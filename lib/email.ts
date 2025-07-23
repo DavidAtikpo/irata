@@ -4,6 +4,11 @@ interface EmailOptions {
   to: string;
   subject: string;
   html: string;
+  attachments?: Array<{
+    filename: string;
+    content: Buffer | string;
+    contentType?: string;
+  }>;
 }
 
 // Configuration unique du transporteur SMTP
@@ -20,7 +25,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-export async function sendEmail({ to, subject, html }: EmailOptions) {
+export async function sendEmail({ to, subject, html, attachments }: EmailOptions) {
   console.log('Configuration SMTP:', {
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT,
@@ -38,12 +43,18 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
   console.log('Sujet:', subject);
 
   try {
-    const info = await transporter.sendMail({
+    const mailOptions: any = {
       from: `"${process.env.SMTP_FROM || 'IRATA'}" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}>`,
       to,
       subject,
       html,
-    });
+    };
+
+    if (attachments && attachments.length > 0) {
+      mailOptions.attachments = attachments;
+    }
+
+    const info = await transporter.sendMail(mailOptions);
     console.log('Email envoyé avec succès:', info.messageId);
     return info;
   } catch (error: any) {

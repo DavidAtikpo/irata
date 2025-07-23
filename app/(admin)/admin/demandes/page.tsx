@@ -20,22 +20,14 @@ interface User {
   prenom: string;
 }
 
-interface Formation {
-  id: string;
-  titre: string;
-  duree: string;
-  niveau: string;
-}
-
 interface Demande {
   id: string;
   statut: 'EN_ATTENTE' | 'VALIDE' | 'REFUSE' | 'ANNULE';
+  session: string;
   message?: string;
   commentaire?: string;
   createdAt: string;
   user: User;
-  formation: Formation;
-  devis?: boolean;
 }
 
 const statusConfig = {
@@ -199,7 +191,7 @@ export default function AdminDemandesPage() {
                       <div className="flex items-center">
                         <ClipboardDocumentListIcon className="h-5 w-5 text-gray-400 mr-2" />
                         <h3 className="text-lg font-medium text-gray-900 truncate">
-                          {demande.formation.titre}
+                          Formation Cordiste - {demande.session}
                         </h3>
                         <span className={`ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
                           <StatusIcon className="h-4 w-4 mr-1" />
@@ -218,10 +210,10 @@ export default function AdminDemandesPage() {
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">
-                            <span className="font-medium">Durée:</span> {demande.formation.duree}
+                            <span className="font-medium">Session:</span> {demande.session}
                           </p>
                           <p className="text-sm text-gray-500">
-                            <span className="font-medium">Niveau:</span> {demande.formation.niveau}
+                            <span className="font-medium">Date de demande:</span> {new Date(demande.createdAt).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
                       </div>
@@ -305,7 +297,7 @@ export default function AdminDemandesPage() {
                         <option value="ANNULE">Annulée</option>
                       </select>
 
-                      {demande.statut === 'VALIDE' && !demande.devis && (
+                      {demande.statut === 'VALIDE' && (
                         <button
                           onClick={() => router.push(`/admin/devis/nouveau?demandeId=${demande.id}`)}
                           className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"

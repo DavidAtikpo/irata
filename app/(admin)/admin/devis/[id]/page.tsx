@@ -1,7 +1,17 @@
 import { prisma } from '@/lib/prisma';
 
-export default async function DevisDetailPage({ params }: { params: { id: string } }) {
-  const devis = await prisma.devis.findUnique({ where: { id: params.id } });
+export default async function DevisDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const devis = await prisma.devis.findUnique({ 
+    where: { id },
+    include: {
+      demande: {
+        include: {
+          user: true
+        }
+      }
+    }
+  });
 
   if (!devis) {
     return <div className="p-8 text-center text-red-600">Devis introuvable.</div>;
@@ -16,6 +26,22 @@ export default async function DevisDetailPage({ params }: { params: { id: string
     <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-6">
         <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">{titre}</h2>
+        
+        {/* Section Session de formation */}
+        <fieldset className="border p-6 rounded mb-6 bg-blue-50">
+          <legend className="text-xl font-bold text-blue-900 px-2">Session de formation</legend>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div className="block text-base font-semibold text-gray-900 mb-1">Session demandée</div>
+              <div className="input text-gray-900 bg-gray-100">{devis.demande?.session || 'Non spécifiée'}</div>
+            </div>
+            <div>
+              <div className="block text-base font-semibold text-gray-900 mb-1">Message du client</div>
+              <div className="input text-gray-900 bg-gray-100">{devis.demande?.message || 'Aucun message'}</div>
+            </div>
+          </div>
+        </fieldset>
+
         {/* Section Titre & Code */}
         <fieldset className="border p-6 rounded mb-6 bg-gray-50">
           <legend className="text-xl font-bold text-gray-900 px-2">En-tête</legend>

@@ -5,11 +5,19 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+interface Demande {
+  id: string;
+  session: string;
+  statut: string;
+  createdAt: string;
+}
+
 interface UserStats {
   demandesEnCours: number;
   demandesAcceptees: number;
   demandesRefusees: number;
   formationsSuivies: number;
+  recentesDemandes: Demande[];
 }
 
 export default function UserDashboard() {
@@ -194,6 +202,23 @@ export default function UserDashboard() {
             </Link>
 
             <Link
+              href="/documents"
+              className="bg-white overflow-hidden shadow rounded-lg p-6 hover:bg-gray-50 transition"
+            >
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="ml-5">
+                  <h4 className="text-lg font-medium text-gray-900">Mes documents</h4>
+                  <p className="mt-1 text-sm text-gray-500">Accéder à mes documents de formation</p>
+                </div>
+              </div>
+            </Link>
+
+            <Link
               href="/profile"
               className="bg-white overflow-hidden shadow rounded-lg p-6 hover:bg-gray-50 transition"
             >
@@ -209,6 +234,67 @@ export default function UserDashboard() {
                 </div>
               </div>
             </Link>
+          </div>
+        </div>
+
+        {/* Demandes récentes */}
+        <div className="mt-8">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Mes 5 dernières demandes</h3>
+          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Session de formation
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date de la demande
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Statut
+                    </th>
+                    <th scope="col" className="relative px-6 py-3">
+                      <span className="sr-only">Voir</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {stats?.recentesDemandes?.length ? (
+                    stats.recentesDemandes.map((demande) => (
+                      <tr key={demande.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{demande.session}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(demande.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              demande.statut === 'EN_ATTENTE' ? 'bg-yellow-100 text-yellow-800' :
+                              demande.statut === 'VALIDE' ? 'bg-green-100 text-green-800' :
+                              'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {demande.statut.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Link href={`/mes-demandes/${demande.id}`} className="text-indigo-600 hover:text-indigo-900">
+                            Voir
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                        Aucune demande récente.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

@@ -6,7 +6,7 @@ import { sendEmail } from '@/lib/email';
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,12 +18,13 @@ export async function POST(
       );
     }
 
+    const { id } = await params;
+
     const devis = await prisma.devis.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         demande: {
           include: {
-            formation: true,
             user: true,
           },
         },
@@ -52,12 +53,11 @@ export async function POST(
     }
 
     const updatedDevis = await prisma.devis.update({
-      where: { id: params.id },
+      where: { id },
       data: { statut: 'VALIDE' },
       include: {
         demande: {
           include: {
-            formation: true,
             user: true,
           },
         },
@@ -73,7 +73,7 @@ export async function POST(
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
             <h2 style="color: #2563eb; margin-bottom: 20px;">Devis validé</h2>
             <p>Bonjour ${devis.demande.user.prenom} ${devis.demande.user.nom},</p>
-            <p>Vous avez accepté le devis pour la formation <strong>${devis.demande.formation.titre}</strong>.</p>
+            <p>Vous avez accepté le devis pour la formation <strong>Formation Cordiste IRATA - ${devis.demande.session}</strong>.</p>
             <p>Détails du devis :</p>
             <ul style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 15px 0;">
               <li>Numéro : ${devis.numero}</li>
@@ -108,7 +108,7 @@ export async function POST(
             <ul style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 15px 0;">
               <li>Numéro : ${devis.numero}</li>
               <li>Client : ${devis.client}</li>
-              <li>Formation : ${devis.demande.formation.titre}</li>
+              <li>Formation : Formation Cordiste IRATA - ${devis.demande.session}</li>
               <li>Montant : ${devis.montant} €</li>
               <li>Date de formation : ${devis.dateFormation ? new Date(devis.dateFormation).toLocaleDateString('fr-FR') : 'Non définie'}</li>
             </ul>

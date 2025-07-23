@@ -6,13 +6,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Demande {
   id: string;
+  session: string;
+  message?: string;
   user: {
     nom: string;
     prenom: string;
     email: string;
-  };
-  formation: {
-    titre: string;
   };
 }
 
@@ -83,7 +82,7 @@ export default function NouveauDevisPage() {
       // Pré-remplir les champs avec les informations du client
       setClient(`${data.user.prenom} ${data.user.nom}`);
       setMail(data.user.email);
-      setDesignation(data.formation.titre);
+      setDesignation(`Formation Cordiste IRATA - ${data.session}`);
     } catch (error) {
       console.error('Erreur:', error);
       setError('Erreur lors de la récupération de la demande');
@@ -136,7 +135,28 @@ export default function NouveauDevisPage() {
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-6">
-        <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">{titre}</h2>
+        <h2 className="text-3xl font-bold mb-4 text-center text-gray-900">{titre}</h2>
+        {demande && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">Session de formation demandée</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <span className="font-medium text-blue-800">Session:</span>
+                <span className="ml-2 text-blue-900">{demande.session}</span>
+              </div>
+              <div>
+                <span className="font-medium text-blue-800">Client:</span>
+                <span className="ml-2 text-blue-900">{demande.user.prenom} {demande.user.nom}</span>
+              </div>
+            </div>
+            {demande.message && (
+              <div className="mt-3">
+                <span className="font-medium text-blue-800">Message du client:</span>
+                <p className="mt-1 text-blue-900 text-sm">{demande.message}</p>
+              </div>
+            )}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Section Titre & Code */}
           <fieldset className="border p-6 rounded mb-6 bg-gray-50">
