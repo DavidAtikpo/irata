@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import React from 'react';
 
@@ -166,7 +166,7 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
         <>
           <div className="mb-4 p-4 bg-blue-50 rounded text-blue-900 text-sm">
             Merci pour votre préinscription.<br />
-            <b>Pour suivre l’évolution de votre dossier, accéder à vos documents et recevoir des notifications, veuillez définir un mot de passe pour activer votre espace personnel.</b>
+            <b>Pour suivre l'évolution de votre dossier, accéder à vos documents et recevoir des notifications, veuillez définir un mot de passe pour activer votre espace personnel.</b>
           </div>
           <div className="grid grid-cols-1 gap-2 mb-2">
             <input name="password" type="password" required placeholder="Définir un mot de passe" className="border rounded px-3 py-2" value={passwords.password} onChange={handlePasswordChange} />
@@ -182,7 +182,7 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
   );
 }
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const sessionParam = searchParams.get('session');
   const [openIdx, setOpenIdx] = useState<number | null>(null);
@@ -370,5 +370,13 @@ export default function Home() {
         </Link>
       </section>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
