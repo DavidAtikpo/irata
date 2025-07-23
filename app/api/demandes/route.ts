@@ -19,7 +19,6 @@ export async function GET() {
     if (session.user.role === 'ADMIN') {
       const demandes = await prisma.demande.findMany({
         include: {
-          formation: true,
           user: {
             select: {
               id: true,
@@ -42,8 +41,13 @@ export async function GET() {
       where: {
         userId: session.user.id,
       },
-      include: {
-        formation: true,
+      select: {
+        id: true,
+        statut: true,
+        session: true,
+        message: true,
+        createdAt: true,
+        updatedAt: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -96,13 +100,10 @@ export async function POST(req: Request) {
     // Créer la demande
     const demande = await prisma.demande.create({
       data: {
-        formationId,
         userId: session.user.id,
+        session: formationId, // Utiliser formationId comme session pour l'instant
         message,
         statut: 'EN_ATTENTE',
-      },
-      include: {
-        formation: true,
       },
     });
 

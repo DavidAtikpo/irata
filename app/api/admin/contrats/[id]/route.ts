@@ -105,13 +105,14 @@ export async function PUT(
 
     // Envoyer un email de notification
     try {
-      const statusText = {
+      const statusMap = {
         EN_ATTENTE: 'en attente',
         SIGNE: 'signé',
         VALIDE: 'validé',
         REFUSE: 'refusé',
         ANNULE: 'annulé',
-      }[status];
+      } as const;
+      const statusText = statusMap[status as keyof typeof statusMap];
 
       await sendEmail({
         to: contrat.user.email,

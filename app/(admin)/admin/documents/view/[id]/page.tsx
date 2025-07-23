@@ -59,13 +59,15 @@ export default function ViewDocumentPage({ params }: { params: Promise<{ id: str
   };
 
   const handleDownload = (url: string, nom: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = nom;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (typeof window !== 'undefined') {
+      const link = window.document.createElement('a');
+      link.href = url;
+      link.download = nom;
+      link.target = '_blank';
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+    }
   };
 
   if (status === 'loading' || loading) {

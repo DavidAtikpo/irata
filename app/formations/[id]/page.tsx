@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { use } from 'react';
 
 interface Formation {
   id: string;
@@ -14,7 +15,7 @@ interface Formation {
   niveau: string;
 }
 
-export default function FormationDetailPage({ params }: { params: { id: string } }) {
+export default function FormationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [formation, setFormation] = useState<Formation | null>(null);
@@ -22,6 +23,8 @@ export default function FormationDetailPage({ params }: { params: { id: string }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  
+  const resolvedParams = use(params);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -29,11 +32,11 @@ export default function FormationDetailPage({ params }: { params: { id: string }
     } else if (status === 'authenticated') {
       fetchFormation();
     }
-  }, [status, router, params.id]);
+  }, [status, router, resolvedParams.id]);
 
   const fetchFormation = async () => {
     try {
-      const response = await fetch(`/api/formations/${params.id}`);
+      const response = await fetch(`/api/formations/${resolvedParams.id}`);
       if (!response.ok) {
         throw new Error('Formation non trouvée');
       }

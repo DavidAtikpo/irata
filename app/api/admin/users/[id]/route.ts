@@ -5,10 +5,11 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('Début de la requête GET pour l\'utilisateur:', params.id);
+    const { id } = await params;
+    console.log('Début de la requête GET pour l\'utilisateur:', id);
     
     const session = await getServerSession(authOptions);
     console.log('Session récupérée:', { 
@@ -29,7 +30,7 @@ export async function GET(
     console.log('Tentative de récupération des données utilisateur...');
     const user = await prisma.user.findUnique({
       where: {
-        id: params.id,
+        id,
       },
       select: {
         id: true,
@@ -43,11 +44,7 @@ export async function GET(
             id: true,
             statut: true,
             createdAt: true,
-            formation: {
-              select: {
-                titre: true,
-              },
-            },
+            session: true,
           },
           orderBy: {
             createdAt: 'desc',
@@ -64,8 +61,7 @@ export async function GET(
               select: {
                 id: true,
                 statut: true,
-                dateDebut: true,
-                dateFin: true,
+                dateSignature: true,
               },
             },
           },
