@@ -19,11 +19,7 @@ export async function GET() {
         userId: session.user.id
       },
       include: {
-        demande: {
-          include: {
-            formation: true
-          }
-        }
+        demande: true
       },
       orderBy: {
         createdAt: 'desc'

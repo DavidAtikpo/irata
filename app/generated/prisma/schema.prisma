@@ -33,30 +33,28 @@ model User {
 }
 
 model Formation {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   titre       String
   description String
   duree       String
   prix        Float
   niveau      String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  demandes    Demande[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@schema("webirata")
 }
 
 model Demande {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   userId      String
-  formationId String
-  statut      Statut    @default(EN_ATTENTE)
-  message     String?
+  statut      Statut   @default(EN_ATTENTE)
+  session     String // session choisie (ex: "2025 février 03 au 08")
+  message     String? // message de motivation
   commentaire String? // Commentaire de l'administrateur
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id])
-  formation   Formation @relation(fields: [formationId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
   devis       Devis?
 
   @@schema("webirata")
@@ -102,17 +100,23 @@ model Devis {
 }
 
 model Contrat {
-  id        String    @id @default(cuid())
-  devisId   String    @unique
-  userId    String
-  statut    Statut    @default(EN_ATTENTE)
-  dateDebut DateTime?
-  dateFin   DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  devis     Devis     @relation(fields: [devisId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  devisId       String   @unique
+  userId        String
+  nom           String
+  prenom        String
+  adresse       String
+  profession    String?
+  dateSignature DateTime
+  signature     String   @db.Text
+  statut        String   @default("EN_ATTENTE")
+  devis         Devis    @relation(fields: [devisId], references: [id])
+  user          User     @relation(fields: [userId], references: [id])
 
+  @@index([devisId])
+  @@index([userId])
   @@schema("webirata")
 }
 

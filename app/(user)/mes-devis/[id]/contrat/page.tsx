@@ -6,30 +6,39 @@ import { useRouter } from 'next/navigation';
 import { EditablePDF } from '../../../../components/EditablePDF';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
-export default function ContratPage({ params }: { params: { id: string } }) {
+export default function ContratPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [devis, setDevis] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [devisId, setDevisId] = useState<string>('');
+
+  useEffect(() => {
+    const getParams = async () => {
+      const { id } = await params;
+      setDevisId(id);
+    };
+    getParams();
+  }, [params]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
-    } else if (status === 'authenticated') {
+    } else if (status === 'authenticated' && devisId) {
       fetchDevis();
     }
-  }, [status, session, router, params.id]);
+  }, [status, session, router, devisId]);
 
   const fetchDevis = async () => {
     try {
-      const response = await fetch(`/api/user/devis/${params.id}`);
+      const response = await fetch(`/api/user/devis/${devisId}`);
       if (!response.ok) {
         throw new Error('Erreur lors de la récupération du devis');
       }
       const data = await response.json();
       if (data.statut !== 'VALIDE') {
-        router.push(`/mes-devis/${params.id}`);
+        router.push(`/mes-devis/${devisId}`);
         return;
       }
       setDevis(data);
@@ -43,7 +52,7 @@ export default function ContratPage({ params }: { params: { id: string } }) {
 
   const handleSubmit = async (data: any) => {
     try {
-      const response = await fetch(`/api/user/devis/${params.id}/contrat`, {
+      const response = await fetch(`/api/user/devis/${devisId}/contrat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,7 +64,7 @@ export default function ContratPage({ params }: { params: { id: string } }) {
         throw new Error('Erreur lors de la soumission du contrat');
       }
 
-      router.push(`/mes-devis/${params.id}`);
+      router.push(`/mes-devis/${devisId}`);
     } catch (error) {
       setError('Erreur lors de la soumission du contrat');
       console.error('Erreur:', error);
@@ -92,7 +101,7 @@ export default function ContratPage({ params }: { params: { id: string } }) {
           </button>
           <h2 className="mt-4 text-3xl font-bold text-gray-900">Contrat de formation</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Téléchargez le contrat de formation au format PDF, remplissez-le et signez-le
+            Remplissez le formulaire ci-dessous avec vos informations personnelles et signez électroniquement pour finaliser votre inscription
           </p>
         </div>
 
@@ -112,8 +121,8 @@ export default function ContratPage({ params }: { params: { id: string } }) {
         <div className="bg-white shadow rounded-lg p-6">
           <div className="prose max-w-none">
             <p className="text-gray-700">
-              Le contrat de formation est disponible au format PDF. Vous pouvez le télécharger, le remplir et le signer.
-              Une fois complété, vous pourrez le renvoyer par email ou le déposer au centre de formation.
+              Veuillez remplir vos informations personnelles dans le formulaire ci-dessous et apposer votre signature électronique. 
+              Une fois le contrat signé, vous recevrez une confirmation par email et nous vous contacterons pour finaliser les détails de votre formation.
             </p>
           </div>
           <div className="mt-6">

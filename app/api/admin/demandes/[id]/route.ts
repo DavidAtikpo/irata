@@ -7,7 +7,7 @@ import { sendStatusUpdateEmail } from '@/lib/email';
 // GET /api/admin/demandes/[id]
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,11 +19,11 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
     const demande = await prisma.demande.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: true,
-        formation: true,
       },
     });
 
@@ -47,7 +47,7 @@ export async function GET(
 // PUT /api/admin/demandes/[id]
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -68,43 +68,23 @@ export async function PUT(
       );
     }
 
+    const { id } = await params;
     const demande = await prisma.demande.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         statut: status,
         commentaire: commentaire || null,
       },
       include: {
         user: true,
-        formation: true,
       },
     });
-
-    // Si la demande est validée, créer un devis
-    if (status === 'VALIDE') {
-      await prisma.devis.create({
-        data: {
-          demandeId: demande.id,
-          userId: demande.userId,
-          montant: demande.formation.prix,
-          statut: 'EN_ATTENTE',
-          numero: `DEV-${Date.now()}`,
-          client: demande.user.nom,
-          mail: demande.user.email,
-          designation: demande.formation.titre,
-          quantite: 1,
-          unite: 'FORMATION',
-          prixUnitaire: demande.formation.prix,
-          tva: 20
-        },
-      });
-    }
 
     // Envoyer un email de notification
     try {
       await sendStatusUpdateEmail(
         demande.user.email,
-        demande.formation.titre,
+        demande.session, // Utiliser la session au lieu du titre de formation
         status,
         commentaire
       );
@@ -126,7 +106,7 @@ export async function PUT(
 // DELETE /api/admin/demandes/[id]
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -138,8 +118,9 @@ export async function DELETE(
       );
     }
 
+    const { id } = await params;
     await prisma.demande.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ message: 'Demande supprimée avec succès' });

@@ -43,6 +43,16 @@ export type Contrat = $Result.DefaultSelection<Prisma.$ContratPayload>
  * 
  */
 export type Settings = $Result.DefaultSelection<Prisma.$SettingsPayload>
+/**
+ * Model PasswordResetToken
+ * 
+ */
+export type PasswordResetToken = $Result.DefaultSelection<Prisma.$PasswordResetTokenPayload>
+/**
+ * Model Document
+ * 
+ */
+export type Document = $Result.DefaultSelection<Prisma.$DocumentPayload>
 
 /**
  * Enums
@@ -260,6 +270,26 @@ export class PrismaClient<
     * ```
     */
   get settings(): Prisma.SettingsDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.passwordResetToken`: Exposes CRUD operations for the **PasswordResetToken** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PasswordResetTokens
+    * const passwordResetTokens = await prisma.passwordResetToken.findMany()
+    * ```
+    */
+  get passwordResetToken(): Prisma.PasswordResetTokenDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.document`: Exposes CRUD operations for the **Document** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Documents
+    * const documents = await prisma.document.findMany()
+    * ```
+    */
+  get document(): Prisma.DocumentDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -705,7 +735,9 @@ export namespace Prisma {
     Demande: 'Demande',
     Devis: 'Devis',
     Contrat: 'Contrat',
-    Settings: 'Settings'
+    Settings: 'Settings',
+    PasswordResetToken: 'PasswordResetToken',
+    Document: 'Document'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -724,7 +756,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "formation" | "demande" | "devis" | "contrat" | "settings"
+      modelProps: "user" | "formation" | "demande" | "devis" | "contrat" | "settings" | "passwordResetToken" | "document"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1172,6 +1204,154 @@ export namespace Prisma {
           }
         }
       }
+      PasswordResetToken: {
+        payload: Prisma.$PasswordResetTokenPayload<ExtArgs>
+        fields: Prisma.PasswordResetTokenFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PasswordResetTokenFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PasswordResetTokenFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
+          }
+          findFirst: {
+            args: Prisma.PasswordResetTokenFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PasswordResetTokenFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
+          }
+          findMany: {
+            args: Prisma.PasswordResetTokenFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>[]
+          }
+          create: {
+            args: Prisma.PasswordResetTokenCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
+          }
+          createMany: {
+            args: Prisma.PasswordResetTokenCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.PasswordResetTokenCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>[]
+          }
+          delete: {
+            args: Prisma.PasswordResetTokenDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
+          }
+          update: {
+            args: Prisma.PasswordResetTokenUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
+          }
+          deleteMany: {
+            args: Prisma.PasswordResetTokenDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PasswordResetTokenUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.PasswordResetTokenUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>[]
+          }
+          upsert: {
+            args: Prisma.PasswordResetTokenUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokenPayload>
+          }
+          aggregate: {
+            args: Prisma.PasswordResetTokenAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePasswordResetToken>
+          }
+          groupBy: {
+            args: Prisma.PasswordResetTokenGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PasswordResetTokenGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PasswordResetTokenCountArgs<ExtArgs>
+            result: $Utils.Optional<PasswordResetTokenCountAggregateOutputType> | number
+          }
+        }
+      }
+      Document: {
+        payload: Prisma.$DocumentPayload<ExtArgs>
+        fields: Prisma.DocumentFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.DocumentFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.DocumentFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentPayload>
+          }
+          findFirst: {
+            args: Prisma.DocumentFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.DocumentFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentPayload>
+          }
+          findMany: {
+            args: Prisma.DocumentFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentPayload>[]
+          }
+          create: {
+            args: Prisma.DocumentCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentPayload>
+          }
+          createMany: {
+            args: Prisma.DocumentCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.DocumentCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentPayload>[]
+          }
+          delete: {
+            args: Prisma.DocumentDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentPayload>
+          }
+          update: {
+            args: Prisma.DocumentUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentPayload>
+          }
+          deleteMany: {
+            args: Prisma.DocumentDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.DocumentUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.DocumentUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentPayload>[]
+          }
+          upsert: {
+            args: Prisma.DocumentUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentPayload>
+          }
+          aggregate: {
+            args: Prisma.DocumentAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateDocument>
+          }
+          groupBy: {
+            args: Prisma.DocumentGroupByArgs<ExtArgs>
+            result: $Utils.Optional<DocumentGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.DocumentCountArgs<ExtArgs>
+            result: $Utils.Optional<DocumentCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1262,6 +1442,8 @@ export namespace Prisma {
     devis?: DevisOmit
     contrat?: ContratOmit
     settings?: SettingsOmit
+    passwordResetToken?: PasswordResetTokenOmit
+    document?: DocumentOmit
   }
 
   /* Types for Logging */
@@ -1356,15 +1538,17 @@ export namespace Prisma {
    */
 
   export type UserCountOutputType = {
+    contrats: number
     demandes: number
     devis: number
-    contrats: number
+    documents: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    contrats?: boolean | UserCountOutputTypeCountContratsArgs
     demandes?: boolean | UserCountOutputTypeCountDemandesArgs
     devis?: boolean | UserCountOutputTypeCountDevisArgs
-    contrats?: boolean | UserCountOutputTypeCountContratsArgs
+    documents?: boolean | UserCountOutputTypeCountDocumentsArgs
   }
 
   // Custom InputTypes
@@ -1376,6 +1560,13 @@ export namespace Prisma {
      * Select specific fields to fetch from the UserCountOutputType
      */
     select?: UserCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountContratsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ContratWhereInput
   }
 
   /**
@@ -1395,39 +1586,39 @@ export namespace Prisma {
   /**
    * UserCountOutputType without action
    */
-  export type UserCountOutputTypeCountContratsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: ContratWhereInput
+  export type UserCountOutputTypeCountDocumentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DocumentWhereInput
   }
 
 
   /**
-   * Count Type FormationCountOutputType
+   * Count Type DevisCountOutputType
    */
 
-  export type FormationCountOutputType = {
-    demandes: number
+  export type DevisCountOutputType = {
+    documents: number
   }
 
-  export type FormationCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    demandes?: boolean | FormationCountOutputTypeCountDemandesArgs
+  export type DevisCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    documents?: boolean | DevisCountOutputTypeCountDocumentsArgs
   }
 
   // Custom InputTypes
   /**
-   * FormationCountOutputType without action
+   * DevisCountOutputType without action
    */
-  export type FormationCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type DevisCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the FormationCountOutputType
+     * Select specific fields to fetch from the DevisCountOutputType
      */
-    select?: FormationCountOutputTypeSelect<ExtArgs> | null
+    select?: DevisCountOutputTypeSelect<ExtArgs> | null
   }
 
   /**
-   * FormationCountOutputType without action
+   * DevisCountOutputType without action
    */
-  export type FormationCountOutputTypeCountDemandesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: DemandeWhereInput
+  export type DevisCountOutputTypeCountDocumentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DocumentWhereInput
   }
 
 
@@ -1623,9 +1814,10 @@ export namespace Prisma {
     role?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    contrats?: boolean | User$contratsArgs<ExtArgs>
     demandes?: boolean | User$demandesArgs<ExtArgs>
     devis?: boolean | User$devisArgs<ExtArgs>
-    contrats?: boolean | User$contratsArgs<ExtArgs>
+    documents?: boolean | User$documentsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -1664,9 +1856,10 @@ export namespace Prisma {
 
   export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "password" | "nom" | "prenom" | "role" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    contrats?: boolean | User$contratsArgs<ExtArgs>
     demandes?: boolean | User$demandesArgs<ExtArgs>
     devis?: boolean | User$devisArgs<ExtArgs>
-    contrats?: boolean | User$contratsArgs<ExtArgs>
+    documents?: boolean | User$documentsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -1675,9 +1868,10 @@ export namespace Prisma {
   export type $UserPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "User"
     objects: {
+      contrats: Prisma.$ContratPayload<ExtArgs>[]
       demandes: Prisma.$DemandePayload<ExtArgs>[]
       devis: Prisma.$DevisPayload<ExtArgs>[]
-      contrats: Prisma.$ContratPayload<ExtArgs>[]
+      documents: Prisma.$DocumentPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -2082,9 +2276,10 @@ export namespace Prisma {
    */
   export interface Prisma__UserClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    contrats<T extends User$contratsArgs<ExtArgs> = {}>(args?: Subset<T, User$contratsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ContratPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     demandes<T extends User$demandesArgs<ExtArgs> = {}>(args?: Subset<T, User$demandesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DemandePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     devis<T extends User$devisArgs<ExtArgs> = {}>(args?: Subset<T, User$devisArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DevisPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    contrats<T extends User$contratsArgs<ExtArgs> = {}>(args?: Subset<T, User$contratsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ContratPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    documents<T extends User$documentsArgs<ExtArgs> = {}>(args?: Subset<T, User$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2510,6 +2705,30 @@ export namespace Prisma {
   }
 
   /**
+   * User.contrats
+   */
+  export type User$contratsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Contrat
+     */
+    select?: ContratSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Contrat
+     */
+    omit?: ContratOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ContratInclude<ExtArgs> | null
+    where?: ContratWhereInput
+    orderBy?: ContratOrderByWithRelationInput | ContratOrderByWithRelationInput[]
+    cursor?: ContratWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ContratScalarFieldEnum | ContratScalarFieldEnum[]
+  }
+
+  /**
    * User.demandes
    */
   export type User$demandesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2558,27 +2777,27 @@ export namespace Prisma {
   }
 
   /**
-   * User.contrats
+   * User.documents
    */
-  export type User$contratsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type User$documentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Contrat
+     * Select specific fields to fetch from the Document
      */
-    select?: ContratSelect<ExtArgs> | null
+    select?: DocumentSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Contrat
+     * Omit specific fields from the Document
      */
-    omit?: ContratOmit<ExtArgs> | null
+    omit?: DocumentOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: ContratInclude<ExtArgs> | null
-    where?: ContratWhereInput
-    orderBy?: ContratOrderByWithRelationInput | ContratOrderByWithRelationInput[]
-    cursor?: ContratWhereUniqueInput
+    include?: DocumentInclude<ExtArgs> | null
+    where?: DocumentWhereInput
+    orderBy?: DocumentOrderByWithRelationInput | DocumentOrderByWithRelationInput[]
+    cursor?: DocumentWhereUniqueInput
     take?: number
     skip?: number
-    distinct?: ContratScalarFieldEnum | ContratScalarFieldEnum[]
+    distinct?: DocumentScalarFieldEnum | DocumentScalarFieldEnum[]
   }
 
   /**
@@ -2822,8 +3041,6 @@ export namespace Prisma {
     niveau?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    demandes?: boolean | Formation$demandesArgs<ExtArgs>
-    _count?: boolean | FormationCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["formation"]>
 
   export type FormationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -2860,18 +3077,10 @@ export namespace Prisma {
   }
 
   export type FormationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "titre" | "description" | "duree" | "prix" | "niveau" | "createdAt" | "updatedAt", ExtArgs["result"]["formation"]>
-  export type FormationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    demandes?: boolean | Formation$demandesArgs<ExtArgs>
-    _count?: boolean | FormationCountOutputTypeDefaultArgs<ExtArgs>
-  }
-  export type FormationIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
-  export type FormationIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
 
   export type $FormationPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Formation"
-    objects: {
-      demandes: Prisma.$DemandePayload<ExtArgs>[]
-    }
+    objects: {}
     scalars: $Extensions.GetPayloadResult<{
       id: string
       titre: string
@@ -3275,7 +3484,6 @@ export namespace Prisma {
    */
   export interface Prisma__FormationClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    demandes<T extends Formation$demandesArgs<ExtArgs> = {}>(args?: Subset<T, Formation$demandesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DemandePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3330,10 +3538,6 @@ export namespace Prisma {
      */
     omit?: FormationOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: FormationInclude<ExtArgs> | null
-    /**
      * Filter, which Formation to fetch.
      */
     where: FormationWhereUniqueInput
@@ -3352,10 +3556,6 @@ export namespace Prisma {
      */
     omit?: FormationOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: FormationInclude<ExtArgs> | null
-    /**
      * Filter, which Formation to fetch.
      */
     where: FormationWhereUniqueInput
@@ -3373,10 +3573,6 @@ export namespace Prisma {
      * Omit specific fields from the Formation
      */
     omit?: FormationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: FormationInclude<ExtArgs> | null
     /**
      * Filter, which Formation to fetch.
      */
@@ -3426,10 +3622,6 @@ export namespace Prisma {
      */
     omit?: FormationOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: FormationInclude<ExtArgs> | null
-    /**
      * Filter, which Formation to fetch.
      */
     where?: FormationWhereInput
@@ -3478,10 +3670,6 @@ export namespace Prisma {
      */
     omit?: FormationOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: FormationInclude<ExtArgs> | null
-    /**
      * Filter, which Formations to fetch.
      */
     where?: FormationWhereInput
@@ -3524,10 +3712,6 @@ export namespace Prisma {
      * Omit specific fields from the Formation
      */
     omit?: FormationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: FormationInclude<ExtArgs> | null
     /**
      * The data needed to create a Formation.
      */
@@ -3576,10 +3760,6 @@ export namespace Prisma {
      * Omit specific fields from the Formation
      */
     omit?: FormationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: FormationInclude<ExtArgs> | null
     /**
      * The data needed to update a Formation.
      */
@@ -3647,10 +3827,6 @@ export namespace Prisma {
      */
     omit?: FormationOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: FormationInclude<ExtArgs> | null
-    /**
      * The filter to search for the Formation to update in case it exists.
      */
     where: FormationWhereUniqueInput
@@ -3677,10 +3853,6 @@ export namespace Prisma {
      */
     omit?: FormationOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: FormationInclude<ExtArgs> | null
-    /**
      * Filter which Formation to delete.
      */
     where: FormationWhereUniqueInput
@@ -3701,30 +3873,6 @@ export namespace Prisma {
   }
 
   /**
-   * Formation.demandes
-   */
-  export type Formation$demandesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Demande
-     */
-    select?: DemandeSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Demande
-     */
-    omit?: DemandeOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DemandeInclude<ExtArgs> | null
-    where?: DemandeWhereInput
-    orderBy?: DemandeOrderByWithRelationInput | DemandeOrderByWithRelationInput[]
-    cursor?: DemandeWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: DemandeScalarFieldEnum | DemandeScalarFieldEnum[]
-  }
-
-  /**
    * Formation without action
    */
   export type FormationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3736,10 +3884,6 @@ export namespace Prisma {
      * Omit specific fields from the Formation
      */
     omit?: FormationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: FormationInclude<ExtArgs> | null
   }
 
 
@@ -3756,8 +3900,8 @@ export namespace Prisma {
   export type DemandeMinAggregateOutputType = {
     id: string | null
     userId: string | null
-    formationId: string | null
     statut: $Enums.Statut | null
+    session: string | null
     message: string | null
     commentaire: string | null
     createdAt: Date | null
@@ -3767,8 +3911,8 @@ export namespace Prisma {
   export type DemandeMaxAggregateOutputType = {
     id: string | null
     userId: string | null
-    formationId: string | null
     statut: $Enums.Statut | null
+    session: string | null
     message: string | null
     commentaire: string | null
     createdAt: Date | null
@@ -3778,8 +3922,8 @@ export namespace Prisma {
   export type DemandeCountAggregateOutputType = {
     id: number
     userId: number
-    formationId: number
     statut: number
+    session: number
     message: number
     commentaire: number
     createdAt: number
@@ -3791,8 +3935,8 @@ export namespace Prisma {
   export type DemandeMinAggregateInputType = {
     id?: true
     userId?: true
-    formationId?: true
     statut?: true
+    session?: true
     message?: true
     commentaire?: true
     createdAt?: true
@@ -3802,8 +3946,8 @@ export namespace Prisma {
   export type DemandeMaxAggregateInputType = {
     id?: true
     userId?: true
-    formationId?: true
     statut?: true
+    session?: true
     message?: true
     commentaire?: true
     createdAt?: true
@@ -3813,8 +3957,8 @@ export namespace Prisma {
   export type DemandeCountAggregateInputType = {
     id?: true
     userId?: true
-    formationId?: true
     statut?: true
+    session?: true
     message?: true
     commentaire?: true
     createdAt?: true
@@ -3897,8 +4041,8 @@ export namespace Prisma {
   export type DemandeGroupByOutputType = {
     id: string
     userId: string
-    formationId: string
     statut: $Enums.Statut
+    session: string
     message: string | null
     commentaire: string | null
     createdAt: Date
@@ -3925,81 +4069,74 @@ export namespace Prisma {
   export type DemandeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
-    formationId?: boolean
     statut?: boolean
+    session?: boolean
     message?: boolean
     commentaire?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
-    formation?: boolean | FormationDefaultArgs<ExtArgs>
     devis?: boolean | Demande$devisArgs<ExtArgs>
   }, ExtArgs["result"]["demande"]>
 
   export type DemandeSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
-    formationId?: boolean
     statut?: boolean
+    session?: boolean
     message?: boolean
     commentaire?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
-    formation?: boolean | FormationDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["demande"]>
 
   export type DemandeSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
-    formationId?: boolean
     statut?: boolean
+    session?: boolean
     message?: boolean
     commentaire?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
-    formation?: boolean | FormationDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["demande"]>
 
   export type DemandeSelectScalar = {
     id?: boolean
     userId?: boolean
-    formationId?: boolean
     statut?: boolean
+    session?: boolean
     message?: boolean
     commentaire?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type DemandeOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "formationId" | "statut" | "message" | "commentaire" | "createdAt" | "updatedAt", ExtArgs["result"]["demande"]>
+  export type DemandeOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "statut" | "session" | "message" | "commentaire" | "createdAt" | "updatedAt", ExtArgs["result"]["demande"]>
   export type DemandeInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
-    formation?: boolean | FormationDefaultArgs<ExtArgs>
     devis?: boolean | Demande$devisArgs<ExtArgs>
   }
   export type DemandeIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
-    formation?: boolean | FormationDefaultArgs<ExtArgs>
   }
   export type DemandeIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
-    formation?: boolean | FormationDefaultArgs<ExtArgs>
   }
 
   export type $DemandePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Demande"
     objects: {
       user: Prisma.$UserPayload<ExtArgs>
-      formation: Prisma.$FormationPayload<ExtArgs>
       devis: Prisma.$DevisPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       userId: string
-      formationId: string
       statut: $Enums.Statut
+      session: string
       message: string | null
       commentaire: string | null
       createdAt: Date
@@ -4399,7 +4536,6 @@ export namespace Prisma {
   export interface Prisma__DemandeClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    formation<T extends FormationDefaultArgs<ExtArgs> = {}>(args?: Subset<T, FormationDefaultArgs<ExtArgs>>): Prisma__FormationClient<$Result.GetResult<Prisma.$FormationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     devis<T extends Demande$devisArgs<ExtArgs> = {}>(args?: Subset<T, Demande$devisArgs<ExtArgs>>): Prisma__DevisClient<$Result.GetResult<Prisma.$DevisPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -4432,8 +4568,8 @@ export namespace Prisma {
   interface DemandeFieldRefs {
     readonly id: FieldRef<"Demande", 'String'>
     readonly userId: FieldRef<"Demande", 'String'>
-    readonly formationId: FieldRef<"Demande", 'String'>
     readonly statut: FieldRef<"Demande", 'Statut'>
+    readonly session: FieldRef<"Demande", 'String'>
     readonly message: FieldRef<"Demande", 'String'>
     readonly commentaire: FieldRef<"Demande", 'String'>
     readonly createdAt: FieldRef<"Demande", 'DateTime'>
@@ -5289,9 +5425,11 @@ export namespace Prisma {
     statut?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    contrat?: boolean | Devis$contratArgs<ExtArgs>
     demande?: boolean | DemandeDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
-    contrat?: boolean | Devis$contratArgs<ExtArgs>
+    documents?: boolean | Devis$documentsArgs<ExtArgs>
+    _count?: boolean | DevisCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["devis"]>
 
   export type DevisSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -5402,9 +5540,11 @@ export namespace Prisma {
 
   export type DevisOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "demandeId" | "userId" | "numero" | "client" | "mail" | "mail2" | "adresseLivraison" | "dateLivraison" | "dateExamen" | "adresse" | "siret" | "numNDA" | "dateFormation" | "suiviPar" | "designation" | "quantite" | "unite" | "prixUnitaire" | "tva" | "exoneration" | "datePriseEffet" | "montant" | "iban" | "bic" | "banque" | "intituleCompte" | "signature" | "statut" | "createdAt" | "updatedAt", ExtArgs["result"]["devis"]>
   export type DevisInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    contrat?: boolean | Devis$contratArgs<ExtArgs>
     demande?: boolean | DemandeDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
-    contrat?: boolean | Devis$contratArgs<ExtArgs>
+    documents?: boolean | Devis$documentsArgs<ExtArgs>
+    _count?: boolean | DevisCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type DevisIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     demande?: boolean | DemandeDefaultArgs<ExtArgs>
@@ -5418,9 +5558,10 @@ export namespace Prisma {
   export type $DevisPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Devis"
     objects: {
+      contrat: Prisma.$ContratPayload<ExtArgs> | null
       demande: Prisma.$DemandePayload<ExtArgs>
       user: Prisma.$UserPayload<ExtArgs>
-      contrat: Prisma.$ContratPayload<ExtArgs> | null
+      documents: Prisma.$DocumentPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -5848,9 +5989,10 @@ export namespace Prisma {
    */
   export interface Prisma__DevisClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    contrat<T extends Devis$contratArgs<ExtArgs> = {}>(args?: Subset<T, Devis$contratArgs<ExtArgs>>): Prisma__ContratClient<$Result.GetResult<Prisma.$ContratPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     demande<T extends DemandeDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DemandeDefaultArgs<ExtArgs>>): Prisma__DemandeClient<$Result.GetResult<Prisma.$DemandePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    contrat<T extends Devis$contratArgs<ExtArgs> = {}>(args?: Subset<T, Devis$contratArgs<ExtArgs>>): Prisma__ContratClient<$Result.GetResult<Prisma.$ContratPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    documents<T extends Devis$documentsArgs<ExtArgs> = {}>(args?: Subset<T, Devis$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -6326,6 +6468,30 @@ export namespace Prisma {
   }
 
   /**
+   * Devis.documents
+   */
+  export type Devis$documentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInclude<ExtArgs> | null
+    where?: DocumentWhereInput
+    orderBy?: DocumentOrderByWithRelationInput | DocumentOrderByWithRelationInput[]
+    cursor?: DocumentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DocumentScalarFieldEnum | DocumentScalarFieldEnum[]
+  }
+
+  /**
    * Devis without action
    */
   export type DevisDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -6356,70 +6522,94 @@ export namespace Prisma {
 
   export type ContratMinAggregateOutputType = {
     id: string | null
-    devisId: string | null
-    userId: string | null
-    statut: $Enums.Statut | null
-    dateDebut: Date | null
-    dateFin: Date | null
     createdAt: Date | null
     updatedAt: Date | null
+    devisId: string | null
+    userId: string | null
+    nom: string | null
+    prenom: string | null
+    adresse: string | null
+    profession: string | null
+    dateSignature: Date | null
+    signature: string | null
+    statut: string | null
   }
 
   export type ContratMaxAggregateOutputType = {
     id: string | null
-    devisId: string | null
-    userId: string | null
-    statut: $Enums.Statut | null
-    dateDebut: Date | null
-    dateFin: Date | null
     createdAt: Date | null
     updatedAt: Date | null
+    devisId: string | null
+    userId: string | null
+    nom: string | null
+    prenom: string | null
+    adresse: string | null
+    profession: string | null
+    dateSignature: Date | null
+    signature: string | null
+    statut: string | null
   }
 
   export type ContratCountAggregateOutputType = {
     id: number
-    devisId: number
-    userId: number
-    statut: number
-    dateDebut: number
-    dateFin: number
     createdAt: number
     updatedAt: number
+    devisId: number
+    userId: number
+    nom: number
+    prenom: number
+    adresse: number
+    profession: number
+    dateSignature: number
+    signature: number
+    statut: number
     _all: number
   }
 
 
   export type ContratMinAggregateInputType = {
     id?: true
-    devisId?: true
-    userId?: true
-    statut?: true
-    dateDebut?: true
-    dateFin?: true
     createdAt?: true
     updatedAt?: true
+    devisId?: true
+    userId?: true
+    nom?: true
+    prenom?: true
+    adresse?: true
+    profession?: true
+    dateSignature?: true
+    signature?: true
+    statut?: true
   }
 
   export type ContratMaxAggregateInputType = {
     id?: true
-    devisId?: true
-    userId?: true
-    statut?: true
-    dateDebut?: true
-    dateFin?: true
     createdAt?: true
     updatedAt?: true
+    devisId?: true
+    userId?: true
+    nom?: true
+    prenom?: true
+    adresse?: true
+    profession?: true
+    dateSignature?: true
+    signature?: true
+    statut?: true
   }
 
   export type ContratCountAggregateInputType = {
     id?: true
-    devisId?: true
-    userId?: true
-    statut?: true
-    dateDebut?: true
-    dateFin?: true
     createdAt?: true
     updatedAt?: true
+    devisId?: true
+    userId?: true
+    nom?: true
+    prenom?: true
+    adresse?: true
+    profession?: true
+    dateSignature?: true
+    signature?: true
+    statut?: true
     _all?: true
   }
 
@@ -6497,13 +6687,17 @@ export namespace Prisma {
 
   export type ContratGroupByOutputType = {
     id: string
-    devisId: string
-    userId: string
-    statut: $Enums.Statut
-    dateDebut: Date | null
-    dateFin: Date | null
     createdAt: Date
     updatedAt: Date
+    devisId: string
+    userId: string
+    nom: string
+    prenom: string
+    adresse: string
+    profession: string | null
+    dateSignature: Date
+    signature: string
+    statut: string
     _count: ContratCountAggregateOutputType | null
     _min: ContratMinAggregateOutputType | null
     _max: ContratMaxAggregateOutputType | null
@@ -6525,55 +6719,71 @@ export namespace Prisma {
 
   export type ContratSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    devisId?: boolean
-    userId?: boolean
-    statut?: boolean
-    dateDebut?: boolean
-    dateFin?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    devisId?: boolean
+    userId?: boolean
+    nom?: boolean
+    prenom?: boolean
+    adresse?: boolean
+    profession?: boolean
+    dateSignature?: boolean
+    signature?: boolean
+    statut?: boolean
     devis?: boolean | DevisDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["contrat"]>
 
   export type ContratSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    devisId?: boolean
-    userId?: boolean
-    statut?: boolean
-    dateDebut?: boolean
-    dateFin?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    devisId?: boolean
+    userId?: boolean
+    nom?: boolean
+    prenom?: boolean
+    adresse?: boolean
+    profession?: boolean
+    dateSignature?: boolean
+    signature?: boolean
+    statut?: boolean
     devis?: boolean | DevisDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["contrat"]>
 
   export type ContratSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    devisId?: boolean
-    userId?: boolean
-    statut?: boolean
-    dateDebut?: boolean
-    dateFin?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    devisId?: boolean
+    userId?: boolean
+    nom?: boolean
+    prenom?: boolean
+    adresse?: boolean
+    profession?: boolean
+    dateSignature?: boolean
+    signature?: boolean
+    statut?: boolean
     devis?: boolean | DevisDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["contrat"]>
 
   export type ContratSelectScalar = {
     id?: boolean
-    devisId?: boolean
-    userId?: boolean
-    statut?: boolean
-    dateDebut?: boolean
-    dateFin?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    devisId?: boolean
+    userId?: boolean
+    nom?: boolean
+    prenom?: boolean
+    adresse?: boolean
+    profession?: boolean
+    dateSignature?: boolean
+    signature?: boolean
+    statut?: boolean
   }
 
-  export type ContratOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "devisId" | "userId" | "statut" | "dateDebut" | "dateFin" | "createdAt" | "updatedAt", ExtArgs["result"]["contrat"]>
+  export type ContratOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "devisId" | "userId" | "nom" | "prenom" | "adresse" | "profession" | "dateSignature" | "signature" | "statut", ExtArgs["result"]["contrat"]>
   export type ContratInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     devis?: boolean | DevisDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -6595,13 +6805,17 @@ export namespace Prisma {
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
-      devisId: string
-      userId: string
-      statut: $Enums.Statut
-      dateDebut: Date | null
-      dateFin: Date | null
       createdAt: Date
       updatedAt: Date
+      devisId: string
+      userId: string
+      nom: string
+      prenom: string
+      adresse: string
+      profession: string | null
+      dateSignature: Date
+      signature: string
+      statut: string
     }, ExtArgs["result"]["contrat"]>
     composites: {}
   }
@@ -7028,13 +7242,17 @@ export namespace Prisma {
    */
   interface ContratFieldRefs {
     readonly id: FieldRef<"Contrat", 'String'>
-    readonly devisId: FieldRef<"Contrat", 'String'>
-    readonly userId: FieldRef<"Contrat", 'String'>
-    readonly statut: FieldRef<"Contrat", 'Statut'>
-    readonly dateDebut: FieldRef<"Contrat", 'DateTime'>
-    readonly dateFin: FieldRef<"Contrat", 'DateTime'>
     readonly createdAt: FieldRef<"Contrat", 'DateTime'>
     readonly updatedAt: FieldRef<"Contrat", 'DateTime'>
+    readonly devisId: FieldRef<"Contrat", 'String'>
+    readonly userId: FieldRef<"Contrat", 'String'>
+    readonly nom: FieldRef<"Contrat", 'String'>
+    readonly prenom: FieldRef<"Contrat", 'String'>
+    readonly adresse: FieldRef<"Contrat", 'String'>
+    readonly profession: FieldRef<"Contrat", 'String'>
+    readonly dateSignature: FieldRef<"Contrat", 'DateTime'>
+    readonly signature: FieldRef<"Contrat", 'String'>
+    readonly statut: FieldRef<"Contrat", 'String'>
   }
     
 
@@ -8446,6 +8664,2170 @@ export namespace Prisma {
 
 
   /**
+   * Model PasswordResetToken
+   */
+
+  export type AggregatePasswordResetToken = {
+    _count: PasswordResetTokenCountAggregateOutputType | null
+    _min: PasswordResetTokenMinAggregateOutputType | null
+    _max: PasswordResetTokenMaxAggregateOutputType | null
+  }
+
+  export type PasswordResetTokenMinAggregateOutputType = {
+    email: string | null
+    token: string | null
+    expires: Date | null
+    createdAt: Date | null
+  }
+
+  export type PasswordResetTokenMaxAggregateOutputType = {
+    email: string | null
+    token: string | null
+    expires: Date | null
+    createdAt: Date | null
+  }
+
+  export type PasswordResetTokenCountAggregateOutputType = {
+    email: number
+    token: number
+    expires: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type PasswordResetTokenMinAggregateInputType = {
+    email?: true
+    token?: true
+    expires?: true
+    createdAt?: true
+  }
+
+  export type PasswordResetTokenMaxAggregateInputType = {
+    email?: true
+    token?: true
+    expires?: true
+    createdAt?: true
+  }
+
+  export type PasswordResetTokenCountAggregateInputType = {
+    email?: true
+    token?: true
+    expires?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type PasswordResetTokenAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PasswordResetToken to aggregate.
+     */
+    where?: PasswordResetTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PasswordResetTokens to fetch.
+     */
+    orderBy?: PasswordResetTokenOrderByWithRelationInput | PasswordResetTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PasswordResetTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PasswordResetTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PasswordResetTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PasswordResetTokens
+    **/
+    _count?: true | PasswordResetTokenCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PasswordResetTokenMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PasswordResetTokenMaxAggregateInputType
+  }
+
+  export type GetPasswordResetTokenAggregateType<T extends PasswordResetTokenAggregateArgs> = {
+        [P in keyof T & keyof AggregatePasswordResetToken]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePasswordResetToken[P]>
+      : GetScalarType<T[P], AggregatePasswordResetToken[P]>
+  }
+
+
+
+
+  export type PasswordResetTokenGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PasswordResetTokenWhereInput
+    orderBy?: PasswordResetTokenOrderByWithAggregationInput | PasswordResetTokenOrderByWithAggregationInput[]
+    by: PasswordResetTokenScalarFieldEnum[] | PasswordResetTokenScalarFieldEnum
+    having?: PasswordResetTokenScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PasswordResetTokenCountAggregateInputType | true
+    _min?: PasswordResetTokenMinAggregateInputType
+    _max?: PasswordResetTokenMaxAggregateInputType
+  }
+
+  export type PasswordResetTokenGroupByOutputType = {
+    email: string
+    token: string
+    expires: Date
+    createdAt: Date
+    _count: PasswordResetTokenCountAggregateOutputType | null
+    _min: PasswordResetTokenMinAggregateOutputType | null
+    _max: PasswordResetTokenMaxAggregateOutputType | null
+  }
+
+  type GetPasswordResetTokenGroupByPayload<T extends PasswordResetTokenGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PasswordResetTokenGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PasswordResetTokenGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PasswordResetTokenGroupByOutputType[P]>
+            : GetScalarType<T[P], PasswordResetTokenGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PasswordResetTokenSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    email?: boolean
+    token?: boolean
+    expires?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["passwordResetToken"]>
+
+  export type PasswordResetTokenSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    email?: boolean
+    token?: boolean
+    expires?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["passwordResetToken"]>
+
+  export type PasswordResetTokenSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    email?: boolean
+    token?: boolean
+    expires?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["passwordResetToken"]>
+
+  export type PasswordResetTokenSelectScalar = {
+    email?: boolean
+    token?: boolean
+    expires?: boolean
+    createdAt?: boolean
+  }
+
+  export type PasswordResetTokenOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"email" | "token" | "expires" | "createdAt", ExtArgs["result"]["passwordResetToken"]>
+
+  export type $PasswordResetTokenPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PasswordResetToken"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      email: string
+      token: string
+      expires: Date
+      createdAt: Date
+    }, ExtArgs["result"]["passwordResetToken"]>
+    composites: {}
+  }
+
+  type PasswordResetTokenGetPayload<S extends boolean | null | undefined | PasswordResetTokenDefaultArgs> = $Result.GetResult<Prisma.$PasswordResetTokenPayload, S>
+
+  type PasswordResetTokenCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PasswordResetTokenFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PasswordResetTokenCountAggregateInputType | true
+    }
+
+  export interface PasswordResetTokenDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PasswordResetToken'], meta: { name: 'PasswordResetToken' } }
+    /**
+     * Find zero or one PasswordResetToken that matches the filter.
+     * @param {PasswordResetTokenFindUniqueArgs} args - Arguments to find a PasswordResetToken
+     * @example
+     * // Get one PasswordResetToken
+     * const passwordResetToken = await prisma.passwordResetToken.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PasswordResetTokenFindUniqueArgs>(args: SelectSubset<T, PasswordResetTokenFindUniqueArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PasswordResetToken that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PasswordResetTokenFindUniqueOrThrowArgs} args - Arguments to find a PasswordResetToken
+     * @example
+     * // Get one PasswordResetToken
+     * const passwordResetToken = await prisma.passwordResetToken.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PasswordResetTokenFindUniqueOrThrowArgs>(args: SelectSubset<T, PasswordResetTokenFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PasswordResetToken that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokenFindFirstArgs} args - Arguments to find a PasswordResetToken
+     * @example
+     * // Get one PasswordResetToken
+     * const passwordResetToken = await prisma.passwordResetToken.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PasswordResetTokenFindFirstArgs>(args?: SelectSubset<T, PasswordResetTokenFindFirstArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PasswordResetToken that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokenFindFirstOrThrowArgs} args - Arguments to find a PasswordResetToken
+     * @example
+     * // Get one PasswordResetToken
+     * const passwordResetToken = await prisma.passwordResetToken.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PasswordResetTokenFindFirstOrThrowArgs>(args?: SelectSubset<T, PasswordResetTokenFindFirstOrThrowArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PasswordResetTokens that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokenFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetToken.findMany()
+     * 
+     * // Get first 10 PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetToken.findMany({ take: 10 })
+     * 
+     * // Only select the `email`
+     * const passwordResetTokenWithEmailOnly = await prisma.passwordResetToken.findMany({ select: { email: true } })
+     * 
+     */
+    findMany<T extends PasswordResetTokenFindManyArgs>(args?: SelectSubset<T, PasswordResetTokenFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PasswordResetToken.
+     * @param {PasswordResetTokenCreateArgs} args - Arguments to create a PasswordResetToken.
+     * @example
+     * // Create one PasswordResetToken
+     * const PasswordResetToken = await prisma.passwordResetToken.create({
+     *   data: {
+     *     // ... data to create a PasswordResetToken
+     *   }
+     * })
+     * 
+     */
+    create<T extends PasswordResetTokenCreateArgs>(args: SelectSubset<T, PasswordResetTokenCreateArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PasswordResetTokens.
+     * @param {PasswordResetTokenCreateManyArgs} args - Arguments to create many PasswordResetTokens.
+     * @example
+     * // Create many PasswordResetTokens
+     * const passwordResetToken = await prisma.passwordResetToken.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PasswordResetTokenCreateManyArgs>(args?: SelectSubset<T, PasswordResetTokenCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many PasswordResetTokens and returns the data saved in the database.
+     * @param {PasswordResetTokenCreateManyAndReturnArgs} args - Arguments to create many PasswordResetTokens.
+     * @example
+     * // Create many PasswordResetTokens
+     * const passwordResetToken = await prisma.passwordResetToken.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many PasswordResetTokens and only return the `email`
+     * const passwordResetTokenWithEmailOnly = await prisma.passwordResetToken.createManyAndReturn({
+     *   select: { email: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends PasswordResetTokenCreateManyAndReturnArgs>(args?: SelectSubset<T, PasswordResetTokenCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a PasswordResetToken.
+     * @param {PasswordResetTokenDeleteArgs} args - Arguments to delete one PasswordResetToken.
+     * @example
+     * // Delete one PasswordResetToken
+     * const PasswordResetToken = await prisma.passwordResetToken.delete({
+     *   where: {
+     *     // ... filter to delete one PasswordResetToken
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PasswordResetTokenDeleteArgs>(args: SelectSubset<T, PasswordResetTokenDeleteArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PasswordResetToken.
+     * @param {PasswordResetTokenUpdateArgs} args - Arguments to update one PasswordResetToken.
+     * @example
+     * // Update one PasswordResetToken
+     * const passwordResetToken = await prisma.passwordResetToken.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PasswordResetTokenUpdateArgs>(args: SelectSubset<T, PasswordResetTokenUpdateArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PasswordResetTokens.
+     * @param {PasswordResetTokenDeleteManyArgs} args - Arguments to filter PasswordResetTokens to delete.
+     * @example
+     * // Delete a few PasswordResetTokens
+     * const { count } = await prisma.passwordResetToken.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PasswordResetTokenDeleteManyArgs>(args?: SelectSubset<T, PasswordResetTokenDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PasswordResetTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokenUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PasswordResetTokens
+     * const passwordResetToken = await prisma.passwordResetToken.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PasswordResetTokenUpdateManyArgs>(args: SelectSubset<T, PasswordResetTokenUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PasswordResetTokens and returns the data updated in the database.
+     * @param {PasswordResetTokenUpdateManyAndReturnArgs} args - Arguments to update many PasswordResetTokens.
+     * @example
+     * // Update many PasswordResetTokens
+     * const passwordResetToken = await prisma.passwordResetToken.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more PasswordResetTokens and only return the `email`
+     * const passwordResetTokenWithEmailOnly = await prisma.passwordResetToken.updateManyAndReturn({
+     *   select: { email: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends PasswordResetTokenUpdateManyAndReturnArgs>(args: SelectSubset<T, PasswordResetTokenUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one PasswordResetToken.
+     * @param {PasswordResetTokenUpsertArgs} args - Arguments to update or create a PasswordResetToken.
+     * @example
+     * // Update or create a PasswordResetToken
+     * const passwordResetToken = await prisma.passwordResetToken.upsert({
+     *   create: {
+     *     // ... data to create a PasswordResetToken
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PasswordResetToken we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PasswordResetTokenUpsertArgs>(args: SelectSubset<T, PasswordResetTokenUpsertArgs<ExtArgs>>): Prisma__PasswordResetTokenClient<$Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PasswordResetTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokenCountArgs} args - Arguments to filter PasswordResetTokens to count.
+     * @example
+     * // Count the number of PasswordResetTokens
+     * const count = await prisma.passwordResetToken.count({
+     *   where: {
+     *     // ... the filter for the PasswordResetTokens we want to count
+     *   }
+     * })
+    **/
+    count<T extends PasswordResetTokenCountArgs>(
+      args?: Subset<T, PasswordResetTokenCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PasswordResetTokenCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PasswordResetToken.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokenAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PasswordResetTokenAggregateArgs>(args: Subset<T, PasswordResetTokenAggregateArgs>): Prisma.PrismaPromise<GetPasswordResetTokenAggregateType<T>>
+
+    /**
+     * Group by PasswordResetToken.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokenGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PasswordResetTokenGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PasswordResetTokenGroupByArgs['orderBy'] }
+        : { orderBy?: PasswordResetTokenGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PasswordResetTokenGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPasswordResetTokenGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PasswordResetToken model
+   */
+  readonly fields: PasswordResetTokenFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PasswordResetToken.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PasswordResetTokenClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PasswordResetToken model
+   */
+  interface PasswordResetTokenFieldRefs {
+    readonly email: FieldRef<"PasswordResetToken", 'String'>
+    readonly token: FieldRef<"PasswordResetToken", 'String'>
+    readonly expires: FieldRef<"PasswordResetToken", 'DateTime'>
+    readonly createdAt: FieldRef<"PasswordResetToken", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PasswordResetToken findUnique
+   */
+  export type PasswordResetTokenFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetToken
+     */
+    select?: PasswordResetTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetToken
+     */
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
+    /**
+     * Filter, which PasswordResetToken to fetch.
+     */
+    where: PasswordResetTokenWhereUniqueInput
+  }
+
+  /**
+   * PasswordResetToken findUniqueOrThrow
+   */
+  export type PasswordResetTokenFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetToken
+     */
+    select?: PasswordResetTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetToken
+     */
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
+    /**
+     * Filter, which PasswordResetToken to fetch.
+     */
+    where: PasswordResetTokenWhereUniqueInput
+  }
+
+  /**
+   * PasswordResetToken findFirst
+   */
+  export type PasswordResetTokenFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetToken
+     */
+    select?: PasswordResetTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetToken
+     */
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
+    /**
+     * Filter, which PasswordResetToken to fetch.
+     */
+    where?: PasswordResetTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PasswordResetTokens to fetch.
+     */
+    orderBy?: PasswordResetTokenOrderByWithRelationInput | PasswordResetTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PasswordResetTokens.
+     */
+    cursor?: PasswordResetTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PasswordResetTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PasswordResetTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PasswordResetTokens.
+     */
+    distinct?: PasswordResetTokenScalarFieldEnum | PasswordResetTokenScalarFieldEnum[]
+  }
+
+  /**
+   * PasswordResetToken findFirstOrThrow
+   */
+  export type PasswordResetTokenFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetToken
+     */
+    select?: PasswordResetTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetToken
+     */
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
+    /**
+     * Filter, which PasswordResetToken to fetch.
+     */
+    where?: PasswordResetTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PasswordResetTokens to fetch.
+     */
+    orderBy?: PasswordResetTokenOrderByWithRelationInput | PasswordResetTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PasswordResetTokens.
+     */
+    cursor?: PasswordResetTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PasswordResetTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PasswordResetTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PasswordResetTokens.
+     */
+    distinct?: PasswordResetTokenScalarFieldEnum | PasswordResetTokenScalarFieldEnum[]
+  }
+
+  /**
+   * PasswordResetToken findMany
+   */
+  export type PasswordResetTokenFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetToken
+     */
+    select?: PasswordResetTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetToken
+     */
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
+    /**
+     * Filter, which PasswordResetTokens to fetch.
+     */
+    where?: PasswordResetTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PasswordResetTokens to fetch.
+     */
+    orderBy?: PasswordResetTokenOrderByWithRelationInput | PasswordResetTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PasswordResetTokens.
+     */
+    cursor?: PasswordResetTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PasswordResetTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PasswordResetTokens.
+     */
+    skip?: number
+    distinct?: PasswordResetTokenScalarFieldEnum | PasswordResetTokenScalarFieldEnum[]
+  }
+
+  /**
+   * PasswordResetToken create
+   */
+  export type PasswordResetTokenCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetToken
+     */
+    select?: PasswordResetTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetToken
+     */
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
+    /**
+     * The data needed to create a PasswordResetToken.
+     */
+    data: XOR<PasswordResetTokenCreateInput, PasswordResetTokenUncheckedCreateInput>
+  }
+
+  /**
+   * PasswordResetToken createMany
+   */
+  export type PasswordResetTokenCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PasswordResetTokens.
+     */
+    data: PasswordResetTokenCreateManyInput | PasswordResetTokenCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PasswordResetToken createManyAndReturn
+   */
+  export type PasswordResetTokenCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetToken
+     */
+    select?: PasswordResetTokenSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetToken
+     */
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
+    /**
+     * The data used to create many PasswordResetTokens.
+     */
+    data: PasswordResetTokenCreateManyInput | PasswordResetTokenCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PasswordResetToken update
+   */
+  export type PasswordResetTokenUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetToken
+     */
+    select?: PasswordResetTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetToken
+     */
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
+    /**
+     * The data needed to update a PasswordResetToken.
+     */
+    data: XOR<PasswordResetTokenUpdateInput, PasswordResetTokenUncheckedUpdateInput>
+    /**
+     * Choose, which PasswordResetToken to update.
+     */
+    where: PasswordResetTokenWhereUniqueInput
+  }
+
+  /**
+   * PasswordResetToken updateMany
+   */
+  export type PasswordResetTokenUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PasswordResetTokens.
+     */
+    data: XOR<PasswordResetTokenUpdateManyMutationInput, PasswordResetTokenUncheckedUpdateManyInput>
+    /**
+     * Filter which PasswordResetTokens to update
+     */
+    where?: PasswordResetTokenWhereInput
+    /**
+     * Limit how many PasswordResetTokens to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PasswordResetToken updateManyAndReturn
+   */
+  export type PasswordResetTokenUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetToken
+     */
+    select?: PasswordResetTokenSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetToken
+     */
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
+    /**
+     * The data used to update PasswordResetTokens.
+     */
+    data: XOR<PasswordResetTokenUpdateManyMutationInput, PasswordResetTokenUncheckedUpdateManyInput>
+    /**
+     * Filter which PasswordResetTokens to update
+     */
+    where?: PasswordResetTokenWhereInput
+    /**
+     * Limit how many PasswordResetTokens to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PasswordResetToken upsert
+   */
+  export type PasswordResetTokenUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetToken
+     */
+    select?: PasswordResetTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetToken
+     */
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
+    /**
+     * The filter to search for the PasswordResetToken to update in case it exists.
+     */
+    where: PasswordResetTokenWhereUniqueInput
+    /**
+     * In case the PasswordResetToken found by the `where` argument doesn't exist, create a new PasswordResetToken with this data.
+     */
+    create: XOR<PasswordResetTokenCreateInput, PasswordResetTokenUncheckedCreateInput>
+    /**
+     * In case the PasswordResetToken was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PasswordResetTokenUpdateInput, PasswordResetTokenUncheckedUpdateInput>
+  }
+
+  /**
+   * PasswordResetToken delete
+   */
+  export type PasswordResetTokenDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetToken
+     */
+    select?: PasswordResetTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetToken
+     */
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
+    /**
+     * Filter which PasswordResetToken to delete.
+     */
+    where: PasswordResetTokenWhereUniqueInput
+  }
+
+  /**
+   * PasswordResetToken deleteMany
+   */
+  export type PasswordResetTokenDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PasswordResetTokens to delete
+     */
+    where?: PasswordResetTokenWhereInput
+    /**
+     * Limit how many PasswordResetTokens to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PasswordResetToken without action
+   */
+  export type PasswordResetTokenDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetToken
+     */
+    select?: PasswordResetTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetToken
+     */
+    omit?: PasswordResetTokenOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Document
+   */
+
+  export type AggregateDocument = {
+    _count: DocumentCountAggregateOutputType | null
+    _min: DocumentMinAggregateOutputType | null
+    _max: DocumentMaxAggregateOutputType | null
+  }
+
+  export type DocumentMinAggregateOutputType = {
+    id: string | null
+    nom: string | null
+    description: string | null
+    cloudinaryId: string | null
+    url: string | null
+    type: string | null
+    public: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    userId: string | null
+    devisId: string | null
+  }
+
+  export type DocumentMaxAggregateOutputType = {
+    id: string | null
+    nom: string | null
+    description: string | null
+    cloudinaryId: string | null
+    url: string | null
+    type: string | null
+    public: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    userId: string | null
+    devisId: string | null
+  }
+
+  export type DocumentCountAggregateOutputType = {
+    id: number
+    nom: number
+    description: number
+    cloudinaryId: number
+    url: number
+    type: number
+    public: number
+    createdAt: number
+    updatedAt: number
+    userId: number
+    devisId: number
+    _all: number
+  }
+
+
+  export type DocumentMinAggregateInputType = {
+    id?: true
+    nom?: true
+    description?: true
+    cloudinaryId?: true
+    url?: true
+    type?: true
+    public?: true
+    createdAt?: true
+    updatedAt?: true
+    userId?: true
+    devisId?: true
+  }
+
+  export type DocumentMaxAggregateInputType = {
+    id?: true
+    nom?: true
+    description?: true
+    cloudinaryId?: true
+    url?: true
+    type?: true
+    public?: true
+    createdAt?: true
+    updatedAt?: true
+    userId?: true
+    devisId?: true
+  }
+
+  export type DocumentCountAggregateInputType = {
+    id?: true
+    nom?: true
+    description?: true
+    cloudinaryId?: true
+    url?: true
+    type?: true
+    public?: true
+    createdAt?: true
+    updatedAt?: true
+    userId?: true
+    devisId?: true
+    _all?: true
+  }
+
+  export type DocumentAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Document to aggregate.
+     */
+    where?: DocumentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Documents to fetch.
+     */
+    orderBy?: DocumentOrderByWithRelationInput | DocumentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: DocumentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Documents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Documents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Documents
+    **/
+    _count?: true | DocumentCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: DocumentMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: DocumentMaxAggregateInputType
+  }
+
+  export type GetDocumentAggregateType<T extends DocumentAggregateArgs> = {
+        [P in keyof T & keyof AggregateDocument]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateDocument[P]>
+      : GetScalarType<T[P], AggregateDocument[P]>
+  }
+
+
+
+
+  export type DocumentGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DocumentWhereInput
+    orderBy?: DocumentOrderByWithAggregationInput | DocumentOrderByWithAggregationInput[]
+    by: DocumentScalarFieldEnum[] | DocumentScalarFieldEnum
+    having?: DocumentScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: DocumentCountAggregateInputType | true
+    _min?: DocumentMinAggregateInputType
+    _max?: DocumentMaxAggregateInputType
+  }
+
+  export type DocumentGroupByOutputType = {
+    id: string
+    nom: string
+    description: string | null
+    cloudinaryId: string
+    url: string
+    type: string
+    public: boolean
+    createdAt: Date
+    updatedAt: Date
+    userId: string | null
+    devisId: string | null
+    _count: DocumentCountAggregateOutputType | null
+    _min: DocumentMinAggregateOutputType | null
+    _max: DocumentMaxAggregateOutputType | null
+  }
+
+  type GetDocumentGroupByPayload<T extends DocumentGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<DocumentGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof DocumentGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DocumentGroupByOutputType[P]>
+            : GetScalarType<T[P], DocumentGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type DocumentSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nom?: boolean
+    description?: boolean
+    cloudinaryId?: boolean
+    url?: boolean
+    type?: boolean
+    public?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    userId?: boolean
+    devisId?: boolean
+    user?: boolean | Document$userArgs<ExtArgs>
+    devis?: boolean | Document$devisArgs<ExtArgs>
+  }, ExtArgs["result"]["document"]>
+
+  export type DocumentSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nom?: boolean
+    description?: boolean
+    cloudinaryId?: boolean
+    url?: boolean
+    type?: boolean
+    public?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    userId?: boolean
+    devisId?: boolean
+    user?: boolean | Document$userArgs<ExtArgs>
+    devis?: boolean | Document$devisArgs<ExtArgs>
+  }, ExtArgs["result"]["document"]>
+
+  export type DocumentSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nom?: boolean
+    description?: boolean
+    cloudinaryId?: boolean
+    url?: boolean
+    type?: boolean
+    public?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    userId?: boolean
+    devisId?: boolean
+    user?: boolean | Document$userArgs<ExtArgs>
+    devis?: boolean | Document$devisArgs<ExtArgs>
+  }, ExtArgs["result"]["document"]>
+
+  export type DocumentSelectScalar = {
+    id?: boolean
+    nom?: boolean
+    description?: boolean
+    cloudinaryId?: boolean
+    url?: boolean
+    type?: boolean
+    public?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    userId?: boolean
+    devisId?: boolean
+  }
+
+  export type DocumentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nom" | "description" | "cloudinaryId" | "url" | "type" | "public" | "createdAt" | "updatedAt" | "userId" | "devisId", ExtArgs["result"]["document"]>
+  export type DocumentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | Document$userArgs<ExtArgs>
+    devis?: boolean | Document$devisArgs<ExtArgs>
+  }
+  export type DocumentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | Document$userArgs<ExtArgs>
+    devis?: boolean | Document$devisArgs<ExtArgs>
+  }
+  export type DocumentIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | Document$userArgs<ExtArgs>
+    devis?: boolean | Document$devisArgs<ExtArgs>
+  }
+
+  export type $DocumentPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Document"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs> | null
+      devis: Prisma.$DevisPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      nom: string
+      description: string | null
+      cloudinaryId: string
+      url: string
+      type: string
+      public: boolean
+      createdAt: Date
+      updatedAt: Date
+      userId: string | null
+      devisId: string | null
+    }, ExtArgs["result"]["document"]>
+    composites: {}
+  }
+
+  type DocumentGetPayload<S extends boolean | null | undefined | DocumentDefaultArgs> = $Result.GetResult<Prisma.$DocumentPayload, S>
+
+  type DocumentCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<DocumentFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: DocumentCountAggregateInputType | true
+    }
+
+  export interface DocumentDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Document'], meta: { name: 'Document' } }
+    /**
+     * Find zero or one Document that matches the filter.
+     * @param {DocumentFindUniqueArgs} args - Arguments to find a Document
+     * @example
+     * // Get one Document
+     * const document = await prisma.document.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends DocumentFindUniqueArgs>(args: SelectSubset<T, DocumentFindUniqueArgs<ExtArgs>>): Prisma__DocumentClient<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Document that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {DocumentFindUniqueOrThrowArgs} args - Arguments to find a Document
+     * @example
+     * // Get one Document
+     * const document = await prisma.document.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends DocumentFindUniqueOrThrowArgs>(args: SelectSubset<T, DocumentFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DocumentClient<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Document that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentFindFirstArgs} args - Arguments to find a Document
+     * @example
+     * // Get one Document
+     * const document = await prisma.document.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends DocumentFindFirstArgs>(args?: SelectSubset<T, DocumentFindFirstArgs<ExtArgs>>): Prisma__DocumentClient<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Document that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentFindFirstOrThrowArgs} args - Arguments to find a Document
+     * @example
+     * // Get one Document
+     * const document = await prisma.document.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends DocumentFindFirstOrThrowArgs>(args?: SelectSubset<T, DocumentFindFirstOrThrowArgs<ExtArgs>>): Prisma__DocumentClient<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Documents that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Documents
+     * const documents = await prisma.document.findMany()
+     * 
+     * // Get first 10 Documents
+     * const documents = await prisma.document.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const documentWithIdOnly = await prisma.document.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends DocumentFindManyArgs>(args?: SelectSubset<T, DocumentFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Document.
+     * @param {DocumentCreateArgs} args - Arguments to create a Document.
+     * @example
+     * // Create one Document
+     * const Document = await prisma.document.create({
+     *   data: {
+     *     // ... data to create a Document
+     *   }
+     * })
+     * 
+     */
+    create<T extends DocumentCreateArgs>(args: SelectSubset<T, DocumentCreateArgs<ExtArgs>>): Prisma__DocumentClient<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Documents.
+     * @param {DocumentCreateManyArgs} args - Arguments to create many Documents.
+     * @example
+     * // Create many Documents
+     * const document = await prisma.document.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends DocumentCreateManyArgs>(args?: SelectSubset<T, DocumentCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Documents and returns the data saved in the database.
+     * @param {DocumentCreateManyAndReturnArgs} args - Arguments to create many Documents.
+     * @example
+     * // Create many Documents
+     * const document = await prisma.document.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Documents and only return the `id`
+     * const documentWithIdOnly = await prisma.document.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends DocumentCreateManyAndReturnArgs>(args?: SelectSubset<T, DocumentCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Document.
+     * @param {DocumentDeleteArgs} args - Arguments to delete one Document.
+     * @example
+     * // Delete one Document
+     * const Document = await prisma.document.delete({
+     *   where: {
+     *     // ... filter to delete one Document
+     *   }
+     * })
+     * 
+     */
+    delete<T extends DocumentDeleteArgs>(args: SelectSubset<T, DocumentDeleteArgs<ExtArgs>>): Prisma__DocumentClient<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Document.
+     * @param {DocumentUpdateArgs} args - Arguments to update one Document.
+     * @example
+     * // Update one Document
+     * const document = await prisma.document.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends DocumentUpdateArgs>(args: SelectSubset<T, DocumentUpdateArgs<ExtArgs>>): Prisma__DocumentClient<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Documents.
+     * @param {DocumentDeleteManyArgs} args - Arguments to filter Documents to delete.
+     * @example
+     * // Delete a few Documents
+     * const { count } = await prisma.document.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends DocumentDeleteManyArgs>(args?: SelectSubset<T, DocumentDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Documents.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Documents
+     * const document = await prisma.document.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends DocumentUpdateManyArgs>(args: SelectSubset<T, DocumentUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Documents and returns the data updated in the database.
+     * @param {DocumentUpdateManyAndReturnArgs} args - Arguments to update many Documents.
+     * @example
+     * // Update many Documents
+     * const document = await prisma.document.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Documents and only return the `id`
+     * const documentWithIdOnly = await prisma.document.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends DocumentUpdateManyAndReturnArgs>(args: SelectSubset<T, DocumentUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Document.
+     * @param {DocumentUpsertArgs} args - Arguments to update or create a Document.
+     * @example
+     * // Update or create a Document
+     * const document = await prisma.document.upsert({
+     *   create: {
+     *     // ... data to create a Document
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Document we want to update
+     *   }
+     * })
+     */
+    upsert<T extends DocumentUpsertArgs>(args: SelectSubset<T, DocumentUpsertArgs<ExtArgs>>): Prisma__DocumentClient<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Documents.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentCountArgs} args - Arguments to filter Documents to count.
+     * @example
+     * // Count the number of Documents
+     * const count = await prisma.document.count({
+     *   where: {
+     *     // ... the filter for the Documents we want to count
+     *   }
+     * })
+    **/
+    count<T extends DocumentCountArgs>(
+      args?: Subset<T, DocumentCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], DocumentCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Document.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends DocumentAggregateArgs>(args: Subset<T, DocumentAggregateArgs>): Prisma.PrismaPromise<GetDocumentAggregateType<T>>
+
+    /**
+     * Group by Document.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends DocumentGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: DocumentGroupByArgs['orderBy'] }
+        : { orderBy?: DocumentGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, DocumentGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDocumentGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Document model
+   */
+  readonly fields: DocumentFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Document.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__DocumentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends Document$userArgs<ExtArgs> = {}>(args?: Subset<T, Document$userArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    devis<T extends Document$devisArgs<ExtArgs> = {}>(args?: Subset<T, Document$devisArgs<ExtArgs>>): Prisma__DevisClient<$Result.GetResult<Prisma.$DevisPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Document model
+   */
+  interface DocumentFieldRefs {
+    readonly id: FieldRef<"Document", 'String'>
+    readonly nom: FieldRef<"Document", 'String'>
+    readonly description: FieldRef<"Document", 'String'>
+    readonly cloudinaryId: FieldRef<"Document", 'String'>
+    readonly url: FieldRef<"Document", 'String'>
+    readonly type: FieldRef<"Document", 'String'>
+    readonly public: FieldRef<"Document", 'Boolean'>
+    readonly createdAt: FieldRef<"Document", 'DateTime'>
+    readonly updatedAt: FieldRef<"Document", 'DateTime'>
+    readonly userId: FieldRef<"Document", 'String'>
+    readonly devisId: FieldRef<"Document", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Document findUnique
+   */
+  export type DocumentFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInclude<ExtArgs> | null
+    /**
+     * Filter, which Document to fetch.
+     */
+    where: DocumentWhereUniqueInput
+  }
+
+  /**
+   * Document findUniqueOrThrow
+   */
+  export type DocumentFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInclude<ExtArgs> | null
+    /**
+     * Filter, which Document to fetch.
+     */
+    where: DocumentWhereUniqueInput
+  }
+
+  /**
+   * Document findFirst
+   */
+  export type DocumentFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInclude<ExtArgs> | null
+    /**
+     * Filter, which Document to fetch.
+     */
+    where?: DocumentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Documents to fetch.
+     */
+    orderBy?: DocumentOrderByWithRelationInput | DocumentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Documents.
+     */
+    cursor?: DocumentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Documents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Documents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Documents.
+     */
+    distinct?: DocumentScalarFieldEnum | DocumentScalarFieldEnum[]
+  }
+
+  /**
+   * Document findFirstOrThrow
+   */
+  export type DocumentFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInclude<ExtArgs> | null
+    /**
+     * Filter, which Document to fetch.
+     */
+    where?: DocumentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Documents to fetch.
+     */
+    orderBy?: DocumentOrderByWithRelationInput | DocumentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Documents.
+     */
+    cursor?: DocumentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Documents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Documents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Documents.
+     */
+    distinct?: DocumentScalarFieldEnum | DocumentScalarFieldEnum[]
+  }
+
+  /**
+   * Document findMany
+   */
+  export type DocumentFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInclude<ExtArgs> | null
+    /**
+     * Filter, which Documents to fetch.
+     */
+    where?: DocumentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Documents to fetch.
+     */
+    orderBy?: DocumentOrderByWithRelationInput | DocumentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Documents.
+     */
+    cursor?: DocumentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Documents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Documents.
+     */
+    skip?: number
+    distinct?: DocumentScalarFieldEnum | DocumentScalarFieldEnum[]
+  }
+
+  /**
+   * Document create
+   */
+  export type DocumentCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Document.
+     */
+    data: XOR<DocumentCreateInput, DocumentUncheckedCreateInput>
+  }
+
+  /**
+   * Document createMany
+   */
+  export type DocumentCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Documents.
+     */
+    data: DocumentCreateManyInput | DocumentCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Document createManyAndReturn
+   */
+  export type DocumentCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * The data used to create many Documents.
+     */
+    data: DocumentCreateManyInput | DocumentCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Document update
+   */
+  export type DocumentUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Document.
+     */
+    data: XOR<DocumentUpdateInput, DocumentUncheckedUpdateInput>
+    /**
+     * Choose, which Document to update.
+     */
+    where: DocumentWhereUniqueInput
+  }
+
+  /**
+   * Document updateMany
+   */
+  export type DocumentUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Documents.
+     */
+    data: XOR<DocumentUpdateManyMutationInput, DocumentUncheckedUpdateManyInput>
+    /**
+     * Filter which Documents to update
+     */
+    where?: DocumentWhereInput
+    /**
+     * Limit how many Documents to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Document updateManyAndReturn
+   */
+  export type DocumentUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * The data used to update Documents.
+     */
+    data: XOR<DocumentUpdateManyMutationInput, DocumentUncheckedUpdateManyInput>
+    /**
+     * Filter which Documents to update
+     */
+    where?: DocumentWhereInput
+    /**
+     * Limit how many Documents to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Document upsert
+   */
+  export type DocumentUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Document to update in case it exists.
+     */
+    where: DocumentWhereUniqueInput
+    /**
+     * In case the Document found by the `where` argument doesn't exist, create a new Document with this data.
+     */
+    create: XOR<DocumentCreateInput, DocumentUncheckedCreateInput>
+    /**
+     * In case the Document was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<DocumentUpdateInput, DocumentUncheckedUpdateInput>
+  }
+
+  /**
+   * Document delete
+   */
+  export type DocumentDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInclude<ExtArgs> | null
+    /**
+     * Filter which Document to delete.
+     */
+    where: DocumentWhereUniqueInput
+  }
+
+  /**
+   * Document deleteMany
+   */
+  export type DocumentDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Documents to delete
+     */
+    where?: DocumentWhereInput
+    /**
+     * Limit how many Documents to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Document.user
+   */
+  export type Document$userArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * Document.devis
+   */
+  export type Document$devisArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Devis
+     */
+    select?: DevisSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Devis
+     */
+    omit?: DevisOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DevisInclude<ExtArgs> | null
+    where?: DevisWhereInput
+  }
+
+  /**
+   * Document without action
+   */
+  export type DocumentDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Document
+     */
+    select?: DocumentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Document
+     */
+    omit?: DocumentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -8490,8 +10872,8 @@ export namespace Prisma {
   export const DemandeScalarFieldEnum: {
     id: 'id',
     userId: 'userId',
-    formationId: 'formationId',
     statut: 'statut',
+    session: 'session',
     message: 'message',
     commentaire: 'commentaire',
     createdAt: 'createdAt',
@@ -8540,13 +10922,17 @@ export namespace Prisma {
 
   export const ContratScalarFieldEnum: {
     id: 'id',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
     devisId: 'devisId',
     userId: 'userId',
-    statut: 'statut',
-    dateDebut: 'dateDebut',
-    dateFin: 'dateFin',
-    createdAt: 'createdAt',
-    updatedAt: 'updatedAt'
+    nom: 'nom',
+    prenom: 'prenom',
+    adresse: 'adresse',
+    profession: 'profession',
+    dateSignature: 'dateSignature',
+    signature: 'signature',
+    statut: 'statut'
   };
 
   export type ContratScalarFieldEnum = (typeof ContratScalarFieldEnum)[keyof typeof ContratScalarFieldEnum]
@@ -8562,6 +10948,33 @@ export namespace Prisma {
   };
 
   export type SettingsScalarFieldEnum = (typeof SettingsScalarFieldEnum)[keyof typeof SettingsScalarFieldEnum]
+
+
+  export const PasswordResetTokenScalarFieldEnum: {
+    email: 'email',
+    token: 'token',
+    expires: 'expires',
+    createdAt: 'createdAt'
+  };
+
+  export type PasswordResetTokenScalarFieldEnum = (typeof PasswordResetTokenScalarFieldEnum)[keyof typeof PasswordResetTokenScalarFieldEnum]
+
+
+  export const DocumentScalarFieldEnum: {
+    id: 'id',
+    nom: 'nom',
+    description: 'description',
+    cloudinaryId: 'cloudinaryId',
+    url: 'url',
+    type: 'type',
+    public: 'public',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    userId: 'userId',
+    devisId: 'devisId'
+  };
+
+  export type DocumentScalarFieldEnum = (typeof DocumentScalarFieldEnum)[keyof typeof DocumentScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -8705,6 +11118,13 @@ export namespace Prisma {
    */
   export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
+
+
+  /**
+   * Reference to a field of type 'Boolean'
+   */
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
   /**
    * Deep Input Types
    */
@@ -8722,9 +11142,10 @@ export namespace Prisma {
     role?: EnumRoleFilter<"User"> | $Enums.Role
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
+    contrats?: ContratListRelationFilter
     demandes?: DemandeListRelationFilter
     devis?: DevisListRelationFilter
-    contrats?: ContratListRelationFilter
+    documents?: DocumentListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -8736,9 +11157,10 @@ export namespace Prisma {
     role?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    contrats?: ContratOrderByRelationAggregateInput
     demandes?: DemandeOrderByRelationAggregateInput
     devis?: DevisOrderByRelationAggregateInput
-    contrats?: ContratOrderByRelationAggregateInput
+    documents?: DocumentOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -8753,9 +11175,10 @@ export namespace Prisma {
     role?: EnumRoleFilter<"User"> | $Enums.Role
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
+    contrats?: ContratListRelationFilter
     demandes?: DemandeListRelationFilter
     devis?: DevisListRelationFilter
-    contrats?: ContratListRelationFilter
+    documents?: DocumentListRelationFilter
   }, "id" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -8798,7 +11221,6 @@ export namespace Prisma {
     niveau?: StringFilter<"Formation"> | string
     createdAt?: DateTimeFilter<"Formation"> | Date | string
     updatedAt?: DateTimeFilter<"Formation"> | Date | string
-    demandes?: DemandeListRelationFilter
   }
 
   export type FormationOrderByWithRelationInput = {
@@ -8810,7 +11232,6 @@ export namespace Prisma {
     niveau?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    demandes?: DemandeOrderByRelationAggregateInput
   }
 
   export type FormationWhereUniqueInput = Prisma.AtLeast<{
@@ -8825,7 +11246,6 @@ export namespace Prisma {
     niveau?: StringFilter<"Formation"> | string
     createdAt?: DateTimeFilter<"Formation"> | Date | string
     updatedAt?: DateTimeFilter<"Formation"> | Date | string
-    demandes?: DemandeListRelationFilter
   }, "id">
 
   export type FormationOrderByWithAggregationInput = {
@@ -8864,28 +11284,26 @@ export namespace Prisma {
     NOT?: DemandeWhereInput | DemandeWhereInput[]
     id?: StringFilter<"Demande"> | string
     userId?: StringFilter<"Demande"> | string
-    formationId?: StringFilter<"Demande"> | string
     statut?: EnumStatutFilter<"Demande"> | $Enums.Statut
+    session?: StringFilter<"Demande"> | string
     message?: StringNullableFilter<"Demande"> | string | null
     commentaire?: StringNullableFilter<"Demande"> | string | null
     createdAt?: DateTimeFilter<"Demande"> | Date | string
     updatedAt?: DateTimeFilter<"Demande"> | Date | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
-    formation?: XOR<FormationScalarRelationFilter, FormationWhereInput>
     devis?: XOR<DevisNullableScalarRelationFilter, DevisWhereInput> | null
   }
 
   export type DemandeOrderByWithRelationInput = {
     id?: SortOrder
     userId?: SortOrder
-    formationId?: SortOrder
     statut?: SortOrder
+    session?: SortOrder
     message?: SortOrderInput | SortOrder
     commentaire?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     user?: UserOrderByWithRelationInput
-    formation?: FormationOrderByWithRelationInput
     devis?: DevisOrderByWithRelationInput
   }
 
@@ -8895,22 +11313,21 @@ export namespace Prisma {
     OR?: DemandeWhereInput[]
     NOT?: DemandeWhereInput | DemandeWhereInput[]
     userId?: StringFilter<"Demande"> | string
-    formationId?: StringFilter<"Demande"> | string
     statut?: EnumStatutFilter<"Demande"> | $Enums.Statut
+    session?: StringFilter<"Demande"> | string
     message?: StringNullableFilter<"Demande"> | string | null
     commentaire?: StringNullableFilter<"Demande"> | string | null
     createdAt?: DateTimeFilter<"Demande"> | Date | string
     updatedAt?: DateTimeFilter<"Demande"> | Date | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
-    formation?: XOR<FormationScalarRelationFilter, FormationWhereInput>
     devis?: XOR<DevisNullableScalarRelationFilter, DevisWhereInput> | null
   }, "id">
 
   export type DemandeOrderByWithAggregationInput = {
     id?: SortOrder
     userId?: SortOrder
-    formationId?: SortOrder
     statut?: SortOrder
+    session?: SortOrder
     message?: SortOrderInput | SortOrder
     commentaire?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -8926,8 +11343,8 @@ export namespace Prisma {
     NOT?: DemandeScalarWhereWithAggregatesInput | DemandeScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"Demande"> | string
     userId?: StringWithAggregatesFilter<"Demande"> | string
-    formationId?: StringWithAggregatesFilter<"Demande"> | string
     statut?: EnumStatutWithAggregatesFilter<"Demande"> | $Enums.Statut
+    session?: StringWithAggregatesFilter<"Demande"> | string
     message?: StringNullableWithAggregatesFilter<"Demande"> | string | null
     commentaire?: StringNullableWithAggregatesFilter<"Demande"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Demande"> | Date | string
@@ -8969,9 +11386,10 @@ export namespace Prisma {
     statut?: EnumStatutFilter<"Devis"> | $Enums.Statut
     createdAt?: DateTimeFilter<"Devis"> | Date | string
     updatedAt?: DateTimeFilter<"Devis"> | Date | string
+    contrat?: XOR<ContratNullableScalarRelationFilter, ContratWhereInput> | null
     demande?: XOR<DemandeScalarRelationFilter, DemandeWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
-    contrat?: XOR<ContratNullableScalarRelationFilter, ContratWhereInput> | null
+    documents?: DocumentListRelationFilter
   }
 
   export type DevisOrderByWithRelationInput = {
@@ -9006,9 +11424,10 @@ export namespace Prisma {
     statut?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    contrat?: ContratOrderByWithRelationInput
     demande?: DemandeOrderByWithRelationInput
     user?: UserOrderByWithRelationInput
-    contrat?: ContratOrderByWithRelationInput
+    documents?: DocumentOrderByRelationAggregateInput
   }
 
   export type DevisWhereUniqueInput = Prisma.AtLeast<{
@@ -9046,9 +11465,10 @@ export namespace Prisma {
     statut?: EnumStatutFilter<"Devis"> | $Enums.Statut
     createdAt?: DateTimeFilter<"Devis"> | Date | string
     updatedAt?: DateTimeFilter<"Devis"> | Date | string
+    contrat?: XOR<ContratNullableScalarRelationFilter, ContratWhereInput> | null
     demande?: XOR<DemandeScalarRelationFilter, DemandeWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
-    contrat?: XOR<ContratNullableScalarRelationFilter, ContratWhereInput> | null
+    documents?: DocumentListRelationFilter
   }, "id" | "demandeId">
 
   export type DevisOrderByWithAggregationInput = {
@@ -9132,26 +11552,34 @@ export namespace Prisma {
     OR?: ContratWhereInput[]
     NOT?: ContratWhereInput | ContratWhereInput[]
     id?: StringFilter<"Contrat"> | string
-    devisId?: StringFilter<"Contrat"> | string
-    userId?: StringFilter<"Contrat"> | string
-    statut?: EnumStatutFilter<"Contrat"> | $Enums.Statut
-    dateDebut?: DateTimeNullableFilter<"Contrat"> | Date | string | null
-    dateFin?: DateTimeNullableFilter<"Contrat"> | Date | string | null
     createdAt?: DateTimeFilter<"Contrat"> | Date | string
     updatedAt?: DateTimeFilter<"Contrat"> | Date | string
+    devisId?: StringFilter<"Contrat"> | string
+    userId?: StringFilter<"Contrat"> | string
+    nom?: StringFilter<"Contrat"> | string
+    prenom?: StringFilter<"Contrat"> | string
+    adresse?: StringFilter<"Contrat"> | string
+    profession?: StringNullableFilter<"Contrat"> | string | null
+    dateSignature?: DateTimeFilter<"Contrat"> | Date | string
+    signature?: StringFilter<"Contrat"> | string
+    statut?: StringFilter<"Contrat"> | string
     devis?: XOR<DevisScalarRelationFilter, DevisWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
   }
 
   export type ContratOrderByWithRelationInput = {
     id?: SortOrder
-    devisId?: SortOrder
-    userId?: SortOrder
-    statut?: SortOrder
-    dateDebut?: SortOrderInput | SortOrder
-    dateFin?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    devisId?: SortOrder
+    userId?: SortOrder
+    nom?: SortOrder
+    prenom?: SortOrder
+    adresse?: SortOrder
+    profession?: SortOrderInput | SortOrder
+    dateSignature?: SortOrder
+    signature?: SortOrder
+    statut?: SortOrder
     devis?: DevisOrderByWithRelationInput
     user?: UserOrderByWithRelationInput
   }
@@ -9162,25 +11590,33 @@ export namespace Prisma {
     AND?: ContratWhereInput | ContratWhereInput[]
     OR?: ContratWhereInput[]
     NOT?: ContratWhereInput | ContratWhereInput[]
-    userId?: StringFilter<"Contrat"> | string
-    statut?: EnumStatutFilter<"Contrat"> | $Enums.Statut
-    dateDebut?: DateTimeNullableFilter<"Contrat"> | Date | string | null
-    dateFin?: DateTimeNullableFilter<"Contrat"> | Date | string | null
     createdAt?: DateTimeFilter<"Contrat"> | Date | string
     updatedAt?: DateTimeFilter<"Contrat"> | Date | string
+    userId?: StringFilter<"Contrat"> | string
+    nom?: StringFilter<"Contrat"> | string
+    prenom?: StringFilter<"Contrat"> | string
+    adresse?: StringFilter<"Contrat"> | string
+    profession?: StringNullableFilter<"Contrat"> | string | null
+    dateSignature?: DateTimeFilter<"Contrat"> | Date | string
+    signature?: StringFilter<"Contrat"> | string
+    statut?: StringFilter<"Contrat"> | string
     devis?: XOR<DevisScalarRelationFilter, DevisWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
   }, "id" | "devisId">
 
   export type ContratOrderByWithAggregationInput = {
     id?: SortOrder
-    devisId?: SortOrder
-    userId?: SortOrder
-    statut?: SortOrder
-    dateDebut?: SortOrderInput | SortOrder
-    dateFin?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    devisId?: SortOrder
+    userId?: SortOrder
+    nom?: SortOrder
+    prenom?: SortOrder
+    adresse?: SortOrder
+    profession?: SortOrderInput | SortOrder
+    dateSignature?: SortOrder
+    signature?: SortOrder
+    statut?: SortOrder
     _count?: ContratCountOrderByAggregateInput
     _max?: ContratMaxOrderByAggregateInput
     _min?: ContratMinOrderByAggregateInput
@@ -9191,13 +11627,17 @@ export namespace Prisma {
     OR?: ContratScalarWhereWithAggregatesInput[]
     NOT?: ContratScalarWhereWithAggregatesInput | ContratScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"Contrat"> | string
-    devisId?: StringWithAggregatesFilter<"Contrat"> | string
-    userId?: StringWithAggregatesFilter<"Contrat"> | string
-    statut?: EnumStatutWithAggregatesFilter<"Contrat"> | $Enums.Statut
-    dateDebut?: DateTimeNullableWithAggregatesFilter<"Contrat"> | Date | string | null
-    dateFin?: DateTimeNullableWithAggregatesFilter<"Contrat"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Contrat"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Contrat"> | Date | string
+    devisId?: StringWithAggregatesFilter<"Contrat"> | string
+    userId?: StringWithAggregatesFilter<"Contrat"> | string
+    nom?: StringWithAggregatesFilter<"Contrat"> | string
+    prenom?: StringWithAggregatesFilter<"Contrat"> | string
+    adresse?: StringWithAggregatesFilter<"Contrat"> | string
+    profession?: StringNullableWithAggregatesFilter<"Contrat"> | string | null
+    dateSignature?: DateTimeWithAggregatesFilter<"Contrat"> | Date | string
+    signature?: StringWithAggregatesFilter<"Contrat"> | string
+    statut?: StringWithAggregatesFilter<"Contrat"> | string
   }
 
   export type SettingsWhereInput = {
@@ -9257,6 +11697,141 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"Settings"> | Date | string
   }
 
+  export type PasswordResetTokenWhereInput = {
+    AND?: PasswordResetTokenWhereInput | PasswordResetTokenWhereInput[]
+    OR?: PasswordResetTokenWhereInput[]
+    NOT?: PasswordResetTokenWhereInput | PasswordResetTokenWhereInput[]
+    email?: StringFilter<"PasswordResetToken"> | string
+    token?: StringFilter<"PasswordResetToken"> | string
+    expires?: DateTimeFilter<"PasswordResetToken"> | Date | string
+    createdAt?: DateTimeFilter<"PasswordResetToken"> | Date | string
+  }
+
+  export type PasswordResetTokenOrderByWithRelationInput = {
+    email?: SortOrder
+    token?: SortOrder
+    expires?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PasswordResetTokenWhereUniqueInput = Prisma.AtLeast<{
+    email?: string
+    AND?: PasswordResetTokenWhereInput | PasswordResetTokenWhereInput[]
+    OR?: PasswordResetTokenWhereInput[]
+    NOT?: PasswordResetTokenWhereInput | PasswordResetTokenWhereInput[]
+    token?: StringFilter<"PasswordResetToken"> | string
+    expires?: DateTimeFilter<"PasswordResetToken"> | Date | string
+    createdAt?: DateTimeFilter<"PasswordResetToken"> | Date | string
+  }, "email">
+
+  export type PasswordResetTokenOrderByWithAggregationInput = {
+    email?: SortOrder
+    token?: SortOrder
+    expires?: SortOrder
+    createdAt?: SortOrder
+    _count?: PasswordResetTokenCountOrderByAggregateInput
+    _max?: PasswordResetTokenMaxOrderByAggregateInput
+    _min?: PasswordResetTokenMinOrderByAggregateInput
+  }
+
+  export type PasswordResetTokenScalarWhereWithAggregatesInput = {
+    AND?: PasswordResetTokenScalarWhereWithAggregatesInput | PasswordResetTokenScalarWhereWithAggregatesInput[]
+    OR?: PasswordResetTokenScalarWhereWithAggregatesInput[]
+    NOT?: PasswordResetTokenScalarWhereWithAggregatesInput | PasswordResetTokenScalarWhereWithAggregatesInput[]
+    email?: StringWithAggregatesFilter<"PasswordResetToken"> | string
+    token?: StringWithAggregatesFilter<"PasswordResetToken"> | string
+    expires?: DateTimeWithAggregatesFilter<"PasswordResetToken"> | Date | string
+    createdAt?: DateTimeWithAggregatesFilter<"PasswordResetToken"> | Date | string
+  }
+
+  export type DocumentWhereInput = {
+    AND?: DocumentWhereInput | DocumentWhereInput[]
+    OR?: DocumentWhereInput[]
+    NOT?: DocumentWhereInput | DocumentWhereInput[]
+    id?: StringFilter<"Document"> | string
+    nom?: StringFilter<"Document"> | string
+    description?: StringNullableFilter<"Document"> | string | null
+    cloudinaryId?: StringFilter<"Document"> | string
+    url?: StringFilter<"Document"> | string
+    type?: StringFilter<"Document"> | string
+    public?: BoolFilter<"Document"> | boolean
+    createdAt?: DateTimeFilter<"Document"> | Date | string
+    updatedAt?: DateTimeFilter<"Document"> | Date | string
+    userId?: StringNullableFilter<"Document"> | string | null
+    devisId?: StringNullableFilter<"Document"> | string | null
+    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    devis?: XOR<DevisNullableScalarRelationFilter, DevisWhereInput> | null
+  }
+
+  export type DocumentOrderByWithRelationInput = {
+    id?: SortOrder
+    nom?: SortOrder
+    description?: SortOrderInput | SortOrder
+    cloudinaryId?: SortOrder
+    url?: SortOrder
+    type?: SortOrder
+    public?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    userId?: SortOrderInput | SortOrder
+    devisId?: SortOrderInput | SortOrder
+    user?: UserOrderByWithRelationInput
+    devis?: DevisOrderByWithRelationInput
+  }
+
+  export type DocumentWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    cloudinaryId?: string
+    AND?: DocumentWhereInput | DocumentWhereInput[]
+    OR?: DocumentWhereInput[]
+    NOT?: DocumentWhereInput | DocumentWhereInput[]
+    nom?: StringFilter<"Document"> | string
+    description?: StringNullableFilter<"Document"> | string | null
+    url?: StringFilter<"Document"> | string
+    type?: StringFilter<"Document"> | string
+    public?: BoolFilter<"Document"> | boolean
+    createdAt?: DateTimeFilter<"Document"> | Date | string
+    updatedAt?: DateTimeFilter<"Document"> | Date | string
+    userId?: StringNullableFilter<"Document"> | string | null
+    devisId?: StringNullableFilter<"Document"> | string | null
+    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    devis?: XOR<DevisNullableScalarRelationFilter, DevisWhereInput> | null
+  }, "id" | "cloudinaryId">
+
+  export type DocumentOrderByWithAggregationInput = {
+    id?: SortOrder
+    nom?: SortOrder
+    description?: SortOrderInput | SortOrder
+    cloudinaryId?: SortOrder
+    url?: SortOrder
+    type?: SortOrder
+    public?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    userId?: SortOrderInput | SortOrder
+    devisId?: SortOrderInput | SortOrder
+    _count?: DocumentCountOrderByAggregateInput
+    _max?: DocumentMaxOrderByAggregateInput
+    _min?: DocumentMinOrderByAggregateInput
+  }
+
+  export type DocumentScalarWhereWithAggregatesInput = {
+    AND?: DocumentScalarWhereWithAggregatesInput | DocumentScalarWhereWithAggregatesInput[]
+    OR?: DocumentScalarWhereWithAggregatesInput[]
+    NOT?: DocumentScalarWhereWithAggregatesInput | DocumentScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Document"> | string
+    nom?: StringWithAggregatesFilter<"Document"> | string
+    description?: StringNullableWithAggregatesFilter<"Document"> | string | null
+    cloudinaryId?: StringWithAggregatesFilter<"Document"> | string
+    url?: StringWithAggregatesFilter<"Document"> | string
+    type?: StringWithAggregatesFilter<"Document"> | string
+    public?: BoolWithAggregatesFilter<"Document"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"Document"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"Document"> | Date | string
+    userId?: StringNullableWithAggregatesFilter<"Document"> | string | null
+    devisId?: StringNullableWithAggregatesFilter<"Document"> | string | null
+  }
+
   export type UserCreateInput = {
     id?: string
     email: string
@@ -9266,9 +11841,10 @@ export namespace Prisma {
     role?: $Enums.Role
     createdAt?: Date | string
     updatedAt?: Date | string
+    contrats?: ContratCreateNestedManyWithoutUserInput
     demandes?: DemandeCreateNestedManyWithoutUserInput
     devis?: DevisCreateNestedManyWithoutUserInput
-    contrats?: ContratCreateNestedManyWithoutUserInput
+    documents?: DocumentCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -9280,9 +11856,10 @@ export namespace Prisma {
     role?: $Enums.Role
     createdAt?: Date | string
     updatedAt?: Date | string
+    contrats?: ContratUncheckedCreateNestedManyWithoutUserInput
     demandes?: DemandeUncheckedCreateNestedManyWithoutUserInput
     devis?: DevisUncheckedCreateNestedManyWithoutUserInput
-    contrats?: ContratUncheckedCreateNestedManyWithoutUserInput
+    documents?: DocumentUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -9294,9 +11871,10 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    contrats?: ContratUpdateManyWithoutUserNestedInput
     demandes?: DemandeUpdateManyWithoutUserNestedInput
     devis?: DevisUpdateManyWithoutUserNestedInput
-    contrats?: ContratUpdateManyWithoutUserNestedInput
+    documents?: DocumentUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -9308,9 +11886,10 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    contrats?: ContratUncheckedUpdateManyWithoutUserNestedInput
     demandes?: DemandeUncheckedUpdateManyWithoutUserNestedInput
     devis?: DevisUncheckedUpdateManyWithoutUserNestedInput
-    contrats?: ContratUncheckedUpdateManyWithoutUserNestedInput
+    documents?: DocumentUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -9355,7 +11934,6 @@ export namespace Prisma {
     niveau: string
     createdAt?: Date | string
     updatedAt?: Date | string
-    demandes?: DemandeCreateNestedManyWithoutFormationInput
   }
 
   export type FormationUncheckedCreateInput = {
@@ -9367,7 +11945,6 @@ export namespace Prisma {
     niveau: string
     createdAt?: Date | string
     updatedAt?: Date | string
-    demandes?: DemandeUncheckedCreateNestedManyWithoutFormationInput
   }
 
   export type FormationUpdateInput = {
@@ -9379,7 +11956,6 @@ export namespace Prisma {
     niveau?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    demandes?: DemandeUpdateManyWithoutFormationNestedInput
   }
 
   export type FormationUncheckedUpdateInput = {
@@ -9391,7 +11967,6 @@ export namespace Prisma {
     niveau?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    demandes?: DemandeUncheckedUpdateManyWithoutFormationNestedInput
   }
 
   export type FormationCreateManyInput = {
@@ -9430,20 +12005,20 @@ export namespace Prisma {
   export type DemandeCreateInput = {
     id?: string
     statut?: $Enums.Statut
+    session: string
     message?: string | null
     commentaire?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     user: UserCreateNestedOneWithoutDemandesInput
-    formation: FormationCreateNestedOneWithoutDemandesInput
     devis?: DevisCreateNestedOneWithoutDemandeInput
   }
 
   export type DemandeUncheckedCreateInput = {
     id?: string
     userId: string
-    formationId: string
     statut?: $Enums.Statut
+    session: string
     message?: string | null
     commentaire?: string | null
     createdAt?: Date | string
@@ -9454,20 +12029,20 @@ export namespace Prisma {
   export type DemandeUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
+    session?: StringFieldUpdateOperationsInput | string
     message?: NullableStringFieldUpdateOperationsInput | string | null
     commentaire?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutDemandesNestedInput
-    formation?: FormationUpdateOneRequiredWithoutDemandesNestedInput
     devis?: DevisUpdateOneWithoutDemandeNestedInput
   }
 
   export type DemandeUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
-    formationId?: StringFieldUpdateOperationsInput | string
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
+    session?: StringFieldUpdateOperationsInput | string
     message?: NullableStringFieldUpdateOperationsInput | string | null
     commentaire?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -9478,8 +12053,8 @@ export namespace Prisma {
   export type DemandeCreateManyInput = {
     id?: string
     userId: string
-    formationId: string
     statut?: $Enums.Statut
+    session: string
     message?: string | null
     commentaire?: string | null
     createdAt?: Date | string
@@ -9489,6 +12064,7 @@ export namespace Prisma {
   export type DemandeUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
+    session?: StringFieldUpdateOperationsInput | string
     message?: NullableStringFieldUpdateOperationsInput | string | null
     commentaire?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -9498,8 +12074,8 @@ export namespace Prisma {
   export type DemandeUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
-    formationId?: StringFieldUpdateOperationsInput | string
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
+    session?: StringFieldUpdateOperationsInput | string
     message?: NullableStringFieldUpdateOperationsInput | string | null
     commentaire?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -9536,9 +12112,10 @@ export namespace Prisma {
     statut?: $Enums.Statut
     createdAt?: Date | string
     updatedAt?: Date | string
+    contrat?: ContratCreateNestedOneWithoutDevisInput
     demande: DemandeCreateNestedOneWithoutDevisInput
     user: UserCreateNestedOneWithoutDevisInput
-    contrat?: ContratCreateNestedOneWithoutDevisInput
+    documents?: DocumentCreateNestedManyWithoutDevisInput
   }
 
   export type DevisUncheckedCreateInput = {
@@ -9574,6 +12151,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     contrat?: ContratUncheckedCreateNestedOneWithoutDevisInput
+    documents?: DocumentUncheckedCreateNestedManyWithoutDevisInput
   }
 
   export type DevisUpdateInput = {
@@ -9606,9 +12184,10 @@ export namespace Prisma {
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    contrat?: ContratUpdateOneWithoutDevisNestedInput
     demande?: DemandeUpdateOneRequiredWithoutDevisNestedInput
     user?: UserUpdateOneRequiredWithoutDevisNestedInput
-    contrat?: ContratUpdateOneWithoutDevisNestedInput
+    documents?: DocumentUpdateManyWithoutDevisNestedInput
   }
 
   export type DevisUncheckedUpdateInput = {
@@ -9644,6 +12223,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     contrat?: ContratUncheckedUpdateOneWithoutDevisNestedInput
+    documents?: DocumentUncheckedUpdateManyWithoutDevisNestedInput
   }
 
   export type DevisCreateManyInput = {
@@ -9748,77 +12328,105 @@ export namespace Prisma {
 
   export type ContratCreateInput = {
     id?: string
-    statut?: $Enums.Statut
-    dateDebut?: Date | string | null
-    dateFin?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    nom: string
+    prenom: string
+    adresse: string
+    profession?: string | null
+    dateSignature: Date | string
+    signature: string
+    statut?: string
     devis: DevisCreateNestedOneWithoutContratInput
     user: UserCreateNestedOneWithoutContratsInput
   }
 
   export type ContratUncheckedCreateInput = {
     id?: string
-    devisId: string
-    userId: string
-    statut?: $Enums.Statut
-    dateDebut?: Date | string | null
-    dateFin?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    devisId: string
+    userId: string
+    nom: string
+    prenom: string
+    adresse: string
+    profession?: string | null
+    dateSignature: Date | string
+    signature: string
+    statut?: string
   }
 
   export type ContratUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
-    dateDebut?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    dateFin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    adresse?: StringFieldUpdateOperationsInput | string
+    profession?: NullableStringFieldUpdateOperationsInput | string | null
+    dateSignature?: DateTimeFieldUpdateOperationsInput | Date | string
+    signature?: StringFieldUpdateOperationsInput | string
+    statut?: StringFieldUpdateOperationsInput | string
     devis?: DevisUpdateOneRequiredWithoutContratNestedInput
     user?: UserUpdateOneRequiredWithoutContratsNestedInput
   }
 
   export type ContratUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    devisId?: StringFieldUpdateOperationsInput | string
-    userId?: StringFieldUpdateOperationsInput | string
-    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
-    dateDebut?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    dateFin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    devisId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    adresse?: StringFieldUpdateOperationsInput | string
+    profession?: NullableStringFieldUpdateOperationsInput | string | null
+    dateSignature?: DateTimeFieldUpdateOperationsInput | Date | string
+    signature?: StringFieldUpdateOperationsInput | string
+    statut?: StringFieldUpdateOperationsInput | string
   }
 
   export type ContratCreateManyInput = {
     id?: string
-    devisId: string
-    userId: string
-    statut?: $Enums.Statut
-    dateDebut?: Date | string | null
-    dateFin?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    devisId: string
+    userId: string
+    nom: string
+    prenom: string
+    adresse: string
+    profession?: string | null
+    dateSignature: Date | string
+    signature: string
+    statut?: string
   }
 
   export type ContratUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
-    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
-    dateDebut?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    dateFin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    adresse?: StringFieldUpdateOperationsInput | string
+    profession?: NullableStringFieldUpdateOperationsInput | string | null
+    dateSignature?: DateTimeFieldUpdateOperationsInput | Date | string
+    signature?: StringFieldUpdateOperationsInput | string
+    statut?: StringFieldUpdateOperationsInput | string
   }
 
   export type ContratUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
-    devisId?: StringFieldUpdateOperationsInput | string
-    userId?: StringFieldUpdateOperationsInput | string
-    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
-    dateDebut?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    dateFin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    devisId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    adresse?: StringFieldUpdateOperationsInput | string
+    profession?: NullableStringFieldUpdateOperationsInput | string | null
+    dateSignature?: DateTimeFieldUpdateOperationsInput | Date | string
+    signature?: StringFieldUpdateOperationsInput | string
+    statut?: StringFieldUpdateOperationsInput | string
   }
 
   export type SettingsCreateInput = {
@@ -9884,6 +12492,151 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type PasswordResetTokenCreateInput = {
+    email: string
+    token: string
+    expires: Date | string
+    createdAt?: Date | string
+  }
+
+  export type PasswordResetTokenUncheckedCreateInput = {
+    email: string
+    token: string
+    expires: Date | string
+    createdAt?: Date | string
+  }
+
+  export type PasswordResetTokenUpdateInput = {
+    email?: StringFieldUpdateOperationsInput | string
+    token?: StringFieldUpdateOperationsInput | string
+    expires?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PasswordResetTokenUncheckedUpdateInput = {
+    email?: StringFieldUpdateOperationsInput | string
+    token?: StringFieldUpdateOperationsInput | string
+    expires?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PasswordResetTokenCreateManyInput = {
+    email: string
+    token: string
+    expires: Date | string
+    createdAt?: Date | string
+  }
+
+  export type PasswordResetTokenUpdateManyMutationInput = {
+    email?: StringFieldUpdateOperationsInput | string
+    token?: StringFieldUpdateOperationsInput | string
+    expires?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PasswordResetTokenUncheckedUpdateManyInput = {
+    email?: StringFieldUpdateOperationsInput | string
+    token?: StringFieldUpdateOperationsInput | string
+    expires?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DocumentCreateInput = {
+    id?: string
+    nom: string
+    description?: string | null
+    cloudinaryId: string
+    url: string
+    type: string
+    public?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user?: UserCreateNestedOneWithoutDocumentsInput
+    devis?: DevisCreateNestedOneWithoutDocumentsInput
+  }
+
+  export type DocumentUncheckedCreateInput = {
+    id?: string
+    nom: string
+    description?: string | null
+    cloudinaryId: string
+    url: string
+    type: string
+    public?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    userId?: string | null
+    devisId?: string | null
+  }
+
+  export type DocumentUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    cloudinaryId?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    public?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneWithoutDocumentsNestedInput
+    devis?: DevisUpdateOneWithoutDocumentsNestedInput
+  }
+
+  export type DocumentUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    cloudinaryId?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    public?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    devisId?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type DocumentCreateManyInput = {
+    id?: string
+    nom: string
+    description?: string | null
+    cloudinaryId: string
+    url: string
+    type: string
+    public?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    userId?: string | null
+    devisId?: string | null
+  }
+
+  export type DocumentUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    cloudinaryId?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    public?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DocumentUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    cloudinaryId?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    public?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    devisId?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -9917,6 +12670,12 @@ export namespace Prisma {
     not?: NestedDateTimeFilter<$PrismaModel> | Date | string
   }
 
+  export type ContratListRelationFilter = {
+    every?: ContratWhereInput
+    some?: ContratWhereInput
+    none?: ContratWhereInput
+  }
+
   export type DemandeListRelationFilter = {
     every?: DemandeWhereInput
     some?: DemandeWhereInput
@@ -9929,10 +12688,14 @@ export namespace Prisma {
     none?: DevisWhereInput
   }
 
-  export type ContratListRelationFilter = {
-    every?: ContratWhereInput
-    some?: ContratWhereInput
-    none?: ContratWhereInput
+  export type DocumentListRelationFilter = {
+    every?: DocumentWhereInput
+    some?: DocumentWhereInput
+    none?: DocumentWhereInput
+  }
+
+  export type ContratOrderByRelationAggregateInput = {
+    _count?: SortOrder
   }
 
   export type DemandeOrderByRelationAggregateInput = {
@@ -9943,7 +12706,7 @@ export namespace Prisma {
     _count?: SortOrder
   }
 
-  export type ContratOrderByRelationAggregateInput = {
+  export type DocumentOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -10117,11 +12880,6 @@ export namespace Prisma {
     isNot?: UserWhereInput
   }
 
-  export type FormationScalarRelationFilter = {
-    is?: FormationWhereInput
-    isNot?: FormationWhereInput
-  }
-
   export type DevisNullableScalarRelationFilter = {
     is?: DevisWhereInput | null
     isNot?: DevisWhereInput | null
@@ -10135,8 +12893,8 @@ export namespace Prisma {
   export type DemandeCountOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
-    formationId?: SortOrder
     statut?: SortOrder
+    session?: SortOrder
     message?: SortOrder
     commentaire?: SortOrder
     createdAt?: SortOrder
@@ -10146,8 +12904,8 @@ export namespace Prisma {
   export type DemandeMaxOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
-    formationId?: SortOrder
     statut?: SortOrder
+    session?: SortOrder
     message?: SortOrder
     commentaire?: SortOrder
     createdAt?: SortOrder
@@ -10157,8 +12915,8 @@ export namespace Prisma {
   export type DemandeMinOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
-    formationId?: SortOrder
     statut?: SortOrder
+    session?: SortOrder
     message?: SortOrder
     commentaire?: SortOrder
     createdAt?: SortOrder
@@ -10215,14 +12973,14 @@ export namespace Prisma {
     not?: NestedIntFilter<$PrismaModel> | number
   }
 
-  export type DemandeScalarRelationFilter = {
-    is?: DemandeWhereInput
-    isNot?: DemandeWhereInput
-  }
-
   export type ContratNullableScalarRelationFilter = {
     is?: ContratWhereInput | null
     isNot?: ContratWhereInput | null
+  }
+
+  export type DemandeScalarRelationFilter = {
+    is?: DemandeWhereInput
+    isNot?: DemandeWhereInput
   }
 
   export type DevisCountOrderByAggregateInput = {
@@ -10378,35 +13136,47 @@ export namespace Prisma {
 
   export type ContratCountOrderByAggregateInput = {
     id?: SortOrder
-    devisId?: SortOrder
-    userId?: SortOrder
-    statut?: SortOrder
-    dateDebut?: SortOrder
-    dateFin?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    devisId?: SortOrder
+    userId?: SortOrder
+    nom?: SortOrder
+    prenom?: SortOrder
+    adresse?: SortOrder
+    profession?: SortOrder
+    dateSignature?: SortOrder
+    signature?: SortOrder
+    statut?: SortOrder
   }
 
   export type ContratMaxOrderByAggregateInput = {
     id?: SortOrder
-    devisId?: SortOrder
-    userId?: SortOrder
-    statut?: SortOrder
-    dateDebut?: SortOrder
-    dateFin?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    devisId?: SortOrder
+    userId?: SortOrder
+    nom?: SortOrder
+    prenom?: SortOrder
+    adresse?: SortOrder
+    profession?: SortOrder
+    dateSignature?: SortOrder
+    signature?: SortOrder
+    statut?: SortOrder
   }
 
   export type ContratMinOrderByAggregateInput = {
     id?: SortOrder
-    devisId?: SortOrder
-    userId?: SortOrder
-    statut?: SortOrder
-    dateDebut?: SortOrder
-    dateFin?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    devisId?: SortOrder
+    userId?: SortOrder
+    nom?: SortOrder
+    prenom?: SortOrder
+    adresse?: SortOrder
+    profession?: SortOrder
+    dateSignature?: SortOrder
+    signature?: SortOrder
+    statut?: SortOrder
   }
   export type JsonFilter<$PrismaModel = never> =
     | PatchUndefined<
@@ -10479,6 +13249,94 @@ export namespace Prisma {
     _max?: NestedJsonFilter<$PrismaModel>
   }
 
+  export type PasswordResetTokenCountOrderByAggregateInput = {
+    email?: SortOrder
+    token?: SortOrder
+    expires?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PasswordResetTokenMaxOrderByAggregateInput = {
+    email?: SortOrder
+    token?: SortOrder
+    expires?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PasswordResetTokenMinOrderByAggregateInput = {
+    email?: SortOrder
+    token?: SortOrder
+    expires?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type UserNullableScalarRelationFilter = {
+    is?: UserWhereInput | null
+    isNot?: UserWhereInput | null
+  }
+
+  export type DocumentCountOrderByAggregateInput = {
+    id?: SortOrder
+    nom?: SortOrder
+    description?: SortOrder
+    cloudinaryId?: SortOrder
+    url?: SortOrder
+    type?: SortOrder
+    public?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    userId?: SortOrder
+    devisId?: SortOrder
+  }
+
+  export type DocumentMaxOrderByAggregateInput = {
+    id?: SortOrder
+    nom?: SortOrder
+    description?: SortOrder
+    cloudinaryId?: SortOrder
+    url?: SortOrder
+    type?: SortOrder
+    public?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    userId?: SortOrder
+    devisId?: SortOrder
+  }
+
+  export type DocumentMinOrderByAggregateInput = {
+    id?: SortOrder
+    nom?: SortOrder
+    description?: SortOrder
+    cloudinaryId?: SortOrder
+    url?: SortOrder
+    type?: SortOrder
+    public?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    userId?: SortOrder
+    devisId?: SortOrder
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type ContratCreateNestedManyWithoutUserInput = {
+    create?: XOR<ContratCreateWithoutUserInput, ContratUncheckedCreateWithoutUserInput> | ContratCreateWithoutUserInput[] | ContratUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: ContratCreateOrConnectWithoutUserInput | ContratCreateOrConnectWithoutUserInput[]
+    createMany?: ContratCreateManyUserInputEnvelope
+    connect?: ContratWhereUniqueInput | ContratWhereUniqueInput[]
+  }
+
   export type DemandeCreateNestedManyWithoutUserInput = {
     create?: XOR<DemandeCreateWithoutUserInput, DemandeUncheckedCreateWithoutUserInput> | DemandeCreateWithoutUserInput[] | DemandeUncheckedCreateWithoutUserInput[]
     connectOrCreate?: DemandeCreateOrConnectWithoutUserInput | DemandeCreateOrConnectWithoutUserInput[]
@@ -10493,7 +13351,14 @@ export namespace Prisma {
     connect?: DevisWhereUniqueInput | DevisWhereUniqueInput[]
   }
 
-  export type ContratCreateNestedManyWithoutUserInput = {
+  export type DocumentCreateNestedManyWithoutUserInput = {
+    create?: XOR<DocumentCreateWithoutUserInput, DocumentUncheckedCreateWithoutUserInput> | DocumentCreateWithoutUserInput[] | DocumentUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: DocumentCreateOrConnectWithoutUserInput | DocumentCreateOrConnectWithoutUserInput[]
+    createMany?: DocumentCreateManyUserInputEnvelope
+    connect?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+  }
+
+  export type ContratUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<ContratCreateWithoutUserInput, ContratUncheckedCreateWithoutUserInput> | ContratCreateWithoutUserInput[] | ContratUncheckedCreateWithoutUserInput[]
     connectOrCreate?: ContratCreateOrConnectWithoutUserInput | ContratCreateOrConnectWithoutUserInput[]
     createMany?: ContratCreateManyUserInputEnvelope
@@ -10514,11 +13379,11 @@ export namespace Prisma {
     connect?: DevisWhereUniqueInput | DevisWhereUniqueInput[]
   }
 
-  export type ContratUncheckedCreateNestedManyWithoutUserInput = {
-    create?: XOR<ContratCreateWithoutUserInput, ContratUncheckedCreateWithoutUserInput> | ContratCreateWithoutUserInput[] | ContratUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: ContratCreateOrConnectWithoutUserInput | ContratCreateOrConnectWithoutUserInput[]
-    createMany?: ContratCreateManyUserInputEnvelope
-    connect?: ContratWhereUniqueInput | ContratWhereUniqueInput[]
+  export type DocumentUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<DocumentCreateWithoutUserInput, DocumentUncheckedCreateWithoutUserInput> | DocumentCreateWithoutUserInput[] | DocumentUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: DocumentCreateOrConnectWithoutUserInput | DocumentCreateOrConnectWithoutUserInput[]
+    createMany?: DocumentCreateManyUserInputEnvelope
+    connect?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -10531,6 +13396,20 @@ export namespace Prisma {
 
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string
+  }
+
+  export type ContratUpdateManyWithoutUserNestedInput = {
+    create?: XOR<ContratCreateWithoutUserInput, ContratUncheckedCreateWithoutUserInput> | ContratCreateWithoutUserInput[] | ContratUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: ContratCreateOrConnectWithoutUserInput | ContratCreateOrConnectWithoutUserInput[]
+    upsert?: ContratUpsertWithWhereUniqueWithoutUserInput | ContratUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: ContratCreateManyUserInputEnvelope
+    set?: ContratWhereUniqueInput | ContratWhereUniqueInput[]
+    disconnect?: ContratWhereUniqueInput | ContratWhereUniqueInput[]
+    delete?: ContratWhereUniqueInput | ContratWhereUniqueInput[]
+    connect?: ContratWhereUniqueInput | ContratWhereUniqueInput[]
+    update?: ContratUpdateWithWhereUniqueWithoutUserInput | ContratUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: ContratUpdateManyWithWhereWithoutUserInput | ContratUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: ContratScalarWhereInput | ContratScalarWhereInput[]
   }
 
   export type DemandeUpdateManyWithoutUserNestedInput = {
@@ -10561,7 +13440,21 @@ export namespace Prisma {
     deleteMany?: DevisScalarWhereInput | DevisScalarWhereInput[]
   }
 
-  export type ContratUpdateManyWithoutUserNestedInput = {
+  export type DocumentUpdateManyWithoutUserNestedInput = {
+    create?: XOR<DocumentCreateWithoutUserInput, DocumentUncheckedCreateWithoutUserInput> | DocumentCreateWithoutUserInput[] | DocumentUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: DocumentCreateOrConnectWithoutUserInput | DocumentCreateOrConnectWithoutUserInput[]
+    upsert?: DocumentUpsertWithWhereUniqueWithoutUserInput | DocumentUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: DocumentCreateManyUserInputEnvelope
+    set?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    disconnect?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    delete?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    connect?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    update?: DocumentUpdateWithWhereUniqueWithoutUserInput | DocumentUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: DocumentUpdateManyWithWhereWithoutUserInput | DocumentUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: DocumentScalarWhereInput | DocumentScalarWhereInput[]
+  }
+
+  export type ContratUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<ContratCreateWithoutUserInput, ContratUncheckedCreateWithoutUserInput> | ContratCreateWithoutUserInput[] | ContratUncheckedCreateWithoutUserInput[]
     connectOrCreate?: ContratCreateOrConnectWithoutUserInput | ContratCreateOrConnectWithoutUserInput[]
     upsert?: ContratUpsertWithWhereUniqueWithoutUserInput | ContratUpsertWithWhereUniqueWithoutUserInput[]
@@ -10603,32 +13496,18 @@ export namespace Prisma {
     deleteMany?: DevisScalarWhereInput | DevisScalarWhereInput[]
   }
 
-  export type ContratUncheckedUpdateManyWithoutUserNestedInput = {
-    create?: XOR<ContratCreateWithoutUserInput, ContratUncheckedCreateWithoutUserInput> | ContratCreateWithoutUserInput[] | ContratUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: ContratCreateOrConnectWithoutUserInput | ContratCreateOrConnectWithoutUserInput[]
-    upsert?: ContratUpsertWithWhereUniqueWithoutUserInput | ContratUpsertWithWhereUniqueWithoutUserInput[]
-    createMany?: ContratCreateManyUserInputEnvelope
-    set?: ContratWhereUniqueInput | ContratWhereUniqueInput[]
-    disconnect?: ContratWhereUniqueInput | ContratWhereUniqueInput[]
-    delete?: ContratWhereUniqueInput | ContratWhereUniqueInput[]
-    connect?: ContratWhereUniqueInput | ContratWhereUniqueInput[]
-    update?: ContratUpdateWithWhereUniqueWithoutUserInput | ContratUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: ContratUpdateManyWithWhereWithoutUserInput | ContratUpdateManyWithWhereWithoutUserInput[]
-    deleteMany?: ContratScalarWhereInput | ContratScalarWhereInput[]
-  }
-
-  export type DemandeCreateNestedManyWithoutFormationInput = {
-    create?: XOR<DemandeCreateWithoutFormationInput, DemandeUncheckedCreateWithoutFormationInput> | DemandeCreateWithoutFormationInput[] | DemandeUncheckedCreateWithoutFormationInput[]
-    connectOrCreate?: DemandeCreateOrConnectWithoutFormationInput | DemandeCreateOrConnectWithoutFormationInput[]
-    createMany?: DemandeCreateManyFormationInputEnvelope
-    connect?: DemandeWhereUniqueInput | DemandeWhereUniqueInput[]
-  }
-
-  export type DemandeUncheckedCreateNestedManyWithoutFormationInput = {
-    create?: XOR<DemandeCreateWithoutFormationInput, DemandeUncheckedCreateWithoutFormationInput> | DemandeCreateWithoutFormationInput[] | DemandeUncheckedCreateWithoutFormationInput[]
-    connectOrCreate?: DemandeCreateOrConnectWithoutFormationInput | DemandeCreateOrConnectWithoutFormationInput[]
-    createMany?: DemandeCreateManyFormationInputEnvelope
-    connect?: DemandeWhereUniqueInput | DemandeWhereUniqueInput[]
+  export type DocumentUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<DocumentCreateWithoutUserInput, DocumentUncheckedCreateWithoutUserInput> | DocumentCreateWithoutUserInput[] | DocumentUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: DocumentCreateOrConnectWithoutUserInput | DocumentCreateOrConnectWithoutUserInput[]
+    upsert?: DocumentUpsertWithWhereUniqueWithoutUserInput | DocumentUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: DocumentCreateManyUserInputEnvelope
+    set?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    disconnect?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    delete?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    connect?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    update?: DocumentUpdateWithWhereUniqueWithoutUserInput | DocumentUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: DocumentUpdateManyWithWhereWithoutUserInput | DocumentUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: DocumentScalarWhereInput | DocumentScalarWhereInput[]
   }
 
   export type FloatFieldUpdateOperationsInput = {
@@ -10639,44 +13518,10 @@ export namespace Prisma {
     divide?: number
   }
 
-  export type DemandeUpdateManyWithoutFormationNestedInput = {
-    create?: XOR<DemandeCreateWithoutFormationInput, DemandeUncheckedCreateWithoutFormationInput> | DemandeCreateWithoutFormationInput[] | DemandeUncheckedCreateWithoutFormationInput[]
-    connectOrCreate?: DemandeCreateOrConnectWithoutFormationInput | DemandeCreateOrConnectWithoutFormationInput[]
-    upsert?: DemandeUpsertWithWhereUniqueWithoutFormationInput | DemandeUpsertWithWhereUniqueWithoutFormationInput[]
-    createMany?: DemandeCreateManyFormationInputEnvelope
-    set?: DemandeWhereUniqueInput | DemandeWhereUniqueInput[]
-    disconnect?: DemandeWhereUniqueInput | DemandeWhereUniqueInput[]
-    delete?: DemandeWhereUniqueInput | DemandeWhereUniqueInput[]
-    connect?: DemandeWhereUniqueInput | DemandeWhereUniqueInput[]
-    update?: DemandeUpdateWithWhereUniqueWithoutFormationInput | DemandeUpdateWithWhereUniqueWithoutFormationInput[]
-    updateMany?: DemandeUpdateManyWithWhereWithoutFormationInput | DemandeUpdateManyWithWhereWithoutFormationInput[]
-    deleteMany?: DemandeScalarWhereInput | DemandeScalarWhereInput[]
-  }
-
-  export type DemandeUncheckedUpdateManyWithoutFormationNestedInput = {
-    create?: XOR<DemandeCreateWithoutFormationInput, DemandeUncheckedCreateWithoutFormationInput> | DemandeCreateWithoutFormationInput[] | DemandeUncheckedCreateWithoutFormationInput[]
-    connectOrCreate?: DemandeCreateOrConnectWithoutFormationInput | DemandeCreateOrConnectWithoutFormationInput[]
-    upsert?: DemandeUpsertWithWhereUniqueWithoutFormationInput | DemandeUpsertWithWhereUniqueWithoutFormationInput[]
-    createMany?: DemandeCreateManyFormationInputEnvelope
-    set?: DemandeWhereUniqueInput | DemandeWhereUniqueInput[]
-    disconnect?: DemandeWhereUniqueInput | DemandeWhereUniqueInput[]
-    delete?: DemandeWhereUniqueInput | DemandeWhereUniqueInput[]
-    connect?: DemandeWhereUniqueInput | DemandeWhereUniqueInput[]
-    update?: DemandeUpdateWithWhereUniqueWithoutFormationInput | DemandeUpdateWithWhereUniqueWithoutFormationInput[]
-    updateMany?: DemandeUpdateManyWithWhereWithoutFormationInput | DemandeUpdateManyWithWhereWithoutFormationInput[]
-    deleteMany?: DemandeScalarWhereInput | DemandeScalarWhereInput[]
-  }
-
   export type UserCreateNestedOneWithoutDemandesInput = {
     create?: XOR<UserCreateWithoutDemandesInput, UserUncheckedCreateWithoutDemandesInput>
     connectOrCreate?: UserCreateOrConnectWithoutDemandesInput
     connect?: UserWhereUniqueInput
-  }
-
-  export type FormationCreateNestedOneWithoutDemandesInput = {
-    create?: XOR<FormationCreateWithoutDemandesInput, FormationUncheckedCreateWithoutDemandesInput>
-    connectOrCreate?: FormationCreateOrConnectWithoutDemandesInput
-    connect?: FormationWhereUniqueInput
   }
 
   export type DevisCreateNestedOneWithoutDemandeInput = {
@@ -10707,14 +13552,6 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutDemandesInput, UserUpdateWithoutDemandesInput>, UserUncheckedUpdateWithoutDemandesInput>
   }
 
-  export type FormationUpdateOneRequiredWithoutDemandesNestedInput = {
-    create?: XOR<FormationCreateWithoutDemandesInput, FormationUncheckedCreateWithoutDemandesInput>
-    connectOrCreate?: FormationCreateOrConnectWithoutDemandesInput
-    upsert?: FormationUpsertWithoutDemandesInput
-    connect?: FormationWhereUniqueInput
-    update?: XOR<XOR<FormationUpdateToOneWithWhereWithoutDemandesInput, FormationUpdateWithoutDemandesInput>, FormationUncheckedUpdateWithoutDemandesInput>
-  }
-
   export type DevisUpdateOneWithoutDemandeNestedInput = {
     create?: XOR<DevisCreateWithoutDemandeInput, DevisUncheckedCreateWithoutDemandeInput>
     connectOrCreate?: DevisCreateOrConnectWithoutDemandeInput
@@ -10735,6 +13572,12 @@ export namespace Prisma {
     update?: XOR<XOR<DevisUpdateToOneWithWhereWithoutDemandeInput, DevisUpdateWithoutDemandeInput>, DevisUncheckedUpdateWithoutDemandeInput>
   }
 
+  export type ContratCreateNestedOneWithoutDevisInput = {
+    create?: XOR<ContratCreateWithoutDevisInput, ContratUncheckedCreateWithoutDevisInput>
+    connectOrCreate?: ContratCreateOrConnectWithoutDevisInput
+    connect?: ContratWhereUniqueInput
+  }
+
   export type DemandeCreateNestedOneWithoutDevisInput = {
     create?: XOR<DemandeCreateWithoutDevisInput, DemandeUncheckedCreateWithoutDevisInput>
     connectOrCreate?: DemandeCreateOrConnectWithoutDevisInput
@@ -10747,16 +13590,24 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
-  export type ContratCreateNestedOneWithoutDevisInput = {
-    create?: XOR<ContratCreateWithoutDevisInput, ContratUncheckedCreateWithoutDevisInput>
-    connectOrCreate?: ContratCreateOrConnectWithoutDevisInput
-    connect?: ContratWhereUniqueInput
+  export type DocumentCreateNestedManyWithoutDevisInput = {
+    create?: XOR<DocumentCreateWithoutDevisInput, DocumentUncheckedCreateWithoutDevisInput> | DocumentCreateWithoutDevisInput[] | DocumentUncheckedCreateWithoutDevisInput[]
+    connectOrCreate?: DocumentCreateOrConnectWithoutDevisInput | DocumentCreateOrConnectWithoutDevisInput[]
+    createMany?: DocumentCreateManyDevisInputEnvelope
+    connect?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
   }
 
   export type ContratUncheckedCreateNestedOneWithoutDevisInput = {
     create?: XOR<ContratCreateWithoutDevisInput, ContratUncheckedCreateWithoutDevisInput>
     connectOrCreate?: ContratCreateOrConnectWithoutDevisInput
     connect?: ContratWhereUniqueInput
+  }
+
+  export type DocumentUncheckedCreateNestedManyWithoutDevisInput = {
+    create?: XOR<DocumentCreateWithoutDevisInput, DocumentUncheckedCreateWithoutDevisInput> | DocumentCreateWithoutDevisInput[] | DocumentUncheckedCreateWithoutDevisInput[]
+    connectOrCreate?: DocumentCreateOrConnectWithoutDevisInput | DocumentCreateOrConnectWithoutDevisInput[]
+    createMany?: DocumentCreateManyDevisInputEnvelope
+    connect?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
   }
 
   export type NullableDateTimeFieldUpdateOperationsInput = {
@@ -10769,6 +13620,16 @@ export namespace Prisma {
     decrement?: number
     multiply?: number
     divide?: number
+  }
+
+  export type ContratUpdateOneWithoutDevisNestedInput = {
+    create?: XOR<ContratCreateWithoutDevisInput, ContratUncheckedCreateWithoutDevisInput>
+    connectOrCreate?: ContratCreateOrConnectWithoutDevisInput
+    upsert?: ContratUpsertWithoutDevisInput
+    disconnect?: ContratWhereInput | boolean
+    delete?: ContratWhereInput | boolean
+    connect?: ContratWhereUniqueInput
+    update?: XOR<XOR<ContratUpdateToOneWithWhereWithoutDevisInput, ContratUpdateWithoutDevisInput>, ContratUncheckedUpdateWithoutDevisInput>
   }
 
   export type DemandeUpdateOneRequiredWithoutDevisNestedInput = {
@@ -10787,14 +13648,18 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutDevisInput, UserUpdateWithoutDevisInput>, UserUncheckedUpdateWithoutDevisInput>
   }
 
-  export type ContratUpdateOneWithoutDevisNestedInput = {
-    create?: XOR<ContratCreateWithoutDevisInput, ContratUncheckedCreateWithoutDevisInput>
-    connectOrCreate?: ContratCreateOrConnectWithoutDevisInput
-    upsert?: ContratUpsertWithoutDevisInput
-    disconnect?: ContratWhereInput | boolean
-    delete?: ContratWhereInput | boolean
-    connect?: ContratWhereUniqueInput
-    update?: XOR<XOR<ContratUpdateToOneWithWhereWithoutDevisInput, ContratUpdateWithoutDevisInput>, ContratUncheckedUpdateWithoutDevisInput>
+  export type DocumentUpdateManyWithoutDevisNestedInput = {
+    create?: XOR<DocumentCreateWithoutDevisInput, DocumentUncheckedCreateWithoutDevisInput> | DocumentCreateWithoutDevisInput[] | DocumentUncheckedCreateWithoutDevisInput[]
+    connectOrCreate?: DocumentCreateOrConnectWithoutDevisInput | DocumentCreateOrConnectWithoutDevisInput[]
+    upsert?: DocumentUpsertWithWhereUniqueWithoutDevisInput | DocumentUpsertWithWhereUniqueWithoutDevisInput[]
+    createMany?: DocumentCreateManyDevisInputEnvelope
+    set?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    disconnect?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    delete?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    connect?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    update?: DocumentUpdateWithWhereUniqueWithoutDevisInput | DocumentUpdateWithWhereUniqueWithoutDevisInput[]
+    updateMany?: DocumentUpdateManyWithWhereWithoutDevisInput | DocumentUpdateManyWithWhereWithoutDevisInput[]
+    deleteMany?: DocumentScalarWhereInput | DocumentScalarWhereInput[]
   }
 
   export type ContratUncheckedUpdateOneWithoutDevisNestedInput = {
@@ -10805,6 +13670,20 @@ export namespace Prisma {
     delete?: ContratWhereInput | boolean
     connect?: ContratWhereUniqueInput
     update?: XOR<XOR<ContratUpdateToOneWithWhereWithoutDevisInput, ContratUpdateWithoutDevisInput>, ContratUncheckedUpdateWithoutDevisInput>
+  }
+
+  export type DocumentUncheckedUpdateManyWithoutDevisNestedInput = {
+    create?: XOR<DocumentCreateWithoutDevisInput, DocumentUncheckedCreateWithoutDevisInput> | DocumentCreateWithoutDevisInput[] | DocumentUncheckedCreateWithoutDevisInput[]
+    connectOrCreate?: DocumentCreateOrConnectWithoutDevisInput | DocumentCreateOrConnectWithoutDevisInput[]
+    upsert?: DocumentUpsertWithWhereUniqueWithoutDevisInput | DocumentUpsertWithWhereUniqueWithoutDevisInput[]
+    createMany?: DocumentCreateManyDevisInputEnvelope
+    set?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    disconnect?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    delete?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    connect?: DocumentWhereUniqueInput | DocumentWhereUniqueInput[]
+    update?: DocumentUpdateWithWhereUniqueWithoutDevisInput | DocumentUpdateWithWhereUniqueWithoutDevisInput[]
+    updateMany?: DocumentUpdateManyWithWhereWithoutDevisInput | DocumentUpdateManyWithWhereWithoutDevisInput[]
+    deleteMany?: DocumentScalarWhereInput | DocumentScalarWhereInput[]
   }
 
   export type DevisCreateNestedOneWithoutContratInput = {
@@ -10833,6 +13712,42 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutContratsInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutContratsInput, UserUpdateWithoutContratsInput>, UserUncheckedUpdateWithoutContratsInput>
+  }
+
+  export type UserCreateNestedOneWithoutDocumentsInput = {
+    create?: XOR<UserCreateWithoutDocumentsInput, UserUncheckedCreateWithoutDocumentsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutDocumentsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type DevisCreateNestedOneWithoutDocumentsInput = {
+    create?: XOR<DevisCreateWithoutDocumentsInput, DevisUncheckedCreateWithoutDocumentsInput>
+    connectOrCreate?: DevisCreateOrConnectWithoutDocumentsInput
+    connect?: DevisWhereUniqueInput
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
+  export type UserUpdateOneWithoutDocumentsNestedInput = {
+    create?: XOR<UserCreateWithoutDocumentsInput, UserUncheckedCreateWithoutDocumentsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutDocumentsInput
+    upsert?: UserUpsertWithoutDocumentsInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutDocumentsInput, UserUpdateWithoutDocumentsInput>, UserUncheckedUpdateWithoutDocumentsInput>
+  }
+
+  export type DevisUpdateOneWithoutDocumentsNestedInput = {
+    create?: XOR<DevisCreateWithoutDocumentsInput, DevisUncheckedCreateWithoutDocumentsInput>
+    connectOrCreate?: DevisCreateOrConnectWithoutDocumentsInput
+    upsert?: DevisUpsertWithoutDocumentsInput
+    disconnect?: DevisWhereInput | boolean
+    delete?: DevisWhereInput | boolean
+    connect?: DevisWhereUniqueInput
+    update?: XOR<XOR<DevisUpdateToOneWithWhereWithoutDocumentsInput, DevisUpdateWithoutDocumentsInput>, DevisUncheckedUpdateWithoutDocumentsInput>
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -11069,21 +13984,72 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type ContratCreateWithoutUserInput = {
+    id?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    nom: string
+    prenom: string
+    adresse: string
+    profession?: string | null
+    dateSignature: Date | string
+    signature: string
+    statut?: string
+    devis: DevisCreateNestedOneWithoutContratInput
+  }
+
+  export type ContratUncheckedCreateWithoutUserInput = {
+    id?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    devisId: string
+    nom: string
+    prenom: string
+    adresse: string
+    profession?: string | null
+    dateSignature: Date | string
+    signature: string
+    statut?: string
+  }
+
+  export type ContratCreateOrConnectWithoutUserInput = {
+    where: ContratWhereUniqueInput
+    create: XOR<ContratCreateWithoutUserInput, ContratUncheckedCreateWithoutUserInput>
+  }
+
+  export type ContratCreateManyUserInputEnvelope = {
+    data: ContratCreateManyUserInput | ContratCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type DemandeCreateWithoutUserInput = {
     id?: string
     statut?: $Enums.Statut
+    session: string
     message?: string | null
     commentaire?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    formation: FormationCreateNestedOneWithoutDemandesInput
     devis?: DevisCreateNestedOneWithoutDemandeInput
   }
 
   export type DemandeUncheckedCreateWithoutUserInput = {
     id?: string
-    formationId: string
     statut?: $Enums.Statut
+    session: string
     message?: string | null
     commentaire?: string | null
     createdAt?: Date | string
@@ -11131,8 +14097,9 @@ export namespace Prisma {
     statut?: $Enums.Statut
     createdAt?: Date | string
     updatedAt?: Date | string
-    demande: DemandeCreateNestedOneWithoutDevisInput
     contrat?: ContratCreateNestedOneWithoutDevisInput
+    demande: DemandeCreateNestedOneWithoutDevisInput
+    documents?: DocumentCreateNestedManyWithoutDevisInput
   }
 
   export type DevisUncheckedCreateWithoutUserInput = {
@@ -11167,6 +14134,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     contrat?: ContratUncheckedCreateNestedOneWithoutDevisInput
+    documents?: DocumentUncheckedCreateNestedManyWithoutDevisInput
   }
 
   export type DevisCreateOrConnectWithoutUserInput = {
@@ -11179,34 +14147,74 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type ContratCreateWithoutUserInput = {
+  export type DocumentCreateWithoutUserInput = {
     id?: string
-    statut?: $Enums.Statut
-    dateDebut?: Date | string | null
-    dateFin?: Date | string | null
+    nom: string
+    description?: string | null
+    cloudinaryId: string
+    url: string
+    type: string
+    public?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
-    devis: DevisCreateNestedOneWithoutContratInput
+    devis?: DevisCreateNestedOneWithoutDocumentsInput
   }
 
-  export type ContratUncheckedCreateWithoutUserInput = {
+  export type DocumentUncheckedCreateWithoutUserInput = {
     id?: string
-    devisId: string
-    statut?: $Enums.Statut
-    dateDebut?: Date | string | null
-    dateFin?: Date | string | null
+    nom: string
+    description?: string | null
+    cloudinaryId: string
+    url: string
+    type: string
+    public?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    devisId?: string | null
   }
 
-  export type ContratCreateOrConnectWithoutUserInput = {
+  export type DocumentCreateOrConnectWithoutUserInput = {
+    where: DocumentWhereUniqueInput
+    create: XOR<DocumentCreateWithoutUserInput, DocumentUncheckedCreateWithoutUserInput>
+  }
+
+  export type DocumentCreateManyUserInputEnvelope = {
+    data: DocumentCreateManyUserInput | DocumentCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ContratUpsertWithWhereUniqueWithoutUserInput = {
     where: ContratWhereUniqueInput
+    update: XOR<ContratUpdateWithoutUserInput, ContratUncheckedUpdateWithoutUserInput>
     create: XOR<ContratCreateWithoutUserInput, ContratUncheckedCreateWithoutUserInput>
   }
 
-  export type ContratCreateManyUserInputEnvelope = {
-    data: ContratCreateManyUserInput | ContratCreateManyUserInput[]
-    skipDuplicates?: boolean
+  export type ContratUpdateWithWhereUniqueWithoutUserInput = {
+    where: ContratWhereUniqueInput
+    data: XOR<ContratUpdateWithoutUserInput, ContratUncheckedUpdateWithoutUserInput>
+  }
+
+  export type ContratUpdateManyWithWhereWithoutUserInput = {
+    where: ContratScalarWhereInput
+    data: XOR<ContratUpdateManyMutationInput, ContratUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type ContratScalarWhereInput = {
+    AND?: ContratScalarWhereInput | ContratScalarWhereInput[]
+    OR?: ContratScalarWhereInput[]
+    NOT?: ContratScalarWhereInput | ContratScalarWhereInput[]
+    id?: StringFilter<"Contrat"> | string
+    createdAt?: DateTimeFilter<"Contrat"> | Date | string
+    updatedAt?: DateTimeFilter<"Contrat"> | Date | string
+    devisId?: StringFilter<"Contrat"> | string
+    userId?: StringFilter<"Contrat"> | string
+    nom?: StringFilter<"Contrat"> | string
+    prenom?: StringFilter<"Contrat"> | string
+    adresse?: StringFilter<"Contrat"> | string
+    profession?: StringNullableFilter<"Contrat"> | string | null
+    dateSignature?: DateTimeFilter<"Contrat"> | Date | string
+    signature?: StringFilter<"Contrat"> | string
+    statut?: StringFilter<"Contrat"> | string
   }
 
   export type DemandeUpsertWithWhereUniqueWithoutUserInput = {
@@ -11231,8 +14239,8 @@ export namespace Prisma {
     NOT?: DemandeScalarWhereInput | DemandeScalarWhereInput[]
     id?: StringFilter<"Demande"> | string
     userId?: StringFilter<"Demande"> | string
-    formationId?: StringFilter<"Demande"> | string
     statut?: EnumStatutFilter<"Demande"> | $Enums.Statut
+    session?: StringFilter<"Demande"> | string
     message?: StringNullableFilter<"Demande"> | string | null
     commentaire?: StringNullableFilter<"Demande"> | string | null
     createdAt?: DateTimeFilter<"Demande"> | Date | string
@@ -11292,82 +14300,37 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"Devis"> | Date | string
   }
 
-  export type ContratUpsertWithWhereUniqueWithoutUserInput = {
-    where: ContratWhereUniqueInput
-    update: XOR<ContratUpdateWithoutUserInput, ContratUncheckedUpdateWithoutUserInput>
-    create: XOR<ContratCreateWithoutUserInput, ContratUncheckedCreateWithoutUserInput>
+  export type DocumentUpsertWithWhereUniqueWithoutUserInput = {
+    where: DocumentWhereUniqueInput
+    update: XOR<DocumentUpdateWithoutUserInput, DocumentUncheckedUpdateWithoutUserInput>
+    create: XOR<DocumentCreateWithoutUserInput, DocumentUncheckedCreateWithoutUserInput>
   }
 
-  export type ContratUpdateWithWhereUniqueWithoutUserInput = {
-    where: ContratWhereUniqueInput
-    data: XOR<ContratUpdateWithoutUserInput, ContratUncheckedUpdateWithoutUserInput>
+  export type DocumentUpdateWithWhereUniqueWithoutUserInput = {
+    where: DocumentWhereUniqueInput
+    data: XOR<DocumentUpdateWithoutUserInput, DocumentUncheckedUpdateWithoutUserInput>
   }
 
-  export type ContratUpdateManyWithWhereWithoutUserInput = {
-    where: ContratScalarWhereInput
-    data: XOR<ContratUpdateManyMutationInput, ContratUncheckedUpdateManyWithoutUserInput>
+  export type DocumentUpdateManyWithWhereWithoutUserInput = {
+    where: DocumentScalarWhereInput
+    data: XOR<DocumentUpdateManyMutationInput, DocumentUncheckedUpdateManyWithoutUserInput>
   }
 
-  export type ContratScalarWhereInput = {
-    AND?: ContratScalarWhereInput | ContratScalarWhereInput[]
-    OR?: ContratScalarWhereInput[]
-    NOT?: ContratScalarWhereInput | ContratScalarWhereInput[]
-    id?: StringFilter<"Contrat"> | string
-    devisId?: StringFilter<"Contrat"> | string
-    userId?: StringFilter<"Contrat"> | string
-    statut?: EnumStatutFilter<"Contrat"> | $Enums.Statut
-    dateDebut?: DateTimeNullableFilter<"Contrat"> | Date | string | null
-    dateFin?: DateTimeNullableFilter<"Contrat"> | Date | string | null
-    createdAt?: DateTimeFilter<"Contrat"> | Date | string
-    updatedAt?: DateTimeFilter<"Contrat"> | Date | string
-  }
-
-  export type DemandeCreateWithoutFormationInput = {
-    id?: string
-    statut?: $Enums.Statut
-    message?: string | null
-    commentaire?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    user: UserCreateNestedOneWithoutDemandesInput
-    devis?: DevisCreateNestedOneWithoutDemandeInput
-  }
-
-  export type DemandeUncheckedCreateWithoutFormationInput = {
-    id?: string
-    userId: string
-    statut?: $Enums.Statut
-    message?: string | null
-    commentaire?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    devis?: DevisUncheckedCreateNestedOneWithoutDemandeInput
-  }
-
-  export type DemandeCreateOrConnectWithoutFormationInput = {
-    where: DemandeWhereUniqueInput
-    create: XOR<DemandeCreateWithoutFormationInput, DemandeUncheckedCreateWithoutFormationInput>
-  }
-
-  export type DemandeCreateManyFormationInputEnvelope = {
-    data: DemandeCreateManyFormationInput | DemandeCreateManyFormationInput[]
-    skipDuplicates?: boolean
-  }
-
-  export type DemandeUpsertWithWhereUniqueWithoutFormationInput = {
-    where: DemandeWhereUniqueInput
-    update: XOR<DemandeUpdateWithoutFormationInput, DemandeUncheckedUpdateWithoutFormationInput>
-    create: XOR<DemandeCreateWithoutFormationInput, DemandeUncheckedCreateWithoutFormationInput>
-  }
-
-  export type DemandeUpdateWithWhereUniqueWithoutFormationInput = {
-    where: DemandeWhereUniqueInput
-    data: XOR<DemandeUpdateWithoutFormationInput, DemandeUncheckedUpdateWithoutFormationInput>
-  }
-
-  export type DemandeUpdateManyWithWhereWithoutFormationInput = {
-    where: DemandeScalarWhereInput
-    data: XOR<DemandeUpdateManyMutationInput, DemandeUncheckedUpdateManyWithoutFormationInput>
+  export type DocumentScalarWhereInput = {
+    AND?: DocumentScalarWhereInput | DocumentScalarWhereInput[]
+    OR?: DocumentScalarWhereInput[]
+    NOT?: DocumentScalarWhereInput | DocumentScalarWhereInput[]
+    id?: StringFilter<"Document"> | string
+    nom?: StringFilter<"Document"> | string
+    description?: StringNullableFilter<"Document"> | string | null
+    cloudinaryId?: StringFilter<"Document"> | string
+    url?: StringFilter<"Document"> | string
+    type?: StringFilter<"Document"> | string
+    public?: BoolFilter<"Document"> | boolean
+    createdAt?: DateTimeFilter<"Document"> | Date | string
+    updatedAt?: DateTimeFilter<"Document"> | Date | string
+    userId?: StringNullableFilter<"Document"> | string | null
+    devisId?: StringNullableFilter<"Document"> | string | null
   }
 
   export type UserCreateWithoutDemandesInput = {
@@ -11379,8 +14342,9 @@ export namespace Prisma {
     role?: $Enums.Role
     createdAt?: Date | string
     updatedAt?: Date | string
-    devis?: DevisCreateNestedManyWithoutUserInput
     contrats?: ContratCreateNestedManyWithoutUserInput
+    devis?: DevisCreateNestedManyWithoutUserInput
+    documents?: DocumentCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutDemandesInput = {
@@ -11392,40 +14356,14 @@ export namespace Prisma {
     role?: $Enums.Role
     createdAt?: Date | string
     updatedAt?: Date | string
-    devis?: DevisUncheckedCreateNestedManyWithoutUserInput
     contrats?: ContratUncheckedCreateNestedManyWithoutUserInput
+    devis?: DevisUncheckedCreateNestedManyWithoutUserInput
+    documents?: DocumentUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutDemandesInput = {
     where: UserWhereUniqueInput
     create: XOR<UserCreateWithoutDemandesInput, UserUncheckedCreateWithoutDemandesInput>
-  }
-
-  export type FormationCreateWithoutDemandesInput = {
-    id?: string
-    titre: string
-    description: string
-    duree: string
-    prix: number
-    niveau: string
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type FormationUncheckedCreateWithoutDemandesInput = {
-    id?: string
-    titre: string
-    description: string
-    duree: string
-    prix: number
-    niveau: string
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type FormationCreateOrConnectWithoutDemandesInput = {
-    where: FormationWhereUniqueInput
-    create: XOR<FormationCreateWithoutDemandesInput, FormationUncheckedCreateWithoutDemandesInput>
   }
 
   export type DevisCreateWithoutDemandeInput = {
@@ -11458,8 +14396,9 @@ export namespace Prisma {
     statut?: $Enums.Statut
     createdAt?: Date | string
     updatedAt?: Date | string
-    user: UserCreateNestedOneWithoutDevisInput
     contrat?: ContratCreateNestedOneWithoutDevisInput
+    user: UserCreateNestedOneWithoutDevisInput
+    documents?: DocumentCreateNestedManyWithoutDevisInput
   }
 
   export type DevisUncheckedCreateWithoutDemandeInput = {
@@ -11494,6 +14433,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     contrat?: ContratUncheckedCreateNestedOneWithoutDevisInput
+    documents?: DocumentUncheckedCreateNestedManyWithoutDevisInput
   }
 
   export type DevisCreateOrConnectWithoutDemandeInput = {
@@ -11521,8 +14461,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    devis?: DevisUpdateManyWithoutUserNestedInput
     contrats?: ContratUpdateManyWithoutUserNestedInput
+    devis?: DevisUpdateManyWithoutUserNestedInput
+    documents?: DocumentUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDemandesInput = {
@@ -11534,41 +14475,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    devis?: DevisUncheckedUpdateManyWithoutUserNestedInput
     contrats?: ContratUncheckedUpdateManyWithoutUserNestedInput
-  }
-
-  export type FormationUpsertWithoutDemandesInput = {
-    update: XOR<FormationUpdateWithoutDemandesInput, FormationUncheckedUpdateWithoutDemandesInput>
-    create: XOR<FormationCreateWithoutDemandesInput, FormationUncheckedCreateWithoutDemandesInput>
-    where?: FormationWhereInput
-  }
-
-  export type FormationUpdateToOneWithWhereWithoutDemandesInput = {
-    where?: FormationWhereInput
-    data: XOR<FormationUpdateWithoutDemandesInput, FormationUncheckedUpdateWithoutDemandesInput>
-  }
-
-  export type FormationUpdateWithoutDemandesInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    titre?: StringFieldUpdateOperationsInput | string
-    description?: StringFieldUpdateOperationsInput | string
-    duree?: StringFieldUpdateOperationsInput | string
-    prix?: FloatFieldUpdateOperationsInput | number
-    niveau?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type FormationUncheckedUpdateWithoutDemandesInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    titre?: StringFieldUpdateOperationsInput | string
-    description?: StringFieldUpdateOperationsInput | string
-    duree?: StringFieldUpdateOperationsInput | string
-    prix?: FloatFieldUpdateOperationsInput | number
-    niveau?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    devis?: DevisUncheckedUpdateManyWithoutUserNestedInput
+    documents?: DocumentUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type DevisUpsertWithoutDemandeInput = {
@@ -11612,8 +14521,9 @@ export namespace Prisma {
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneRequiredWithoutDevisNestedInput
     contrat?: ContratUpdateOneWithoutDevisNestedInput
+    user?: UserUpdateOneRequiredWithoutDevisNestedInput
+    documents?: DocumentUpdateManyWithoutDevisNestedInput
   }
 
   export type DevisUncheckedUpdateWithoutDemandeInput = {
@@ -11648,24 +14558,58 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     contrat?: ContratUncheckedUpdateOneWithoutDevisNestedInput
+    documents?: DocumentUncheckedUpdateManyWithoutDevisNestedInput
+  }
+
+  export type ContratCreateWithoutDevisInput = {
+    id?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    nom: string
+    prenom: string
+    adresse: string
+    profession?: string | null
+    dateSignature: Date | string
+    signature: string
+    statut?: string
+    user: UserCreateNestedOneWithoutContratsInput
+  }
+
+  export type ContratUncheckedCreateWithoutDevisInput = {
+    id?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    userId: string
+    nom: string
+    prenom: string
+    adresse: string
+    profession?: string | null
+    dateSignature: Date | string
+    signature: string
+    statut?: string
+  }
+
+  export type ContratCreateOrConnectWithoutDevisInput = {
+    where: ContratWhereUniqueInput
+    create: XOR<ContratCreateWithoutDevisInput, ContratUncheckedCreateWithoutDevisInput>
   }
 
   export type DemandeCreateWithoutDevisInput = {
     id?: string
     statut?: $Enums.Statut
+    session: string
     message?: string | null
     commentaire?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     user: UserCreateNestedOneWithoutDemandesInput
-    formation: FormationCreateNestedOneWithoutDemandesInput
   }
 
   export type DemandeUncheckedCreateWithoutDevisInput = {
     id?: string
     userId: string
-    formationId: string
     statut?: $Enums.Statut
+    session: string
     message?: string | null
     commentaire?: string | null
     createdAt?: Date | string
@@ -11686,8 +14630,9 @@ export namespace Prisma {
     role?: $Enums.Role
     createdAt?: Date | string
     updatedAt?: Date | string
-    demandes?: DemandeCreateNestedManyWithoutUserInput
     contrats?: ContratCreateNestedManyWithoutUserInput
+    demandes?: DemandeCreateNestedManyWithoutUserInput
+    documents?: DocumentCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutDevisInput = {
@@ -11699,8 +14644,9 @@ export namespace Prisma {
     role?: $Enums.Role
     createdAt?: Date | string
     updatedAt?: Date | string
-    demandes?: DemandeUncheckedCreateNestedManyWithoutUserInput
     contrats?: ContratUncheckedCreateNestedManyWithoutUserInput
+    demandes?: DemandeUncheckedCreateNestedManyWithoutUserInput
+    documents?: DocumentUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutDevisInput = {
@@ -11708,29 +14654,79 @@ export namespace Prisma {
     create: XOR<UserCreateWithoutDevisInput, UserUncheckedCreateWithoutDevisInput>
   }
 
-  export type ContratCreateWithoutDevisInput = {
+  export type DocumentCreateWithoutDevisInput = {
     id?: string
-    statut?: $Enums.Statut
-    dateDebut?: Date | string | null
-    dateFin?: Date | string | null
+    nom: string
+    description?: string | null
+    cloudinaryId: string
+    url: string
+    type: string
+    public?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
-    user: UserCreateNestedOneWithoutContratsInput
+    user?: UserCreateNestedOneWithoutDocumentsInput
   }
 
-  export type ContratUncheckedCreateWithoutDevisInput = {
+  export type DocumentUncheckedCreateWithoutDevisInput = {
     id?: string
-    userId: string
-    statut?: $Enums.Statut
-    dateDebut?: Date | string | null
-    dateFin?: Date | string | null
+    nom: string
+    description?: string | null
+    cloudinaryId: string
+    url: string
+    type: string
+    public?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    userId?: string | null
   }
 
-  export type ContratCreateOrConnectWithoutDevisInput = {
-    where: ContratWhereUniqueInput
+  export type DocumentCreateOrConnectWithoutDevisInput = {
+    where: DocumentWhereUniqueInput
+    create: XOR<DocumentCreateWithoutDevisInput, DocumentUncheckedCreateWithoutDevisInput>
+  }
+
+  export type DocumentCreateManyDevisInputEnvelope = {
+    data: DocumentCreateManyDevisInput | DocumentCreateManyDevisInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ContratUpsertWithoutDevisInput = {
+    update: XOR<ContratUpdateWithoutDevisInput, ContratUncheckedUpdateWithoutDevisInput>
     create: XOR<ContratCreateWithoutDevisInput, ContratUncheckedCreateWithoutDevisInput>
+    where?: ContratWhereInput
+  }
+
+  export type ContratUpdateToOneWithWhereWithoutDevisInput = {
+    where?: ContratWhereInput
+    data: XOR<ContratUpdateWithoutDevisInput, ContratUncheckedUpdateWithoutDevisInput>
+  }
+
+  export type ContratUpdateWithoutDevisInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    adresse?: StringFieldUpdateOperationsInput | string
+    profession?: NullableStringFieldUpdateOperationsInput | string | null
+    dateSignature?: DateTimeFieldUpdateOperationsInput | Date | string
+    signature?: StringFieldUpdateOperationsInput | string
+    statut?: StringFieldUpdateOperationsInput | string
+    user?: UserUpdateOneRequiredWithoutContratsNestedInput
+  }
+
+  export type ContratUncheckedUpdateWithoutDevisInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    userId?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    adresse?: StringFieldUpdateOperationsInput | string
+    profession?: NullableStringFieldUpdateOperationsInput | string | null
+    dateSignature?: DateTimeFieldUpdateOperationsInput | Date | string
+    signature?: StringFieldUpdateOperationsInput | string
+    statut?: StringFieldUpdateOperationsInput | string
   }
 
   export type DemandeUpsertWithoutDevisInput = {
@@ -11747,19 +14743,19 @@ export namespace Prisma {
   export type DemandeUpdateWithoutDevisInput = {
     id?: StringFieldUpdateOperationsInput | string
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
+    session?: StringFieldUpdateOperationsInput | string
     message?: NullableStringFieldUpdateOperationsInput | string | null
     commentaire?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutDemandesNestedInput
-    formation?: FormationUpdateOneRequiredWithoutDemandesNestedInput
   }
 
   export type DemandeUncheckedUpdateWithoutDevisInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
-    formationId?: StringFieldUpdateOperationsInput | string
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
+    session?: StringFieldUpdateOperationsInput | string
     message?: NullableStringFieldUpdateOperationsInput | string | null
     commentaire?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -11786,8 +14782,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    demandes?: DemandeUpdateManyWithoutUserNestedInput
     contrats?: ContratUpdateManyWithoutUserNestedInput
+    demandes?: DemandeUpdateManyWithoutUserNestedInput
+    documents?: DocumentUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDevisInput = {
@@ -11799,39 +14796,25 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    demandes?: DemandeUncheckedUpdateManyWithoutUserNestedInput
     contrats?: ContratUncheckedUpdateManyWithoutUserNestedInput
+    demandes?: DemandeUncheckedUpdateManyWithoutUserNestedInput
+    documents?: DocumentUncheckedUpdateManyWithoutUserNestedInput
   }
 
-  export type ContratUpsertWithoutDevisInput = {
-    update: XOR<ContratUpdateWithoutDevisInput, ContratUncheckedUpdateWithoutDevisInput>
-    create: XOR<ContratCreateWithoutDevisInput, ContratUncheckedCreateWithoutDevisInput>
-    where?: ContratWhereInput
+  export type DocumentUpsertWithWhereUniqueWithoutDevisInput = {
+    where: DocumentWhereUniqueInput
+    update: XOR<DocumentUpdateWithoutDevisInput, DocumentUncheckedUpdateWithoutDevisInput>
+    create: XOR<DocumentCreateWithoutDevisInput, DocumentUncheckedCreateWithoutDevisInput>
   }
 
-  export type ContratUpdateToOneWithWhereWithoutDevisInput = {
-    where?: ContratWhereInput
-    data: XOR<ContratUpdateWithoutDevisInput, ContratUncheckedUpdateWithoutDevisInput>
+  export type DocumentUpdateWithWhereUniqueWithoutDevisInput = {
+    where: DocumentWhereUniqueInput
+    data: XOR<DocumentUpdateWithoutDevisInput, DocumentUncheckedUpdateWithoutDevisInput>
   }
 
-  export type ContratUpdateWithoutDevisInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
-    dateDebut?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    dateFin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneRequiredWithoutContratsNestedInput
-  }
-
-  export type ContratUncheckedUpdateWithoutDevisInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    userId?: StringFieldUpdateOperationsInput | string
-    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
-    dateDebut?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    dateFin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  export type DocumentUpdateManyWithWhereWithoutDevisInput = {
+    where: DocumentScalarWhereInput
+    data: XOR<DocumentUpdateManyMutationInput, DocumentUncheckedUpdateManyWithoutDevisInput>
   }
 
   export type DevisCreateWithoutContratInput = {
@@ -11866,6 +14849,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     demande: DemandeCreateNestedOneWithoutDevisInput
     user: UserCreateNestedOneWithoutDevisInput
+    documents?: DocumentCreateNestedManyWithoutDevisInput
   }
 
   export type DevisUncheckedCreateWithoutContratInput = {
@@ -11900,6 +14884,7 @@ export namespace Prisma {
     statut?: $Enums.Statut
     createdAt?: Date | string
     updatedAt?: Date | string
+    documents?: DocumentUncheckedCreateNestedManyWithoutDevisInput
   }
 
   export type DevisCreateOrConnectWithoutContratInput = {
@@ -11918,6 +14903,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     demandes?: DemandeCreateNestedManyWithoutUserInput
     devis?: DevisCreateNestedManyWithoutUserInput
+    documents?: DocumentCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutContratsInput = {
@@ -11931,6 +14917,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     demandes?: DemandeUncheckedCreateNestedManyWithoutUserInput
     devis?: DevisUncheckedCreateNestedManyWithoutUserInput
+    documents?: DocumentUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutContratsInput = {
@@ -11981,6 +14968,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     demande?: DemandeUpdateOneRequiredWithoutDevisNestedInput
     user?: UserUpdateOneRequiredWithoutDevisNestedInput
+    documents?: DocumentUpdateManyWithoutDevisNestedInput
   }
 
   export type DevisUncheckedUpdateWithoutContratInput = {
@@ -12015,6 +15003,7 @@ export namespace Prisma {
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    documents?: DocumentUncheckedUpdateManyWithoutDevisNestedInput
   }
 
   export type UserUpsertWithoutContratsInput = {
@@ -12039,6 +15028,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     demandes?: DemandeUpdateManyWithoutUserNestedInput
     devis?: DevisUpdateManyWithoutUserNestedInput
+    documents?: DocumentUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutContratsInput = {
@@ -12052,12 +15042,255 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     demandes?: DemandeUncheckedUpdateManyWithoutUserNestedInput
     devis?: DevisUncheckedUpdateManyWithoutUserNestedInput
+    documents?: DocumentUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserCreateWithoutDocumentsInput = {
+    id?: string
+    email: string
+    password: string
+    nom: string
+    prenom: string
+    role?: $Enums.Role
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    contrats?: ContratCreateNestedManyWithoutUserInput
+    demandes?: DemandeCreateNestedManyWithoutUserInput
+    devis?: DevisCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutDocumentsInput = {
+    id?: string
+    email: string
+    password: string
+    nom: string
+    prenom: string
+    role?: $Enums.Role
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    contrats?: ContratUncheckedCreateNestedManyWithoutUserInput
+    demandes?: DemandeUncheckedCreateNestedManyWithoutUserInput
+    devis?: DevisUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutDocumentsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutDocumentsInput, UserUncheckedCreateWithoutDocumentsInput>
+  }
+
+  export type DevisCreateWithoutDocumentsInput = {
+    id?: string
+    numero: string
+    client: string
+    mail: string
+    mail2?: string
+    adresseLivraison?: string | null
+    dateLivraison?: Date | string | null
+    dateExamen?: Date | string | null
+    adresse?: string | null
+    siret?: string | null
+    numNDA?: string | null
+    dateFormation?: Date | string | null
+    suiviPar?: string | null
+    designation: string
+    quantite: number
+    unite: string
+    prixUnitaire: number
+    tva: number
+    exoneration?: string | null
+    datePriseEffet?: Date | string | null
+    montant: number
+    iban?: string | null
+    bic?: string | null
+    banque?: string | null
+    intituleCompte?: string | null
+    signature?: string | null
+    statut?: $Enums.Statut
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    contrat?: ContratCreateNestedOneWithoutDevisInput
+    demande: DemandeCreateNestedOneWithoutDevisInput
+    user: UserCreateNestedOneWithoutDevisInput
+  }
+
+  export type DevisUncheckedCreateWithoutDocumentsInput = {
+    id?: string
+    demandeId: string
+    userId: string
+    numero: string
+    client: string
+    mail: string
+    mail2?: string
+    adresseLivraison?: string | null
+    dateLivraison?: Date | string | null
+    dateExamen?: Date | string | null
+    adresse?: string | null
+    siret?: string | null
+    numNDA?: string | null
+    dateFormation?: Date | string | null
+    suiviPar?: string | null
+    designation: string
+    quantite: number
+    unite: string
+    prixUnitaire: number
+    tva: number
+    exoneration?: string | null
+    datePriseEffet?: Date | string | null
+    montant: number
+    iban?: string | null
+    bic?: string | null
+    banque?: string | null
+    intituleCompte?: string | null
+    signature?: string | null
+    statut?: $Enums.Statut
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    contrat?: ContratUncheckedCreateNestedOneWithoutDevisInput
+  }
+
+  export type DevisCreateOrConnectWithoutDocumentsInput = {
+    where: DevisWhereUniqueInput
+    create: XOR<DevisCreateWithoutDocumentsInput, DevisUncheckedCreateWithoutDocumentsInput>
+  }
+
+  export type UserUpsertWithoutDocumentsInput = {
+    update: XOR<UserUpdateWithoutDocumentsInput, UserUncheckedUpdateWithoutDocumentsInput>
+    create: XOR<UserCreateWithoutDocumentsInput, UserUncheckedCreateWithoutDocumentsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutDocumentsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutDocumentsInput, UserUncheckedUpdateWithoutDocumentsInput>
+  }
+
+  export type UserUpdateWithoutDocumentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    contrats?: ContratUpdateManyWithoutUserNestedInput
+    demandes?: DemandeUpdateManyWithoutUserNestedInput
+    devis?: DevisUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutDocumentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    contrats?: ContratUncheckedUpdateManyWithoutUserNestedInput
+    demandes?: DemandeUncheckedUpdateManyWithoutUserNestedInput
+    devis?: DevisUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type DevisUpsertWithoutDocumentsInput = {
+    update: XOR<DevisUpdateWithoutDocumentsInput, DevisUncheckedUpdateWithoutDocumentsInput>
+    create: XOR<DevisCreateWithoutDocumentsInput, DevisUncheckedCreateWithoutDocumentsInput>
+    where?: DevisWhereInput
+  }
+
+  export type DevisUpdateToOneWithWhereWithoutDocumentsInput = {
+    where?: DevisWhereInput
+    data: XOR<DevisUpdateWithoutDocumentsInput, DevisUncheckedUpdateWithoutDocumentsInput>
+  }
+
+  export type DevisUpdateWithoutDocumentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    numero?: StringFieldUpdateOperationsInput | string
+    client?: StringFieldUpdateOperationsInput | string
+    mail?: StringFieldUpdateOperationsInput | string
+    mail2?: StringFieldUpdateOperationsInput | string
+    adresseLivraison?: NullableStringFieldUpdateOperationsInput | string | null
+    dateLivraison?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dateExamen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    adresse?: NullableStringFieldUpdateOperationsInput | string | null
+    siret?: NullableStringFieldUpdateOperationsInput | string | null
+    numNDA?: NullableStringFieldUpdateOperationsInput | string | null
+    dateFormation?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    suiviPar?: NullableStringFieldUpdateOperationsInput | string | null
+    designation?: StringFieldUpdateOperationsInput | string
+    quantite?: IntFieldUpdateOperationsInput | number
+    unite?: StringFieldUpdateOperationsInput | string
+    prixUnitaire?: FloatFieldUpdateOperationsInput | number
+    tva?: FloatFieldUpdateOperationsInput | number
+    exoneration?: NullableStringFieldUpdateOperationsInput | string | null
+    datePriseEffet?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    montant?: FloatFieldUpdateOperationsInput | number
+    iban?: NullableStringFieldUpdateOperationsInput | string | null
+    bic?: NullableStringFieldUpdateOperationsInput | string | null
+    banque?: NullableStringFieldUpdateOperationsInput | string | null
+    intituleCompte?: NullableStringFieldUpdateOperationsInput | string | null
+    signature?: NullableStringFieldUpdateOperationsInput | string | null
+    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    contrat?: ContratUpdateOneWithoutDevisNestedInput
+    demande?: DemandeUpdateOneRequiredWithoutDevisNestedInput
+    user?: UserUpdateOneRequiredWithoutDevisNestedInput
+  }
+
+  export type DevisUncheckedUpdateWithoutDocumentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    demandeId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    numero?: StringFieldUpdateOperationsInput | string
+    client?: StringFieldUpdateOperationsInput | string
+    mail?: StringFieldUpdateOperationsInput | string
+    mail2?: StringFieldUpdateOperationsInput | string
+    adresseLivraison?: NullableStringFieldUpdateOperationsInput | string | null
+    dateLivraison?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dateExamen?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    adresse?: NullableStringFieldUpdateOperationsInput | string | null
+    siret?: NullableStringFieldUpdateOperationsInput | string | null
+    numNDA?: NullableStringFieldUpdateOperationsInput | string | null
+    dateFormation?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    suiviPar?: NullableStringFieldUpdateOperationsInput | string | null
+    designation?: StringFieldUpdateOperationsInput | string
+    quantite?: IntFieldUpdateOperationsInput | number
+    unite?: StringFieldUpdateOperationsInput | string
+    prixUnitaire?: FloatFieldUpdateOperationsInput | number
+    tva?: FloatFieldUpdateOperationsInput | number
+    exoneration?: NullableStringFieldUpdateOperationsInput | string | null
+    datePriseEffet?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    montant?: FloatFieldUpdateOperationsInput | number
+    iban?: NullableStringFieldUpdateOperationsInput | string | null
+    bic?: NullableStringFieldUpdateOperationsInput | string | null
+    banque?: NullableStringFieldUpdateOperationsInput | string | null
+    intituleCompte?: NullableStringFieldUpdateOperationsInput | string | null
+    signature?: NullableStringFieldUpdateOperationsInput | string | null
+    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    contrat?: ContratUncheckedUpdateOneWithoutDevisNestedInput
+  }
+
+  export type ContratCreateManyUserInput = {
+    id?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    devisId: string
+    nom: string
+    prenom: string
+    adresse: string
+    profession?: string | null
+    dateSignature: Date | string
+    signature: string
+    statut?: string
   }
 
   export type DemandeCreateManyUserInput = {
     id?: string
-    formationId: string
     statut?: $Enums.Statut
+    session: string
     message?: string | null
     commentaire?: string | null
     createdAt?: Date | string
@@ -12097,31 +15330,76 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
-  export type ContratCreateManyUserInput = {
+  export type DocumentCreateManyUserInput = {
     id?: string
-    devisId: string
-    statut?: $Enums.Statut
-    dateDebut?: Date | string | null
-    dateFin?: Date | string | null
+    nom: string
+    description?: string | null
+    cloudinaryId: string
+    url: string
+    type: string
+    public?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    devisId?: string | null
+  }
+
+  export type ContratUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    adresse?: StringFieldUpdateOperationsInput | string
+    profession?: NullableStringFieldUpdateOperationsInput | string | null
+    dateSignature?: DateTimeFieldUpdateOperationsInput | Date | string
+    signature?: StringFieldUpdateOperationsInput | string
+    statut?: StringFieldUpdateOperationsInput | string
+    devis?: DevisUpdateOneRequiredWithoutContratNestedInput
+  }
+
+  export type ContratUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    devisId?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    adresse?: StringFieldUpdateOperationsInput | string
+    profession?: NullableStringFieldUpdateOperationsInput | string | null
+    dateSignature?: DateTimeFieldUpdateOperationsInput | Date | string
+    signature?: StringFieldUpdateOperationsInput | string
+    statut?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type ContratUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    devisId?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    adresse?: StringFieldUpdateOperationsInput | string
+    profession?: NullableStringFieldUpdateOperationsInput | string | null
+    dateSignature?: DateTimeFieldUpdateOperationsInput | Date | string
+    signature?: StringFieldUpdateOperationsInput | string
+    statut?: StringFieldUpdateOperationsInput | string
   }
 
   export type DemandeUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
+    session?: StringFieldUpdateOperationsInput | string
     message?: NullableStringFieldUpdateOperationsInput | string | null
     commentaire?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    formation?: FormationUpdateOneRequiredWithoutDemandesNestedInput
     devis?: DevisUpdateOneWithoutDemandeNestedInput
   }
 
   export type DemandeUncheckedUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
-    formationId?: StringFieldUpdateOperationsInput | string
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
+    session?: StringFieldUpdateOperationsInput | string
     message?: NullableStringFieldUpdateOperationsInput | string | null
     commentaire?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -12131,8 +15409,8 @@ export namespace Prisma {
 
   export type DemandeUncheckedUpdateManyWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
-    formationId?: StringFieldUpdateOperationsInput | string
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
+    session?: StringFieldUpdateOperationsInput | string
     message?: NullableStringFieldUpdateOperationsInput | string | null
     commentaire?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -12169,8 +15447,9 @@ export namespace Prisma {
     statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    demande?: DemandeUpdateOneRequiredWithoutDevisNestedInput
     contrat?: ContratUpdateOneWithoutDevisNestedInput
+    demande?: DemandeUpdateOneRequiredWithoutDevisNestedInput
+    documents?: DocumentUpdateManyWithoutDevisNestedInput
   }
 
   export type DevisUncheckedUpdateWithoutUserInput = {
@@ -12205,6 +15484,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     contrat?: ContratUncheckedUpdateOneWithoutDevisNestedInput
+    documents?: DocumentUncheckedUpdateManyWithoutDevisNestedInput
   }
 
   export type DevisUncheckedUpdateManyWithoutUserInput = {
@@ -12240,76 +15520,95 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type ContratUpdateWithoutUserInput = {
+  export type DocumentUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
-    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
-    dateDebut?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    dateFin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nom?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    cloudinaryId?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    public?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    devis?: DevisUpdateOneRequiredWithoutContratNestedInput
+    devis?: DevisUpdateOneWithoutDocumentsNestedInput
   }
 
-  export type ContratUncheckedUpdateWithoutUserInput = {
+  export type DocumentUncheckedUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
-    devisId?: StringFieldUpdateOperationsInput | string
-    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
-    dateDebut?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    dateFin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nom?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    cloudinaryId?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    public?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    devisId?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type ContratUncheckedUpdateManyWithoutUserInput = {
+  export type DocumentUncheckedUpdateManyWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
-    devisId?: StringFieldUpdateOperationsInput | string
-    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
-    dateDebut?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    dateFin?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nom?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    cloudinaryId?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    public?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    devisId?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type DemandeCreateManyFormationInput = {
+  export type DocumentCreateManyDevisInput = {
     id?: string
-    userId: string
-    statut?: $Enums.Statut
-    message?: string | null
-    commentaire?: string | null
+    nom: string
+    description?: string | null
+    cloudinaryId: string
+    url: string
+    type: string
+    public?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    userId?: string | null
   }
 
-  export type DemandeUpdateWithoutFormationInput = {
+  export type DocumentUpdateWithoutDevisInput = {
     id?: StringFieldUpdateOperationsInput | string
-    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
-    message?: NullableStringFieldUpdateOperationsInput | string | null
-    commentaire?: NullableStringFieldUpdateOperationsInput | string | null
+    nom?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    cloudinaryId?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    public?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneRequiredWithoutDemandesNestedInput
-    devis?: DevisUpdateOneWithoutDemandeNestedInput
+    user?: UserUpdateOneWithoutDocumentsNestedInput
   }
 
-  export type DemandeUncheckedUpdateWithoutFormationInput = {
+  export type DocumentUncheckedUpdateWithoutDevisInput = {
     id?: StringFieldUpdateOperationsInput | string
-    userId?: StringFieldUpdateOperationsInput | string
-    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
-    message?: NullableStringFieldUpdateOperationsInput | string | null
-    commentaire?: NullableStringFieldUpdateOperationsInput | string | null
+    nom?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    cloudinaryId?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    public?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    devis?: DevisUncheckedUpdateOneWithoutDemandeNestedInput
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type DemandeUncheckedUpdateManyWithoutFormationInput = {
+  export type DocumentUncheckedUpdateManyWithoutDevisInput = {
     id?: StringFieldUpdateOperationsInput | string
-    userId?: StringFieldUpdateOperationsInput | string
-    statut?: EnumStatutFieldUpdateOperationsInput | $Enums.Statut
-    message?: NullableStringFieldUpdateOperationsInput | string | null
-    commentaire?: NullableStringFieldUpdateOperationsInput | string | null
+    nom?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    cloudinaryId?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    public?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
 

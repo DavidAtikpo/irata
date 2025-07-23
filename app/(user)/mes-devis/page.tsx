@@ -9,7 +9,8 @@ import {
   XCircleIcon,
   ClockIcon,
   EyeIcon,
-  DocumentDuplicateIcon
+  DocumentDuplicateIcon,
+  DocumentArrowDownIcon
 } from '@heroicons/react/24/outline';
 
 interface Devis {
@@ -19,9 +20,8 @@ interface Devis {
   statut: 'EN_ATTENTE' | 'VALIDE' | 'REFUSE';
   createdAt: string;
   demande: {
-    formation: {
-      titre: string;
-    };
+    session: string;
+    message?: string;
   };
 }
 
@@ -53,6 +53,50 @@ export default function MesDevisPage() {
       console.error('Erreur:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const downloadDevis = async (devisId: string, numero: string) => {
+    try {
+      const response = await fetch(`/api/user/devis/${devisId}/pdf`);
+      if (!response.ok) {
+        throw new Error('Erreur lors du téléchargement du devis');
+      }
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `devis_${numero}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur:', error);
+      setError('Erreur lors du téléchargement du devis');
+    }
+  };
+
+  const downloadContract = async (devisId: string, numero: string) => {
+    try {
+      const response = await fetch(`/api/user/devis/${devisId}/contrat/pdf`);
+      if (!response.ok) {
+        throw new Error('Erreur lors du téléchargement du contrat');
+      }
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `contrat_${numero}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur:', error);
+      setError('Erreur lors du téléchargement du contrat');
     }
   };
 
@@ -150,7 +194,7 @@ export default function MesDevisPage() {
                       <div className="mt-2 sm:flex sm:justify-between">
                         <div className="sm:flex">
                           <p className="flex items-center text-sm text-gray-500">
-                            {devis.demande.formation.titre}
+                            Formation Cordiste IRATA - {devis.demande.session}
                           </p>
                         </div>
                         <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
@@ -165,16 +209,32 @@ export default function MesDevisPage() {
                           className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         >
                           <EyeIcon className="h-4 w-4 mr-1" />
-                          Voir le devis
+                          Voir
+                        </button>
+                        <button
+                          onClick={() => downloadDevis(devis.id, devis.numero)}
+                          className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                          <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
+                          PDF
                         </button>
                         {devis.statut === 'VALIDE' && (
-                          <button
-                            onClick={() => router.push(`/mes-devis/${devis.id}/contrat`)}
-                            className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                          >
-                            <DocumentDuplicateIcon className="h-4 w-4 mr-1" />
-                            Remplir le contrat
-                          </button>
+                          <>
+                            <button
+                              onClick={() => router.push(`/mes-devis/${devis.id}/contrat`)}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            >
+                              <DocumentDuplicateIcon className="h-4 w-4 mr-1" />
+                              Contrat
+                            </button>
+                            <button
+                              onClick={() => downloadContract(devis.id, devis.numero)}
+                              className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                              <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
+                              PDF Contrat
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>

@@ -1,12 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js"
-  output   = "../app/generated/prisma"
+  provider        = "prisma-client-js"
+  output          = "../app/generated/prisma"
   previewFeatures = ["multiSchema"]
 }
 
@@ -17,86 +11,86 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String
-  nom           String
-  prenom        String
-  role          Role      @default(USER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  demandes      Demande[]
-  devis         Devis[]
-  contrats      Contrat[]
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  nom       String
+  prenom    String
+  role      Role      @default(USER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  contrats  Contrat[]
+  demandes  Demande[]
+  devis     Devis[]
+  documents Document[]
 
   @@schema("webirata")
 }
 
 model Formation {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   titre       String
   description String
   duree       String
   prix        Float
-  niveau      String        
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  demandes    Demande[]
+  niveau      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@schema("webirata")
 }
 
 model Demande {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   userId      String
-  formationId String
-  statut      Statut    @default(EN_ATTENTE)
+  statut      Statut   @default(EN_ATTENTE)
+  session     String
   message     String?
-  commentaire String?  // Commentaire de l'administrateur
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id])
-  formation   Formation @relation(fields: [formationId], references: [id])
+  commentaire String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
   devis       Devis?
 
   @@schema("webirata")
 }
 
 model Devis {
-  id                String   @id @default(cuid())
-  demandeId         String   @unique
-  userId            String
-  numero            String
-  client            String
-  mail              String
-  mail2             String   @default("atikpododzi4@gmail.com")
-  adresseLivraison  String?
-  dateLivraison     DateTime?
-  dateExamen        DateTime?
-  adresse           String?
-  siret             String?
-  numNDA            String?
-  dateFormation     DateTime?
-  suiviPar          String?
-  designation       String
-  quantite          Int
-  unite             String
-  prixUnitaire      Float
-  tva               Float
-  exoneration       String?
-  datePriseEffet    DateTime?
-  montant           Float
-  iban              String?
-  bic               String?
-  banque            String?
-  intituleCompte    String?
-  signature         String?
-  statut            Statut   @default(EN_ATTENTE)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  demande           Demande  @relation(fields: [demandeId], references: [id])
-  user              User     @relation(fields: [userId], references: [id])
-  contrat           Contrat?
+  id               String    @id @default(cuid())
+  demandeId        String    @unique
+  userId           String
+  numero           String
+  client           String
+  mail             String
+  mail2            String    @default("atikpododzi4@gmail.com")
+  adresseLivraison String?
+  dateLivraison    DateTime?
+  dateExamen       DateTime?
+  adresse          String?
+  siret            String?
+  numNDA           String?
+  dateFormation    DateTime?
+  suiviPar         String?
+  designation      String
+  quantite         Int
+  unite            String
+  prixUnitaire     Float
+  tva              Float
+  exoneration      String?
+  datePriseEffet   DateTime?
+  montant          Float
+  iban             String?
+  bic              String?
+  banque           String?
+  intituleCompte   String?
+  signature        String?
+  statut           Statut    @default(EN_ATTENTE)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  contrat          Contrat?
+  demande          Demande   @relation(fields: [demandeId], references: [id])
+  user             User      @relation(fields: [userId], references: [id])
+  documents        Document[]
 
   @@schema("webirata")
 }
@@ -111,9 +105,8 @@ model Contrat {
   prenom        String
   adresse       String
   profession    String?
-  statut        String?
   dateSignature DateTime
-  signature     String   @db.Text
+  signature     String
   statut        String   @default("EN_ATTENTE")
   devis         Devis    @relation(fields: [devisId], references: [id])
   user          User     @relation(fields: [userId], references: [id])
@@ -130,6 +123,35 @@ model Settings {
   email     Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@schema("webirata")
+}
+
+model PasswordResetToken {
+  email     String   @unique
+  token     String
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@schema("webirata")
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  nom         String
+  description String?
+  cloudinaryId String  @unique
+  url         String
+  type        String   // 'formation', 'contrat', 'general', etc.
+  public      Boolean  @default(false) // Si accessible à tous les utilisateurs
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations optionnelles
+  userId      String?  // Si spécifique à un utilisateur
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  devisId     String?  // Si lié à un devis spécifique
+  devis       Devis?   @relation(fields: [devisId], references: [id], onDelete: SetNull)
 
   @@schema("webirata")
 }

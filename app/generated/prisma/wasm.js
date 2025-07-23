@@ -145,8 +145,8 @@ exports.Prisma.FormationScalarFieldEnum = {
 exports.Prisma.DemandeScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
-  formationId: 'formationId',
   statut: 'statut',
+  session: 'session',
   message: 'message',
   commentaire: 'commentaire',
   createdAt: 'createdAt',
@@ -189,13 +189,17 @@ exports.Prisma.DevisScalarFieldEnum = {
 
 exports.Prisma.ContratScalarFieldEnum = {
   id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
   devisId: 'devisId',
   userId: 'userId',
-  statut: 'statut',
-  dateDebut: 'dateDebut',
-  dateFin: 'dateFin',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  nom: 'nom',
+  prenom: 'prenom',
+  adresse: 'adresse',
+  profession: 'profession',
+  dateSignature: 'dateSignature',
+  signature: 'signature',
+  statut: 'statut'
 };
 
 exports.Prisma.SettingsScalarFieldEnum = {
@@ -205,6 +209,27 @@ exports.Prisma.SettingsScalarFieldEnum = {
   email: 'email',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PasswordResetTokenScalarFieldEnum = {
+  email: 'email',
+  token: 'token',
+  expires: 'expires',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.DocumentScalarFieldEnum = {
+  id: 'id',
+  nom: 'nom',
+  description: 'description',
+  cloudinaryId: 'cloudinaryId',
+  url: 'url',
+  type: 'type',
+  public: 'public',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  userId: 'userId',
+  devisId: 'devisId'
 };
 
 exports.Prisma.SortOrder = {
@@ -250,7 +275,9 @@ exports.Prisma.ModelName = {
   Demande: 'Demande',
   Devis: 'Devis',
   Contrat: 'Contrat',
-  Settings: 'Settings'
+  Settings: 'Settings',
+  PasswordResetToken: 'PasswordResetToken',
+  Document: 'Document'
 };
 
 /**

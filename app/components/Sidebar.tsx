@@ -9,7 +9,8 @@ import {
   DocumentDuplicateIcon,
   AcademicCapIcon,
   UserGroupIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  FolderIcon
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -17,6 +18,7 @@ const navigation = [
   { name: 'Demandes', href: '/admin/demandes', icon: ClipboardDocumentListIcon },
   { name: 'Devis', href: '/admin/devis', icon: DocumentTextIcon },
   { name: 'Contrats', href: '/admin/contrats', icon: DocumentDuplicateIcon },
+  { name: 'Documents', href: '/admin/documents', icon: FolderIcon },
   { name: 'Formations', href: '/admin/formations', icon: AcademicCapIcon },
   { name: 'Utilisateurs', href: '/admin/utilisateurs', icon: UserGroupIcon },
   { name: 'Paramètres', href: '/admin/parametres', icon: Cog6ToothIcon },

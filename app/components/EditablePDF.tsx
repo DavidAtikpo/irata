@@ -355,8 +355,9 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
             250501 CI.DES 2504SS03 11 Florent MIRBEAU Contrat Formation Professionnelle
           </div>
           <div className="flex flex-col items-center ml-4">
-            <img src="/logo-cides.png" alt="logo cides" className="w-10 h-10 mb-1" />
-            <span className="text-[11px] text-gray-700">Page 2 sur 2</span>
+            <img src="/logo.png" alt="logo cides" className="w-10 h-10 mb-1" />
+            <span className="text-[11px
+            ] text-gray-700">Page 2 sur 2</span>
           </div>
         </div>
       </footer>

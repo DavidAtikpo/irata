@@ -23,7 +23,6 @@ export async function GET() {
             email: true,
           },
         },
-        formation: true,
       },
       orderBy: {
         createdAt: 'desc',

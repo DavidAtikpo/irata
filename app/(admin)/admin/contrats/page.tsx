@@ -29,7 +29,7 @@ interface Devis {
 
 interface Contrat {
   id: string;
-  statut: 'EN_ATTENTE' | 'VALIDE' | 'REFUSE' | 'ANNULE';
+  statut: string; // Changed from specific enum to string
   dateDebut?: string;
   dateFin?: string;
   createdAt: string;
@@ -37,7 +37,7 @@ interface Contrat {
   devis: Devis;
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { color: string; icon: any; label: string }> = {
   EN_ATTENTE: {
     color: 'bg-yellow-500 text-white',
     icon: ClockIcon,
@@ -57,6 +57,11 @@ const statusConfig = {
     color: 'bg-gray-500 text-white',
     icon: ExclamationCircleIcon,
     label: 'Annulé'
+  },
+  SIGNE: {
+    color: 'bg-blue-500 text-white',
+    icon: DocumentDuplicateIcon,
+    label: 'Signé'
   }
 };
 
@@ -172,6 +177,7 @@ export default function AdminContratsPage() {
             >
               <option value="all">Tous les statuts</option>
               <option value="EN_ATTENTE">En attente</option>
+              <option value="SIGNE">Signés</option>
               <option value="VALIDE">Validés</option>
               <option value="REFUSE">Refusés</option>
               <option value="ANNULE">Annulés</option>
@@ -182,7 +188,11 @@ export default function AdminContratsPage() {
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <ul className="divide-y divide-gray-200">
             {filteredContrats.map((contrat) => {
-              const status = statusConfig[contrat.statut];
+              const status = statusConfig[contrat.statut] || {
+                color: 'bg-gray-500 text-white',
+                icon: ExclamationCircleIcon,
+                label: contrat.statut || 'Inconnu'
+              };
               const StatusIcon = status.icon;
               
               return (
@@ -253,6 +263,7 @@ export default function AdminContratsPage() {
                         className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black"
                       >
                         <option value="EN_ATTENTE">En attente</option>
+                        <option value="SIGNE">Signé</option>
                         <option value="VALIDE">Validé</option>
                         <option value="REFUSE">Refusé</option>
                         <option value="ANNULE">Annulé</option>

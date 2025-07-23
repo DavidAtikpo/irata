@@ -3,6 +3,10 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
 
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error('La variable d\'environnement NEXTAUTH_SECRET est manquante ou vide.');
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({

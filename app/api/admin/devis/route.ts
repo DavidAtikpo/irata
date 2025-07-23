@@ -44,8 +44,7 @@ export async function POST(req: Request) {
     const demande = await prisma.demande.findUnique({
       where: { id: demandeId },
       include: { 
-        user: true,
-        formation: true 
+        user: true
       },
     });
 
@@ -67,7 +66,7 @@ export async function POST(req: Request) {
     const devis = await prisma.devis.create({
       data: {
         demandeId,
-        userId: demande.userId, // Utiliser l'ID de l'utilisateur qui a fait la demande
+        userId: demande.userId,
         numero: body.numero,
         client: body.client,
         mail: body.mail,
@@ -97,7 +96,6 @@ export async function POST(req: Request) {
       include: {
         demande: {
           include: {
-            formation: true,
             user: true,
           },
         },
@@ -108,11 +106,11 @@ export async function POST(req: Request) {
     try {
       await sendEmail({
         to: demande.user.email,
-        subject: 'Nouveau devis',
+        subject: 'Nouveau devis - Formation Cordiste IRATA',
         html: `
           <h1>Nouveau devis</h1>
           <p>Bonjour ${demande.user.prenom} ${demande.user.nom},</p>
-          <p>Un nouveau devis a été créé pour votre demande de formation "${demande.formation.titre}".</p>
+          <p>Un nouveau devis a été créé pour votre demande de formation pour la session "${demande.session}".</p>
           <p>Numéro du devis : ${devis.numero}</p>
           <p>Montant : ${devis.montant} €</p>
           <p>Vous pouvez consulter les détails de votre devis dans votre espace personnel.</p>
@@ -134,6 +132,31 @@ export async function POST(req: Request) {
     }
     return NextResponse.json(
       { message: 'Erreur lors de la création du devis', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+} 
+
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { message: 'Non autorisé' },
+        { status: 401 }
+      );
+    }
+
+    const devis = await prisma.devis.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return NextResponse.json(devis);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des devis:', error);
+    return NextResponse.json(
+      { message: 'Erreur lors de la récupération des devis' },
       { status: 500 }
     );
   }

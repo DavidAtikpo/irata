@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
-import puppeteer from 'puppeteer';
 
 export async function POST(req: Request) {
   try {
@@ -25,7 +24,6 @@ export async function POST(req: Request) {
       include: {
         demande: {
           include: {
-            formation: true,
             user: true,
           },
         },
@@ -50,94 +48,33 @@ export async function POST(req: Request) {
       },
     });
 
-    // Générer le PDF du contrat
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-
-    // Créer le HTML du contrat
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            .header { text-align: center; margin-bottom: 40px; }
-            .section { margin-bottom: 30px; }
-            .signature { margin-top: 50px; }
-            .signature img { max-width: 300px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Contrat de Formation</h1>
-          </div>
-          
-          <div class="section">
-            <h2>Informations de la Formation</h2>
-            <p><strong>Formation:</strong> ${devis.demande.formation.titre}</p>
-            <p><strong>Montant:</strong> ${devis.montant} €</p>
-            <p><strong>Date de formation:</strong> ${devis.dateFormation ? new Date(devis.dateFormation).toLocaleDateString('fr-FR') : 'Non définie'}</p>
-          </div>
-
-          <div class="section">
-            <h2>Informations du Stagiaire</h2>
-            <p><strong>Nom:</strong> ${formData.nom}</p>
-            <p><strong>Prénom:</strong> ${formData.prenom}</p>
-            <p><strong>Adresse:</strong> ${formData.adresse}</p>
-            <p><strong>Téléphone:</strong> ${formData.telephone}</p>
-            <p><strong>Email:</strong> ${formData.email}</p>
-            <p><strong>Date de naissance:</strong> ${formData.dateNaissance}</p>
-            <p><strong>Lieu de naissance:</strong> ${formData.lieuNaissance}</p>
-          </div>
-
-          <div class="signature">
-            <h3>Signature du Stagiaire</h3>
-            <img src="${signature}" alt="Signature" />
-          </div>
-        </body>
-      </html>
-    `;
-
-    await page.setContent(html);
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '20px',
-        right: '20px',
-        bottom: '20px',
-        left: '20px',
-      },
-    });
-
-    await browser.close();
-
-    // Envoyer le PDF par email
+    // Envoyer les emails de notification
     try {
+      // Email à l'utilisateur
       await sendEmail({
-        to: formData.email,
-        subject: 'Votre contrat de formation',
+        to: formData.email || devis.demande.user.email,
+        subject: 'Contrat de formation signé',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
             <h2 style="color: #2563eb; margin-bottom: 20px;">Contrat de formation signé</h2>
             <p>Bonjour ${formData.prenom} ${formData.nom},</p>
-            <p>Votre contrat de formation a été signé avec succès.</p>
-            <p>Vous trouverez ci-joint une copie de votre contrat au format PDF.</p>
+            <p>Votre contrat de formation a été signé avec succès pour la session <strong>${devis.demande.session}</strong>.</p>
+            <p>Détails du contrat :</p>
+            <ul style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 15px 0;">
+              <li>Formation : Formation Cordiste IRATA - ${devis.demande.session}</li>
+              <li>Montant : ${devis.montant} €</li>
+              <li>Date de formation : ${devis.dateFormation ? new Date(devis.dateFormation).toLocaleDateString('fr-FR') : 'Non définie'}</li>
+            </ul>
+            <p>Nous vous contacterons prochainement pour finaliser les détails pratiques de la formation.</p>
             <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
               Cordialement,<br>
               L'équipe CI.DES
             </p>
           </div>
-        `,
-        attachments: [
-          {
-            filename: 'contrat.pdf',
-            content: pdf,
-          },
-        ],
+        `
       });
 
-      // Envoyer une copie à l'admin
+      // Email à l'admin
       await sendEmail({
         to: 'atikpododzi4@gmail.com',
         subject: 'Nouveau contrat signé',
@@ -145,23 +82,26 @@ export async function POST(req: Request) {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
             <h2 style="color: #2563eb; margin-bottom: 20px;">Nouveau contrat signé</h2>
             <p>Un nouveau contrat a été signé par ${formData.prenom} ${formData.nom}.</p>
-            <p>Formation: ${devis.demande.formation.titre}</p>
-            <p>Vous trouverez ci-joint une copie du contrat au format PDF.</p>
+            <p>Détails :</p>
+            <ul style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 15px 0;">
+              <li>Formation : Formation Cordiste IRATA - ${devis.demande.session}</li>
+              <li>Email : ${formData.email || devis.demande.user.email}</li>
+              <li>Téléphone : ${formData.telephone}</li>
+              <li>Adresse : ${formData.adresse}</li>
+              <li>Date de naissance : ${formData.dateNaissance}</li>
+              <li>Lieu de naissance : ${formData.lieuNaissance}</li>
+            </ul>
+            <p>Vous pouvez consulter les détails complets du contrat dans votre espace administrateur.</p>
             <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
               Cordialement,<br>
               L'équipe CI.DES
             </p>
           </div>
-        `,
-        attachments: [
-          {
-            filename: 'contrat.pdf',
-            content: pdf,
-          },
-        ],
+        `
       });
-    } catch (error) {
-      console.error('Erreur lors de l\'envoi des emails:', error);
+    } catch (emailError) {
+      console.error('Erreur lors de l\'envoi des emails:', emailError);
+      // On continue même si l'email échoue
     }
 
     return NextResponse.json(contrat);

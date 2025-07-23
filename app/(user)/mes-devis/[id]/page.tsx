@@ -9,8 +9,11 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  DocumentArrowDownIcon,
+  DocumentDuplicateIcon
 } from '@heroicons/react/24/outline';
+import { Button } from '../../../components/ui/button';
 
 interface Devis {
   id: string;
@@ -41,8 +44,12 @@ interface Devis {
   statut: 'EN_ATTENTE' | 'VALIDE' | 'REFUSE';
   createdAt: string;
   demande: {
-    formation: {
-      titre: string;
+    session: string;
+    message?: string;
+    user: {
+      nom: string;
+      prenom: string;
+      email: string;
     };
   };
 }
@@ -114,6 +121,54 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  const downloadDevis = async () => {
+    if (!devis) return;
+    
+    try {
+      const response = await fetch(`/api/user/devis/${resolvedParams.id}/pdf`);
+      if (!response.ok) {
+        throw new Error('Erreur lors du téléchargement du devis');
+      }
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `devis_${devis.numero}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur:', error);
+      setError('Erreur lors du téléchargement du devis');
+    }
+  };
+
+  const downloadContract = async () => {
+    if (!devis) return;
+    
+    try {
+      const response = await fetch(`/api/user/devis/${resolvedParams.id}/contrat/pdf`);
+      if (!response.ok) {
+        throw new Error('Erreur lors du téléchargement du contrat');
+      }
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `contrat_${devis.numero}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur:', error);
+      setError('Erreur lors du téléchargement du contrat');
+    }
+  };
+
   const getStatusConfig = (statut: string) => {
     switch (statut) {
       case 'VALIDE':
@@ -172,7 +227,7 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
             <div>
               <h2 className="text-3xl font-bold text-gray-900">TRAME BDC DEVIS FACTURE</h2>
               <p className="mt-2 text-sm text-gray-600">
-                {devis.demande.formation.titre}
+                {devis.demande.session}
               </p>
             </div>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${devisStatus.color}`}>
@@ -371,6 +426,52 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">Signature</label>
                 <input type="text" className="input text-gray-900" value={devis.signature || ''} readOnly />
+              </div>
+            </div>
+          </fieldset>
+
+          {/* Section Documents */}
+          <fieldset className="border p-6 rounded mb-6 bg-gray-50">
+            <legend className="text-xl font-bold text-gray-900 px-2">Documents</legend>
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={downloadDevis}
+                  variant="outline"
+                  className="flex items-center"
+                >
+                  <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
+                  Télécharger le devis
+                </Button>
+                {devis.statut === 'VALIDE' && (
+                  <>
+                    <Button
+                      onClick={() => router.push(`/mes-devis/${devis.id}/contrat`)}
+                      className="bg-green-600 hover:bg-green-700 text-white flex items-center"
+                    >
+                      <DocumentDuplicateIcon className="h-4 w-4 mr-2" />
+                      Remplir le contrat
+                    </Button>
+                    <Button
+                      onClick={downloadContract}
+                      variant="outline"
+                      className="flex items-center"
+                    >
+                      <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
+                      Télécharger le contrat
+                    </Button>
+                  </>
+                )}
+              </div>
+              <div className="pt-2 border-t">
+                <Button
+                  onClick={() => router.push('/documents')}
+                  variant="outline"
+                  className="flex items-center text-indigo-600 border-indigo-300 hover:bg-indigo-50"
+                >
+                  <DocumentTextIcon className="h-4 w-4 mr-2" />
+                  Voir tous mes documents
+                </Button>
               </div>
             </div>
           </fieldset>
