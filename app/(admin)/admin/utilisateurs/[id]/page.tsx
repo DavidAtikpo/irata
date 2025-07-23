@@ -227,7 +227,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               ) : (
                 <ul className="divide-y divide-gray-200">
                   {user.demandes.map((demande) => {
-                    const status = statusConfig[demande.statut];
+                    const status = statusConfig[demande.statut as keyof typeof statusConfig];
                     const StatusIcon = status.icon;
                     
                     return (
@@ -266,7 +266,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               ) : (
                 <ul className="divide-y divide-gray-200">
                   {user.devis.map((devis) => {
-                    const status = statusConfig[devis.statut];
+                    const status = statusConfig[devis.statut as keyof typeof statusConfig];
                     const StatusIcon = status.icon;
                     
                     return (
@@ -305,7 +305,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               ) : (
                 <ul className="divide-y divide-gray-200">
                   {user.contrats.map((contrat) => {
-                    const status = statusConfig[contrat.statut];
+                    const status = statusConfig[contrat.statut as keyof typeof statusConfig];
                     const StatusIcon = status.icon;
                     
                     return (

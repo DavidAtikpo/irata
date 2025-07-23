@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { use } from 'react';
 
 interface Formation {
   id: string;
@@ -13,7 +14,7 @@ interface Formation {
   niveau: string;
 }
 
-export default function EditFormationPage({ params }: { params: { id: string } }) {
+export default function EditFormationPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -27,6 +28,8 @@ export default function EditFormationPage({ params }: { params: { id: string } }
     prix: 0,
     niveau: '',
   });
+  
+  const resolvedParams = use(params);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -39,7 +42,7 @@ export default function EditFormationPage({ params }: { params: { id: string } }
   useEffect(() => {
     const fetchFormation = async () => {
       try {
-        const response = await fetch(`/api/admin/formations/${params.id}`);
+        const response = await fetch(`/api/admin/formations/${resolvedParams.id}`);
         if (!response.ok) throw new Error('Erreur lors du chargement de la formation');
         const data = await response.json();
         setFormData(data);
@@ -53,7 +56,7 @@ export default function EditFormationPage({ params }: { params: { id: string } }
     if (status === 'authenticated' && session.user.role === 'ADMIN') {
       fetchFormation();
     }
-  }, [status, session, params.id]);
+  }, [status, session, resolvedParams.id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -69,7 +72,7 @@ export default function EditFormationPage({ params }: { params: { id: string } }
     setError('');
 
     try {
-      const response = await fetch(`/api/admin/formations/${params.id}`, {
+      const response = await fetch(`/api/admin/formations/${resolvedParams.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

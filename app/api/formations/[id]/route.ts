@@ -4,10 +4,10 @@ import { prisma } from '@/lib/prisma';
 // GET /api/formations/[id]
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const formation = await prisma.formation.findUnique({
       where: { id },

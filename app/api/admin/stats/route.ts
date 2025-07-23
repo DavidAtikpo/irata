@@ -63,21 +63,22 @@ export async function GET() {
       })
     ]);
 
-    // Formations les plus demandées
-    const formationsPopulaires = await prisma.demande.groupBy({
-      by: ['formationId'],
-      _count: {
-        formationId: true,
-      },
-      orderBy: {
-        _count: {
-          formationId: 'desc',
-        },
-      },
-      take: 5,
-    });
+    // Formations les plus demandées - Temporairement désactivé car pas de relation formationId
+    const formationsPopulaires: any[] = [];
+    // const formationsPopulaires = await prisma.demande.groupBy({
+    //   by: ['formationId'],
+    //   _count: {
+    //     formationId: true,
+    //   },
+    //   orderBy: {
+    //     _count: {
+    //       formationId: 'desc',
+    //     },
+    //   },
+    //   take: 5,
+    // });
 
-    const formationsDetails = await Promise.all(
+    const formationsDetails = formationsPopulaires.length > 0 ? await Promise.all(
       formationsPopulaires.map(async (formation) => {
         const details = await prisma.formation.findUnique({
           where: { id: formation.formationId },
@@ -90,7 +91,7 @@ export async function GET() {
           count: formation._count.formationId,
         };
       })
-    );
+    ) : [];
 
     // Évolution des demandes par mois
     const sixMonthsAgo = new Date();

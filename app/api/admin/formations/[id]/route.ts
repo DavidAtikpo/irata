@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/admin/formations/[id]
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,8 +18,9 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
     const formation = await prisma.formation.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!formation) {
@@ -42,7 +43,7 @@ export async function GET(
 // PUT /api/admin/formations/[id]
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -63,8 +64,9 @@ export async function PUT(
       );
     }
 
+    const { id } = await params;
     const formation = await prisma.formation.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         titre,
         description,
@@ -87,7 +89,7 @@ export async function PUT(
 // DELETE /api/admin/formations/[id]
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -99,8 +101,9 @@ export async function DELETE(
       );
     }
 
+    const { id } = await params;
     await prisma.formation.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json(

@@ -1,13 +1,13 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { ContractForm } from '@/components/ContractForm';
+import { ContractForm } from '../../../../components/ContractForm';
 import { redirect } from 'next/navigation';
 
 export default async function ContratPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const session = await getServerSession(authOptions);
 
@@ -15,12 +15,12 @@ export default async function ContratPage({
     redirect('/login');
   }
 
+  const { id } = await params;
   const devis = await prisma.devis.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       demande: {
         include: {
-          formation: true,
           user: true,
         },
       },

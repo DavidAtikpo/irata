@@ -57,17 +57,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       console.log('=== TENTATIVE ADMIN API ===');
       console.log('Cloudinary ID:', document.cloudinaryId);
 
-      // Méthode 1: Utiliser l'archive API pour créer un téléchargement temporaire
+      // Méthode 1: Utiliser l'URL direct du document
       try {
-        const archiveUrl = cloudinary.utils.archive_url({
-          resource_type: 'image',
-          type: 'upload',
-          target_public_ids: [document.cloudinaryId],
-          mode: 'download',
-          expires_at: Math.floor(Date.now() / 1000) + 300 // 5 minutes
-        });
+        // Utiliser l'URL direct du document stocké
+        const archiveUrl = document.url;
 
-        console.log('Archive URL générée:', archiveUrl);
+        console.log('Document URL:', archiveUrl);
 
         // Télécharger l'archive (qui sera un ZIP contenant le PDF)
         const archiveResponse = await fetch(archiveUrl);
