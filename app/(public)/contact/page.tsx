@@ -62,19 +62,21 @@ export default function ContactPage() {
               <div className="space-y-4 text-gray-600">
                 <div>
                   <h3 className="font-medium text-gray-700">Adresse</h3>
-                  <p>123 Rue de la Formation<br />75000 Paris, France</p>
+                  <p>Chez Chagneau<br />
+                    17270 Boresse-et-Martron<br />
+                    GPS : 45.286198, -0.145154</p>
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-700">Téléphone</h3>
-                  <p>+33 1 23 45 67 89</p>
+                  <p>+33 7 45 37 31 07</p>
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-700">Email</h3>
-                  <p>contact@irata-formation.com</p>
+                  <p>pm@cides.tf</p>
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-700">Horaires</h3>
-                  <p>Lundi - Vendredi : 9h00 - 18h00<br />Samedi - Dimanche : Fermé</p>
+                  <p>Lundi - Vendredi : 8h00 - 17h00<br />Samedi - Dimanche : Fermé</p>
                 </div>
               </div>
             </div>

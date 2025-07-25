@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../../../lib/prisma';
+import { sendEmail } from '../../../../lib/email';
 
 export async function POST(req: Request) {
   try {
@@ -35,6 +36,37 @@ export async function POST(req: Request) {
           password: hashedPassword,
         },
       });
+
+      // Envoyer l'email de bienvenue
+      try {
+        await sendEmail({
+          to: email,
+          subject: 'Bienvenue sur IRATA - Votre compte a été créé',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+              <h2 style="color: #2563eb; margin-bottom: 20px;">Bienvenue sur IRATA !</h2>
+              <p>Bonjour ${prenom} ${nom},</p>
+              <p>Votre compte a été créé avec succès sur notre plateforme IRATA.</p>
+              <p>Vous pouvez maintenant vous connecter avec votre email <strong>${email}</strong> pour :</p>
+              <ul style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                <li>Faire une demande de formation</li>
+                <li>Consulter vos devis</li>
+                <li>Suivre vos contrats</li>
+                <li>Accéder à vos documents</li>
+              </ul>
+              <p>Si vous avez des questions, n'hésitez pas à nous contacter.</p>
+              <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
+                Cordialement,<br>
+                L'équipe CI.DES
+              </p>
+            </div>
+          `,
+        });
+        console.log('Email de bienvenue envoyé avec succès à:', email);
+      } catch (emailError) {
+        console.error('Erreur lors de l\'envoi de l\'email de bienvenue:', emailError);
+        // On continue même si l'email échoue, l'inscription est valide
+      }
 
       const { password: _, ...userWithoutPassword } = user;
       return NextResponse.json({ user: userWithoutPassword }, { status: 201 });
