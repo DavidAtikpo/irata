@@ -38,7 +38,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <div className={`flex h-full flex-col bg-gray-900 transition-all duration-300 ${
+    <div className={`fixed top-16 left-0 h-full flex flex-col bg-gray-900 transition-all duration-300 z-30 ${
       isCollapsed ? 'w-16' : 'w-64'
     }`}>
       {/* Header avec bouton de toggle */}
@@ -60,7 +60,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex flex-1 flex-col">
+      <nav className="flex flex-1 flex-col overflow-y-auto">
         <ul role="list" className="flex flex-1 flex-col gap-y-7">
           <li>
             <ul role="list" className="-mx-2 space-y-1">
