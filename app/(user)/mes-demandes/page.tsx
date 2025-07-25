@@ -5,23 +5,15 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-interface Formation {
-  id: string;
-  titre: string;
-  description: string;
-  duree: number;
-  prix: number;
-  niveau: string;
-}
-
 interface Demande {
   id: string;
-  formationId: string;
   userId: string;
-  message: string | null;
   statut: string;
+  session: string;
+  message: string | null;
+  commentaire: string | null;
   createdAt: string;
-  formation: Formation;
+  updatedAt: string;
 }
 
 export default function MesDemandesPage() {
@@ -32,12 +24,10 @@ export default function MesDemandesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    } else if (status === 'authenticated') {
+    if (status === 'authenticated') {
       fetchDemandes();
     }
-  }, [status, router]);
+  }, [status]);
 
   const fetchDemandes = async () => {
     try {
@@ -55,9 +45,9 @@ export default function MesDemandesPage() {
     }
   };
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
             <h2 className="text-2xl font-semibold text-gray-900">Chargement...</h2>
@@ -69,7 +59,7 @@ export default function MesDemandesPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
             <h2 className="text-2xl font-semibold text-red-600">{error}</h2>
@@ -80,7 +70,7 @@ export default function MesDemandesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Mes demandes de formation</h2>
@@ -91,10 +81,10 @@ export default function MesDemandesPage() {
           <div className="text-center py-12">
             <p className="text-gray-600">Vous n'avez pas encore fait de demande de formation</p>
             <Link
-              href="/formations"
+              href="/demande"
               className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
             >
-              Voir les formations disponibles
+              Faire une demande de formation
             </Link>
           </div>
         ) : (
@@ -106,14 +96,19 @@ export default function MesDemandesPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-medium text-gray-900 truncate">
-                          {demande.formation.titre}
+                          Formation Cordiste IRATA - {demande.session}
                         </h3>
                         <p className="mt-1 text-sm text-gray-500">
-                          Durée: {demande.formation.duree} heures • Niveau: {demande.formation.niveau}
+                          Session: {demande.session}
                         </p>
                         {demande.message && (
                           <p className="mt-2 text-sm text-gray-600">
                             Message: {demande.message}
+                          </p>
+                        )}
+                        {demande.commentaire && (
+                          <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                            <strong>Commentaire de l'administrateur:</strong> {demande.commentaire}
                           </p>
                         )}
                       </div>
@@ -124,19 +119,30 @@ export default function MesDemandesPage() {
                               ? 'bg-yellow-100 text-yellow-800'
                               : demande.statut === 'VALIDE'
                               ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                              : demande.statut === 'REFUSE'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-gray-100 text-gray-800'
                           }`}
                         >
                           {demande.statut === 'EN_ATTENTE'
                             ? 'En attente'
                             : demande.statut === 'VALIDE'
                             ? 'Validée'
-                            : 'Refusée'}
+                            : demande.statut === 'REFUSE'
+                            ? 'Refusée'
+                            : demande.statut === 'ANNULE'
+                            ? 'Annulée'
+                            : demande.statut}
                         </span>
                       </div>
                     </div>
                     <div className="mt-2 text-sm text-gray-500">
-                      Demandée le {new Date(demande.createdAt).toLocaleDateString()}
+                      Demandée le {new Date(demande.createdAt).toLocaleDateString('fr-FR')}
+                      {demande.updatedAt !== demande.createdAt && (
+                        <span className="ml-2">
+                          • Mise à jour le {new Date(demande.updatedAt).toLocaleDateString('fr-FR')}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </li>

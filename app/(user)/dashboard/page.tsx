@@ -28,14 +28,10 @@ export default function UserDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    } else if (status === 'authenticated' && session?.user?.role !== 'USER') {
-      router.push('/');
-    } else if (status === 'authenticated') {
+    if (status === 'authenticated') {
       fetchStats();
     }
-  }, [status, session, router]);
+  }, [status]);
 
   const fetchStats = async () => {
     try {
@@ -53,9 +49,9 @@ export default function UserDashboard() {
     }
   };
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
             <h2 className="text-2xl font-semibold text-gray-900">Chargement...</h2>
@@ -67,7 +63,7 @@ export default function UserDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
             <h2 className="text-2xl font-semibold text-red-600">{error}</h2>
@@ -78,7 +74,7 @@ export default function UserDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Mon Tableau de bord</h2>
