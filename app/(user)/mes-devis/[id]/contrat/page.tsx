@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { EditablePDF } from '../../../../components/EditablePDF';
+import { EditablePDF } from '@/app/components/EditablePDF';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 export default function ContratPage({ params }: { params: Promise<{ id: string }> }) {
