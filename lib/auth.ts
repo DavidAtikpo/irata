@@ -20,6 +20,8 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email et mot de passe requis');
         }
 
+        console.log('🔍 Tentative de connexion pour:', credentials.email);
+
         const user = await prisma.user.findUnique({
           where: {
             email: credentials.email
@@ -27,8 +29,17 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
+          console.log('❌ Utilisateur non trouvé:', credentials.email);
           throw new Error('Utilisateur non trouvé');
         }
+
+        console.log('✅ Utilisateur trouvé:', {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          nom: user.nom,
+          prenom: user.prenom
+        });
 
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
@@ -36,8 +47,14 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isPasswordValid) {
+          console.log('❌ Mot de passe incorrect pour:', credentials.email);
           throw new Error('Mot de passe incorrect');
         }
+
+        console.log('✅ Authentification réussie pour:', {
+          email: user.email,
+          role: user.role
+        });
 
         return {
           id: user.id,
@@ -56,6 +73,11 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        console.log('🔧 JWT Callback - User:', {
+          id: user.id,
+          role: user.role,
+          email: user.email
+        });
         token.id = user.id;
         token.role = user.role;
       }
@@ -63,6 +85,11 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token && session.user) {
+        console.log('🔧 Session Callback - Token:', {
+          id: token.id,
+          role: token.role,
+          email: token.email
+        });
         session.user.id = token.id;
         session.user.role = token.role;
       }

@@ -16,10 +16,18 @@ export default function AdminLayout({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
+    console.log('🔍 Admin Layout - Status:', status);
+    console.log('🔍 Admin Layout - Session:', session);
+    
     if (status === 'unauthenticated') {
+      console.log('❌ Utilisateur non authentifié, redirection vers /login');
       router.push('/login');
     } else if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
+      console.log('❌ Utilisateur authentifié mais pas admin, redirection vers /');
+      console.log('🔍 Rôle de l\'utilisateur:', session?.user?.role);
       router.push('/');
+    } else if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
+      console.log('✅ Utilisateur admin authentifié');
     }
   }, [status, session, router]);
 
@@ -70,12 +78,14 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminHeader onToggleSidebar={toggleSidebar} />
-      <div className="flex">
+      <div className="flex pt-16">
         <Sidebar 
           isCollapsed={isSidebarCollapsed} 
           onToggle={toggleSidebar} 
         />
-        <main className="flex-1 overflow-y-auto bg-gray-100 p-8 transition-all duration-300">
+        <main className={`flex-1 overflow-y-auto bg-gray-100 p-8 transition-all duration-300 min-h-screen ${
+          isSidebarCollapsed ? 'ml-16' : 'ml-64'
+        }`}>
           {children}
         </main>
       </div>
