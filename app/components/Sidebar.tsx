@@ -14,7 +14,8 @@ import {
   FolderIcon,
   ExclamationTriangleIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -23,6 +24,7 @@ const navigation = [
   { name: 'Devis', href: '/admin/devis', icon: DocumentTextIcon },
   { name: 'Contrats', href: '/admin/contrats', icon: DocumentDuplicateIcon },
   { name: 'Documents', href: '/admin/documents', icon: FolderIcon },
+  { name: 'Inspections', href: '/admin/inspections', icon: ClipboardDocumentCheckIcon },
   { name: '⚠️ État Cloudinary', href: '/admin/cloudinary-info', icon: ExclamationTriangleIcon },
   { name: 'Formations', href: '/admin/formations', icon: AcademicCapIcon },
   { name: 'Utilisateurs', href: '/admin/utilisateurs', icon: UserGroupIcon },

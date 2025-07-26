@@ -41,13 +41,19 @@ export async function POST(req: Request) {
       try {
         await sendEmail({
           to: email,
-          subject: 'Bienvenue sur IRATA - Votre compte a été créé',
+          subject: 'Bienvenue sur CI.DES formation irata - Votre compte a été créé',
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
               <h2 style="color: #2563eb; margin-bottom: 20px;">Bienvenue sur IRATA !</h2>
               <p>Bonjour ${prenom} ${nom},</p>
               <p>Votre compte a été créé avec succès sur notre plateforme IRATA.</p>
-              <p>Vous pouvez maintenant vous connecter avec votre email <strong>${email}</strong> pour :</p>
+              <p>Vous pouvez maintenant vous connecter avec votre email <strong>${email}</strong> en cliquant sur le lien ci-dessous :</p>
+              <div style="text-align: center; margin: 20px 0;">
+                <a href="https://irata-wci8-git-main-dubon-services-projects.vercel.app/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+                  Se connecter
+                </a>
+              </div>
+              <p>Une fois connecté, vous pourrez :</p>
               <ul style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 15px 0;">
                 <li>Faire une demande de formation</li>
                 <li>Consulter vos devis</li>
