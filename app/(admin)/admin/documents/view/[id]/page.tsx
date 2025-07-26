@@ -10,6 +10,7 @@ interface Document {
   id: string;
   nom: string;
   description?: string;
+  cloudinaryId: string;
   url: string;
   type: string;
   public: boolean;
