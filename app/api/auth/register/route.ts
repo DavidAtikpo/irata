@@ -67,7 +67,7 @@ export async function POST(req: Request) {
               <p>Votre compte a été créé avec succès sur notre plateforme IRATA.</p>
               <p>Vous pouvez maintenant vous connecter avec votre email <strong>${email}</strong> en cliquant sur le lien ci-dessous :</p>
               <div style="text-align: center; margin: 20px 0;">
-                <a href="https://irata-wci8-git-main-dubon-services-projects.vercel.app/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+                <a href="https://irata.vercel.app/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
                   Se connecter
                 </a>
               </div>
