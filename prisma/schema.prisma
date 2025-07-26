@@ -10,18 +10,25 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  password  String
-  nom       String
-  prenom    String
-  role      Role      @default(USER)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  contrats  Contrat[]
-  demandes  Demande[]
-  devis     Devis[]
-  documents Document[]
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  password              String
+  nom                   String?
+  prenom                String?
+  role                  Role      @default(USER)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  passwordResetToken    String?   @unique
+  passwordResetExpires  DateTime?
+  
+  // Relations
+  demandes              Demande[]
+  devis                 Devis[]
+  contrats              Contrat[]
+  documents             Document[]
+  inspections           EquipmentInspection[]
+  jobPlans              JobPlan[]
+  assessorInspections   EquipmentInspection[] @relation("AssessorInspections")
 
   @@schema("webirata")
 }
@@ -168,6 +175,123 @@ enum Statut {
   VALIDE
   REFUSE
   ANNULE
+
+  @@schema("webirata")
+}
+
+enum InspectionStatus {
+  DRAFT
+  SUBMITTED
+  ASSESSED
+  APPROVED
+  REJECTED
+
+  @@schema("webirata")
+}
+
+enum Verdict {
+  PASS
+  FAIL
+  DISCREPANCY
+
+  @@schema("webirata")
+}
+
+model EquipmentInspection {
+  id                    String    @id @default(cuid())
+  
+  // Document details
+  docNumber             String    @default("HS019ENG")
+  dateOfIssue           DateTime  @default(now())
+  issueNumber           String    @default("001")
+  
+  // Equipment and technician details
+  inspectionDate        DateTime
+  technicianName        String
+  technicianIrataNo     String
+  makeOfItem            String
+  modelOfItem           String
+  itemIdNumber          String
+  
+  // Conformance and History
+  standardsConformance  String?
+  suitabilityOfItem     String?
+  ageOfItem             String?
+  historyOfItem         String?
+  
+  // Visual & Tactile check
+  metalPartsCondition   String?
+  textilePartsCondition String?
+  plasticPartsCondition String?
+  
+  // Operational check
+  movingPartsFunction   String?
+  operationalCheck      String?
+  compatibilityCheck    String?
+  
+  // Overall assessment
+  overallComments       String?
+  technicianVerdict     Verdict?
+  
+  // Assessor section
+  assessorVerdict       Verdict?
+  assessorComments      String?
+  candidateCorrectlyIdentified Boolean?
+  
+  // Status and metadata
+  status                InspectionStatus @default(DRAFT)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  // Relations
+  technicianId          String
+  technician            User      @relation(fields: [technicianId], references: [id])
+  assessorId            String?
+  assessor              User?     @relation("AssessorInspections", fields: [assessorId], references: [id])
+
+  @@schema("webirata")
+}
+
+model JobPlan {
+  id                    String    @id @default(cuid())
+  
+  // Document details
+  docNumber             String    @default("HS061ENG")
+  dateOfIssue           DateTime  @default(now())
+  issueNumber           String    @default("001")
+  
+  // Site and company details
+  technicianName        String
+  technicianIrataNo     String
+  jobDate               DateTime
+  jobLength             String?
+  clientDetails         String?
+  
+  // Work description
+  taskDetails           String
+  location              String
+  height                String?
+  accessMethod          String?
+  communicationMethods  String?
+  permitRequirements    String?
+  
+  // Anchor selection
+  anchorStructure       String
+  anchorEquipment       String
+  
+  // Emergency planning
+  accessPlan            String
+  evacuationPlan        String
+  rescuePlan            String
+  
+  // Status and metadata
+  status                InspectionStatus @default(DRAFT)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  // Relations
+  technicianId          String
+  technician            User      @relation(fields: [technicianId], references: [id])
 
   @@schema("webirata")
 }
