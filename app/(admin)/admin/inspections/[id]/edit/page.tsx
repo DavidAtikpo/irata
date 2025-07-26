@@ -28,7 +28,8 @@ interface EquipmentInspection {
   status: string;
 }
 
-export default function EditInspectionPage({ params }: { params: { id: string } }) {
+export default async function EditInspectionPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -69,11 +70,11 @@ export default function EditInspectionPage({ params }: { params: { id: string } 
     if (session?.user?.role === 'ADMIN') {
       fetchInspection();
     }
-  }, [session, params.id]);
+  }, [session, id]);
 
   const fetchInspection = async () => {
     try {
-      const response = await fetch(`/api/admin/inspections/${params.id}`);
+      const response = await fetch(`/api/admin/inspections/${id}`);
       if (response.ok) {
         const data = await response.json();
         setForm({
@@ -100,7 +101,7 @@ export default function EditInspectionPage({ params }: { params: { id: string } 
     setSaving(true);
 
     try {
-      const response = await fetch(`/api/admin/inspections/${params.id}`, {
+              const response = await fetch(`/api/admin/inspections/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +110,7 @@ export default function EditInspectionPage({ params }: { params: { id: string } 
       });
 
       if (response.ok) {
-        router.push(`/admin/inspections/${params.id}`);
+        router.push(`/admin/inspections/${id}`);
       } else {
         console.error('Erreur lors de la mise à jour de l\'inspection');
       }

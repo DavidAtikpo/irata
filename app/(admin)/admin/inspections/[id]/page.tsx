@@ -47,7 +47,8 @@ interface EquipmentInspection {
   };
 }
 
-export default function InspectionDetailPage({ params }: { params: { id: string } }) {
+export default async function InspectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const { data: session, status } = useSession();
   const router = useRouter();
   const [inspection, setInspection] = useState<EquipmentInspection | null>(null);
@@ -71,11 +72,11 @@ export default function InspectionDetailPage({ params }: { params: { id: string 
     if (session?.user?.role === 'ADMIN') {
       fetchInspection();
     }
-  }, [session, params.id]);
+  }, [session, id]);
 
   const fetchInspection = async () => {
     try {
-      const response = await fetch(`/api/admin/inspections/${params.id}`);
+      const response = await fetch(`/api/admin/inspections/${id}`);
       if (response.ok) {
         const data = await response.json();
         setInspection(data);
@@ -94,7 +95,7 @@ export default function InspectionDetailPage({ params }: { params: { id: string 
     setSubmitting(true);
 
     try {
-      const response = await fetch(`/api/admin/inspections/${params.id}`, {
+              const response = await fetch(`/api/admin/inspections/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

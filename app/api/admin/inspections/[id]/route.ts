@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -15,7 +16,7 @@ export async function GET(
     }
 
     const inspection = await prisma.equipmentInspection.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         technician: {
           select: {
@@ -52,8 +53,9 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -65,7 +67,7 @@ export async function PUT(
     
     // Vérifier si l'inspection existe
     const existingInspection = await prisma.equipmentInspection.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!existingInspection) {
@@ -75,7 +77,7 @@ export async function PUT(
     // Si c'est un assesseur qui met à jour
     if (session.user.role === 'ADMIN' && body.assessorVerdict !== undefined) {
       const updatedInspection = await prisma.equipmentInspection.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           assessorVerdict: body.assessorVerdict,
           assessorComments: body.assessorComments,
@@ -109,7 +111,7 @@ export async function PUT(
     // Si c'est le technicien qui met à jour
     if (existingInspection.technicianId === session.user.id) {
       const updatedInspection = await prisma.equipmentInspection.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           inspectionDate: body.inspectionDate ? new Date(body.inspectionDate) : undefined,
           technicianName: body.technicianName,
@@ -166,8 +168,9 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -176,7 +179,7 @@ export async function DELETE(
     }
 
     await prisma.equipmentInspection.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({ message: 'Inspection supprimée avec succès' });
