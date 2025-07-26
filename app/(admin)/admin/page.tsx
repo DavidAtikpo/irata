@@ -49,7 +49,7 @@ async function getStats() {
     totalContrats,
     contratsEnAttente,
     montantTotalDevis: montantTotalDevis._sum?.montant || 0,
-    montantTotalContrats: montantTotalContrats.reduce((sum, contrat) => sum + (contrat.devis?.montant || 0), 0)
+    montantTotalContrats: montantTotalContrats.reduce((sum: number, contrat: any) => sum + (contrat.devis?.montant || 0), 0)
   };
 }
 
