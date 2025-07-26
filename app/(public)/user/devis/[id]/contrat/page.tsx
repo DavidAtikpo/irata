@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { ContractForm } from '@/app/components/ContractForm';
+import { ContractForm } from '../../../../../components/ContractForm';
 import { redirect } from 'next/navigation';
 
 export default async function ContratPage({
