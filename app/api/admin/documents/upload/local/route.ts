@@ -47,15 +47,28 @@ export async function POST(req: NextRequest) {
       await mkdir(uploadsDir, { recursive: true });
     }
 
-    // Générer un nom de fichier unique
+    // Générer un nom de fichier unique avec extension .pdf
     const timestamp = Date.now();
     const fileName = `${type}_${timestamp}.pdf`;
     const filePath = join(uploadsDir, fileName);
+
+    console.log('Tentative de sauvegarde du fichier:', {
+      originalName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      targetPath: filePath
+    });
 
     // Convertir le fichier en buffer et l'enregistrer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await writeFile(filePath, buffer);
+
+    console.log('Fichier sauvegardé avec succès:', {
+      savedPath: filePath,
+      fileSize: buffer.length,
+      existsAfterSave: existsSync(filePath)
+    });
 
     // Créer l'URL d'accès public
     const publicUrl = `/uploads/documents/${fileName}`;
