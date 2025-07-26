@@ -47,15 +47,13 @@ export async function POST(req: NextRequest) {
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
-          resource_type: 'raw', // Revenir à 'raw' mais avec des paramètres publics forcés
+          resource_type: 'raw',
           folder: 'irata-documents',
           public_id: `${type}_${Date.now()}`,
           type: 'upload',
           access_mode: 'public',
           invalidate: true,
           overwrite: true,
-          // Pas de signature automatique
-          auto_tagging: false,
           // Configuration publique explicite
           delivery_type: 'upload',
           // Headers pour forcer l'accessibilité
