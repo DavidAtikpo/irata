@@ -62,7 +62,7 @@ export async function POST(req: Request) {
           subject: 'Bienvenue sur CI.DES formation irata - Votre compte a été créé',
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
-              <h2 style="color: #2563eb; margin-bottom: 20px;">Bienvenue sur IRATA !</h2>
+              <h2 style="color: #2563eb; margin-bottom: 20px;">Bienvenue sur C.IDES !</h2>
               <p>Bonjour ${prenom} ${nom},</p>
               <p>Votre compte a été créé avec succès sur notre plateforme IRATA.</p>
               <p>Vous pouvez maintenant vous connecter avec votre email <strong>${email}</strong> en cliquant sur le lien ci-dessous :</p>
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
               <h2 style="color: #dc2626; margin-bottom: 20px;">Nouvelle Préinscription IRATA</h2>
-              <p><strong>Un nouvel utilisateur s'est inscrit sur la plateforme IRATA.</strong></p>
+              <p><strong>Un nouvel utilisateur s'est inscrit sur la plateforme C.IDES.</strong></p>
               
               <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0;">
                 <h3 style="color: #374151; margin-bottom: 10px;">Informations de l'utilisateur :</h3>
