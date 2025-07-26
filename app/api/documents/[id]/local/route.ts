@@ -65,7 +65,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       if (!existsSync(filePath)) {
         console.log('Fichier local non trouvé, tentative de redirection vers l\'URL publique');
         
-        // Si le fichier n'existe pas localement, essayer de rediriger vers l'URL
+        // Si le fichier n'existe pas localement
         if (document.url.startsWith('/uploads/')) {
           return NextResponse.json(
             { message: 'Fichier local non trouvé' },
@@ -73,22 +73,69 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           );
         }
         
-        // Sinon, rediriger vers l'URL externe (Cloudinary)
+        // Si c'est une URL Cloudinary, essayer de la servir directement
+        if (document.url.includes('cloudinary.com')) {
+          console.log('Tentative d\'accès à Cloudinary:', document.url);
+          
+          try {
+            const cloudinaryResponse = await fetch(document.url);
+            if (cloudinaryResponse.ok) {
+              const pdfBuffer = await cloudinaryResponse.arrayBuffer();
+              return new NextResponse(pdfBuffer, {
+                headers: {
+                  'Content-Type': 'application/pdf',
+                  'Content-Disposition': `inline; filename="${document.nom}.pdf"`,
+                  'Cache-Control': 'private, max-age=0',
+                  'Content-Length': pdfBuffer.byteLength.toString(),
+                  'X-Storage-Type': 'cloudinary',
+                },
+              });
+            } else {
+              throw new Error(`Cloudinary returned ${cloudinaryResponse.status}`);
+            }
+          } catch (cloudinaryError) {
+            console.error('Erreur Cloudinary:', cloudinaryError);
+            return NextResponse.json(
+              { 
+                message: 'Erreur d\'accès à Cloudinary - service temporairement indisponible',
+                error: cloudinaryError instanceof Error ? cloudinaryError.message : 'Erreur inconnue'
+              },
+              { status: 503 }
+            );
+          }
+        }
+        
+        // Fallback : redirection vers l'URL
         return NextResponse.redirect(document.url);
       }
 
       // Lire le fichier
       const fileBuffer = await readFile(filePath);
       
-      console.log('Fichier local lu avec succès, taille:', fileBuffer.length);
+      console.log('Fichier local lu avec succès:', {
+        path: filePath,
+        size: fileBuffer.length,
+        documentName: document.nom,
+        cloudinaryId: document.cloudinaryId
+      });
+
+      // Vérifier que c'est bien un PDF (magic number)
+      const isPdf = fileBuffer.length >= 4 && 
+                   fileBuffer[0] === 0x25 && // %
+                   fileBuffer[1] === 0x50 && // P
+                   fileBuffer[2] === 0x44 && // D
+                   fileBuffer[3] === 0x46;   // F
+
+      console.log('Vérification PDF:', { isPdf, firstBytes: fileBuffer.slice(0, 4) });
 
       return new NextResponse(fileBuffer, {
         headers: {
-          'Content-Type': 'application/pdf',
+          'Content-Type': isPdf ? 'application/pdf' : 'application/octet-stream',
           'Content-Disposition': `inline; filename="${document.nom}.pdf"`,
           'Cache-Control': 'private, max-age=0',
           'Content-Length': fileBuffer.length.toString(),
           'X-Storage-Type': 'local',
+          'X-Is-PDF': isPdf.toString(),
         },
       });
 

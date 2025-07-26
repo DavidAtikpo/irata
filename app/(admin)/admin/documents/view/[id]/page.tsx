@@ -152,6 +152,12 @@ export default function ViewDocumentPage({ params }: { params: Promise<{ id: str
                  Télécharger (Local)
                </button>
                <button
+                 onClick={() => window.open(`/api/documents/${document.id}/debug`, '_blank')}
+                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm"
+               >
+                 Debug Info
+               </button>
+               <button
                  onClick={() => window.open(`/api/documents/${document.id}/admin`, '_blank')}
                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md text-sm"
                >
@@ -167,33 +173,45 @@ export default function ViewDocumentPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
 
+        {/* Informations de débogage */}
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <h3 className="font-semibold text-yellow-800 mb-2">Informations de débogage :</h3>
+          <div className="text-sm text-yellow-700 space-y-1">
+            <p><strong>ID :</strong> {document.id}</p>
+            <p><strong>Cloudinary ID :</strong> {document.cloudinaryId}</p>
+            <p><strong>URL :</strong> {document.url}</p>
+            <p><strong>Type :</strong> {document.type}</p>
+            <p><strong>Public :</strong> {document.public ? 'Oui' : 'Non'}</p>
+          </div>
+        </div>
+
         {/* Visualisation du document */}
         <div className="border rounded-lg bg-gray-50 p-4">
-                     <div className="h-96 md:h-screen max-h-screen">
-             <iframe
-               src={`/api/documents/${document.id}/local`}
-               className="w-full h-full border rounded"
-               title={document.nom}
-               onError={() => {
-                 console.error('Erreur lors du chargement de l\'iframe');
-               }}
-             >
+          <div className="h-96 md:h-screen max-h-screen">
+            <iframe
+              src={`/api/documents/${document.id}/local`}
+              className="w-full h-full border rounded"
+              title={document.nom}
+              onError={() => {
+                console.error('Erreur lors du chargement de l\'iframe');
+              }}
+            >
               <div className="flex flex-col items-center justify-center h-full">
                 <p className="mb-4 text-gray-600">Votre navigateur ne supporte pas l'affichage des PDF intégrés.</p>
-                                 <div className="space-x-2">
-                   <button
-                     onClick={() => window.open(`/api/documents/${document.id}/stream`, '_blank')}
-                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm"
-                   >
-                     Ouvrir dans un nouvel onglet
-                   </button>
-                   <button
-                     onClick={() => handleDownload(`/api/documents/${document.id}/download`, document.nom)}
-                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm"
-                   >
-                     Télécharger le fichier
-                   </button>
-                 </div>
+                <div className="space-x-2">
+                  <button
+                    onClick={() => window.open(`/api/documents/${document.id}/stream`, '_blank')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm"
+                  >
+                    Ouvrir dans un nouvel onglet
+                  </button>
+                  <button
+                    onClick={() => handleDownload(`/api/documents/${document.id}/download`, document.nom)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm"
+                  >
+                    Télécharger le fichier
+                  </button>
+                </div>
               </div>
             </iframe>
           </div>
