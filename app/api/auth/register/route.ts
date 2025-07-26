@@ -55,7 +55,7 @@ export async function POST(req: Request) {
 
       const { user } = result;
 
-      // Envoyer l'email de bienvenue
+      // Envoyer l'email de bienvenue à l'utilisateur
       try {
         await sendEmail({
           to: email,
@@ -90,6 +90,42 @@ export async function POST(req: Request) {
       } catch (emailError) {
         console.error('Erreur lors de l\'envoi de l\'email de bienvenue:', emailError);
         // On continue même si l'email échoue, l'inscription est valide
+      }
+
+      // Envoyer l'email de notification à l'admin
+      try {
+        await sendEmail({
+          to: 'pmcides@gmail.com',
+          subject: 'Nouvelle préinscription IRATA - CI.DES',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+              <h2 style="color: #dc2626; margin-bottom: 20px;">Nouvelle Préinscription IRATA</h2>
+              <p><strong>Un nouvel utilisateur s'est inscrit sur la plateforme IRATA.</strong></p>
+              
+              <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                <h3 style="color: #374151; margin-bottom: 10px;">Informations de l'utilisateur :</h3>
+                <p><strong>Nom :</strong> ${prenom} ${nom}</p>
+                <p><strong>Email :</strong> ${email}</p>
+                <p><strong>Session choisie :</strong> ${session || 'Non spécifiée'}</p>
+                <p><strong>Message :</strong> ${message || 'Aucun message'}</p>
+                <p><strong>Date d'inscription :</strong> ${new Date().toLocaleString('fr-FR')}</p>
+              </div>
+              
+              <p style="margin-top: 20px; color: #6b7280; font-size: 14px;">
+                Vous pouvez consulter cette demande dans votre interface d'administration.
+              </p>
+              
+              <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
+                Cordialement,<br>
+                Système de notification CI.DES
+              </p>
+            </div>
+          `,
+        });
+        console.log('Email de notification admin envoyé avec succès');
+      } catch (adminEmailError) {
+        console.error('Erreur lors de l\'envoi de l\'email de notification admin:', adminEmailError);
+        // On continue même si l'email admin échoue
       }
 
       const { password: _, ...userWithoutPassword } = user;
