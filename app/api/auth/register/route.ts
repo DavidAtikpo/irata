@@ -6,7 +6,7 @@ import { sendEmail } from '../../../../lib/email';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { step, email, nom, prenom, password } = body;
+    const { step, email, nom, prenom, password, session, message } = body;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
@@ -28,14 +28,32 @@ export async function POST(req: Request) {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await prisma.user.create({
-        data: {
-          nom,
-          prenom,
-          email,
-          password: hashedPassword,
-        },
+      
+      // Créer l'utilisateur et la demande en transaction
+      const result = await prisma.$transaction(async (tx: any) => {
+        const user = await tx.user.create({
+          data: {
+            nom,
+            prenom,
+            email,
+            password: hashedPassword,
+          },
+        });
+
+        // Créer la demande avec la session choisie
+        const demande = await tx.demande.create({
+          data: {
+            userId: user.id,
+            session: session || 'Session non spécifiée',
+            message: message || '',
+            statut: 'EN_ATTENTE',
+          },
+        });
+
+        return { user, demande };
       });
+
+      const { user } = result;
 
       // Envoyer l'email de bienvenue
       try {
