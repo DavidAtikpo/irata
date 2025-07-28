@@ -137,11 +137,11 @@ export default function MesDevisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-6 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Mes devis</h2>
-          <p className="mt-2 text-sm text-gray-600">
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes devis</h2>
+          <p className="mt-2 text-sm sm:text-base text-gray-600">
             Consultez l'état de vos devis
           </p>
         </div>
@@ -160,62 +160,62 @@ export default function MesDevisPage() {
         )}
 
         {devis.length === 0 ? (
-          <div className="text-center py-12">
-            <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Aucun devis</h3>
-            <p className="mt-1 text-sm text-gray-500">
+          <div className="text-center py-8 sm:py-12">
+            <DocumentTextIcon className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm sm:text-base font-medium text-gray-900">Aucun devis</h3>
+            <p className="mt-1 text-xs sm:text-sm text-gray-500">
               Vous n'avez pas encore de devis.
             </p>
           </div>
         ) : (
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <div className="bg-white shadow overflow-hidden rounded-lg">
             <ul className="divide-y divide-gray-200">
               {devis.map((devis) => {
                 const status = getStatusConfig(devis.statut);
                 const StatusIcon = status.icon;
 
                 return (
-                  <li key={devis.id}>
+                  <li key={devis.id} className="hover:bg-gray-50 transition-colors duration-200">
                     <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                         <div className="flex items-center">
-                          <DocumentTextIcon className="h-5 w-5 text-gray-400 mr-2" />
+                          <DocumentTextIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-2" />
                           <p className="text-sm font-medium text-indigo-600 truncate">
                             Devis #{devis.numero}
                           </p>
                         </div>
-                        <div className="ml-2 flex-shrink-0 flex">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
-                            <StatusIcon className="h-4 w-4 mr-1" />
+                        <div className="flex-shrink-0 flex">
+                          <span className={`inline-flex items-center px-2 py-0.5 sm:px-2.5 rounded-full text-xs font-medium ${status.color}`}>
+                            <StatusIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                             {status.label}
                           </span>
                         </div>
                       </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
+                      <div className="mt-3 sm:mt-2 sm:flex sm:justify-between">
                         <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500">
+                          <p className="flex items-center text-xs sm:text-sm text-gray-500">
                             Formation Cordiste IRATA - {devis.demande.session}
                           </p>
                         </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                        <div className="mt-2 flex items-center text-xs sm:text-sm text-gray-500 sm:mt-0">
                           <p>
                             {new Date(devis.createdAt).toLocaleDateString('fr-FR')} - {devis.montant.toLocaleString('fr-FR')} €
                           </p>
                         </div>
                       </div>
-                      <div className="mt-2 flex justify-end space-x-2">
+                      <div className="mt-3 sm:mt-2 flex flex-wrap justify-end gap-2">
                         <button
                           onClick={() => router.push(`/mes-devis/${devis.id}`)}
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                          className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
                         >
-                          <EyeIcon className="h-4 w-4 mr-1" />
+                          <EyeIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           Voir
                         </button>
                         <button
                           onClick={() => downloadDevis(devis.id, devis.numero)}
-                          className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                          className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
                         >
-                          <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
+                          <DocumentArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           PDF
                         </button>
                         {devis.statut === 'VALIDE' && (

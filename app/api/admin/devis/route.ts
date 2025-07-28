@@ -149,7 +149,16 @@ export async function GET() {
     }
 
     const devis = await prisma.devis.findMany({
-      orderBy: { createdAt: 'desc' },
+      include: {
+        demande: {
+          include: {
+            user: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
 
     return NextResponse.json(devis);

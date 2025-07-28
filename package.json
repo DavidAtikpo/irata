@@ -15,6 +15,7 @@
     "@prisma/client": "^6.7.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/nodemailer": "^6.4.17",
+    "@types/pdfkit": "^0.13.4",
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.4.9",
     "cloudinary": "^2.7.0",
@@ -25,12 +26,15 @@
     "next-auth": "^4.24.11",
     "nodemailer": "^6.10.1",
     "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.15.0",
+    "puppeteer": "^24.15.0",
     "react": "^19.0.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
     "react-signature-canvas": "^1.1.0-alpha.2",
-    "tailwind-merge": "^3.3.0"
+    "tailwind-merge": "^3.3.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

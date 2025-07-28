@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AdminHeader from '@/app/components/AdminHeader';
 import Sidebar from '@/app/components/Sidebar';
+import { NotificationProvider } from '../../../contexts/NotificationContext';
 
 export default function AdminLayout({
   children,
@@ -14,6 +15,7 @@ export default function AdminLayout({
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     console.log('🔍 Admin Layout - Status:', status);
@@ -60,6 +62,10 @@ export default function AdminLayout({
     localStorage.setItem('sidebar-collapsed', JSON.stringify(newState));
   };
 
+  const closeMobileSidebar = () => {
+    setIsMobileSidebarOpen(false);
+  };
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -76,19 +82,27 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminHeader onToggleSidebar={toggleSidebar} />
-      <div className="flex pt-16">
+    <NotificationProvider>
+      <div className="min-h-screen bg-gray-50">
+        <AdminHeader onToggleSidebar={toggleSidebar} />
+        
+        {/* Sidebar */}
         <Sidebar 
           isCollapsed={isSidebarCollapsed} 
-          onToggle={toggleSidebar} 
+          onToggle={toggleSidebar}
+          isMobileOpen={isMobileSidebarOpen}
+          onMobileClose={closeMobileSidebar}
         />
-        <main className={`flex-1 overflow-y-auto bg-gray-100 p-8 transition-all duration-300 min-h-screen ${
-          isSidebarCollapsed ? 'ml-16' : 'ml-64'
-        }`}>
+        
+        {/* Main content */}
+        <main className={`
+          flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8 transition-all duration-300 min-h-screen
+          pt-16 lg:pt-32
+          lg:ml-64 ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}
+        `}>
           {children}
         </main>
       </div>
-    </div>
+    </NotificationProvider>
   );
 }

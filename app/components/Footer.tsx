@@ -46,32 +46,45 @@ const socialLinks = [
 const Footer = () => {
   return (
     <footer className="bg-gray-700 text-white w-full">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between">
-        {/* Logo à gauche */}
-        <div className="flex items-center mb-4 md:mb-0">
-          <Image src="/logoCIDES-formations-cordistes.png" alt="CI.DES Logo" width={140} height={60} className="object-contain" />
-        </div>
-        {/* Copyright centré */}
-        <div className="text-center flex-1">
-          <span className="text-gray-300 text-sm">
-            © 2020 CI.DES
-          </span>
-        </div>
-        {/* Réseaux sociaux à droite */}
-        <div className="flex items-center space-x-6 mt-4 md:mt-0">
-          {socialLinks.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={item.label}
-              className="flex flex-col items-center group"
-            >
-              <span className="text-2xl group-hover:text-yellow-400 transition-colors">{item.svg}</span>
-              <span className="block w-6 h-1 bg-yellow-400 mt-1 rounded group-hover:w-8 transition-all"></span>
-            </a>
-          ))}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="flex flex-col lg:flex-row items-center justify-between space-y-6 lg:space-y-0">
+          {/* Logo à gauche */}
+          <div className="flex items-center">
+            <Image 
+              src="/logoCIDES-formations-cordistes.png" 
+              alt="CI.DES Logo" 
+              width={140} 
+              height={60} 
+              className="object-contain w-32 sm:w-36 lg:w-40" 
+            />
+          </div>
+          
+          {/* Copyright centré */}
+          <div className="text-center lg:flex-1">
+            <span className="text-gray-300 text-xs sm:text-sm">
+              © 2020 CI.DES - Formation Cordiste IRATA
+            </span>
+            <p className="text-gray-400 text-xs mt-1">
+              Nouvelle-Aquitaine, France
+            </p>
+          </div>
+          
+          {/* Réseaux sociaux à droite */}
+          <div className="flex items-center space-x-4 sm:space-x-6">
+            {socialLinks.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={item.label}
+                className="flex flex-col items-center group"
+              >
+                <span className="text-xl sm:text-2xl group-hover:text-yellow-400 transition-colors duration-200">{item.svg}</span>
+                <span className="block w-4 sm:w-6 h-1 bg-yellow-400 mt-1 rounded group-hover:w-6 sm:group-hover:w-8 transition-all duration-200"></span>
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </footer>

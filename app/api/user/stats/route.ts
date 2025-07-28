@@ -39,8 +39,8 @@ export async function GET() {
       // Formations suivies (même que demandes acceptées)
       prisma.demande.count({
         where: {
-          userId,
-          statut: 'VALIDE'
+              userId,
+              statut: 'VALIDE'
         }
       })
     ]);

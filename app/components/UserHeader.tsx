@@ -7,13 +7,14 @@ import { signOut } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
 
 interface UserHeaderProps {
-  sidebarCollapsed: boolean;
+  sidebarCollapsed?: boolean;
   onToggleSidebar: () => void;
 }
 
 export default function UserHeader({ sidebarCollapsed, onToggleSidebar }: UserHeaderProps) {
   const { data: session } = useSession();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const getInitials = () => {
@@ -81,16 +82,16 @@ export default function UserHeader({ sidebarCollapsed, onToggleSidebar }: UserHe
                 alt="CI.DES Logo"
                 width={200}
                 height={70}
-                className="object-contain"
+                className="object-contain w-32 sm:w-40 md:w-48 lg:w-56"
                 priority
               />
             </Link>
           </div>
 
           {/* Notifications et profil */}
-          <div className="flex items-center space-x-4">
-            {/* Notifications */}
-            <button className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            {/* Notifications - visible sur tablette et desktop */}
+            <button className="hidden sm:inline-flex p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
               <span className="sr-only">Notifications</span>
               <svg
                 className="h-6 w-6"
@@ -114,11 +115,11 @@ export default function UserHeader({ sidebarCollapsed, onToggleSidebar }: UserHe
                     {getInitials() || 'U'}
                   </span>
                 </div>
-                <span className="hidden md:block text-sm font-medium text-gray-900">
+                <span className="hidden sm:block text-sm font-medium text-gray-900">
                   {session?.user?.prenom} {session?.user?.nom}
                 </span>
                 <svg
-                  className={`h-4 w-4 text-gray-400 transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`}
+                  className={`hidden sm:block h-4 w-4 text-gray-400 transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`}
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -150,8 +151,49 @@ export default function UserHeader({ sidebarCollapsed, onToggleSidebar }: UserHe
                 </div>
               )}
             </div>
+
+            {/* Menu mobile */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+            >
+              <span className="sr-only">Ouvrir le menu mobile</span>
+              <svg
+                className="h-6 w-6"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
           </div>
         </div>
+
+        {/* Menu mobile déroulant */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden border-t border-gray-200 bg-white">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              <Link
+                href="/profile"
+                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Mon profil
+              </Link>
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  signOut({ callbackUrl: '/' });
+                }}
+                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+              >
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

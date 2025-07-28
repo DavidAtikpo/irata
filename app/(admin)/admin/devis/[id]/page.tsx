@@ -1,20 +1,76 @@
-import { prisma } from '@/lib/prisma';
+'use client';
 
-export default async function DevisDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const devis = await prisma.devis.findUnique({ 
-    where: { id },
-    include: {
-      demande: {
-        include: {
-          user: true
-        }
-      }
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useDevisNotifications } from '../../../../../hooks/useDevisNotifications';
+
+export default function DevisDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [devis, setDevis] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [devisId, setDevisId] = useState<string>('');
+
+  // Utiliser le hook pour les notifications de devis
+  useDevisNotifications();
+
+  useEffect(() => {
+    const getParams = async () => {
+      const { id } = await params;
+      setDevisId(id);
+    };
+    getParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    } else if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
+      router.push('/');
+    } else if (status === 'authenticated' && devisId) {
+      fetchDevis();
     }
-  });
+  }, [status, session, router, devisId]);
+
+  const fetchDevis = async () => {
+    try {
+      const response = await fetch(`/api/admin/devis/${devisId}`);
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération du devis');
+      }
+      const data = await response.json();
+      setDevis(data);
+    } catch (error) {
+      setError('Erreur lors de la récupération du devis');
+      console.error('Erreur:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-6">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+            <h2 className="mt-4 text-xl font-semibold text-gray-900">Chargement...</h2>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!devis) {
-    return <div className="p-8 text-center text-red-600">Devis introuvable.</div>;
+    return (
+      <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-6">
+          <div className="p-8 text-center text-red-600">Devis introuvable.</div>
+        </div>
+      </div>
+    );
   }
 
   const adresseFacturationFixe = 'CI.DES BP212 Votokondji TOGO';

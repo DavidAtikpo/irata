@@ -124,7 +124,17 @@ export async function POST(
       console.error('Erreur lors de l\'envoi de l\'email à l\'admin:', error);
     }
 
-    return NextResponse.json(updatedDevis);
+    // Créer une notification pour l'admin
+    const notificationData = {
+      type: 'DEVIS_VALIDATED',
+      message: `Devis ${devis.numero} accepté par ${devis.client} - Montant: ${devis.montant}€`,
+      link: `/admin/devis/${devis.id}`
+    };
+
+    return NextResponse.json({
+      ...updatedDevis,
+      adminNotification: notificationData
+    });
   } catch (error) {
     console.error('Erreur lors de la validation du devis:', error);
     return NextResponse.json(

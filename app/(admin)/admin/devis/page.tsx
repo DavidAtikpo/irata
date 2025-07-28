@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { DocumentArrowDownIcon } from '@heroicons/react/24/outline';
+import { useDevisNotifications } from '../../../../hooks/useDevisNotifications';
 
 interface Devis {
   id: string;
@@ -23,6 +24,9 @@ export default function DevisListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Utiliser le hook pour les notifications de devis
+  useDevisNotifications();
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
@@ -32,6 +36,8 @@ export default function DevisListPage() {
       fetchDevis();
     }
   }, [status, session, router]);
+
+
 
   const fetchDevis = async () => {
     try {

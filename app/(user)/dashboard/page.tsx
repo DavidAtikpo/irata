@@ -74,27 +74,27 @@ export default function UserDashboard() {
   }
 
   return (
-    <div className="py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-6 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Mon Tableau de bord</h2>
-          <p className="mt-2 text-gray-600">Bienvenue {session?.user?.prenom} {session?.user?.nom}</p>
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Mon Tableau de bord</h2>
+          <p className="mt-2 text-sm sm:text-base text-gray-600">Bienvenue {session?.user?.prenom} {session?.user?.nom}</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {/* Carte des demandes en cours */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
+          <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200">
+            <div className="p-4 sm:p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-3 sm:ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Demandes en cours</dt>
-                    <dd className="text-lg font-medium text-gray-900">{stats?.demandesEnCours || 0}</dd>
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">Demandes en cours</dt>
+                    <dd className="text-base sm:text-lg font-medium text-gray-900">{stats?.demandesEnCours || 0}</dd>
                   </dl>
                 </div>
               </div>
