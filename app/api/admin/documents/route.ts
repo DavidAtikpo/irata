@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import cloudinary from '@/lib/cloudinary';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -16,9 +16,26 @@ export async function GET() {
     }
 
     const documents = await prisma.document.findMany({
-      include: {
-        user: { select: { nom: true, prenom: true, email: true } },
-        devis: { select: { numero: true } },
+      select: {
+        id: true,
+        nom: true,
+        description: true,
+        url: true,
+        type: true,
+        public: true,
+        createdAt: true,
+        user: {
+          select: {
+            nom: true,
+            prenom: true,
+            email: true,
+          },
+        },
+        devis: {
+          select: {
+            numero: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -32,6 +49,8 @@ export async function GET() {
     );
   }
 }
+
+
 
 export async function DELETE(req: Request) {
   try {
@@ -54,7 +73,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // Récupérer le document pour obtenir l'ID Cloudinary
+    // Vérifier que le document existe
     const document = await prisma.document.findUnique({
       where: { id: documentId },
     });
@@ -66,19 +85,12 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // Supprimer de Cloudinary
-    await cloudinary.uploader.destroy(document.cloudinaryId, {
-      resource_type: 'raw',
-    });
-
-    // Supprimer de la base de données
+    // Supprimer le document
     await prisma.document.delete({
       where: { id: documentId },
     });
 
-    return NextResponse.json({
-      message: 'Document supprimé avec succès',
-    });
+    return NextResponse.json({ message: 'Document supprimé avec succès' });
   } catch (error) {
     console.error('Erreur lors de la suppression du document:', error);
     return NextResponse.json(

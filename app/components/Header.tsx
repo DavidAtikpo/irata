@@ -33,11 +33,11 @@ export default function Header() {
           <div className="flex items-center">
             <Link href="/">
               <Image
-                src="/logoCIDES-formations-cordistes.png"
+                src="/logo.png"
                 alt="CI.DES Logo"
                 width={260}
-                height={90}
-                className="object-contain w-48 sm:w-56 lg:w-64"
+                height={70}
+                className="object-contain w-20 sm:w-20 lg:w-20"
                 priority
               />
             </Link>

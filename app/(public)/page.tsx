@@ -366,7 +366,7 @@ function HomeContent() {
           href="/register"
           className="bg-blue-700 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full font-semibold hover:bg-blue-800 transition-colors text-sm sm:text-base"
         >
-          Faire une demande de préinscription
+          Connectez-vous à votre espace personnel
         </Link>
       </section>
     </main>

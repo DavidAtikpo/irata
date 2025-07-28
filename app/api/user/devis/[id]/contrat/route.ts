@@ -81,7 +81,7 @@ export async function POST(
       );
     }
 
-    console.log('Tentative de création du contrat...');
+    console.log('Tentative de création/mise à jour du contrat...');
     console.log('Données pour contrat:', {
       devisId: id,
       userId: session.user.id,
@@ -94,9 +94,21 @@ export async function POST(
       statut: 'SIGNE'
     });
 
-    // Créer le contrat avec les champs correspondant au modèle Prisma
-    const contrat = await prisma.contrat.create({
-      data: {
+    // Utiliser upsert pour créer ou mettre à jour le contrat
+    const contrat = await prisma.contrat.upsert({
+      where: {
+        devisId: id,
+      },
+      update: {
+        nom: nom || '',
+        prenom: prenom || '',
+        adresse: adresse || '',
+        profession: profession || '',
+        dateSignature: new Date(),
+        signature: signature || '',
+        statut: 'SIGNE',
+      },
+      create: {
         devisId: id,
         userId: session.user.id,
         nom: nom || '',
