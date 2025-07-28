@@ -88,7 +88,7 @@ export async function GET() {
 
     // Calculer le montant total investi (somme des montants des devis validés)
     const totalMontant = devis
-      .filter(devis => devis.statut === 'VALIDE' || devis.statut === 'SIGNE')
+      .filter(devis => devis.statut === 'VALIDE')
       .reduce((total, devis) => total + devis.montant, 0);
 
     return NextResponse.json({
