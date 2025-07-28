@@ -13,8 +13,8 @@ export default function UserLayout({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Charger l'état de la sidebar depuis localStorage
   useEffect(() => {
@@ -73,24 +73,29 @@ export default function UserLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <UserHeader onToggleSidebar={toggleSidebar} />
-      
-      {/* Sidebar */}
-      <UserSidebar 
-        user={session.user}
-        collapsed={isSidebarCollapsed}
-        isMobileOpen={isMobileSidebarOpen}
-        onMobileClose={closeMobileSidebar}
+      <UserHeader 
+        sidebarCollapsed={isSidebarCollapsed}
+        onToggleSidebar={toggleSidebar}
+        onMobileToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
       />
       
-      {/* Main content */}
-      <main className={`
-        flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8 transition-all duration-300 min-h-screen
-        pt-16 lg:pt-32
-        lg:ml-64 ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}
-      `}>
-        {children}
-      </main>
+      <div className="flex pt-16">
+        {/* Sidebar */}
+        <UserSidebar 
+          user={session.user}
+          collapsed={isSidebarCollapsed}
+          isMobileOpen={isMobileSidebarOpen}
+          onMobileClose={closeMobileSidebar}
+        />
+        
+        {/* Main content */}
+        <main className={`
+          flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8 transition-all duration-300 min-h-[calc(100vh-4rem)]
+          ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}
+        `}>
+          {children}
+        </main>
+      </div>
     </div>
   );
 } 

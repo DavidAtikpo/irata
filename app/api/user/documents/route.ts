@@ -17,6 +17,40 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const devisId = searchParams.get('devisId');
 
+    // Vérifier si l'utilisateur a un contrat validé
+    const validatedContract = await prisma.contrat.findFirst({
+      where: {
+        userId: session.user.id,
+        statut: 'VALIDE',
+      },
+      include: {
+        devis: true,
+      },
+    });
+
+    // Si l'utilisateur n'a pas de contrat validé, retourner seulement les documents publics
+    if (!validatedContract) {
+      const publicDocuments = await prisma.document.findMany({
+        where: {
+          public: true,
+        },
+        select: {
+          id: true,
+          nom: true,
+          description: true,
+          url: true,
+          type: true,
+          public: true,
+          createdAt: true,
+          devis: { select: { numero: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return NextResponse.json(publicDocuments);
+    }
+
+    // Si l'utilisateur a un contrat validé, récupérer tous les documents accessibles
     let whereCondition: any = {
       OR: [
         { public: true }, // Documents publics
@@ -24,9 +58,13 @@ export async function GET(req: Request) {
       ],
     };
 
-    // Si un devis ID est spécifié, inclure les documents liés à ce devis
+    // Inclure les documents liés au devis du contrat validé
+    if (validatedContract.devisId) {
+      whereCondition.OR.push({ devisId: validatedContract.devisId });
+    }
+
+    // Si un devis ID spécifique est demandé, vérifier qu'il appartient à l'utilisateur
     if (devisId) {
-      // Vérifier que le devis appartient à l'utilisateur
       const devis = await prisma.devis.findFirst({
         where: {
           id: devisId,

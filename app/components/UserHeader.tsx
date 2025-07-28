@@ -9,9 +9,10 @@ import { useState, useEffect, useRef } from 'react';
 interface UserHeaderProps {
   sidebarCollapsed?: boolean;
   onToggleSidebar: () => void;
+  onMobileToggle: () => void;
 }
 
-export default function UserHeader({ sidebarCollapsed, onToggleSidebar }: UserHeaderProps) {
+export default function UserHeader({ sidebarCollapsed, onToggleSidebar, onMobileToggle }: UserHeaderProps) {
   const { data: session } = useSession();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -38,7 +39,7 @@ export default function UserHeader({ sidebarCollapsed, onToggleSidebar }: UserHe
   }, []);
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+    <header className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo et bouton sidebar */}
@@ -65,24 +66,36 @@ export default function UserHeader({ sidebarCollapsed, onToggleSidebar }: UserHe
               className="hidden lg:inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 mr-4"
             >
               <span className="sr-only">Réduire/Agrandir la sidebar</span>
-              <svg
-                className="h-6 w-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              {sidebarCollapsed ? (
+                <svg
+                  className="h-6 w-6"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              ) : (
+                <svg
+                  className="h-6 w-6"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              )}
             </button>
 
             <Link href="/dashboard" className="flex items-center">
               <Image
-                src="/logoCIDES-formations-cordistes.png"
+                src="/logo.png"
                 alt="CI.DES Logo"
                 width={200}
                 height={70}
-                className="object-contain w-32 sm:w-40 md:w-48 lg:w-56"
+                className="object-contain w-10 sm:w-10 md:w-10 lg:w-10"
                 priority
               />
             </Link>
@@ -154,7 +167,7 @@ export default function UserHeader({ sidebarCollapsed, onToggleSidebar }: UserHe
 
             {/* Menu mobile */}
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={onMobileToggle}
               className="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
             >
               <span className="sr-only">Ouvrir le menu mobile</span>

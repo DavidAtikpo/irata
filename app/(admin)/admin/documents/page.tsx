@@ -13,7 +13,9 @@ import {
   MagnifyingGlassIcon,
   CalendarIcon,
   AdjustmentsHorizontalIcon,
-  EyeIcon
+  EyeIcon,
+  PencilIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { Button } from '@/app/components/ui/button';
 import Link from 'next/link';
@@ -28,6 +30,8 @@ interface Document {
   createdAt: string;
   user?: { nom: string; prenom: string; email: string };
   devis?: { numero: string };
+  userId?: string;
+  devisId?: string;
 }
 
 export default function AdminDocumentsPage() {
@@ -39,6 +43,10 @@ export default function AdminDocumentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingDocument, setEditingDocument] = useState<Document | null>(null);
+  const [users, setUsers] = useState<Array<{id: string, nom: string, prenom: string, email: string}>>([]);
+  const [devis, setDevis] = useState<Array<{id: string, numero: string}>>([]);
 
   // États pour les filtres
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,6 +63,15 @@ export default function AdminDocumentsPage() {
     devisId: '',
   });
 
+  const [editForm, setEditForm] = useState({
+    nom: '',
+    description: '',
+    type: 'formation',
+    public: true,
+    userId: '',
+    devisId: '',
+  });
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
@@ -62,6 +79,8 @@ export default function AdminDocumentsPage() {
       router.push('/');
     } else if (status === 'authenticated') {
       fetchDocuments();
+      fetchUsers();
+      fetchDevis();
     }
   }, [status, session, router]);
 
@@ -79,6 +98,30 @@ export default function AdminDocumentsPage() {
       console.error('Erreur:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('/api/admin/users');
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des utilisateurs:', error);
+    }
+  };
+
+  const fetchDevis = async () => {
+    try {
+      const response = await fetch('/api/admin/devis');
+      if (response.ok) {
+        const data = await response.json();
+        setDevis(data);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des devis:', error);
     }
   };
 
@@ -189,6 +232,50 @@ export default function AdminDocumentsPage() {
     }
   };
 
+  const handleEdit = (document: Document) => {
+    setEditingDocument(document);
+    setEditForm({
+      nom: document.nom,
+      description: document.description || '',
+      type: document.type,
+      public: document.public,
+      userId: document.userId || '',
+      devisId: document.devisId || '',
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDocument) return;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/admin/documents/${editingDocument.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la modification');
+      }
+
+      setShowEditModal(false);
+      setEditingDocument(null);
+      await fetchDocuments();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Erreur lors de la modification');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleDelete = async (documentId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) return;
 
@@ -227,30 +314,30 @@ export default function AdminDocumentsPage() {
     switch (type) {
       case 'formation':
         return (
-          <div className="w-16 h-20 bg-blue-500 rounded-lg flex items-center justify-center text-white relative shadow-md">
-            <DocumentIcon className="h-8 w-8" />
-            <span className="absolute bottom-1 text-xs font-bold">PDF</span>
+          <div className="w-8 h-10 bg-blue-500 rounded flex items-center justify-center text-white relative shadow-sm">
+            <DocumentIcon className="h-4 w-4" />
+            <span className="absolute bottom-0.5 text-xs font-bold">PDF</span>
           </div>
         );
       case 'contrat':
         return (
-          <div className="w-16 h-20 bg-green-500 rounded-lg flex items-center justify-center text-white relative shadow-md">
-            <DocumentIcon className="h-8 w-8" />
-            <span className="absolute bottom-1 text-xs font-bold">PDF</span>
+          <div className="w-8 h-10 bg-green-500 rounded flex items-center justify-center text-white relative shadow-sm">
+            <DocumentIcon className="h-4 w-4" />
+            <span className="absolute bottom-0.5 text-xs font-bold">PDF</span>
           </div>
         );
       case 'procedure':
         return (
-          <div className="w-16 h-20 bg-purple-500 rounded-lg flex items-center justify-center text-white relative shadow-md">
-            <DocumentIcon className="h-8 w-8" />
-            <span className="absolute bottom-1 text-xs font-bold">PDF</span>
+          <div className="w-8 h-10 bg-purple-500 rounded flex items-center justify-center text-white relative shadow-sm">
+            <DocumentIcon className="h-4 w-4" />
+            <span className="absolute bottom-0.5 text-xs font-bold">PDF</span>
           </div>
         );
       default:
         return (
-          <div className="w-16 h-20 bg-gray-500 rounded-lg flex items-center justify-center text-white relative shadow-md">
-            <DocumentIcon className="h-8 w-8" />
-            <span className="absolute bottom-1 text-xs font-bold">PDF</span>
+          <div className="w-8 h-10 bg-gray-500 rounded flex items-center justify-center text-white relative shadow-sm">
+            <DocumentIcon className="h-4 w-4" />
+            <span className="absolute bottom-0.5 text-xs font-bold">PDF</span>
           </div>
         );
     }
@@ -405,95 +492,244 @@ export default function AdminDocumentsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-4">
-              {filteredDocuments.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="group bg-white hover:bg-gray-50 p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-all duration-200 hover:shadow-md"
-                >
-                  {/* Icône du fichier - cliquable pour ouvrir */}
-                  <div 
-                    className="flex justify-center mb-3 cursor-pointer" 
-                    onClick={() => handleView(doc.id)}
-                    title="Cliquer pour ouvrir le document"
-                  >
-                    {getDocumentIcon(doc.type)}
-                  </div>
-
-                  {/* Nom du fichier */}
-                  <div className="text-center mb-3">
-                    <h4 className="text-sm font-medium text-gray-900 truncate" title={doc.nom}>
-                      {doc.nom}
-                    </h4>
-                    {doc.description && (
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2" title={doc.description}>
-                        {doc.description}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Métadonnées */}
-                  <div className="space-y-2">
-                    <div className="flex justify-center">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        doc.type === 'formation' ? 'bg-blue-100 text-blue-800' :
-                        doc.type === 'contrat' ? 'bg-green-100 text-green-800' :
-                        doc.type === 'procedure' ? 'bg-purple-100 text-purple-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {getTypeLabel(doc.type)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500 text-center">
-                      {new Date(doc.createdAt).toLocaleDateString('fr-FR')}
-                    </div>
-                    {doc.public && (
-                      <div className="flex justify-center">
-                        <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full font-medium">
-                          Public
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions (visibles au hover sur desktop, toujours visibles sur mobile) */}
-                  <div className="mt-3 flex justify-center space-x-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleView(doc.id);
-                      }}
-                      className="p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-100 rounded-full transition-colors"
-                      title="Voir"
-                    >
-                      <EyeIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownload(doc.id, doc.nom);
-                      }}
-                      className="p-2 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-full transition-colors"
-                      title="Télécharger"
-                    >
-                      <DocumentArrowDownIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(doc.id);
-                      }}
-                      className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-full transition-colors"
-                      title="Supprimer"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Document
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Statut
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredDocuments.map((doc) => (
+                      <tr key={doc.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-8">
+                              {getDocumentIcon(doc.type)}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {doc.nom}
+                              </div>
+                              {doc.description && (
+                                <div className="text-sm text-gray-500 truncate max-w-xs">
+                                  {doc.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            doc.type === 'formation' ? 'bg-blue-100 text-blue-800' :
+                            doc.type === 'contrat' ? 'bg-green-100 text-green-800' :
+                            doc.type === 'procedure' ? 'bg-purple-100 text-purple-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {getTypeLabel(doc.type)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {doc.public ? (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                              Public
+                            </span>
+                          ) : (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                              Privé
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(doc.createdAt).toLocaleDateString('fr-FR')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleView(doc.id)}
+                              className="text-indigo-600 hover:text-indigo-900 p-1 rounded"
+                              title="Voir"
+                            >
+                              <EyeIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(doc)}
+                              className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                              title="Modifier"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDownload(doc.id, doc.nom)}
+                              className="text-green-600 hover:text-green-900 p-1 rounded"
+                              title="Télécharger"
+                            >
+                              <DocumentArrowDownIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(doc.id)}
+                              className="text-red-600 hover:text-red-900 p-1 rounded"
+                              title="Supprimer"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Modal d'édition */}
+        {showEditModal && editingDocument && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Modifier le document</h3>
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleEditSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nom du document
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.nom}
+                      onChange={(e) => setEditForm({...editForm, nom: e.target.value})}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      value={editForm.description}
+                      onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                      rows={3}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Type
+                    </label>
+                    <select
+                      value={editForm.type}
+                      onChange={(e) => setEditForm({...editForm, type: e.target.value})}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="formation">Formation</option>
+                      <option value="contrat">Contrat</option>
+                      <option value="procedure">Procédure</option>
+                      <option value="general">Général</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="public"
+                      checked={editForm.public}
+                      onChange={(e) => setEditForm({...editForm, public: e.target.checked})}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="public" className="ml-2 block text-sm text-gray-900">
+                      Document public
+                    </label>
+                  </div>
+
+                  {!editForm.public && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Utilisateur spécifique (optionnel)
+                        </label>
+                        <select
+                          value={editForm.userId}
+                          onChange={(e) => setEditForm({...editForm, userId: e.target.value})}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                          <option value="">Aucun utilisateur spécifique</option>
+                          {users.map((user) => (
+                            <option key={user.id} value={user.id}>
+                              {user.prenom} {user.nom} ({user.email})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Devis spécifique (optionnel)
+                        </label>
+                        <select
+                          value={editForm.devisId}
+                          onChange={(e) => setEditForm({...editForm, devisId: e.target.value})}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                          <option value="">Aucun devis spécifique</option>
+                          {devis.map((devis) => (
+                            <option key={devis.id} value={devis.id}>
+                              Devis #{devis.numero}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditModal(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={uploading}
+                      className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                    >
+                      {uploading ? 'Modification...' : 'Modifier'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

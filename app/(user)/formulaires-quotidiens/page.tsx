@@ -172,7 +172,7 @@ export default function FormulairesQuotidiensPage() {
             value={value}
             onChange={(e) => handleInputChange(questionId, e.target.value)}
             required={question.required}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             placeholder="Votre réponse..."
           />
         );
@@ -183,8 +183,8 @@ export default function FormulairesQuotidiensPage() {
             value={value}
             onChange={(e) => handleInputChange(questionId, e.target.value)}
             required={question.required}
-            rows={4}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            rows={3}
+            className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             placeholder="Votre réponse détaillée..."
           />
         );
@@ -196,7 +196,7 @@ export default function FormulairesQuotidiensPage() {
             value={value}
             onChange={(e) => handleInputChange(questionId, e.target.value)}
             required={question.required}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             placeholder="Entrez un nombre..."
           />
         );
@@ -207,7 +207,7 @@ export default function FormulairesQuotidiensPage() {
             value={value}
             onChange={(e) => handleInputChange(questionId, e.target.value)}
             required={question.required}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           >
             <option value="">Sélectionnez une option</option>
             {question.options?.map((option, index) => (
@@ -220,7 +220,7 @@ export default function FormulairesQuotidiensPage() {
 
       case 'radio':
         return (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {question.options?.map((option, index) => (
               <label key={index} className="flex items-center">
                 <input
@@ -232,7 +232,7 @@ export default function FormulairesQuotidiensPage() {
                   required={question.required}
                   className="mr-2 text-indigo-600 focus:ring-indigo-500"
                 />
-                <span className="text-sm text-gray-700">{option}</span>
+                <span className="text-xs text-gray-700">{option}</span>
               </label>
             ))}
           </div>
@@ -240,7 +240,7 @@ export default function FormulairesQuotidiensPage() {
 
       case 'checkbox':
         return (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {question.options?.map((option, index) => (
               <label key={index} className="flex items-center">
                 <input
@@ -257,7 +257,7 @@ export default function FormulairesQuotidiensPage() {
                   }}
                   className="mr-2 text-indigo-600 focus:ring-indigo-500"
                 />
-                <span className="text-sm text-gray-700">{option}</span>
+                <span className="text-xs text-gray-700">{option}</span>
               </label>
             ))}
           </div>
@@ -317,34 +317,34 @@ export default function FormulairesQuotidiensPage() {
   }
 
   return (
-    <div className="py-6 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-2 sm:py-4 lg:py-6 px-2 sm:px-4 lg:px-6">
       <div className="max-w-4xl mx-auto">
         {/* En-tête */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-3 sm:mb-4">
           <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Formulaires Quotidiens</h1>
-            <p className="mt-2 text-sm sm:text-base text-gray-600">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Formulaires Quotidiens</h1>
+            <p className="mt-1 text-xs sm:text-sm text-gray-600">
               Répondez aux questionnaires de votre formation IRATA
             </p>
-            <div className="mt-4 flex items-center justify-center space-x-2 text-xs sm:text-sm text-gray-500">
-              <UserIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span>Connecté en tant que: {session?.user?.prenom} {session?.user?.nom}</span>
+            <div className="mt-2 flex items-center justify-center space-x-1 text-xs text-gray-500">
+              <UserIcon className="h-3 w-3" />
+              <span>Connecté: {session?.user?.prenom} {session?.user?.nom}</span>
             </div>
           </div>
         </div>
 
         {/* Filtres */}
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-            <h2 className="text-base sm:text-lg font-medium text-gray-900">Mes formulaires</h2>
-            <div className="flex items-center space-x-4">
-              <label className="text-xs sm:text-sm font-medium text-gray-700">Filtrer:</label>
+        <div className="bg-white p-2 sm:p-3 rounded-lg shadow mb-3 sm:mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+            <h2 className="text-sm sm:text-base font-medium text-gray-900">Mes formulaires</h2>
+            <div className="flex items-center space-x-2">
+              <label className="text-xs font-medium text-gray-700">Filtrer:</label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="border border-gray-300 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
+                className="border border-gray-300 rounded px-2 py-1 text-xs"
               >
-                <option value="all">Tous les formulaires</option>
+                <option value="all">Tous</option>
                 <option value="available">Disponibles</option>
                 <option value="completed">Complétés</option>
               </select>
@@ -353,11 +353,11 @@ export default function FormulairesQuotidiensPage() {
         </div>
 
         {/* Liste des formulaires */}
-        <div className="space-y-4">
+        <div className="space-y-2 sm:space-y-3">
           {filteredFormulaires.length === 0 ? (
-            <div className="bg-white shadow rounded-lg p-8 text-center">
-              <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
+            <div className="bg-white shadow rounded-lg p-4 sm:p-6 text-center">
+              <DocumentTextIcon className="mx-auto h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
+              <h3 className="mt-2 text-xs sm:text-sm font-medium text-gray-900">
                 {filterStatus === 'all' 
                   ? 'Aucun formulaire disponible'
                   : filterStatus === 'available'
@@ -365,80 +365,80 @@ export default function FormulairesQuotidiensPage() {
                   : 'Aucun formulaire complété'
                 }
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-xs text-gray-500">
                 {filterStatus === 'all' 
-                  ? 'Les formulaires apparaîtront ici une fois validés par votre formateur.'
+                  ? 'Les formulaires apparaîtront ici une fois validés.'
                   : filterStatus === 'available'
-                  ? 'Revenez plus tard ou changez le filtre pour voir d\'autres formulaires.'
+                  ? 'Revenez plus tard ou changez le filtre.'
                   : 'Vous n\'avez pas encore complété de formulaires.'
                 }
               </p>
             </div>
           ) : (
-            <ul className="space-y-4">
+            <ul className="space-y-2 sm:space-y-3">
               {filteredFormulaires.map((formulaire) => {
                 const statut = getStatutFormulaire(formulaire);
                 const dansLaPeriode = isFormulaireDansLaPeriode(formulaire);
                 
                 return (
                   <li key={formulaire.id} className="bg-white shadow rounded-lg overflow-hidden">
-                    <div className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3">
-                            <h3 className="text-lg font-medium text-gray-900">
+                    <div className="p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-1 sm:space-y-0">
+                            <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">
                               {formulaire.titre}
                             </h3>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statut.color}`}>
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${statut.color} w-fit`}>
                               {statut.label}
                             </span>
                           </div>
                           
                           {formulaire.description && (
-                            <p className="mt-2 text-sm text-gray-600">{formulaire.description}</p>
+                            <p className="mt-1 text-xs text-gray-600 line-clamp-2">{formulaire.description}</p>
                           )}
                           
-                          <div className="mt-3 flex items-center space-x-6 text-sm text-gray-500">
+                          <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0 text-xs text-gray-500">
                             <span className="flex items-center">
-                              <CalendarIcon className="h-4 w-4 mr-1" />
+                              <CalendarIcon className="h-3 w-3 mr-1" />
                               Session: {formulaire.session}
                             </span>
                             <span className="flex items-center">
-                              <DocumentTextIcon className="h-4 w-4 mr-1" />
+                              <DocumentTextIcon className="h-3 w-3 mr-1" />
                               {formulaire.questions.length} questions
                             </span>
                             <span className="flex items-center">
-                              <ClockIcon className="h-4 w-4 mr-1" />
+                              <ClockIcon className="h-3 w-3 mr-1" />
                               Du {new Date(formulaire.dateDebut).toLocaleDateString('fr-FR')} au {new Date(formulaire.dateFin).toLocaleDateString('fr-FR')}
                             </span>
                           </div>
 
                           {formulaire.dejaRepondu && formulaire.dateDerniereReponse && (
-                            <div className="mt-2 flex items-center text-sm text-green-600">
-                              <CheckCircleIcon className="h-4 w-4 mr-1" />
+                            <div className="mt-1 flex items-center text-xs text-green-600">
+                              <CheckCircleIcon className="h-3 w-3 mr-1" />
                               Répondu le {new Date(formulaire.dateDerniereReponse).toLocaleDateString('fr-FR')} à {new Date(formulaire.dateDerniereReponse).toLocaleTimeString('fr-FR')}
                             </div>
                           )}
                         </div>
                         
-                        <div className="ml-6">
+                        <div className="flex justify-end sm:ml-4">
                           {formulaire.dejaRepondu ? (
                             <div className="flex items-center text-green-600">
-                              <CheckCircleIcon className="h-5 w-5 mr-2" />
-                              <span className="text-sm font-medium">Complété</span>
+                              <CheckCircleIcon className="h-4 w-4 mr-1" />
+                              <span className="text-xs font-medium">Complété</span>
                             </div>
                           ) : dansLaPeriode ? (
                             <button
                               onClick={() => handleStartForm(formulaire)}
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                              className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-2 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             >
                               Répondre
-                              <ArrowRightIcon className="ml-2 h-4 w-4" />
+                              <ArrowRightIcon className="ml-1 h-3 w-3" />
                             </button>
                           ) : (
                             <div className="flex items-center text-gray-400">
-                              <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
-                              <span className="text-sm">
+                              <ExclamationTriangleIcon className="h-4 w-4 mr-1" />
+                              <span className="text-xs">
                                 {new Date() < new Date(formulaire.dateDebut) ? 'Pas encore ouvert' : 'Période expirée'}
                               </span>
                             </div>
@@ -456,12 +456,12 @@ export default function FormulairesQuotidiensPage() {
         {/* Modal du formulaire */}
         {showForm && selectedFormulaire && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
-              <div className="mt-3">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">{selectedFormulaire.titre}</h3>
-                    <p className="text-sm text-gray-500 mt-1">
+            <div className="relative top-2 sm:top-4 mx-auto p-2 sm:p-4 border w-11/12 md:w-4/5 lg:w-3/4 shadow-lg rounded-md bg-white max-h-[95vh] overflow-y-auto">
+              <div className="mt-2">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">{selectedFormulaire.titre}</h3>
+                    <p className="text-xs text-gray-500 mt-1">
                       {selectedFormulaire.questions.length} questions • Session: {selectedFormulaire.session}
                     </p>
                   </div>
@@ -470,40 +470,40 @@ export default function FormulairesQuotidiensPage() {
                       setShowForm(false);
                       setFormData({ commentaires: '' });
                     }}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 ml-2 flex-shrink-0"
                   >
                     <span className="sr-only">Fermer</span>
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
                 
-                <form onSubmit={handleSubmitForm} className="space-y-6">
+                <form onSubmit={handleSubmitForm} className="space-y-3 sm:space-y-4">
                   {selectedFormulaire.description && (
-                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                    <div className="bg-blue-50 border border-blue-200 p-2 sm:p-3 rounded-lg">
                       <div className="flex items-start">
-                        <InformationCircleIcon className="h-5 w-5 text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
-                        <p className="text-sm text-blue-800">{selectedFormulaire.description}</p>
+                        <InformationCircleIcon className="h-4 w-4 text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
+                        <p className="text-xs sm:text-sm text-blue-800">{selectedFormulaire.description}</p>
                       </div>
                     </div>
                   )}
 
                   {/* Questions */}
-                  <div className="space-y-6">
+                  <div className="space-y-3 sm:space-y-4">
                     {selectedFormulaire.questions.map((question, index) => (
-                      <div key={question.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <div className="mb-3">
-                          <label className="block text-sm font-medium text-gray-900 mb-2">
+                      <div key={question.id} className="border border-gray-200 rounded-lg p-2 sm:p-3 bg-gray-50">
+                        <div className="mb-2">
+                          <label className="block text-xs sm:text-sm font-medium text-gray-900 mb-2">
                             <span className="inline-flex items-center">
-                              <span className="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium mr-2">
+                              <span className="bg-indigo-600 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs font-medium mr-2">
                                 {index + 1}
                               </span>
                               {question.question}
                               {question.required && <span className="text-red-500 ml-1">*</span>}
                             </span>
                           </label>
-                          <div className="mt-2">
+                          <div className="mt-1">
                             {renderQuestion(question)}
                           </div>
                         </div>
@@ -512,42 +512,42 @@ export default function FormulairesQuotidiensPage() {
                   </div>
 
                   {/* Commentaires */}
-                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="border border-gray-200 rounded-lg p-2 sm:p-3 bg-gray-50">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                       Commentaires ou observations (optionnel)
                     </label>
                     <textarea
                       value={formData.commentaires}
                       onChange={(e) => handleInputChange('commentaires', e.target.value)}
-                      rows={4}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      placeholder="Partagez vos commentaires, questions ou observations sur cette formation..."
+                      rows={3}
+                      className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="Partagez vos commentaires, questions ou observations..."
                     />
                   </div>
 
-                  <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                  <div className="flex justify-end space-x-2 pt-3 border-t border-gray-200">
                     <button
                       type="button"
                       onClick={() => {
                         setShowForm(false);
                         setFormData({ commentaires: '' });
                       }}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className="px-3 py-1 sm:px-4 sm:py-2 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
                       Annuler
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className="px-4 py-1 sm:px-6 sm:py-2 border border-transparent rounded shadow-sm text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
                       {submitting ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1 inline-block"></div>
                           Soumission...
                         </>
                       ) : (
-                        'Soumettre le formulaire'
+                        'Soumettre'
                       )}
                     </button>
                   </div>

@@ -73,9 +73,10 @@ const navigationTabs = [
 
 interface AdminHeaderProps {
   onToggleSidebar?: () => void;
+  onMobileToggle?: () => void;
 }
 
-export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
+export default function AdminHeader({ onToggleSidebar, onMobileToggle }: AdminHeaderProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter();
@@ -167,7 +168,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
 
             {/* Bouton menu mobile */}
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={onMobileToggle}
               className="lg:hidden p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-md"
               title="Menu"
             >
@@ -181,10 +182,10 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
             <div className="flex-shrink-0">
               <Link href="/admin">
                 <h1 className="text-xl font-bold text-gray-900 hidden sm:block">
-                  IRATA Admin
+                   CI.DES Admin
                 </h1>
                 <h1 className="text-lg font-bold text-gray-900 sm:hidden">
-                  IRATA
+                  CI.DES
                 </h1>
               </Link>
             </div>

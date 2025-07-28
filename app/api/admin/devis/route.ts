@@ -149,16 +149,14 @@ export async function GET() {
     }
 
     const devis = await prisma.devis.findMany({
-      include: {
-        demande: {
-          include: {
-            user: true
-          }
-        }
+      select: {
+        id: true,
+        numero: true,
+        statut: true,
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
 
     return NextResponse.json(devis);

@@ -84,7 +84,10 @@ export default function AdminLayout({
   return (
     <NotificationProvider>
       <div className="min-h-screen bg-gray-50">
-        <AdminHeader onToggleSidebar={toggleSidebar} />
+        <AdminHeader 
+          onToggleSidebar={toggleSidebar}
+          onMobileToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+        />
         
         {/* Sidebar */}
         <Sidebar 
@@ -96,9 +99,9 @@ export default function AdminLayout({
         
         {/* Main content */}
         <main className={`
-          flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8 transition-all duration-300 min-h-screen
-          pt-16 lg:pt-32
-          lg:ml-64 ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}
+          overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8 transition-all duration-300 min-h-screen
+          pt-16
+           ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}
         `}>
           {children}
         </main>
