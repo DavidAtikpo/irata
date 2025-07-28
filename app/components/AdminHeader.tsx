@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useNotificationContext } from '../../contexts/NotificationContext';
 import {
   UserCircleIcon,
   ChevronDownIcon,
@@ -12,6 +13,8 @@ import {
   UserGroupIcon,
   ChartBarIcon,
   CogIcon,
+  FolderIcon,
+  ClipboardDocumentIcon,
   ArrowRightOnRectangleIcon,
   BellIcon,
   MagnifyingGlassIcon,
@@ -19,7 +22,8 @@ import {
   DocumentIcon,
   ShieldCheckIcon,
   CalendarIcon,
-  Bars3Icon
+  Bars3Icon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 const navigationTabs = [
@@ -42,6 +46,18 @@ const navigationTabs = [
     description: 'Gestion des présences'
   },
   {
+    name: 'Documents',
+    href: '/admin/documents',
+    icon: FolderIcon,
+    description: 'Gestion des documents'
+  },
+  {
+    name: 'Formulaires quotidiens',
+    href: '/admin/formulaires-quotidiens',
+    icon: ClipboardDocumentIcon,
+    description: 'Gestion des formulaires quotidiens'
+  },
+  {
     name: 'Rapports',
     href: '/admin/rapports',
     icon: ChartBarIcon,
@@ -62,10 +78,23 @@ interface AdminHeaderProps {
 export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
+  
+  const {
+    notifications,
+    stats,
+    markAsRead,
+    markAllAsRead,
+    removeNotification,
+    getRecentNotifications,
+    formatRelativeTime,
+    getNotificationIcon
+  } = useNotificationContext();
 
   // Fermer les dropdowns quand on clique ailleurs
   useEffect(() => {
@@ -88,6 +117,23 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
     signOut({ callbackUrl: '/login' });
   };
 
+  const handleNotificationClick = (notification: { id: string; link?: string }) => {
+    markAsRead(notification.id);
+    if (notification.link) {
+      router.push(notification.link);
+    }
+    setIsNotificationsOpen(false);
+  };
+
+  const handleMarkAllAsRead = () => {
+    markAllAsRead();
+  };
+
+  const handleRemoveNotification = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    removeNotification(id);
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -108,83 +154,137 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
         <div className="flex justify-between items-center h-16">
           {/* Logo et titre */}
           <div className="flex items-center space-x-4">
-            {/* Bouton toggle sidebar */}
+            {/* Bouton toggle sidebar - Desktop uniquement */}
             {onToggleSidebar && (
               <button
                 onClick={onToggleSidebar}
-                className="p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-md"
+                className="hidden lg:block p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-md"
                 title="Basculer la sidebar"
               >
                 <Bars3Icon className="h-6 w-6" />
               </button>
             )}
+
+            {/* Bouton menu mobile */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-md"
+              title="Menu"
+            >
+              {isMobileMenuOpen ? (
+                <XMarkIcon className="h-6 w-6" />
+              ) : (
+                <Bars3Icon className="h-6 w-6" />
+              )}
+            </button>
             
             <div className="flex-shrink-0">
               <Link href="/admin">
-                <h1 className="text-xl font-bold text-gray-900 cursor-pointer hover:text-indigo-600">IRATA Admin</h1>
+                <h1 className="text-xl font-bold text-gray-900 hidden sm:block">
+                  IRATA Admin
+                </h1>
+                <h1 className="text-lg font-bold text-gray-900 sm:hidden">
+                  IRATA
+                </h1>
               </Link>
-            </div>
-          </div>
-
-          {/* Barre de recherche centrale */}
-          <div className="hidden md:block flex-1 max-w-lg mx-8">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Rechercher stagiaires, formations, documents..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              />
             </div>
           </div>
 
           {/* Actions à droite */}
           <div className="flex items-center space-x-4">
-            {/* Notifications */}
-            <div className="relative" ref={notificationsRef}>
+            {/* Barre de recherche - Cachée sur mobile */}
+            <div className="hidden md:block">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Rechercher..."
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Notifications - Cachées sur très petit écran */}
+            <div className="relative hidden sm:block" ref={notificationsRef}>
               <button
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-full"
+                className="p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-full relative"
+                title="Notifications"
               >
                 <BellIcon className="h-6 w-6" />
-                {/* Badge de notification */}
-                <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white"></span>
+                {stats.unread > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {stats.unread > 9 ? '9+' : stats.unread}
+                  </span>
+                )}
               </button>
 
               {/* Dropdown notifications */}
               {isNotificationsOpen && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                  <div className="p-4">
-                    <h3 className="text-lg font-medium text-gray-900 mb-3">Notifications</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
-                        <div className="flex-shrink-0">
-                          <div className="h-2 w-2 bg-blue-400 rounded-full mt-2"></div>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">Nouvelle demande de formation</p>
-                          <p className="text-sm text-gray-500">Jean Dupont a soumis une demande</p>
-                          <p className="text-xs text-gray-400">Il y a 5 minutes</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
-                        <div className="flex-shrink-0">
-                          <div className="h-2 w-2 bg-green-400 rounded-full mt-2"></div>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">Contrat signé</p>
-                          <p className="text-sm text-gray-500">Marie Martin a signé son contrat</p>
-                          <p className="text-xs text-gray-400">Il y a 1 heure</p>
-                        </div>
-                      </div>
+                  <div className="py-1">
+                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                      <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
+                      {stats.unread > 0 && (
+                        <button
+                          onClick={handleMarkAllAsRead}
+                          className="text-xs text-indigo-600 hover:text-indigo-800"
+                        >
+                          Tout marquer comme lu
+                        </button>
+                      )}
                     </div>
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <Link href="/admin/notifications" className="text-sm text-indigo-600 hover:text-indigo-500">
-                        Voir toutes les notifications
-                      </Link>
+                    <div className="max-h-64 overflow-y-auto">
+                      {getRecentNotifications().length === 0 ? (
+                        <div className="px-4 py-8 text-center">
+                          <BellIcon className="mx-auto h-8 w-8 text-gray-400" />
+                          <p className="mt-2 text-sm text-gray-500">Aucune notification</p>
+                        </div>
+                      ) : (
+                        getRecentNotifications().slice(0, 8).map((notification) => (
+                          <div
+                            key={notification.id}
+                            onClick={() => handleNotificationClick(notification)}
+                            className={`px-4 py-3 hover:bg-gray-50 cursor-pointer border-l-4 ${
+                              notification.read ? 'border-transparent' : 'border-indigo-500 bg-indigo-50'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-lg">{getNotificationIcon(notification.type)}</span>
+                                  <p className={`text-sm font-medium ${notification.read ? 'text-gray-900' : 'text-gray-900'}`}>
+                                    {notification.title}
+                                  </p>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">{notification.message}</p>
+                                <p className="text-xs text-gray-400 mt-1">{formatRelativeTime(notification.timestamp)}</p>
+                              </div>
+                              <button
+                                onClick={(e) => handleRemoveNotification(e, notification.id)}
+                                className="ml-2 text-gray-400 hover:text-gray-600 text-xs"
+                                title="Supprimer"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
+                    {getRecentNotifications().length > 8 && (
+                      <div className="border-t border-gray-100">
+                        <Link
+                          href="/admin/notifications"
+                          className="block px-4 py-3 text-sm text-center text-indigo-600 hover:bg-gray-50"
+                          onClick={() => setIsNotificationsOpen(false)}
+                        >
+                          Voir toutes les notifications ({stats.total})
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -194,16 +294,15 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="flex items-center space-x-2 p-2 text-sm rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                {/* Avatar */}
                 <div className="h-8 w-8 bg-indigo-600 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-white">
-                    {session?.user?.name ? getInitials(session.user.name) : 'AD'}
+                  <span className="text-white font-medium text-sm">
+                    {getInitials(session?.user?.name || 'Admin')}
                   </span>
                 </div>
                 
-                {/* Nom et rôle */}
+                {/* Nom et rôle - Cachés sur mobile */}
                 <div className="hidden md:block text-left">
                   <p className="text-sm font-medium text-gray-900">
                     {session?.user?.name || 'Administrateur'}
@@ -213,7 +312,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                   </p>
                 </div>
                 
-                <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                <ChevronDownIcon className="h-4 w-4 text-gray-400 hidden sm:block" />
               </button>
 
               {/* Dropdown profil */}
@@ -268,8 +367,70 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
         </div>
       </div>
 
-      {/* Barre de navigation avec onglets */}
-      <div className="border-t border-gray-200 bg-gray-50">
+      {/* Menu mobile */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden border-t border-gray-200 bg-white">
+          <div className="px-4 py-2 space-y-1">
+            {/* Barre de recherche mobile */}
+            <div className="md:hidden mb-4">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Rechercher..."
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Navigation mobile */}
+            {navigationTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = isActiveTab(tab.href);
+              
+              return (
+                <Link
+                  key={tab.name}
+                  href={tab.href}
+                  className={`
+                    flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium
+                    ${isActive
+                      ? 'bg-indigo-100 text-indigo-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }
+                  `}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Icon className="h-6 w-6" />
+                  <span>{tab.name}</span>
+                </Link>
+              );
+            })}
+
+            {/* Notifications mobile */}
+            <div className="sm:hidden border-t border-gray-200 pt-4 mt-4">
+              <Link
+                href="/admin/notifications"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <BellIcon className="h-6 w-6" />
+                <span>Notifications</span>
+                {stats.unread > 0 && (
+                  <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {stats.unread > 9 ? '9+' : stats.unread}
+                  </span>
+                )}
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barre de navigation avec onglets - Desktop uniquement */}
+      <div className="hidden lg:block border-t border-gray-200 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8 overflow-x-auto">
             {navigationTabs.map((tab) => {
@@ -299,4 +460,4 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
       </div>
     </header>
   );
-} 
+}

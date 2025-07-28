@@ -112,6 +112,19 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
       }
 
       setSuccess('Le devis a été validé avec succès');
+      
+      // Déclencher une notification pour l'admin
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('devisValidated', {
+          detail: {
+            type: 'DEVIS_VALIDATED',
+            message: `Devis ${devis?.numero} accepté par ${devis?.client} - Montant: ${devis?.montant}€`,
+            link: `/admin/devis/${resolvedParams.id}`
+          }
+        });
+        window.dispatchEvent(event);
+      }
+      
       fetchDevis(); // Rafraîchir les données du devis
     } catch (error) {
       setError('Erreur lors de la validation du devis');

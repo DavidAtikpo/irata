@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     const isPublic = formData.get('public') === 'true';
     const userId = formData.get('userId') as string;
     const devisId = formData.get('devisId') as string;
+    const certificationId = formData.get('certificationId') as string;
 
     if (!file || !nom || !type) {
       return NextResponse.json(
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
         public: isPublic,
         userId: userId || null,
         devisId: devisId || null,
+        certificationId: certificationId || null,
       },
       include: {
         user: userId ? { select: { nom: true, prenom: true, email: true } } : false,

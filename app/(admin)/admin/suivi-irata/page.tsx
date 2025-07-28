@@ -11,7 +11,10 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  DocumentArrowUpIcon,
+  DocumentArrowDownIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 
 interface CertificationIRATA {
@@ -31,6 +34,16 @@ interface CertificationIRATA {
   notePratique?: number;
   commentaires?: string;
   examinateur?: string;
+  documents?: DocumentIRATA[];
+}
+
+interface DocumentIRATA {
+  id: string;
+  nom: string;
+  description?: string;
+  url: string;
+  type: 'examen' | 'certificat' | 'rapport' | 'autre';
+  createdAt: string;
 }
 
 export default function SuiviIRATAPage() {
@@ -41,6 +54,13 @@ export default function SuiviIRATAPage() {
   const [selectedCertification, setSelectedCertification] = useState<CertificationIRATA | null>(null);
   const [filterNiveau, setFilterNiveau] = useState<string>('all');
   const [filterStatut, setFilterStatut] = useState<string>('all');
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadForm, setUploadForm] = useState({
+    nom: '',
+    description: '',
+    type: 'examen' as 'examen' | 'certificat' | 'rapport' | 'autre',
+  });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -138,6 +158,74 @@ export default function SuiviIRATAPage() {
     const statutMatch = filterStatut === 'all' || cert.statut === filterStatut;
     return niveauMatch && statutMatch;
   });
+
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCertification) return;
+
+    const formData = new FormData(e.target as HTMLFormElement);
+    formData.append('certificationId', selectedCertification.id);
+    
+    setUploading(true);
+
+    try {
+      const response = await fetch('/api/admin/documents/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors du téléversement');
+      }
+
+      setShowUploadForm(false);
+      setUploadForm({
+        nom: '',
+        description: '',
+        type: 'examen',
+      });
+      
+      // Recharger les données de la certification
+      // Ici on pourrait recharger les données depuis l'API
+      
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors du téléversement du document');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDownload = (url: string, nom: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nom;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) return;
+
+    try {
+      const response = await fetch(`/api/admin/documents?id=${documentId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la suppression');
+      }
+
+      // Recharger les données
+      // Ici on pourrait recharger les données depuis l'API
+      
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de la suppression du document');
+    }
+  };
 
   if (status === 'loading' || loading) {
     return (
@@ -467,6 +555,147 @@ export default function SuiviIRATAPage() {
                     placeholder="Commentaires sur l'examen, points forts, axes d'amélioration..."
                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                   />
+                </div>
+
+                {/* Section Documents */}
+                <div className="border-t pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-medium text-gray-900">Documents associés</h4>
+                    <button
+                      type="button"
+                      onClick={() => setShowUploadForm(true)}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      <DocumentArrowUpIcon className="h-4 w-4 mr-2" />
+                      Ajouter un document
+                    </button>
+                  </div>
+
+                  {/* Formulaire de téléversement */}
+                  {showUploadForm && (
+                    <div className="mb-6 bg-gray-50 p-4 rounded-lg">
+                      <h5 className="text-md font-medium text-gray-900 mb-3">Téléverser un nouveau document</h5>
+                      <form onSubmit={handleUpload} className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Nom du document *
+                            </label>
+                            <input
+                              type="text"
+                              name="nom"
+                              required
+                              value={uploadForm.nom}
+                              onChange={(e) => setUploadForm({ ...uploadForm, nom: e.target.value })}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Type
+                            </label>
+                            <select
+                              name="type"
+                              value={uploadForm.type}
+                              onChange={(e) => setUploadForm({ ...uploadForm, type: e.target.value as any })}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                            >
+                              <option value="examen">Examen</option>
+                              <option value="certificat">Certificat</option>
+                              <option value="rapport">Rapport</option>
+                              <option value="autre">Autre</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Description
+                          </label>
+                          <textarea
+                            name="description"
+                            value={uploadForm.description}
+                            onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                            rows={2}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Fichier PDF *
+                          </label>
+                          <input
+                            type="file"
+                            name="file"
+                            accept=".pdf"
+                            required
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                          />
+                        </div>
+
+                        <div className="flex space-x-3">
+                          <button
+                            type="submit"
+                            disabled={uploading}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md disabled:opacity-50"
+                          >
+                            {uploading ? 'Téléversement...' : 'Téléverser'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowUploadForm(false)}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* Liste des documents */}
+                  <div className="space-y-2">
+                    {selectedCertification.documents && selectedCertification.documents.length > 0 ? (
+                      selectedCertification.documents.map((doc) => (
+                        <div key={doc.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <DocumentTextIcon className="h-5 w-5 text-gray-400" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{doc.nom}</p>
+                              {doc.description && (
+                                <p className="text-xs text-gray-500">{doc.description}</p>
+                              )}
+                              <p className="text-xs text-gray-500">
+                                {new Date(doc.createdAt).toLocaleDateString('fr-FR')} - {doc.type}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleDownload(doc.url, doc.nom)}
+                              className="p-1 text-green-600 hover:text-green-800 hover:bg-green-100 rounded"
+                              title="Télécharger"
+                            >
+                              <DocumentArrowDownIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteDocument(doc.id)}
+                              className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded"
+                              title="Supprimer"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-4 text-gray-500">
+                        <DocumentTextIcon className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+                        <p className="text-sm">Aucun document associé</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="flex justify-end space-x-3 pt-4">

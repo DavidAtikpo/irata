@@ -8,6 +8,7 @@ import {
   DocumentDuplicateIcon,
   AcademicCapIcon,
   BanknotesIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 
 async function getStats() {
@@ -18,8 +19,9 @@ async function getStats() {
     devisEnAttente,
     totalContrats,
     contratsEnAttente,
-    montantTotalDevis,
-    montantTotalContrats
+    totalFormulaires,
+    formulairesValides,
+    totalReponses
   ] = await Promise.all([
     prisma.demande.count(),
     prisma.demande.count({ where: { statut: 'EN_ATTENTE' } }),
@@ -27,18 +29,9 @@ async function getStats() {
     prisma.devis.count({ where: { statut: 'EN_ATTENTE' } }),
     prisma.contrat.count(),
     prisma.contrat.count({ where: { statut: 'EN_ATTENTE' } }),
-    prisma.devis.aggregate({
-      where: { statut: 'VALIDE' },
-      _sum: { montant: true }
-    }),
-    prisma.contrat.findMany({
-      where: { statut: 'VALIDE' },
-      include: {
-        devis: {
-          select: { montant: true }
-        }
-      }
-    })
+    prisma.formulairesQuotidiens.count(),
+    prisma.formulairesQuotidiens.count({ where: { valide: true } as any }),
+    prisma.reponseFormulaire.count()
   ]);
 
   return {
@@ -48,8 +41,9 @@ async function getStats() {
     devisEnAttente,
     totalContrats,
     contratsEnAttente,
-    montantTotalDevis: montantTotalDevis._sum?.montant || 0,
-    montantTotalContrats: montantTotalContrats.reduce((sum: number, contrat: any) => sum + (contrat.devis?.montant || 0), 0)
+    totalFormulaires,
+    formulairesValides,
+    totalReponses
   };
 }
 
@@ -85,10 +79,17 @@ export default async function AdminDashboard() {
       href: '/admin/contrats',
     },
     {
-      name: 'Montant Total',
-      value: `${(stats.montantTotalDevis + stats.montantTotalContrats).toLocaleString('fr-FR')} €`,
-      icon: BanknotesIcon,
-      href: '/admin/devis',
+      name: 'Formulaires Quotidiens',
+      value: stats.totalFormulaires,
+      pending: stats.formulairesValides,
+      icon: DocumentTextIcon,
+      href: '/admin/formulaires-quotidiens',
+    },
+    {
+      name: 'Réponses Formulaires',
+      value: stats.totalReponses,
+      icon: ChatBubbleLeftRightIcon,
+      href: '/admin/formulaires-quotidiens/reponses',
     },
   ];
 
@@ -117,7 +118,7 @@ export default async function AdminDashboard() {
               </p>
               {card.pending !== undefined && (
                 <p className="ml-2 flex items-baseline text-sm font-semibold text-orange-600">
-                  ({card.pending} en attente)
+                  ({card.pending} {card.name === 'Formulaires Quotidiens' ? 'validés' : 'en attente'})
                 </p>
               )}
             </dd>

@@ -29,6 +29,8 @@ model User {
   inspections           EquipmentInspection[]
   jobPlans              JobPlan[]
   assessorInspections   EquipmentInspection[] @relation("AssessorInspections")
+  formulairesCrees      FormulairesQuotidiens[] @relation("AdminFormulaires")
+  reponsesFormulaires   ReponseFormulaire[] @relation("StagiaireReponses")
 
   @@schema("webirata")
 }
@@ -148,7 +150,7 @@ model Document {
   description String?
   cloudinaryId String  @unique
   url         String
-  type        String   // 'formation', 'contrat', 'general', etc.
+  type        String   // 'formation', 'contrat', 'general', 'examen', 'certificat', etc.
   public      Boolean  @default(false) // Si accessible à tous les utilisateurs
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -158,7 +160,49 @@ model Document {
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   devisId     String?  // Si lié à un devis spécifique
   devis       Devis?   @relation(fields: [devisId], references: [id], onDelete: SetNull)
+  certificationId String? // Si lié à une certification IRATA
 
+  @@schema("webirata")
+}
+
+model FormulairesQuotidiens {
+  id          String   @id @default(cuid())
+  titre       String
+  description String?
+  session     String   // Session de formation (ex: "2025 février 03 au 08")
+  dateCreation DateTime @default(now())
+  dateDebut   DateTime
+  dateFin     DateTime
+  actif       Boolean  @default(true)
+  valide      Boolean  @default(false) // Nouveau champ pour valider les formulaires
+  questions   Json     // Array de questions
+  createdBy   String   // ID de l'admin qui l'a créé
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  reponses    ReponseFormulaire[]
+  admin       User     @relation("AdminFormulaires", fields: [createdBy], references: [id])
+
+  @@schema("webirata")
+}
+
+model ReponseFormulaire {
+  id              String   @id @default(cuid())
+  formulaireId    String
+  stagiaireId     String
+  dateReponse     DateTime @default(now())
+  reponses        Json     // Array des réponses aux questions
+  commentaires    String?
+  soumis          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  formulaire      FormulairesQuotidiens @relation(fields: [formulaireId], references: [id], onDelete: Cascade)
+  stagiaire       User                  @relation("StagiaireReponses", fields: [stagiaireId], references: [id], onDelete: Cascade)
+
+  @@unique([formulaireId, stagiaireId, dateReponse])
   @@schema("webirata")
 }
 

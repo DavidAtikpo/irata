@@ -162,19 +162,19 @@ export default function UserDocumentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-6 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <button
             onClick={() => router.back()}
-            className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-1" />
             Retour
           </button>
-          <div className="mt-4">
-            <h1 className="text-3xl font-bold text-gray-900">Mes documents</h1>
-            <p className="mt-2 text-sm text-gray-600">
+          <div className="mt-4 text-center sm:text-left">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes documents</h1>
+            <p className="mt-2 text-sm sm:text-base text-gray-600">
               Accédez à vos documents de formation et contractuels
             </p>
           </div>
@@ -187,16 +187,16 @@ export default function UserDocumentsPage() {
         )}
 
         {/* Barre de filtres */}
-        <div className="mb-6 bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
+        <div className="mb-6 bg-white p-4 sm:p-6 rounded-lg shadow">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">
               Mes documents ({filteredDocuments.length})
             </h3>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center text-gray-600 hover:text-gray-900"
+              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
             >
-              <AdjustmentsHorizontalIcon className="h-5 w-5 mr-2" />
+              <AdjustmentsHorizontalIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
               Filtres
             </button>
           </div>
@@ -204,13 +204,13 @@ export default function UserDocumentsPage() {
           {/* Barre de recherche */}
           <div className="flex items-center space-x-4 mb-4">
             <div className="flex-1 relative">
-              <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <MagnifyingGlassIcon className="h-4 w-4 sm:h-5 sm:w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Rechercher dans mes documents..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full pl-8 sm:pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
           </div>

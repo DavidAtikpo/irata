@@ -26,8 +26,45 @@ body {
   background: #fff;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Améliorations responsive */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
 }
 
 .input {
-  @apply mt-1 block w-full border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 sm:text-base px-3 py-2;
+  @apply mt-1 block w-full border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base px-3 py-2 transition-colors duration-200;
+}
+
+/* Améliorations pour les formulaires responsives */
+.form-input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200;
+}
+
+.form-button {
+  @apply px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 text-sm font-medium;
+}
+
+/* Améliorations pour les cartes responsives */
+.card {
+  @apply bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+}
+
+/* Améliorations pour les tableaux responsives */
+.table-responsive {
+  @apply overflow-x-auto -mx-4 sm:mx-0;
+}
+
+.table-responsive table {
+  @apply min-w-full;
+}
+
+/* Améliorations pour les grilles responsives */
+.grid-responsive {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
 }

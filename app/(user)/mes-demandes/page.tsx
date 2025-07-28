@@ -70,32 +70,32 @@ export default function MesDemandesPage() {
   }
 
   return (
-    <div className="py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-6 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Mes demandes de formation</h2>
-          <p className="mt-2 text-gray-600">Consultez l'état de vos demandes de formation</p>
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes demandes de formation</h2>
+          <p className="mt-2 text-sm sm:text-base text-gray-600">Consultez l'état de vos demandes de formation</p>
         </div>
 
         {demandes.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">Vous n'avez pas encore fait de demande de formation</p>
+          <div className="text-center py-8 sm:py-12">
+            <p className="text-sm sm:text-base text-gray-600">Vous n'avez pas encore fait de demande de formation</p>
             <Link
               href="/demande"
-              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              className="mt-4 inline-flex items-center px-3 sm:px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
             >
               Faire une demande de formation
             </Link>
           </div>
         ) : (
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <div className="bg-white shadow overflow-hidden rounded-lg">
             <ul className="divide-y divide-gray-200">
               {demandes.map((demande) => (
-                <li key={demande.id}>
+                <li key={demande.id} className="hover:bg-gray-50 transition-colors duration-200">
                   <div className="px-4 py-4 sm:px-6">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-medium text-gray-900 truncate">
+                        <h3 className="text-base sm:text-lg font-medium text-gray-900 truncate">
                           Formation Cordiste IRATA - {demande.session}
                         </h3>
                         <p className="mt-1 text-sm text-gray-500">
