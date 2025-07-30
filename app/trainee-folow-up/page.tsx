@@ -340,7 +340,7 @@ export default function TraineeFollowUpForm() {
           {/* Corps du tableau */}
           <tbody>
             {syllabus.map((item, index) => (
-              <tr key={item} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+              <tr key={`syllabus-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                 <td className="border p-2 sticky left-0 bg-inherit z-10 font-medium">
                   {item}
                 </td>
