@@ -29,7 +29,7 @@ import {
 const navigationTabs = [
   {
     name: 'Suivi stagiaires',
-    href: '/admin/suivi-stagiaire',
+    href: '/admin/trainee-folow-up',
     icon: UserGroupIcon,
     description: 'Suivi des stagiaires en formation'
   },

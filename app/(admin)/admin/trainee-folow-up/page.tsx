@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { generateTraineeFollowUpPDF } from '../../../../lib/pdf-generator';
 
@@ -453,12 +454,7 @@ export default function TraineeFollowUpForm() {
         </div>
       </div>
 
-      {/* QR Code */}
-      <div className="mb-4 p-4">
-        <div className="w-16 h-16 bg-gray-200 border border-gray-400 flex items-center justify-center">
-          <span className="text-xs text-gray-500">QR</span>
-        </div>
-      </div>
+
 
       <div className="overflow-auto border rounded shadow">
         
@@ -467,7 +463,7 @@ export default function TraineeFollowUpForm() {
           
           <thead className="bg-white">
             <tr>
-              <td colSpan={3 + trainees.length * 5} className="border p-4">
+              <td colSpan={4 + trainees.length * 5} className="border p-4">
                 {/* Session de formation */}
                 {currentSession && (
                   <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
@@ -486,30 +482,50 @@ export default function TraineeFollowUpForm() {
                   </div>
                 )}
                 
-                {/* Tableau d'informations */}
-                <div className="mb-4">
-                  <table className="w-full border-collapse">
-                    <tbody>
-                      <tr>
-                        <td className="border p-2 font-bold">Titre</td>
-                        <td className="border p-2 font-bold">Code Number</td>
-                        <td className="border p-2 font-bold">Revision</td>
-                        <td className="border p-2 font-bold">Creation date</td>
-                      </tr>
-                      <tr>
-                        <td className="border p-2">CI.DES TRAINEE FOLLOW UP FORM</td>
-                        <td className="border p-2">ENR-CIFRA-FORM 004</td>
-                        <td className="border p-2">01</td>
-                        <td className="border p-2">09/10/2023</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div className="flex items-start">
+                  {/* QR Code à gauche */}
+                  <div className="mr-4 flex-shrink-0">
+                    <div className="w-16 h-16 bg-gray-200 border border-gray-400 flex items-center justify-center">
+                    <Image
+                src="/logo.png"
+                alt="CI.DES Logo"
+                width={260}
+                height={70}
+                className="object-contain w-20 sm:w-20 lg:w-20"
+                priority
+              />
+                      {/* <span className="text-xs text-gray-500">QR</span> */}
+                    </div>
+                  </div>
+                  
+                  {/* Informations à droite */}
+                  <div className="flex-1">
+                    {/* Tableau d'informations */}
+                    <div className="mb-6">
+                      <table className="border-collapse">
+                        <tbody>
+                          <tr>
+                            <td className="border p-2 font-bold">Titre</td>
+                            <td className="border p-2 font-bold">Code Number</td>
+                            <td className="border p-2 font-bold">Revision</td>
+                            <td className="border p-2 font-bold">Creation date</td>
+                          </tr>
+                          <tr>
+                            <td className="border p-2">CI.DES TRAINEE FOLLOW UP FORM</td>
+                            <td className="border p-2">ENR-CIFRA-FORM 004</td>
+                            <td className="border p-2">01</td>
+                            <td className="border p-2">09/10/2023</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    {/* Titre principal */}
+                    <h1 className="text-2xl font-bold text-center mb-4">
+                      TRAINEE FOLLOW UP FORM - VUE ADMIN
+                    </h1>
+                  </div>
                 </div>
-                
-                {/* Titre principal */}
-                <h1 className="text-2xl font-bold text-center mb-4">
-                  TRAINEE FOLLOW UP FORM - VUE ADMIN
-                </h1>
               </td>
             </tr>
           </thead>
