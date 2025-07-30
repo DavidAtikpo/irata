@@ -16,7 +16,8 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ClipboardDocumentCheckIcon,
-  ClipboardDocumentIcon
+  ClipboardDocumentIcon,
+  UserIcon
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -30,6 +31,7 @@ const navigation = [
   // { name: '⚠️ État Cloudinary', href: '/admin/cloudinary-info', icon: ExclamationTriangleIcon },
   { name: 'Formations', href: '/admin/formations', icon: AcademicCapIcon },
   { name: 'Stagiaires', href: '/admin/utilisateurs', icon: UserGroupIcon },
+  { name: 'Trainee Follow Up', href: '/trainee-folow-up', icon: UserIcon },
   { name: 'Paramètres', href: '/admin/parametres', icon: Cog6ToothIcon },
 ];
 
