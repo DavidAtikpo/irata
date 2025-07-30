@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '../../../../lib/auth';
+import { prisma } from '../../../../lib/prisma';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -14,15 +14,17 @@ export async function GET() {
       );
     }
 
+    const { searchParams } = new URL(request.url);
+    const role = searchParams.get('role');
+
     const users = await prisma.user.findMany({
-      where: {
-        role: 'USER',
-      },
+      where: role ? { role: role as any } : {},
       select: {
         id: true,
         nom: true,
         prenom: true,
         email: true,
+        role: true,
       },
       orderBy: {
         nom: 'asc',

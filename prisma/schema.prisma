@@ -31,6 +31,9 @@ model User {
   assessorInspections   EquipmentInspection[] @relation("AssessorInspections")
   formulairesCrees      FormulairesQuotidiens[] @relation("AdminFormulaires")
   reponsesFormulaires   ReponseFormulaire[] @relation("StagiaireReponses")
+  traineeProgress       TraineeProgress[]
+  traineeSignatures     TraineeSignature[]
+  trainingSessions      TrainingSession[] @relation("TrainingSessionTrainees")
 
   @@schema("webirata")
 }
@@ -336,6 +339,97 @@ model JobPlan {
   // Relations
   technicianId          String
   technician            User      @relation(fields: [technicianId], references: [id])
+
+  @@schema("webirata")
+}
+
+// Tables pour le Trainee Follow Up
+model TraineeFollowUp {
+  id          String   @id @default(cuid())
+  title       String   @default("CI.DES TRAINEE FOLLOW UP FORM")
+  codeNumber  String   @default("ENR-CIFRA-FORM 004")
+  revision    String   @default("01")
+  creationDate DateTime @default(now())
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  progress    TraineeProgress[]
+  levelData   TraineeLevelData[]
+  signatures  TraineeSignature[]
+
+  @@schema("webirata")
+}
+
+model TraineeProgress {
+  id           String   @id @default(cuid())
+  syllabusItem String   // Élément du programme (ex: "Planification et gestion")
+  traineeId    String   // ID du stagiaire
+  day          String   // J1, J2, J3, J4, J5
+  completed    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  trainee      User     @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+  followUpId   String?
+  followUp     TraineeFollowUp? @relation(fields: [followUpId], references: [id], onDelete: SetNull)
+
+  @@unique([syllabusItem, traineeId, day])
+  @@schema("webirata")
+}
+
+model TraineeLevelData {
+  id           String   @id @default(cuid())
+  syllabusItem String   // Élément du programme
+  level        String   // Level 1, Level 2, Level 3
+  required     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  followUpId   String?
+  followUp     TraineeFollowUp? @relation(fields: [followUpId], references: [id], onDelete: SetNull)
+
+  @@unique([syllabusItem, level])
+  @@schema("webirata")
+}
+
+model TraineeSignature {
+  id            String   @id @default(cuid())
+  traineeId     String   // ID du stagiaire
+  signature     String   // Signature du stagiaire
+  adminSignature String? // Signature de l'admin
+  isValidated   Boolean  @default(false) // Si le formulaire est validé
+  validatedAt   DateTime? // Date de validation
+  currentDay    Int      @default(1) // Jour actuel autorisé (1-5)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  trainee       User     @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+  followUpId    String?
+  followUp      TraineeFollowUp? @relation(fields: [followUpId], references: [id], onDelete: SetNull)
+  sessionId     String?
+  session       TrainingSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@unique([traineeId])
+  @@schema("webirata")
+}
+
+model TrainingSession {
+  id          String   @id @default(cuid())
+  name        String   // Nom de la session (ex: "Session Juillet 2025")
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  trainees    User[]   @relation("TrainingSessionTrainees")
+  signatures  TraineeSignature[]
 
   @@schema("webirata")
 }
