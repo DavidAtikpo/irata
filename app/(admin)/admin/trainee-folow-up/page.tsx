@@ -349,7 +349,7 @@ export default function TraineeFollowUpForm() {
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {availableSessions.map((session) => (
-                <option key={session.name} value={session.name}>
+                <option key={session.id} value={session.name}>
                   {session.name} ({session.traineeIds?.length || 0} stagiaires)
                 </option>
               ))}
@@ -565,7 +565,7 @@ export default function TraineeFollowUpForm() {
           {/* Corps du tableau */}
           <tbody>
             {syllabus.map((item, index) => (
-              <tr key={item} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+              <tr key={`syllabus-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                 <td className="border p-2 sticky left-0 bg-inherit z-10 font-medium">
                   {item}
                 </td>
