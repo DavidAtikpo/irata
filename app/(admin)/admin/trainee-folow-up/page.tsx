@@ -131,7 +131,7 @@ export default function TraineeFollowUpForm() {
   const [signatures, setSignatures] = useState<SignatureData[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const [traineeCurrentDays, setTraineeCurrentDays] = useState<{[key: string]: number}>({});
+  const [globalCurrentDay, setGlobalCurrentDay] = useState<number>(1);
   const [currentSession, setCurrentSession] = useState<TrainingSession | null>(null);
   const [availableSessions, setAvailableSessions] = useState<TrainingSession[]>([]);
 
@@ -178,12 +178,22 @@ export default function TraineeFollowUpForm() {
         const signatureData = await signatureResponse.json();
         setSignatures(signatureData);
         
-        // Extraire les jours actuels des stagiaires
-        const currentDays: {[key: string]: number} = {};
-        signatureData.forEach((sig: any) => {
-          currentDays[sig.traineeId] = sig.currentDay || 1;
-        });
-        setTraineeCurrentDays(currentDays);
+        // Extraire le jour global actuel (prendre le maximum de tous les stagiaires)
+        const allDays = signatureData.map((sig: any) => sig.currentDay || 1);
+        const maxDay = allDays.length > 0 ? Math.max(...allDays) : 1;
+        setGlobalCurrentDay(maxDay);
+        
+        console.log('Jours récupérés:', allDays, 'Jour max:', maxDay);
+      }
+
+      // Récupérer le jour global actuel depuis l'API dédiée
+      const globalDayResponse = await fetch('/api/admin/global-current-day');
+      if (globalDayResponse.ok) {
+        const globalDayData = await globalDayResponse.json();
+        if (globalDayData.currentDay) {
+          setGlobalCurrentDay(globalDayData.currentDay);
+          console.log('Jour global depuis API:', globalDayData.currentDay);
+        }
       }
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
@@ -258,31 +268,38 @@ export default function TraineeFollowUpForm() {
     }
   };
 
-  const handleUnlockNextDay = async (traineeId: string) => {
-    const currentDay = traineeCurrentDays[traineeId] || 1;
-    const nextDay = Math.min(currentDay + 1, 5); // Maximum jour 5
+  const handleUnlockNextDay = async () => {
+    const nextDay = Math.min(globalCurrentDay + 1, 5); // Maximum jour 5
     
     try {
-      const response = await fetch('/api/admin/unlock-next-day', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          traineeId,
-          nextDay,
-        }),
-      });
+      // Débloquer pour tous les stagiaires
+      const promises = trainees.map(trainee => 
+        fetch('/api/admin/unlock-next-day', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            traineeId: trainee.id,
+            nextDay,
+          }),
+        })
+      );
 
-      if (response.ok) {
+      const responses = await Promise.all(promises);
+      const allSuccessful = responses.every(response => response.ok);
+
+      if (allSuccessful) {
         // Mettre à jour l'état local
-        setTraineeCurrentDays(prev => ({
-          ...prev,
-          [traineeId]: nextDay
-        }));
-        alert(`Jour ${nextDay} débloqué pour le stagiaire`);
+        setGlobalCurrentDay(nextDay);
+        alert(`Jour ${nextDay} débloqué pour tous les stagiaires`);
+        
+        // Recharger les données pour s'assurer de la synchronisation
+        setTimeout(() => {
+          fetchData();
+        }, 1000);
       } else {
-        alert('Erreur lors du déblocage du jour');
+        alert('Erreur lors du déblocage du jour pour certains stagiaires');
       }
     } catch (error) {
       console.error('Erreur lors du déblocage:', error);
@@ -407,50 +424,67 @@ export default function TraineeFollowUpForm() {
         </div>
       </div>
 
-      {/* Gestion des jours des stagiaires */}
+      {/* Gestion globale des jours */}
       <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h3 className="font-bold text-blue-800 mb-2">🔓 Gestion des jours d'accès</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {trainees.map((trainee) => {
-            const currentDay = traineeCurrentDays[trainee.id] || 1;
-            const isMaxDay = currentDay >= 5;
-            
-            return (
-              <div key={trainee.id} className="bg-white p-3 rounded border">
-                <div className="font-bold text-gray-800 mb-2">
-                  {trainee.prenom} {trainee.nom}
-                </div>
-                <div className="text-sm text-gray-600 mb-2">
-                  Jour actuel : <span className="font-bold text-blue-600">{currentDay}/5</span>
-                </div>
-                <div className="flex space-x-1 mb-2">
-                  {[1, 2, 3, 4, 5].map((day) => (
-                    <div
-                      key={day}
-                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        day <= currentDay
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gray-200 text-gray-500'
-                      }`}
-                    >
-                      {day}
-                    </div>
-                  ))}
-                </div>
-                <button
-                  onClick={() => handleUnlockNextDay(trainee.id)}
-                  disabled={isMaxDay}
-                  className={`w-full px-3 py-1 text-xs rounded transition-colors ${
-                    isMaxDay
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+        <h3 className="font-bold text-blue-800 mb-2">🔓 Gestion globale des jours d'accès</h3>
+        <div className="bg-white p-4 rounded border">
+          <div className="text-center mb-4">
+            <div className="text-lg font-bold text-gray-800 mb-2">
+              Jour actuel pour tous les stagiaires
+            </div>
+            <div className="text-3xl font-bold text-blue-600 mb-4">
+              {globalCurrentDay}/5
+            </div>
+            <div className="flex justify-center space-x-2 mb-4">
+              {[1, 2, 3, 4, 5].map((day) => (
+                <div
+                  key={day}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                    day <= globalCurrentDay
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-500'
                   }`}
                 >
-                  {isMaxDay ? 'Tous les jours débloqués' : 'Débloquer jour suivant'}
-                </button>
-              </div>
-            );
-          })}
+                  {day}
+                </div>
+              ))}
+            </div>
+            <div className="flex space-x-2 justify-center">
+              <button
+                onClick={handleUnlockNextDay}
+                disabled={globalCurrentDay >= 5}
+                className={`px-6 py-2 text-sm rounded transition-colors ${
+                  globalCurrentDay >= 5
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {globalCurrentDay >= 5 ? 'Tous les jours débloqués' : 'Débloquer jour suivant pour tous'}
+              </button>
+              <button
+                onClick={() => {
+                  fetchData();
+                  alert('Données rafraîchies');
+                }}
+                className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+              >
+                🔄 Rafraîchir
+              </button>
+            </div>
+          </div>
+          
+          {/* Liste des stagiaires avec leur statut */}
+          <div className="mt-4">
+            <h4 className="font-semibold text-gray-700 mb-2">Statut des stagiaires :</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+              {trainees.map((trainee) => (
+                <div key={trainee.id} className="text-sm p-2 bg-gray-50 rounded">
+                  <span className="font-medium">{trainee.prenom} {trainee.nom}</span>
+                  <span className="ml-2 text-green-600">✓ Jour {globalCurrentDay} accessible</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -482,50 +516,37 @@ export default function TraineeFollowUpForm() {
                   </div>
                 )}
                 
-                <div className="flex items-start">
-                  {/* QR Code à gauche */}
+                {/* Tableau d'informations avec logo */}
+                <div className="flex items-start mb-4">
                   <div className="mr-4 flex-shrink-0">
                     <div className="w-16 h-16 bg-gray-200 border border-gray-400 flex items-center justify-center">
-                    <Image
-                src="/logo.png"
-                alt="CI.DES Logo"
-                width={260}
-                height={70}
-                className="object-contain w-20 sm:w-20 lg:w-20"
-                priority
-              />
-                      {/* <span className="text-xs text-gray-500">QR</span> */}
+                      <Image src="/logo.png" alt="CI.DES Logo" width={100} height={100} />
                     </div>
                   </div>
-                  
-                  {/* Informations à droite */}
                   <div className="flex-1">
-                    {/* Tableau d'informations */}
-                    <div className="mb-6">
-                      <table className="border-collapse">
-                        <tbody>
-                          <tr>
-                            <td className="border p-2 font-bold">Titre</td>
-                            <td className="border p-2 font-bold">Code Number</td>
-                            <td className="border p-2 font-bold">Revision</td>
-                            <td className="border p-2 font-bold">Creation date</td>
-                          </tr>
-                          <tr>
-                            <td className="border p-2">CI.DES TRAINEE FOLLOW UP FORM</td>
-                            <td className="border p-2">ENR-CIFRA-FORM 004</td>
-                            <td className="border p-2">01</td>
-                            <td className="border p-2">09/10/2023</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    
-                    {/* Titre principal */}
-                    <h1 className="text-2xl font-bold text-center mb-4">
-                      TRAINEE FOLLOW UP FORM - VUE ADMIN
-                    </h1>
+                    <table className="w-full border-collapse">
+                      <tbody>
+                        <tr>
+                          <td className="border p-2 font-bold">Titre</td>
+                          <td className="border p-2 font-bold">Code Number</td>
+                          <td className="border p-2 font-bold">Revision</td>
+                          <td className="border p-2 font-bold">Creation date</td>
+                        </tr>
+                        <tr>
+                          <td className="border p-2">CI.DES TRAINEE FOLLOW UP FORM</td>
+                          <td className="border p-2">ENR-CIFRA-FORM 004</td>
+                          <td className="border p-2">01</td>
+                          <td className="border p-2">09/10/2023</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
+                
+                {/* Titre principal */}
+                <h1 className="text-2xl font-bold text-center mb-4">
+                  TRAINEE FOLLOW UP FORM - VUE ADMIN
+                </h1>
               </td>
             </tr>
           </thead>

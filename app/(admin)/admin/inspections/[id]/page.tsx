@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface EquipmentInspection {
   id: string;
@@ -179,25 +180,37 @@ export default async function InspectionDetailPage({ params }: { params: Promise
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {/* Header */}
+      {/* Header avec logo */}
       <div className="mb-6">
         <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Inspection d'Équipement</h1>
-            <p className="text-gray-600">Document: {inspection.docNumber}</p>
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-gray-200 border border-gray-400 flex items-center justify-center">
+              <Image src="/logo.png" alt="CI.DES Logo" width={64} height={64} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Inspection d'Équipement</h1>
+              <p className="text-gray-600">Document: {inspection.docNumber}</p>
+              <p className="text-sm text-gray-500">CI.DES Formations Cordistes</p>
+            </div>
           </div>
           <div className="flex space-x-2">
             <Link
               href={`/admin/inspections/${inspection.id}/edit`}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
             >
-              Modifier
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <span>Modifier</span>
             </Link>
             <Link
               href="/admin/inspections"
-              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center space-x-2"
             >
-              Retour
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span>Retour</span>
             </Link>
           </div>
         </div>

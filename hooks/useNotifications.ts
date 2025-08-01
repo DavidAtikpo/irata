@@ -38,16 +38,7 @@ function saveNotifications(notifications: Notification[]): void {
 }
 
 // Notifications de démonstration
-const DEMO_NOTIFICATIONS = [
-  createNotification('NEW_DEMANDE', 'Jean Dupont a soumis une demande pour la formation IRATA Niveau 1', '/admin/demandes'),
-  createNotification('FORMULAIRE_VALIDATED', 'Le formulaire quotidien "Évaluation session 2025" a été validé', '/admin/formulaires-quotidiens'),
-  createNotification('NEW_REPONSE', 'Marie Martin a répondu au formulaire quotidien', '/admin/formulaires-quotidiens/reponses'),
-  createNotification('NEW_DEVIS', 'Un nouveau devis a été créé pour la formation de février', '/admin/devis'),
-  createNotification('DOCUMENT_UPLOADED', 'Certificat médical téléchargé par Pierre Durand', '/admin/documents'),
-  createNotification('INSPECTION_DUE', 'Inspection d\'équipement due pour la session de mars', '/admin/inspections'),
-  createNotification('FORMATION_STARTING', 'La formation IRATA Niveau 2 commence dans 2 jours', '/admin/suivi-stagiaire'),
-  createNotification('PAYMENT_RECEIVED', 'Paiement reçu pour la formation de janvier', '/admin/devis')
-];
+
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -59,8 +50,6 @@ export function useNotifications() {
     
     // Si aucune notification stockée, utiliser les notifications de démonstration
     if (storedNotifications.length === 0) {
-      setNotifications(DEMO_NOTIFICATIONS);
-      saveNotifications(DEMO_NOTIFICATIONS);
     } else {
       setNotifications(storedNotifications);
     }

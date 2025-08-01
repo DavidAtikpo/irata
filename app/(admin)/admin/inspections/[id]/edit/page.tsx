@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface EquipmentInspection {
   id: string;
@@ -131,9 +132,32 @@ export default async function EditInspectionPage({ params }: { params: Promise<{
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      {/* Header avec logo */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Modifier l'Inspection d'Équipement</h1>
-        <p className="text-gray-600">Document: {form.docNumber}</p>
+        <div className="flex justify-between items-start">
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-gray-200 border border-gray-400 flex items-center justify-center">
+              <Image src="/logo.png" alt="CI.DES Logo" width={64} height={64} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Modifier l'Inspection d'Équipement</h1>
+              <p className="text-gray-600">Document: {form.docNumber}</p>
+              <p className="text-sm text-gray-500">CI.DES Formations Cordistes</p>
+            </div>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>{saving ? 'Enregistrement...' : 'Enregistrer'}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">

@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import Image from 'next/image';
 import {
   ClipboardDocumentListIcon,
   DocumentTextIcon,
@@ -95,7 +96,16 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-gray-900">Tableau de bord</h1>
+      {/* Header avec logo */}
+      <div className="flex items-center space-x-4 mb-6">
+        <div className="w-16 h-16 bg-gray-200 border border-gray-400 flex items-center justify-center">
+          <Image src="/logo.png" alt="CI.DES Logo" width={64} height={64} />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Tableau de bord</h1>
+          <p className="text-sm text-gray-600">CI.DES Formations Cordistes</p>
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
