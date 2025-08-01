@@ -12,6 +12,8 @@ export async function POST(request: NextRequest) {
 
     const { traineeId, nextDay } = await request.json();
 
+    console.log(`Déblocage jour ${nextDay} pour stagiaire ${traineeId}`);
+    
     // Mettre à jour le jour autorisé pour le stagiaire
     const updatedSignature = await prisma.traineeSignature.upsert({
       where: {
@@ -28,6 +30,8 @@ export async function POST(request: NextRequest) {
         isValidated: false
       } as any,
     });
+
+    console.log('Signature mise à jour:', updatedSignature);
 
     return NextResponse.json({
       success: true,

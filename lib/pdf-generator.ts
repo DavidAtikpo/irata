@@ -48,25 +48,72 @@ export function generateTraineeFollowUpPDF(
   const colors = {
     header: [255, 255, 255] as [number, number, number], // Blanc
     level: [255, 255, 224] as [number, number, number],  // Jaune clair
-    trainee: [255, 255, 255] as [number, number, number], // Bleu ciel
+    trainee: [173, 216, 230] as [number, number, number], // Bleu ciel
     completed: [221, 221, 221] as [number, number, number], // Gris
-    border: [128, 128, 128] as [number, number, number]  // Gris
+    border: [128, 128, 128] as [number, number, number],  // Gris
+    sessionBg: [239, 246, 255] as [number, number, number], // Bleu très clair
+    sessionBorder: [191, 219, 254] as [number, number, number] // Bleu clair
   };
 
-  // En-tête du formulaire - Tableau 4 colonnes, 2 lignes
+  let currentY = 20;
+
+  // Informations de session (si disponible)
+  if (currentSession) {
+    // Fond bleu pour la session
+    doc.setFillColor(...colors.sessionBg);
+    doc.rect(15, currentY, 180, 15, 'F');
+    doc.setDrawColor(...colors.sessionBorder);
+    doc.rect(15, currentY, 180, 15, 'S');
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Session de Formation', 105, currentY + 5, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(currentSession.name, 105, currentY + 10, { align: 'center' });
+    
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Du ${new Date(currentSession.startDate).toLocaleDateString('fr-FR')} au ${new Date(currentSession.endDate).toLocaleDateString('fr-FR')}`, 105, currentY + 13, { align: 'center' });
+    
+    currentY += 20;
+  }
+
+  // Logo et tableau d'informations (comme dans le web)
+  // Espace pour le logo à gauche (16x16mm)
+  const logoX = 20;
+  const logoY = currentY;
+  const logoSize = 16;
+  
+  // Dessiner le logo (plus visible avec fond coloré)
+  doc.setFillColor(0, 100, 200); // Bleu CI.DES
+  doc.rect(logoX, logoY, logoSize, logoSize, 'F');
+  doc.setDrawColor(0, 50, 100);
+  doc.rect(logoX, logoY, logoSize, logoSize, 'S');
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(255, 255, 255); // Texte blanc
+  doc.text('CI.DES', logoX + logoSize/2, logoY + logoSize/2 - 1, { align: 'center' });
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.text('LOGO', logoX + logoSize/2, logoY + logoSize/2 + 4, { align: 'center' });
+  doc.setTextColor(0, 0, 0); // Remettre le texte noir
+
+  // Tableau d'informations à droite du logo
   const headerData = [
     ['Titre', 'Code Number', 'Revision', 'Creation date'],
     ['CI.DES TRAINEE FOLLOW UP FORM', 'ENR-CIFRA-FORM 004', '01', '09/10/2023']
   ];
 
-  // Générer l'en-tête du formulaire
   autoTable(doc, {
     head: [headerData[0]],
     body: [headerData[1]],
-    startY: 20,
+    startY: currentY,
+    margin: { left: logoX + logoSize + 5 },
     styles: {
-      fontSize: 10,
-      cellPadding: 3,
+      fontSize: 8,
+      cellPadding: 2,
       lineColor: colors.border,
       lineWidth: 0.5,
       textColor: [0, 0, 0],
@@ -78,25 +125,21 @@ export function generateTraineeFollowUpPDF(
       fontStyle: 'bold',
     },
     columnStyles: {
-      0: { cellWidth: 50 },
-      1: { cellWidth: 50 },
-      2: { cellWidth: 30 },
-      3: { cellWidth: 40 }
+      0: { cellWidth: 45 },
+      1: { cellWidth: 45 },
+      2: { cellWidth: 25 },
+      3: { cellWidth: 35 }
     }
   });
 
-  // Titre principal après l'en-tête
+  currentY += 15;
+
+  // Titre principal
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('TRAINEE FOLLOW UP FORM - VUE ADMIN', 105, 45, { align: 'center' });
+  doc.text('TRAINEE FOLLOW UP FORM - VUE ADMIN', 105, currentY, { align: 'center' });
 
-  // Informations de session
-  if (currentSession) {
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Session: ${currentSession.name}`, 20, 55);
-    doc.text(`Du ${new Date(currentSession.startDate).toLocaleDateString('fr-FR')} au ${new Date(currentSession.endDate).toLocaleDateString('fr-FR')}`, 20, 60);
-  }
+  currentY += 10;
 
   // Préparer les données du tableau
   const days = ['J1', 'J2', 'J3', 'J4', 'J5'];
@@ -169,17 +212,10 @@ export function generateTraineeFollowUpPDF(
   const headerRow1 = ['Éléments du programme', ...levels];
   const headerRow2 = ['', '', '', ''];
   
-  // Ajouter les noms des stagiaires et leurs jours sur les deux lignes d'en-tête
+  // Ajouter les noms des stagiaires (une colonne par stagiaire qui s'étend sur 5 jours)
   trainees.forEach(trainee => {
-    // Nom du stagiaire sur la première ligne
     headerRow1.push(`${trainee.prenom} ${trainee.nom}`);
     headerRow2.push(''); // Espace vide pour les niveaux
-    
-    // Jours pour ce stagiaire sur la deuxième ligne
-    days.forEach(day => {
-      headerRow1.push('');
-      headerRow2.push(day);
-    });
   });
 
   // Créer les données du tableau
@@ -192,29 +228,30 @@ export function generateTraineeFollowUpPDF(
       row.push(isRequired ? '✓' : '');
     });
     
-    // Ajouter les jours pour chaque stagiaire
+    // Ajouter les jours pour chaque stagiaire (une colonne par stagiaire)
     trainees.forEach(trainee => {
-      days.forEach(day => {
-        const isCompleted = traineeProgress.find(p => 
+      // Compter combien de jours sont complétés pour ce stagiaire et cet élément
+      const completedDays = days.filter(day => {
+        return traineeProgress.find(p => 
           p.syllabusItem === item && 
           p.traineeId === trainee.id && 
           p.day === day
         )?.completed || false;
-        row.push(isCompleted ? '✓' : '');
-      });
+      }).length;
+      
+      // Afficher le nombre de jours complétés sur 5
+      row.push(completedDays > 0 ? `${completedDays}/5` : '');
     });
     
     return row;
   });
 
-  // Ajouter la ligne de signature des stagiaires
+  // Ajouter la ligne de signature des stagiaires (une colonne par stagiaire)
   const signatureRow = ['Signature Stagiaire'];
   levels.forEach(() => signatureRow.push(''));
   trainees.forEach(trainee => {
     const signature = signatures.find(s => s.traineeId === trainee.id)?.signature;
-    days.forEach(() => {
-      signatureRow.push(signature ? '✓ Signé' : 'Non signé');
-    });
+    signatureRow.push(signature ? '✓ Signé' : 'Non signé');
   });
   tableData.push(signatureRow);
 
@@ -222,7 +259,8 @@ export function generateTraineeFollowUpPDF(
   autoTable(doc, {
     head: [headerRow1, headerRow2],
     body: tableData,
-    startY: 70,
+    startY: currentY + 10, // Positionner le tableau sous le titre principal
+    margin: { left: logoX + logoSize + 5 }, // Aligner le tableau avec le tableau d'informations
     styles: {
       fontSize: 6,
       cellPadding: 1,
@@ -242,43 +280,106 @@ export function generateTraineeFollowUpPDF(
       2: { cellWidth: 8, fillColor: colors.level }, // Level 2
       3: { cellWidth: 8, fillColor: colors.level }, // Level 3
     },
-    didParseCell: function(data) {
-      // Colorer les cellules des stagiaires (noms et jours)
-      if (data.column.index > 3) {
-        data.cell.styles.fillColor = colors.trainee;
-      }
-      
-      // Colorer les cases cochées avec texte blanc pour meilleure visibilité
-      if (data.cell.text[0] === '✓') {
-        data.cell.styles.fillColor = colors.completed;
-        data.cell.styles.textColor = [255, 255, 255] as [number, number, number]; // Texte blanc
-        data.cell.styles.fontStyle = 'bold';
-      }
-      
-      // Colorer les signatures
-      if (data.cell.text.includes('Signé')) {
-        data.cell.styles.fillColor = [144, 238, 144] as [number, number, number]; // Vert clair pour les signatures
-        data.cell.styles.textColor = [0, 0, 0] as [number, number, number]; // Texte noir
-        data.cell.styles.fontStyle = 'bold';
-      }
-    },
-    didDrawPage: function(data) {
-      // Ajouter la signature admin en bas
-      const pageHeight = doc.internal.pageSize.height;
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Signature Admin:', 20, pageHeight - 20);
-      doc.setFont('helvetica', 'normal');
-      doc.text('_________________________________', 20, pageHeight - 15);
-    }
-  });
+         didParseCell: function(data) {
+               // Colorer les cellules des stagiaires (noms et jours)
+        if (data.column.index > 3) {
+          data.cell.styles.fillColor = colors.trainee;
+        }
+        
+        // Colorer les cellules avec progression (ex: "3/5")
+        if (data.cell.text.includes('/5')) {
+          data.cell.styles.fillColor = [144, 238, 144] as [number, number, number]; // Vert clair
+          data.cell.styles.textColor = [0, 0, 0] as [number, number, number]; // Texte noir
+          data.cell.styles.fontStyle = 'bold';
+        }
+       
+       // Colorer les cases cochées avec texte blanc pour meilleure visibilité
+       if (data.cell.text[0] === '✓') {
+         data.cell.styles.fillColor = colors.completed;
+         data.cell.styles.textColor = [255, 255, 255] as [number, number, number]; // Texte blanc
+         data.cell.styles.fontStyle = 'bold';
+       }
+       
+       
+       
+       // Colorer les signatures
+       if (data.cell.text.includes('Signé')) {
+         data.cell.styles.fillColor = [255, 215, 0] as [number, number, number]; // Jaune doré pour les signatures
+         data.cell.styles.textColor = [0, 0, 0] as [number, number, number]; // Texte noir
+         data.cell.styles.fontStyle = 'bold';
+       }
+     },
+         didDrawPage: function(data) {
+       // Ajouter la signature admin en bas
+       const pageHeight = doc.internal.pageSize.height;
+       doc.setFontSize(10);
+       doc.setFont('helvetica', 'bold');
+       doc.text('Signature Admin:', 20, pageHeight - 20);
+       doc.setFont('helvetica', 'normal');
+       doc.text('_________________________________', 20, pageHeight - 15);
+     }
+      });
 
-  // Pied de page
-  const pageHeight = doc.internal.pageSize.height;
-  doc.setFontSize(8);
-  doc.text('ENR-CIFRA-FORM 004 CI.DES Trainee Follow Up Form', 20, pageHeight - 10);
-  doc.text('CI.DES sasu Capital 2 500 Euros | SIRET: 87840789900011 TVA: FR71878407899', 20, pageHeight - 7);
-  doc.text('Copie non contrôlée imprimée | Page 1 sur 1', 20, pageHeight - 4);
+   // Ajouter les signatures des stagiaires après le tableau
+   let signatureY = 0;
+   autoTable(doc, {
+     head: [['Signatures des Stagiaires']],
+     body: [],
+     startY: 0,
+     styles: {
+       fontSize: 12,
+       cellPadding: 5,
+       lineColor: colors.border,
+       lineWidth: 0.5,
+     },
+     headStyles: {
+       fillColor: colors.header,
+       textColor: [0, 0, 0],
+       fontStyle: 'bold',
+     },
+     didDrawPage: function(data) {
+       if (data.cursor) {
+         signatureY = data.cursor.y;
+       }
+     }
+   });
+
+   // Afficher les signatures des stagiaires
+   let currentSignatureY = signatureY + 10;
+   trainees.forEach((trainee, index) => {
+     const signature = signatures.find(s => s.traineeId === trainee.id)?.signature;
+     
+     doc.setFontSize(10);
+     doc.setFont('helvetica', 'bold');
+     doc.text(`${trainee.prenom} ${trainee.nom}:`, 20, currentSignatureY);
+     
+     if (signature) {
+       try {
+         // Ajouter l'image de signature
+         doc.addImage(signature, 'PNG', 80, currentSignatureY - 5, 40, 20);
+         doc.setFontSize(8);
+         doc.setFont('helvetica', 'normal');
+         doc.text('✓ Signé', 130, currentSignatureY + 5);
+       } catch (error) {
+         doc.setFontSize(8);
+         doc.setFont('helvetica', 'normal');
+         doc.text('✓ Signé (erreur affichage)', 80, currentSignatureY + 5);
+       }
+     } else {
+       doc.setFontSize(8);
+       doc.setFont('helvetica', 'normal');
+       doc.text('Non signé', 80, currentSignatureY + 5);
+     }
+     
+     currentSignatureY += 15;
+   });
+
+   // Pied de page
+   const pageHeight = doc.internal.pageSize.height;
+   doc.setFontSize(8);
+   doc.text('ENR-CIFRA-FORM 004 CI.DES Trainee Follow Up Form', 20, pageHeight - 10);
+   doc.text('CI.DES sasu Capital 2 500 Euros | SIRET: 87840789900011 TVA: FR71878407899', 20, pageHeight - 7);
+   doc.text('Copie non contrôlée imprimée | Page 1 sur 1', 20, pageHeight - 4);
 
   return doc;
 }

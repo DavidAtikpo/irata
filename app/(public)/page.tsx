@@ -18,7 +18,7 @@ const sessions = [
   { annee: '2025', mois: 'septembre', dates: '01 au 06' },
   { annee: '2025', mois: 'octobre', dates: '06 au 11' },
   { annee: '2025', mois: 'novembre', dates: '03 au 08' },
-  { annee: '2025', mois: 'décembre', dates: '15 au 20' },
+  // { annee: '2025', mois: 'décembre', dates: '15 au 20' },
 ];
 
 type SessionRegisterFormProps = {

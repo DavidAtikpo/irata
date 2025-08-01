@@ -20,6 +20,7 @@ export async function GET() {
         traineeId: true,
         signature: true,
         adminSignature: true,
+        currentDay: true,
       },
       orderBy: {
         traineeId: 'asc',

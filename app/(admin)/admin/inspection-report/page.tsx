@@ -1,38 +1,11 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 
 export default function InspectionReportPage() {
-  const handleSave = () => {
-    // Logique de sauvegarde à implémenter
-    alert('Rapport d\'inspection enregistré avec succès !');
-  };
-
   return (
     <div className="p-6 print:p-2 text-black font-sans bg-white">
       <div className="max-w-4xl mx-auto bg-white shadow-md print:shadow-none">
-        {/* Header avec logo et bouton d'enregistrement */}
-        <div className="flex justify-between items-center mb-4 print:hidden">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gray-200 border border-gray-400 flex items-center justify-center">
-              <Image src="/logo.png" alt="CI.DES Logo" width={64} height={64} />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-800">Rapport d'Inspection d'Équipement</h2>
-              <p className="text-sm text-gray-600">CI.DES Formations Cordistes</p>
-            </div>
-          </div>
-          <button
-            onClick={handleSave}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-            </svg>
-            <span>Enregistrer</span>
-          </button>
-        </div>
         {/* Header */}
         <div className="border-2 border-blue-600 p-4">
           <div className="grid grid-cols-3 gap-4">
