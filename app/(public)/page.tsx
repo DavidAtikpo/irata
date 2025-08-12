@@ -199,6 +199,28 @@ function HomeContent() {
 
   return (
     <main className="bg-white px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-7xl mx-auto text-gray-800">
+      {/* Financement Participatif Banner */}
+      <section className="bg-gradient-to-r from-green-500 to-teal-400 text-white rounded-2xl sm:rounded-3xl shadow-lg px-4 sm:px-6 py-6 sm:py-8 text-center mb-6 sm:mb-8">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold leading-tight mb-2 sm:mb-3">
+          🎯 Aidez-nous à équiper l'un des premiers centres de multi formations en sécurité du Togo
+        </h2>
+        <p className="text-sm sm:text-base md:text-lg mb-3 sm:mb-4 opacity-90">
+          Participez au développement d'un centre de formation révolutionnaire avec des avantages exclusifs pour vous !
+        </p>
+        <Link
+          href="/financement-participatif"
+          className="inline-block bg-white text-green-600 font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-md hover:bg-gray-100 transition duration-300 text-sm sm:text-base mr-2 sm:mr-4"
+        >
+          Découvrir le projet
+        </Link>
+        <Link
+          href="/financement-participatif#contribuer"
+          className="inline-block bg-yellow-400 text-green-800 font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-md hover:bg-yellow-300 transition duration-300 text-sm sm:text-base"
+        >
+          Contribuer maintenant
+        </Link>
+      </section>
+
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-yellow-400 to-yellow-200 text-gray-800 rounded-2xl sm:rounded-3xl shadow-lg px-4 sm:px-6 py-8 sm:py-12 lg:py-16 text-center mb-8 sm:mb-12">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight mb-3 sm:mb-4">

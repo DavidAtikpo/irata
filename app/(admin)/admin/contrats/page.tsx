@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import HeaderInfoTable from '@/app/components/HeaderInfoTable';
 import { 
   DocumentDuplicateIcon, 
   CheckCircleIcon, 
@@ -162,6 +163,7 @@ export default function AdminContratsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+
         <div className="sm:flex sm:items-center sm:justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">Gestion des contrats</h2>

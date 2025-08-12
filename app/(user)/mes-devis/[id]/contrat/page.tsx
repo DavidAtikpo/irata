@@ -5,6 +5,8 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { EditablePDF } from '@/app/components/EditablePDF';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import HeaderInfoTable from '@/app/components/HeaderInfoTable';
+import Image from 'next/image';
 
 export default function ContratPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession();
@@ -90,17 +92,9 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
-          >
-            <ArrowLeftIcon className="h-4 w-4 mr-1" />
-            Retour
-          </button>
-          <h2 className="mt-4 text-3xl font-bold text-gray-900">Contrat de formation</h2>
-          <p className="mt-2 text-sm text-gray-600">
+      <div className="max-w-7xl mx-auto bg-white shadow rounded-lg p-6">
+        <div className="mb-4">
+          <p className="text-sm text-gray-600">
             Remplissez le formulaire ci-dessous avec vos informations personnelles et signez électroniquement pour finaliser votre inscription
           </p>
         </div>
@@ -118,7 +112,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
           </div>
         )}
 
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-6">
           <div className="prose max-w-none">
             <p className="text-gray-700">
               Veuillez remplir vos informations personnelles dans le formulaire ci-dessous et apposer votre signature électronique. 
@@ -130,6 +124,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
           </div>
         </div>
       </div>
+      {/* Pas d'entête/pied externe ici – gérés par le contenu du contrat */}
     </div>
   );
 } 

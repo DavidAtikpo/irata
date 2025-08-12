@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import HeaderInfoTable from '@/app/components/HeaderInfoTable';
+import Image from 'next/image';
 
 interface Demande {
   id: string;
@@ -134,45 +136,38 @@ export default function NouveauDevisPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-6">
-        <h2 className="text-3xl font-bold mb-4 text-center text-gray-900">{titre}</h2>
-        {demande && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">Session de formation demandée</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="font-medium text-blue-800">Session:</span>
-                <span className="ml-2 text-blue-900">{demande.session}</span>
-              </div>
-              <div>
-                <span className="font-medium text-blue-800">Client:</span>
-                <span className="ml-2 text-blue-900">{demande.user.prenom} {demande.user.nom}</span>
-              </div>
+      {demande && (
+        <div className="max-w-4xl mx-auto bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">Session de formation demandée</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <span className="font-medium text-blue-800">Session:</span>
+              <span className="ml-2 text-blue-900">{demande.session}</span>
             </div>
-            {demande.message && (
-              <div className="mt-3">
-                <span className="font-medium text-blue-800">Message du client:</span>
-                <p className="mt-1 text-blue-900 text-sm">{demande.message}</p>
-              </div>
-            )}
+            <div>
+              <span className="font-medium text-blue-800">Client:</span>
+              <span className="ml-2 text-blue-900">{demande.user.prenom} {demande.user.nom}</span>
+            </div>
           </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Section Titre & Code */}
-          <fieldset className="border p-6 rounded mb-6 bg-gray-50">
-            <legend className="text-xl font-bold text-gray-900 px-2">En-tête</legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Titre</label>
-                <input type="text" className="input text-gray-900" value={titre} readOnly />
-              </div>
-              <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Numéro de code</label>
-                <input type="text" className="input text-gray-900" value={numeroCode} readOnly />
-              </div>
+          {demande.message && (
+            <div className="mt-3">
+              <span className="font-medium text-blue-800">Message du client:</span>
+              <p className="mt-1 text-blue-900 text-sm">{demande.message}</p>
             </div>
-          </fieldset>
-
+          )}
+        </div>
+      )}
+      <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-6">
+        <HeaderInfoTable
+          title={titre}
+          codeNumberLabel="Numéro de code"
+          codeNumber={numeroCode}
+          revisionLabel="Révision"
+          revision="00"
+          creationDateLabel="Création date"
+          creationDate={new Date().toLocaleDateString('fr-FR')}
+        />
+        <form onSubmit={handleSubmit} className="space-y-8">
           {/* Section Informations principales */}
           <fieldset className="border p-6 rounded mb-6 bg-gray-50">
             <legend className="text-xl font-bold text-gray-900 px-2">Informations principales</legend>
@@ -364,6 +359,22 @@ export default function NouveauDevisPage() {
           </div>
         </form>
       </div>
+      {/* Pied de page */}
+      <footer className="mt-6 p-4 bg-white border rounded shadow">
+        <div className="max-w-4xl mx-auto flex justify-between items-center text-xs text-gray-600">
+          <div>
+            {numero} Trame
+          </div>
+          <div className="text-center">
+            <div>CI.DES sasu&nbsp;&nbsp; Capital 2 500 Euros</div>
+            <div>SIRET : 87840789900011&nbsp;&nbsp; VAT : FR71878407899</div>
+            <div>Page 1 sur 2</div>
+          </div>
+          <div>
+            <Image src="/logo.png" alt="CI.DES" width={32} height={32} />
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

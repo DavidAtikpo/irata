@@ -15,6 +15,7 @@ import {
   CogIcon,
   FolderIcon,
   ClipboardDocumentIcon,
+  CurrencyDollarIcon,
   ArrowRightOnRectangleIcon,
   BellIcon,
   MagnifyingGlassIcon,
@@ -28,10 +29,10 @@ import {
 
 const navigationTabs = [
   {
-    name: 'Suivi stagiaires',
-    href: '/admin/trainee-folow-up',
-    icon: UserGroupIcon,
-    description: 'Suivi des stagiaires en formation'
+    name: 'Financement Participatif',
+    href: '/admin/financement-participatif',
+    icon: CurrencyDollarIcon,
+    description: 'Gestion du financement participatif'
   },
   {
     name: 'Suivi IRATA',
@@ -45,18 +46,7 @@ const navigationTabs = [
     icon: CalendarIcon,
     description: 'Gestion des présences'
   },
-  {
-    name: 'Documents',
-    href: '/admin/documents',
-    icon: FolderIcon,
-    description: 'Gestion des documents'
-  },
-  {
-    name: 'Formulaires quotidiens',
-    href: '/admin/formulaires-quotidiens',
-    icon: ClipboardDocumentIcon,
-    description: 'Gestion des formulaires quotidiens'
-  },
+
   {
     name: 'Rapports',
     href: '/admin/rapports',
@@ -74,9 +64,10 @@ const navigationTabs = [
 interface AdminHeaderProps {
   onToggleSidebar?: () => void;
   onMobileToggle?: () => void;
+  isSticky?: boolean;
 }
 
-export default function AdminHeader({ onToggleSidebar, onMobileToggle }: AdminHeaderProps) {
+export default function AdminHeader({ onToggleSidebar, onMobileToggle, isSticky = true }: AdminHeaderProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter();
@@ -149,7 +140,7 @@ export default function AdminHeader({ onToggleSidebar, onMobileToggle }: AdminHe
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
+    <header className={`bg-white border-b border-gray-200 shadow-sm ${isSticky ? 'fixed top-0 left-0 right-0 w-full z-[60]' : 'relative'}`}>
       {/* Barre principale */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">

@@ -321,10 +321,10 @@ export default function TraineeFollowUpForm() {
     }
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     try {
       // Générer le PDF
-      const doc = generateTraineeFollowUpPDF(
+      const doc = await generateTraineeFollowUpPDF(
         trainees,
         traineeProgress,
         levelData,
@@ -536,17 +536,17 @@ export default function TraineeFollowUpForm() {
                           <td className="border p-2">CI.DES TRAINEE FOLLOW UP FORM</td>
                           <td className="border p-2">ENR-CIFRA-FORM 004</td>
                           <td className="border p-2">01</td>
-                          <td className="border p-2">09/10/2023</td>
+                          <td className="border p-2">{new Date().toLocaleDateString('fr-FR')}</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
                 
-                {/* Titre principal */}
+                {/* Titre principal
                 <h1 className="text-2xl font-bold text-center mb-4">
                   TRAINEE FOLLOW UP FORM - VUE ADMIN
-                </h1>
+                </h1> */}
               </td>
             </tr>
           </thead>

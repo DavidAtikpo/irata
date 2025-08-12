@@ -51,6 +51,8 @@ interface ReponseFormulaire {
   }[];
   commentaires?: string;
   soumis: boolean;
+  score?: number;
+  maxScore?: number;
 }
 
 export default function ReponsesFormulairesPage() {
@@ -60,6 +62,9 @@ export default function ReponsesFormulairesPage() {
   const [selectedFormulaire, setSelectedFormulaire] = useState<FormulaireQuotidien | null>(null);
   const [reponses, setReponses] = useState<ReponseFormulaire[]>([]);
   const [selectedReponse, setSelectedReponse] = useState<ReponseFormulaire | null>(null);
+  const [adminDecision, setAdminDecision] = useState<'ACCEPTE' | 'REFUSE' | 'A_REVOIR' | ''>('');
+  const [adminComment, setAdminComment] = useState('');
+  const [adminScore, setAdminScore] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [loadingReponses, setLoadingReponses] = useState(false);
   const [filterSession, setFilterSession] = useState('all');
@@ -393,6 +398,17 @@ export default function ReponsesFormulairesPage() {
                             }`}>
                               {reponse.soumis ? 'Soumis' : 'Brouillon'}
                             </span>
+                            {reponse.score !== undefined && reponse.maxScore !== undefined && (
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                (reponse.score / reponse.maxScore) >= 0.8 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : (reponse.score / reponse.maxScore) >= 0.6 
+                                  ? 'bg-orange-100 text-orange-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                🎯 {reponse.score}/{reponse.maxScore} ({Math.round((reponse.score / reponse.maxScore) * 100)}%)
+                              </span>
+                            )}
                           </div>
                           <div className="mt-2 text-sm text-gray-600">
                             <p>{reponse.utilisateurEmail}</p>
@@ -478,6 +494,20 @@ export default function ReponsesFormulairesPage() {
                           {selectedReponse.soumis ? 'Soumis' : 'Brouillon'}
                         </span>
                       </div>
+                      {selectedReponse.score !== undefined && selectedReponse.maxScore !== undefined && (
+                        <div>
+                          <span className="font-medium text-gray-700">Score obtenu:</span>
+                          <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            (selectedReponse.score / selectedReponse.maxScore) >= 0.8 
+                              ? 'bg-green-100 text-green-800' 
+                              : (selectedReponse.score / selectedReponse.maxScore) >= 0.6 
+                              ? 'bg-orange-100 text-orange-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            🎯 {selectedReponse.score}/{selectedReponse.maxScore} ({Math.round((selectedReponse.score / selectedReponse.maxScore) * 100)}%)
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -513,6 +543,77 @@ export default function ReponsesFormulairesPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Décision/feedback admin */}
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                    <h4 className="font-medium text-indigo-900 mb-3">Décision et retour au stagiaire</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Décision</label>
+                        <select
+                          value={adminDecision}
+                          onChange={(e) => setAdminDecision(e.target.value as any)}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                          <option value="">— Sélectionner —</option>
+                          <option value="ACCEPTE">Accepté</option>
+                          <option value="REFUSE">Refusé</option>
+                          <option value="A_REVOIR">À revoir</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Score (optionnel)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={adminScore}
+                          onChange={(e) => setAdminScore(e.target.value)}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="ex: 8"
+                        />
+                      </div>
+                      <div className="md:col-span-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Commentaire</label>
+                        <textarea
+                          value={adminComment}
+                          onChange={(e) => setAdminComment(e.target.value)}
+                          rows={3}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="Retour pour le stagiaire..."
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        onClick={async () => {
+                          if (!selectedFormulaire || !selectedReponse) return;
+                          try {
+                            const resp = await fetch(`/api/admin/formulaires-quotidiens/${selectedFormulaire.id}/reponses`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                reponseId: selectedReponse.id,
+                                decision: adminDecision || undefined,
+                                commentaire: adminComment || undefined,
+                                score: adminScore !== '' ? Number(adminScore) : undefined,
+                              })
+                            });
+                            if (!resp.ok) throw new Error('Erreur lors de l\'envoi');
+                            alert('Décision envoyée au stagiaire.');
+                            setAdminDecision('');
+                            setAdminComment('');
+                            setAdminScore('');
+                          } catch (err) {
+                            console.error(err);
+                            alert('Erreur lors de l\'envoi de la décision');
+                          }
+                        }}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                      >
+                        Envoyer au stagiaire
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
