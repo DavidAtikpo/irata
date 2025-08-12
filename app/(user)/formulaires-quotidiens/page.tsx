@@ -20,6 +20,16 @@ interface Question {
   question: string;
   options?: string[];
   required: boolean;
+  // Options spécifiques nombres (aligné avec l'admin)
+  numberMin?: number;
+  numberMax?: number;
+  numberStep?: number;
+  numberUnit?: string;
+  numberCorrect?: number;
+  // Scoring functionality for multiple choice questions
+  correctAnswers?: string[];
+  points?: number;
+  scoringEnabled?: boolean;
 }
 
 interface FormulaireQuotidien {
@@ -94,6 +104,49 @@ export default function FormulairesQuotidiensPage() {
     setShowForm(true);
   };
 
+  // Function to calculate score for scored questions
+  const calculateScore = (questions: Question[], userResponses: { [questionId: string]: any }) => {
+    let totalScore = 0;
+    let maxScore = 0;
+
+    questions.forEach(question => {
+      const points = question.points || 1;
+      const questionId = question.id || `question_${question.question.substring(0, 10)}`;
+      const userAnswer = userResponses[questionId];
+
+      // Sélection/radio/checkbox via correctAnswers
+      if (question.scoringEnabled && question.correctAnswers && question.correctAnswers.length > 0) {
+        maxScore += points;
+        if (userAnswer !== undefined && userAnswer !== null && userAnswer !== '') {
+          if (question.type === 'radio' || question.type === 'select') {
+            if (question.correctAnswers.includes(userAnswer)) {
+              totalScore += points;
+            }
+          } else if (question.type === 'checkbox') {
+            const userAnswersArray = Array.isArray(userAnswer) ? userAnswer : [userAnswer];
+            const correctAnswersSet = new Set(question.correctAnswers);
+            const userAnswersSet = new Set(userAnswersArray);
+            if (correctAnswersSet.size === userAnswersSet.size &&
+                [...correctAnswersSet].every(answer => userAnswersSet.has(answer))) {
+              totalScore += points;
+            }
+          }
+        }
+      }
+
+      // Nombre: comparaison exacte avec numberCorrect si activé
+      if (question.scoringEnabled && question.type === 'number' && typeof question.numberCorrect === 'number') {
+        maxScore += points;
+        const numericAnswer = typeof userAnswer === 'number' ? userAnswer : Number(userAnswer);
+        if (!Number.isNaN(numericAnswer) && numericAnswer === question.numberCorrect) {
+          totalScore += points;
+        }
+      }
+    });
+
+    return { totalScore, maxScore };
+  };
+
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFormulaire) return;
@@ -122,6 +175,9 @@ export default function FormulairesQuotidiensPage() {
         };
       });
 
+      // Calculate score if there are scored questions
+      const { totalScore, maxScore } = calculateScore(selectedFormulaire.questions, formData);
+
       const response = await fetch('/api/user/formulaires-quotidiens/reponses', {
         method: 'POST',
         headers: {
@@ -130,7 +186,9 @@ export default function FormulairesQuotidiensPage() {
         body: JSON.stringify({
           formulaireId: selectedFormulaire.id,
           reponses,
-          commentaires: formData.commentaires
+          commentaires: formData.commentaires,
+          score: maxScore > 0 ? totalScore : undefined,
+          maxScore: maxScore > 0 ? maxScore : undefined
         }),
       });
 
@@ -144,7 +202,13 @@ export default function FormulairesQuotidiensPage() {
       setFormData({ commentaires: '' });
       await fetchFormulaires(); 
       
-      alert('Formulaire soumis avec succès !');
+      // Show success message with score if available
+      if (maxScore > 0) {
+        const percentage = Math.round((totalScore / maxScore) * 100);
+        alert(`Formulaire soumis avec succès !\n\nVotre score : ${totalScore}/${maxScore} (${percentage}%)`);
+      } else {
+        alert('Formulaire soumis avec succès !');
+      }
     } catch (error) {
       console.error('Erreur:', error);
       alert(error instanceof Error ? error.message : 'Erreur lors de la soumission du formulaire');
@@ -194,10 +258,16 @@ export default function FormulairesQuotidiensPage() {
           <input
             type="number"
             value={value}
-            onChange={(e) => handleInputChange(questionId, e.target.value)}
+            min={question.numberMin !== undefined ? question.numberMin : undefined}
+            max={question.numberMax !== undefined ? question.numberMax : undefined}
+            step={question.numberStep !== undefined ? question.numberStep : 'any'}
+            onChange={(e) => {
+              const val = e.target.value;
+              handleInputChange(questionId, val === '' ? '' : Number(val));
+            }}
             required={question.required}
             className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Entrez un nombre..."
+            placeholder={`Entrez un nombre${question.numberUnit ? ` (${question.numberUnit})` : ''}...`}
           />
         );
 

@@ -326,32 +326,26 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-8">
-          {/* En-tête du contrat */}
-          <div className="border rounded mb-6 overflow-hidden bg-white shadow-sm">
-            <div className="grid grid-cols-6 items-stretch min-h-[64px]">
-              <div className="col-span-1 flex items-center justify-center p-3 border-r bg-gray-50">
-                <img src="/logo.png" alt="Logo CI.DES" className="w-14 h-14" />
-              </div>
-              <div className="col-span-5">
-                <div className="grid grid-cols-4 divide-x h-full">
-                  <div className="flex flex-col justify-center px-4 py-2 text-base">
-                    <span className="font-semibold text-gray-800">Title :</span>
-                    <span className="font-bold underline text-gray-900">CI.DES AGREEMENT SERVICE CONTRACT</span>
-                  </div>
-                  <div className="flex flex-col justify-center px-4 py-2 text-base">
-                    <span className="font-semibold text-gray-800">Revision</span>
-                    <span className="font-bold text-gray-900">02</span>
-                  </div>
-                  <div className="flex flex-col justify-center px-4 py-2 text-base">
-                    <span className="font-semibold text-gray-800">Code Number :</span>
-                    <span className="font-bold underline text-gray-900">ENR-CIDESA-RH 023</span>
-                  </div>
-                  <div className="flex flex-col justify-center px-4 py-2 text-base">
-                    <span className="font-semibold text-gray-800">Creation Date :</span>
-                    <span className="font-bold text-gray-900">29/07/2024</span>
-                  </div>
-                </div>
-              </div>
+          {/* En-tête du contrat (alignée avec le user: logo à gauche, tableau à droite) */}
+          <div className="border rounded mb-6 bg-white shadow-sm p-3">
+            <div className="flex items-start gap-4">
+              <img src="/logo.png" alt="Logo CI.DES" className="w-14 h-14 flex-shrink-0" />
+              <table className="w-full border-collapse">
+                <tbody>
+                  <tr>
+                    <td className="border p-2 font-semibold text-gray-800">Title</td>
+                    <td className="border p-2 font-semibold text-gray-800">Code Number</td>
+                    <td className="border p-2 font-semibold text-gray-800">Revision</td>
+                    <td className="border p-2 font-semibold text-gray-800">Creation date</td>
+                  </tr>
+                  <tr>
+                    <td className="border p-2 font-bold underline text-gray-900">CI.DES AGREEMENT SERVICE CONTRACT</td>
+                    <td className="border p-2 font-bold underline text-gray-900">ENR-CIDESA-RH 023</td>
+                    <td className="border p-2 font-bold text-gray-900">02</td>
+                    <td className="border p-2 font-bold text-gray-900">29/07/2024</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 

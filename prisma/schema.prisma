@@ -34,6 +34,7 @@ model User {
   traineeProgress       TraineeProgress[]
   traineeSignatures     TraineeSignature[]
   trainingSessions      TrainingSession[] @relation("TrainingSessionTrainees")
+  contributions         Contribution[]
 
   @@schema("webirata")
 }
@@ -198,8 +199,14 @@ model ReponseFormulaire {
   reponses        Json     // Array des réponses aux questions
   commentaires    String?
   soumis          Boolean  @default(false)
+  score           Int?     // Score obtenu pour les questions notées
+  maxScore        Int?     // Score maximum possible
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  // Champs d'évaluation/admin
+  decisionAdmin   DecisionAdmin?
+  commentaireAdmin String?
+  scoreAdmin      Int?
 
   // Relations
   formulaire      FormulairesQuotidiens @relation(fields: [formulaireId], references: [id], onDelete: Cascade)
@@ -240,6 +247,15 @@ enum Verdict {
   PASS
   FAIL
   DISCREPANCY
+
+  @@schema("webirata")
+}
+
+// Décision de l'admin sur une réponse de formulaire
+enum DecisionAdmin {
+  ACCEPTE
+  REFUSE
+  A_REVOIR
 
   @@schema("webirata")
 }
@@ -430,6 +446,62 @@ model TrainingSession {
   // Relations
   trainees    User[]   @relation("TrainingSessionTrainees")
   signatures  TraineeSignature[]
+
+  @@schema("webirata")
+}
+
+model Contribution {
+  id                    String   @id @default(cuid())
+  
+  // Informations du donateur
+  donorName             String   // Nom complet du donateur
+  donorEmail            String   // Email du donateur
+  donorPhone            String?  // Téléphone du donateur
+  
+  // Détails de la contribution
+  amount                Int      // Montant en FCFA
+  type                  ContributionType // Type de contribution
+  returnAmount          Int      // Montant de retour calculé
+  returnDescription     String?  // Description du retour
+  
+  // Informations de paiement
+  paymentMethod         PaymentMethod @default(MOBILE_MONEY)
+  status                ContributionStatus @default(PENDING)
+  
+  // Métadonnées
+  notes                 String?  // Notes administratives
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations optionnelles
+  userId                String?  // Si lié à un utilisateur enregistré
+  user                  User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@schema("webirata")
+}
+
+enum ContributionType {
+  PREFORMATION  // Pré-financement formation avec remise
+  FINANCIAL     // Don financier avec rendement
+  MATERIAL      // Récompenses matérielles
+
+  @@schema("webirata")
+}
+
+enum ContributionStatus {
+  PENDING       // En attente de paiement
+  CONFIRMED     // Paiement confirmé
+  PROCESSED     // Traité et bénéfice accordé
+  CANCELLED     // Annulé
+
+  @@schema("webirata")
+}
+
+enum PaymentMethod {
+  MOBILE_MONEY  // Mobile Money (Flooz, TMoney, etc.)
+  BANK_TRANSFER // Virement bancaire
+  CASH          // Espèces
+  CRYPTO        // Cryptomonnaie
 
   @@schema("webirata")
 }

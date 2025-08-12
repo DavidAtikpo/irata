@@ -10,11 +10,12 @@ import { useDevisNotifications } from '../../../../hooks/useDevisNotifications';
 interface Devis {
   id: string;
   numero: string;
-  client: string;
-  mail: string;
-  montant: number;
+  client?: string;
+  mail?: string;
+  montant?: number;
   statut: string;
-  createdAt: string;
+  createdAt?: string;
+  demande?: { user?: { prenom?: string; nom?: string } };
 }
 
 export default function DevisListPage() {
@@ -94,7 +95,7 @@ export default function DevisListPage() {
     <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-900">Liste des devis</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Gestion des devis</h2>
           <Link href="/admin/devis/nouveau" className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Nouveau devis</Link>
         </div>
 
@@ -104,50 +105,35 @@ export default function DevisListPage() {
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full border text-base text-gray-900">
-            <thead>
-              <tr className="bg-gray-200">
-                <th className="border px-2 py-1">Numéro</th>
-                <th className="border px-2 py-1">Client</th>
-                <th className="border px-2 py-1">Email</th>
-                <th className="border px-2 py-1">Date</th>
-                <th className="border px-2 py-1">Montant</th>
-                <th className="border px-2 py-1">Statut</th>
-                <th className="border px-2 py-1">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {devis.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-4">Aucun devis trouvé.</td>
-                </tr>
-              ) : (
-                devis.map((d) => (
-                  <tr key={d.id} className="hover:bg-gray-50">
-                    <td className="border px-2 py-1">{d.numero}</td>
-                    <td className="border px-2 py-1">{d.client}</td>
-                    <td className="border px-2 py-1">{d.mail}</td>
-                    <td className="border px-2 py-1">{d.createdAt ? new Date(d.createdAt).toLocaleDateString() : ''}</td>
-                    <td className="border px-2 py-1">{d.montant} €</td>
-                    <td className="border px-2 py-1">{d.statut || '-'}</td>
-                    <td className="border px-2 py-1">
-                      <div className="flex space-x-2">
-                        <Link href={`/admin/devis/${d.id}`} className="text-indigo-600 hover:underline">Voir</Link>
-                        <button
-                          onClick={() => downloadDevis(d.id, d.numero)}
-                          className="inline-flex items-center text-sm text-gray-700 hover:text-gray-900"
-                          title="Télécharger le PDF"
-                        >
-                          <DocumentArrowDownIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {devis.length === 0 ? (
+            <div className="col-span-full text-center text-gray-500 py-8">Aucun devis trouvé.</div>
+          ) : (
+            devis.map((d) => (
+              <div key={d.id} className="border rounded-lg p-4 bg-white shadow-sm hover:shadow transition">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm text-gray-500">N° {d.numero}</div>
+                  <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700">{d.statut || '-'}</span>
+                </div>
+                <div className="space-y-1 text-sm">
+                  <div><span className="text-gray-500">Stagiaire:</span> <span className="font-medium">{d.demande?.user ? `${d.demande.user.prenom ?? ''} ${d.demande.user.nom ?? ''}`.trim() : (d.client ?? '-')}</span></div>
+                  <div><span className="text-gray-500">Email:</span> <span>{d.mail ?? '-'}</span></div>
+                  <div><span className="text-gray-500">Date:</span> <span>{d.createdAt ? new Date(d.createdAt).toLocaleDateString('fr-FR') : '-'}</span></div>
+                  <div><span className="text-gray-500">Montant:</span> <span className="font-semibold">{typeof d.montant === 'number' ? d.montant.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '-'}</span></div>
+                </div>
+                <div className="mt-3 flex justify-between items-center">
+                  <Link href={`/admin/devis/${d.id}`} className="text-indigo-600 hover:underline text-sm">Voir</Link>
+                  <button
+                    onClick={() => downloadDevis(d.id, d.numero)}
+                    className="inline-flex items-center text-sm text-gray-700 hover:text-gray-900"
+                    title="Télécharger le PDF"
+                  >
+                    <DocumentArrowDownIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -152,7 +152,18 @@ export async function GET() {
       select: {
         id: true,
         numero: true,
+        client: true,
+        mail: true,
+        montant: true,
         statut: true,
+        createdAt: true,
+        demande: {
+          select: {
+            user: {
+              select: { prenom: true, nom: true }
+            }
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc',

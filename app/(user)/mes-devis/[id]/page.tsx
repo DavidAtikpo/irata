@@ -14,6 +14,8 @@ import {
   DocumentDuplicateIcon
 } from '@heroicons/react/24/outline';
 import { Button } from '../../../components/ui/button';
+import HeaderInfoTable from '@/app/components/HeaderInfoTable';
+import Image from 'next/image';
 
 interface Devis {
   id: string;
@@ -182,28 +184,7 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
     }
   };
 
-  const getStatusConfig = (statut: string) => {
-    switch (statut) {
-      case 'VALIDE':
-        return {
-          icon: CheckCircleIcon,
-          color: 'bg-green-100 text-green-800',
-          label: 'Validé'
-        };
-      case 'REFUSE':
-        return {
-          icon: XCircleIcon,
-          color: 'bg-red-100 text-red-800',
-          label: 'Refusé'
-        };
-      default:
-        return {
-          icon: ClockIcon,
-          color: 'bg-yellow-100 text-yellow-800',
-          label: 'En attente'
-        };
-    }
-  };
+  // Aucune pastille de statut sur cette page (cachée selon demande)
 
   if (status === 'loading' || loading) {
     return (
@@ -222,32 +203,21 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
     return null;
   }
 
-  const devisStatus = getStatusConfig(devis.statut);
-  const StatusIcon = devisStatus.icon;
+  // Statut non affiché sur cette page
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-6">
-        <div className="mb-8">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
-          >
-            <ArrowLeftIcon className="h-4 w-4 mr-1" />
-            Retour
-          </button>
-          <div className="mt-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">TRAME BDC DEVIS FACTURE</h2>
-              <p className="mt-2 text-sm text-gray-600">
-                {devis.demande.session}
-              </p>
-            </div>
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${devisStatus.color}`}>
-              <StatusIcon className="h-5 w-5 mr-1" />
-              {devisStatus.label}
-            </span>
-          </div>
+        <div className="mb-4">
+          <HeaderInfoTable
+            title="TRAME BDC DEVIS FACTURE"
+            codeNumberLabel="Numéro de code"
+            codeNumber="ENR-CIFRA-COMP 00X"
+            revisionLabel="Révision"
+            revision="00"
+            creationDateLabel="Création date"
+            creationDate={new Date().toLocaleDateString('fr-FR')}
+          />
         </div>
 
         {error && (
@@ -264,20 +234,7 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
         )}
 
         <div className="space-y-8">
-          {/* Section Titre & Code */}
-          <fieldset className="border p-6 rounded mb-6 bg-gray-50">
-            <legend className="text-xl font-bold text-gray-900 px-2">En-tête</legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Titre</label>
-                <input type="text" className="input text-gray-900" value="TRAME BDC DEVIS FACTURE" readOnly />
-              </div>
-              <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Numéro de code</label>
-                <input type="text" className="input text-gray-900" value="ENR-CIFRA-COMP 00X" readOnly />
-              </div>
-            </div>
-          </fieldset>
+          {/* En-tête remplacée par HeaderInfoTable ci-dessus */}
 
           {/* Section Informations principales */}
           <fieldset className="border p-6 rounded mb-6 bg-gray-50">
@@ -562,6 +519,22 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
           )}
         </div>
       </div>
+      {/* Pied de page */}
+      <footer className="mt-6 p-4 bg-white border rounded shadow">
+        <div className="max-w-4xl mx-auto flex justify-between items-center text-xs text-gray-600">
+          <div>
+            {devis.numero} Trame
+          </div>
+          <div className="text-center">
+            <div>CI.DES sasu  Capital 2 500 Euros</div>
+            <div>SIRET : 87840789900011  VAT : FR71878407899</div>
+            <div>Page 1 sur 2</div>
+          </div>
+          <div>
+            <Image src="/logo.png" alt="CI.DES" width={32} height={32} />
+          </div>
+        </div>
+      </footer>
     </div>
   );
 } 

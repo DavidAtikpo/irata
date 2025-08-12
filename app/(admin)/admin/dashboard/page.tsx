@@ -19,6 +19,12 @@ interface Stats {
     mois: string;
     count: number;
   }[];
+  crowdfunding?: {
+    totalRaised: number;
+    goal: number;
+    contributorCount: number;
+    progressPercentage: number;
+  };
 }
 
 export default function DashboardPage() {
@@ -166,6 +172,52 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Financement Participatif */}
+        {stats.crowdfunding && (
+          <div className="mt-8">
+            <div className="bg-gradient-to-r from-green-500 to-teal-400 rounded-lg p-6 text-white">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">🎯 Financement Participatif - Centre Togo</h3>
+                <a 
+                  href="/admin/financement-participatif" 
+                  className="bg-white text-green-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition duration-300"
+                >
+                  Gérer
+                </a>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold">
+                    {new Intl.NumberFormat('fr-FR').format(stats.crowdfunding.totalRaised)} FCFA
+                  </div>
+                  <div className="text-sm opacity-90">Montant collecté</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{stats.crowdfunding.contributorCount}</div>
+                  <div className="text-sm opacity-90">Contributeurs</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{stats.crowdfunding.progressPercentage}%</div>
+                  <div className="text-sm opacity-90">Progression</div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="bg-white/20 rounded-full h-3 mb-2">
+                <div 
+                  className="bg-yellow-400 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(stats.crowdfunding.progressPercentage, 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-xs opacity-90">
+                <span>Objectif: {new Intl.NumberFormat('fr-FR').format(stats.crowdfunding.goal)} FCFA</span>
+                <span>{100 - stats.crowdfunding.progressPercentage}% restant</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Formations populaires */}
         <div className="mt-8">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Formations les plus demandées</h3>
@@ -199,6 +251,8 @@ export default function DashboardPage() {
             </ul>
           </div>
         </div>
+
+        {/* Lien vers la trame de facture déplacé dans la sidebar */}
       </div>
     </div>
   );

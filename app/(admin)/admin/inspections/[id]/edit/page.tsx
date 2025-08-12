@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -29,8 +29,8 @@ interface EquipmentInspection {
   status: string;
 }
 
-export default async function EditInspectionPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default function EditInspectionPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);

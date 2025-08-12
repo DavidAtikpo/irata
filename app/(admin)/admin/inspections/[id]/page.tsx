@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -48,8 +48,8 @@ interface EquipmentInspection {
   };
 }
 
-export default async function InspectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default function InspectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { data: session, status } = useSession();
   const router = useRouter();
   const [inspection, setInspection] = useState<EquipmentInspection | null>(null);

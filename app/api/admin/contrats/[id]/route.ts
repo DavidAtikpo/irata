@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -62,7 +62,7 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -114,6 +114,15 @@ export async function PUT(
       } as const;
       const statusText = statusMap[status as keyof typeof statusMap];
 
+      let extraHtml = '';
+      // Si validé, proposer la facture avec un lien direct
+      if (status === 'VALIDE') {
+        extraHtml = `
+          <p style="margin-top:16px;">Votre facture est disponible. Vous pouvez la télécharger depuis votre espace ou via ce lien direct:</p>
+          <p><a href="${process.env.NEXTAUTH_URL || ''}/api/user/contrats/${contrat.id}/invoice/pdf" target="_blank">Télécharger ma facture</a></p>
+        `;
+      }
+
       await sendEmail({
         to: contrat.user.email,
         subject: `Mise à jour de votre contrat de formation - ${statusText}`,
@@ -123,6 +132,7 @@ export async function PUT(
             <p>Bonjour ${contrat.user.prenom} ${contrat.user.nom},</p>
             <p>Votre contrat de formation pour la session <strong>${contrat.devis.demande.session}</strong> est maintenant <strong>${statusText}</strong>.</p>
             <p>Vous pouvez consulter les détails en vous connectant à votre espace personnel.</p>
+            ${extraHtml}
             <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
               Cordialement,<br>
               L'équipe CI.DES
@@ -143,4 +153,4 @@ export async function PUT(
       { status: 500 }
     );
   }
-} 
+}

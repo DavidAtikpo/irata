@@ -17,7 +17,9 @@ import {
   ChevronRightIcon,
   ClipboardDocumentCheckIcon,
   ClipboardDocumentIcon,
-  UserIcon
+  UserIcon,
+  ReceiptPercentIcon,
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -25,13 +27,17 @@ const navigation = [
   { name: 'Demandes', href: '/admin/demandes', icon: ClipboardDocumentListIcon },
   { name: 'Devis', href: '/admin/devis', icon: DocumentTextIcon },
   { name: 'Contrats', href: '/admin/contrats', icon: DocumentDuplicateIcon },
-  // { name: 'Documents', href: '/admin/documents', icon: FolderIcon },
+  { name: 'Trame facture', href: '/admin/facture-trame', icon: ReceiptPercentIcon },
+  { name: 'Envoyer documents', href: '/admin/documents', icon: FolderIcon },
+  { name: 'Trainee Follow Up', href: '/admin/trainee-folow-up', icon: UserIcon },
+  { name: 'Questionnaires', href: '/admin/formulaires-quotidiens', icon: ClipboardDocumentIcon },
+
   { name: 'Inspections', href: '/admin/inspections', icon: ClipboardDocumentCheckIcon },
-  // { name: 'Formulaires quotidiens', href: '/admin/formulaires-quotidiens', icon: ClipboardDocumentIcon },
-  // { name: '⚠️ État Cloudinary', href: '/admin/cloudinary-info', icon: ExclamationTriangleIcon },
+  
   { name: 'Formations', href: '/admin/formations', icon: AcademicCapIcon },
   { name: 'Stagiaires', href: '/admin/utilisateurs', icon: UserGroupIcon },
-  { name: 'Trainee Follow Up', href: '/admin/trainee-folow-up', icon: UserIcon },
+  { name: 'Financement Participatif', href: '/admin/financement-participatif', icon: CurrencyDollarIcon },
+
   { name: 'Paramètres', href: '/admin/parametres', icon: Cog6ToothIcon },
 ];
 
@@ -54,7 +60,7 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen = false, o
       `}>
         <div className="h-full flex flex-col">
           {/* Spacer pour éviter que le contenu soit caché sous le header principal */}
-          <div className="h-16"></div>
+          <div className="h-28 lg:h-32"></div>
           
           {/* Header mobile */}
           <div className="flex items-center justify-between p-4 border-b border-gray-800">
@@ -104,7 +110,7 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen = false, o
       `}>
         <div className="h-full flex flex-col">
           {/* Spacer pour éviter que le contenu soit caché sous le header principal */}
-          <div className="h-16"></div>
+          <div className="h-28 lg:h-32"></div>
           
           {/* Header desktop */}
           <div className="flex h-16 shrink-0 items-center justify-between px-4">

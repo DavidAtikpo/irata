@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import AdminHeader from '@/app/components/AdminHeader';
 import Sidebar from '@/app/components/Sidebar';
@@ -16,6 +16,8 @@ export default function AdminLayout({
   const router = useRouter();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const pathname = usePathname();
+  const hideChrome = false; // Désactivé pour afficher l'header et sidebar sur toutes les pages
 
   useEffect(() => {
     console.log('🔍 Admin Layout - Status:', status);
@@ -84,24 +86,34 @@ export default function AdminLayout({
   return (
     <NotificationProvider>
       <div className="min-h-screen bg-gray-50">
-        <AdminHeader 
-          onToggleSidebar={toggleSidebar}
-          onMobileToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-        />
+        {!hideChrome && (
+          <div className="print:hidden">
+            <AdminHeader 
+              onToggleSidebar={toggleSidebar}
+              onMobileToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+              isSticky={true}
+            />
+          </div>
+        )}
         
         {/* Sidebar */}
-        <Sidebar 
-          isCollapsed={isSidebarCollapsed} 
-          onToggle={toggleSidebar}
-          isMobileOpen={isMobileSidebarOpen}
-          onMobileClose={closeMobileSidebar}
-        />
+        {!hideChrome && (
+          <div className="print:hidden">
+            <Sidebar 
+              isCollapsed={isSidebarCollapsed} 
+              onToggle={toggleSidebar}
+              isMobileOpen={isMobileSidebarOpen}
+              onMobileClose={closeMobileSidebar}
+            />
+          </div>
+        )}
         
         {/* Main content */}
         <main className={`
-          overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8 transition-all duration-300 min-h-screen
-          pt-16
-           ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}
+          overflow-y-auto ${hideChrome ? 'bg-white' : 'bg-gray-100'} p-4 sm:p-6 lg:p-8 transition-all duration-300 min-h-screen
+          ${hideChrome ? '' : 'pt-28 lg:pt-32'}
+          ${hideChrome ? '' : (isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64')}
+          print:bg-white print:p-0 print:m-0 print:pt-0 print:ml-0
         `}>
           {children}
         </main>

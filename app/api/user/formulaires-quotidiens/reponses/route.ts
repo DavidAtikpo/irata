@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { formulaireId, reponses, commentaires } = body;
+    const { formulaireId, reponses, commentaires, score, maxScore } = body;
 
     // Validation des données
     if (!formulaireId || !reponses || !Array.isArray(reponses)) {
@@ -88,7 +88,11 @@ export async function POST(req: NextRequest) {
         stagiaireId: session.user.id,
         reponses,
         commentaires: commentaires || null,
-        soumis: true
+        soumis: true,
+        ...(score !== undefined && maxScore !== undefined && {
+          score: score,
+          maxScore: maxScore
+        })
       }
     });
 

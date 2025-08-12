@@ -35,7 +35,7 @@ interface TrainingSession {
   status: string;
 }
 
-export function generateTraineeFollowUpPDF(
+export async function generateTraineeFollowUpPDF(
   trainees: TraineeData[],
   traineeProgress: TraineeProgress[],
   levelData: LevelData[],
@@ -86,24 +86,32 @@ export function generateTraineeFollowUpPDF(
   const logoY = currentY;
   const logoSize = 16;
   
-  // Dessiner le logo (plus visible avec fond coloré)
-  doc.setFillColor(0, 100, 200); // Bleu CI.DES
-  doc.rect(logoX, logoY, logoSize, logoSize, 'F');
-  doc.setDrawColor(0, 50, 100);
-  doc.rect(logoX, logoY, logoSize, logoSize, 'S');
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(255, 255, 255); // Texte blanc
-  doc.text('CI.DES', logoX + logoSize/2, logoY + logoSize/2 - 1, { align: 'center' });
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
-  doc.text('LOGO', logoX + logoSize/2, logoY + logoSize/2 + 4, { align: 'center' });
-  doc.setTextColor(0, 0, 0); // Remettre le texte noir
+  // Charger et insérer le logo réel depuis /logo.png
+  try {
+    // En environnement Next côté client, utiliser import via URL absolue
+    const logoUrl = typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : '/logo.png';
+    const resp = await fetch(logoUrl);
+    if (!resp.ok) throw new Error('logo fetch failed');
+    const blob = await resp.blob();
+    const reader = new FileReader();
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      reader.onerror = () => reject(new Error('reader error'));
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+    // Type détecté depuis dataUrl
+    const format = dataUrl.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+    doc.addImage(dataUrl, format as any, logoX, logoY, logoSize, logoSize);
+  } catch (_) {
+    // Fallback rectangle si le logo ne charge pas
+    doc.setDrawColor(0, 0, 0);
+    doc.rect(logoX, logoY, logoSize, logoSize, 'S');
+  }
 
   // Tableau d'informations à droite du logo
   const headerData = [
     ['Titre', 'Code Number', 'Revision', 'Creation date'],
-    ['CI.DES TRAINEE FOLLOW UP FORM', 'ENR-CIFRA-FORM 004', '01', '09/10/2023']
+    ['CI.DES TRAINEE FOLLOW UP FORM', 'ENR-CIFRA-FORM 004', '01', new Date().toLocaleDateString('fr-FR')]
   ];
 
   autoTable(doc, {
@@ -137,7 +145,7 @@ export function generateTraineeFollowUpPDF(
   // Titre principal
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('TRAINEE FOLLOW UP FORM - VUE ADMIN', 105, currentY, { align: 'center' });
+  // doc.text('TRAINEE FOLLOW UP FORM - VUE ADMIN', 105, currentY, { align: 'center' });
 
   currentY += 10;
 
@@ -208,17 +216,28 @@ export function generateTraineeFollowUpPDF(
     'Sauvetage en escalade aidée : liaison courte'
   ];
 
-  // Créer les en-têtes multi-lignes du tableau
+  // Créer les en-têtes multi-lignes du tableau pour correspondre exactement à l'écran
   const headerRow1 = ['Éléments du programme', ...levels];
   const headerRow2 = ['', '', '', ''];
   
-  // Ajouter les noms des stagiaires (une colonne par stagiaire qui s'étend sur 5 jours)
+  // Ajouter les noms des stagiaires (5 colonnes par stagiaire pour J1-J5)
   trainees.forEach(trainee => {
+    // Première ligne : nom du stagiaire étalé sur 5 colonnes
     headerRow1.push(`${trainee.prenom} ${trainee.nom}`);
-    headerRow2.push(''); // Espace vide pour les niveaux
+    headerRow1.push(''); // Colonne 2 vide
+    headerRow1.push(''); // Colonne 3 vide  
+    headerRow1.push(''); // Colonne 4 vide
+    headerRow1.push(''); // Colonne 5 vide
+    
+    // Deuxième ligne : J1, J2, J3, J4, J5
+    headerRow2.push('J1');
+    headerRow2.push('J2');
+    headerRow2.push('J3');
+    headerRow2.push('J4');
+    headerRow2.push('J5');
   });
 
-  // Créer les données du tableau
+  // Créer les données du tableau pour correspondre exactement à l'écran
   const tableData = syllabus.map(item => {
     const row = [item];
     
@@ -228,158 +247,132 @@ export function generateTraineeFollowUpPDF(
       row.push(isRequired ? '✓' : '');
     });
     
-    // Ajouter les jours pour chaque stagiaire (une colonne par stagiaire)
+    // Ajouter chaque jour individuellement pour chaque stagiaire (5 colonnes par stagiaire)
     trainees.forEach(trainee => {
-      // Compter combien de jours sont complétés pour ce stagiaire et cet élément
-      const completedDays = days.filter(day => {
-        return traineeProgress.find(p => 
+      days.forEach(day => {
+        const isCompleted = traineeProgress.find(p => 
           p.syllabusItem === item && 
           p.traineeId === trainee.id && 
           p.day === day
         )?.completed || false;
-      }).length;
-      
-      // Afficher le nombre de jours complétés sur 5
-      row.push(completedDays > 0 ? `${completedDays}/5` : '');
+        
+        // Afficher ✓ pour complété, vide sinon (comme à l'écran)
+        row.push(isCompleted ? '✓' : '');
+      });
     });
     
     return row;
   });
 
-  // Ajouter la ligne de signature des stagiaires (une colonne par stagiaire)
+  // Ajouter la ligne de signature des stagiaires (5 colonnes par stagiaire)
   const signatureRow = ['Signature Stagiaire'];
   levels.forEach(() => signatureRow.push(''));
   trainees.forEach(trainee => {
     const signature = signatures.find(s => s.traineeId === trainee.id)?.signature;
-    signatureRow.push(signature ? '✓ Signé' : 'Non signé');
+    const signatureText = signature ? '✓ Signé' : 'Non signé';
+    // Première colonne avec le texte, 4 colonnes vides pour s'étendre
+    signatureRow.push(signatureText);
+    signatureRow.push(''); // Colonne 2 vide
+    signatureRow.push(''); // Colonne 3 vide
+    signatureRow.push(''); // Colonne 4 vide
+    signatureRow.push(''); // Colonne 5 vide
   });
   tableData.push(signatureRow);
 
-  // Générer le tableau avec en-têtes multi-lignes
+  // Ajouter la ligne de signature admin (s'étend sur toutes les colonnes de stagiaires)
+  const adminSignatureRow = ['Signature Admin'];
+  levels.forEach(() => adminSignatureRow.push(''));
+  // Ajouter une seule entrée pour l'admin qui s'étend sur toutes les colonnes de stagiaires
+  adminSignatureRow.push('Signature Administrateur');
+  // Remplir le reste des colonnes vides
+  for (let i = 1; i < trainees.length * 5; i++) {
+    adminSignatureRow.push('');
+  }
+  tableData.push(adminSignatureRow);
+
+  // Générer le tableau avec en-têtes multi-lignes et colonnes ajustées
+  const columnStyles: {[key: number]: any} = {
+    0: { cellWidth: 40 }, // Éléments du programme
+    1: { cellWidth: 8, fillColor: colors.level }, // Level 1
+    2: { cellWidth: 8, fillColor: colors.level }, // Level 2
+    3: { cellWidth: 8, fillColor: colors.level }, // Level 3
+  };
+
+  // Calculer dynamiquement les largeurs pour les colonnes des stagiaires
+  let columnIndex = 4; // Commence après les 4 premières colonnes (programme + 3 niveaux)
+  trainees.forEach((trainee, traineeIndex) => {
+    // 5 colonnes par stagiaire (J1-J5), largeur plus petite pour s'adapter
+    for (let day = 0; day < 5; day++) {
+      columnStyles[columnIndex] = { 
+        cellWidth: 6, // Largeur réduite pour accommoder plus de colonnes
+        fillColor: colors.trainee,
+        halign: 'center' as const // Centrer le contenu
+      };
+      columnIndex++;
+    }
+  });
+
   autoTable(doc, {
     head: [headerRow1, headerRow2],
     body: tableData,
     startY: currentY + 10, // Positionner le tableau sous le titre principal
-    margin: { left: logoX + logoSize + 5 }, // Aligner le tableau avec le tableau d'informations
+    margin: { left: 10, right: 10 }, // Marges réduites pour plus d'espace
     styles: {
-      fontSize: 6,
-      cellPadding: 1,
+      fontSize: 5, // Taille réduite pour accommoder plus de colonnes
+      cellPadding: 0.5,
       lineColor: colors.border,
       lineWidth: 0.1,
       textColor: [0, 0, 0],
-      // fontStyle: 'bold',
+      halign: 'center' as const,
     },
     headStyles: {
       fillColor: colors.header,
       textColor: [0, 0, 0],
       fontStyle: 'bold',
+      fontSize: 5,
     },
-    columnStyles: {
-      0: { cellWidth: 40 }, // Éléments du programme
-      1: { cellWidth: 8, fillColor: colors.level }, // Level 1
-      2: { cellWidth: 8, fillColor: colors.level }, // Level 2
-      3: { cellWidth: 8, fillColor: colors.level }, // Level 3
-    },
-         didParseCell: function(data) {
-               // Colorer les cellules des stagiaires (noms et jours)
-        if (data.column.index > 3) {
-          data.cell.styles.fillColor = colors.trainee;
-        }
-        
-        // Colorer les cellules avec progression (ex: "3/5")
-        if (data.cell.text.includes('/5')) {
-          data.cell.styles.fillColor = [144, 238, 144] as [number, number, number]; // Vert clair
-          data.cell.styles.textColor = [0, 0, 0] as [number, number, number]; // Texte noir
-          data.cell.styles.fontStyle = 'bold';
-        }
-       
-       // Colorer les cases cochées avec texte blanc pour meilleure visibilité
-       if (data.cell.text[0] === '✓') {
-         data.cell.styles.fillColor = colors.completed;
-         data.cell.styles.textColor = [255, 255, 255] as [number, number, number]; // Texte blanc
-         data.cell.styles.fontStyle = 'bold';
-       }
-       
-       
-       
-       // Colorer les signatures
-       if (data.cell.text.includes('Signé')) {
-         data.cell.styles.fillColor = [255, 215, 0] as [number, number, number]; // Jaune doré pour les signatures
-         data.cell.styles.textColor = [0, 0, 0] as [number, number, number]; // Texte noir
-         data.cell.styles.fontStyle = 'bold';
-       }
-     },
-         didDrawPage: function(data) {
-       // Ajouter la signature admin en bas
-       const pageHeight = doc.internal.pageSize.height;
-       doc.setFontSize(10);
-       doc.setFont('helvetica', 'bold');
-       doc.text('Signature Admin:', 20, pageHeight - 20);
-       doc.setFont('helvetica', 'normal');
-       doc.text('_________________________________', 20, pageHeight - 15);
-     }
-      });
+    columnStyles,
+    didParseCell: function(data) {
+      // Colorer les cellules des stagiaires (colonnes des jours)
+      if (data.column.index > 3) {
+        data.cell.styles.fillColor = colors.trainee;
+      }
+      
+      // Colorer les cases cochées (✓) en vert comme à l'écran
+      if (data.cell.text[0] === '✓' && data.column.index > 3) {
+        data.cell.styles.fillColor = [34, 197, 94] as [number, number, number]; // Vert comme à l'écran
+        data.cell.styles.textColor = [255, 255, 255] as [number, number, number]; // Texte blanc
+        data.cell.styles.fontStyle = 'bold';
+      }
+      
+      // Colorer les niveaux cochés
+      if (data.cell.text[0] === '✓' && data.column.index >= 1 && data.column.index <= 3) {
+        data.cell.styles.fillColor = colors.completed;
+        data.cell.styles.textColor = [0, 0, 0] as [number, number, number];
+        data.cell.styles.fontStyle = 'bold';
+      }
+      
+      // Style spécial pour les lignes de signatures
+      if (data.cell.text.includes('Signature') && data.column.index === 0) {
+        data.cell.styles.fillColor = [243, 244, 246] as [number, number, number]; // Gris clair
+        data.cell.styles.fontStyle = 'bold';
+      }
+      
+      // Style pour les signatures des stagiaires
+      if ((data.cell.text.includes('Signé') || data.cell.text.includes('Non signé'))) {
+        data.cell.styles.fillColor = [253, 224, 71] as [number, number, number]; // Jaune clair
+        data.cell.styles.fontStyle = 'italic';
+      }
+    }
+  });
 
-   // Ajouter les signatures des stagiaires après le tableau
-   let signatureY = 0;
-   autoTable(doc, {
-     head: [['Signatures des Stagiaires']],
-     body: [],
-     startY: 0,
-     styles: {
-       fontSize: 12,
-       cellPadding: 5,
-       lineColor: colors.border,
-       lineWidth: 0.5,
-     },
-     headStyles: {
-       fillColor: colors.header,
-       textColor: [0, 0, 0],
-       fontStyle: 'bold',
-     },
-     didDrawPage: function(data) {
-       if (data.cursor) {
-         signatureY = data.cursor.y;
-       }
-     }
-   });
-
-   // Afficher les signatures des stagiaires
-   let currentSignatureY = signatureY + 10;
-   trainees.forEach((trainee, index) => {
-     const signature = signatures.find(s => s.traineeId === trainee.id)?.signature;
-     
-     doc.setFontSize(10);
-     doc.setFont('helvetica', 'bold');
-     doc.text(`${trainee.prenom} ${trainee.nom}:`, 20, currentSignatureY);
-     
-     if (signature) {
-       try {
-         // Ajouter l'image de signature
-         doc.addImage(signature, 'PNG', 80, currentSignatureY - 5, 40, 20);
-         doc.setFontSize(8);
-         doc.setFont('helvetica', 'normal');
-         doc.text('✓ Signé', 130, currentSignatureY + 5);
-       } catch (error) {
-         doc.setFontSize(8);
-         doc.setFont('helvetica', 'normal');
-         doc.text('✓ Signé (erreur affichage)', 80, currentSignatureY + 5);
-       }
-     } else {
-       doc.setFontSize(8);
-       doc.setFont('helvetica', 'normal');
-       doc.text('Non signé', 80, currentSignatureY + 5);
-     }
-     
-     currentSignatureY += 15;
-   });
-
-   // Pied de page
-   const pageHeight = doc.internal.pageSize.height;
-   doc.setFontSize(8);
-   doc.text('ENR-CIFRA-FORM 004 CI.DES Trainee Follow Up Form', 20, pageHeight - 10);
-   doc.text('CI.DES sasu Capital 2 500 Euros | SIRET: 87840789900011 TVA: FR71878407899', 20, pageHeight - 7);
-   doc.text('Copie non contrôlée imprimée | Page 1 sur 1', 20, pageHeight - 4);
+  // Pied de page avec informations du formulaire
+  const pageHeight = doc.internal.pageSize.height;
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100); // Gris pour le pied de page
+  doc.text('CI.DES TRAINEE FOLLOW UP FORM - ENR-CIFRA-FORM 004 - Révision 01', 20, pageHeight - 10);
+  doc.text('CI.DES sasu Capital 2 500 Euros | SIRET: 87840789900011 | TVA: FR71878407899', 20, pageHeight - 7);
+  doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, 20, pageHeight - 4);
 
   return doc;
 }
