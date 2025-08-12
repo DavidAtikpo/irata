@@ -157,12 +157,12 @@ export default function FinancementParticipatif() {
         
         {/* Progress Bar */}
         <div className="bg-white/20 rounded-full h-4 sm:h-6 mb-4 max-w-md mx-auto">
-          <div className="bg-yellow-400 h-full rounded-full" style={{ width: '35%' }}>
-            <span className="sr-only">35% financé</span>
+          <div className="bg-yellow-400 h-full rounded-full" style={{ width: '1%' }}>
+            <span className="sr-only">0% financé</span>
           </div>
         </div>
         <div className="flex justify-between text-xs sm:text-sm opacity-90 max-w-md mx-auto">
-          <span>35% financé</span>
+          <span>0% financé</span>
           <span>Objectif: 50M FCFA</span>
         </div>
       </section>
@@ -297,7 +297,7 @@ export default function FinancementParticipatif() {
                   Nous Contacter
                 </Link>
                 <span className="text-gray-600 text-sm">
-                  ou appelez-nous au: +228 XX XX XX XX
+                  ecrivez-nous à: pm@cides.tf
                 </span>
               </div>
             </div>
