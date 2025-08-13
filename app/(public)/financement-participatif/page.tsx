@@ -157,13 +157,13 @@ export default function FinancementParticipatif() {
         
         {/* Progress Bar */}
         <div className="bg-white/20 rounded-full h-4 sm:h-6 mb-4 max-w-md mx-auto">
-          <div className="bg-yellow-400 h-full rounded-full" style={{ width: '1%' }}>
-            <span className="sr-only">0% financé</span>
+          <div className="bg-yellow-400 h-full rounded-full" style={{ width: '10%' }}>
+            <span className="sr-only">10% financé</span>
           </div>
         </div>
         <div className="flex justify-between text-xs sm:text-sm opacity-90 max-w-md mx-auto">
-          <span>0% financé</span>
-          <span>Objectif: 50M FCFA</span>
+          <span>10% financé</span>
+          <span>Objectif: 15M FCFA</span>
         </div>
       </section>
 
@@ -214,7 +214,7 @@ export default function FinancementParticipatif() {
 
               <h3 className="text-lg font-semibold mb-3 text-gray-800">🎯 Objectifs du Projet</h3>
               <ul className="list-disc list-inside space-y-2 text-sm sm:text-base text-gray-700">
-                <li>Acquisition de matériel cordiste certifié IRATA</li>
+                <li>Acquisition matériel Cordiste certifié, aux normes avec certificat de conformité et de contrôle</li>
                 <li>Installation d'un appareil à ultrasons pour contrôles non destructifs (CND)</li>
                 <li>Équipement complet en matériel de Santé et Sécurité au Travail (SST)</li>
                 <li>Formation d'une équipe locale de formateurs experts</li>
@@ -231,7 +231,7 @@ export default function FinancementParticipatif() {
                   <h4 className="font-semibold text-blue-800 mb-2">Matériel Cordiste IRATA</h4>
                   <div className="flex justify-between text-sm">
                     <span>Budget nécessaire:</span>
-                    <span className="font-semibold">20M FCFA</span>
+                    <span className="font-semibold">8M FCFA</span>
                   </div>
                 </div>
                 
@@ -239,7 +239,7 @@ export default function FinancementParticipatif() {
                   <h4 className="font-semibold text-green-800 mb-2">Appareil Ultrasons CND</h4>
                   <div className="flex justify-between text-sm">
                     <span>Budget nécessaire:</span>
-                    <span className="font-semibold">15M FCFA</span>
+                    <span className="font-semibold">4M FCFA</span>
                   </div>
                 </div>
                 
@@ -247,7 +247,7 @@ export default function FinancementParticipatif() {
                   <h4 className="font-semibold text-yellow-800 mb-2">Équipement SST</h4>
                   <div className="flex justify-between text-sm">
                     <span>Budget nécessaire:</span>
-                    <span className="font-semibold">15M FCFA</span>
+                    <span className="font-semibold">3M FCFA</span>
                   </div>
                 </div>
               </div>
@@ -256,15 +256,15 @@ export default function FinancementParticipatif() {
               <div className="space-y-2 text-sm sm:text-base text-gray-700">
                 <div className="flex justify-between border-b pb-1">
                   <span>Phase 1 - Financement:</span>
-                  <span className="font-semibold">Mars 2025</span>
+                  <span className="font-semibold">Septembre 2025</span>
                 </div>
                 <div className="flex justify-between border-b pb-1">
                   <span>Phase 2 - Équipement:</span>
-                  <span className="font-semibold">Mai 2025</span>
+                  <span className="font-semibold"> fin Octobre 2025</span>
                 </div>
                 <div className="flex justify-between border-b pb-1">
                   <span>Phase 3 - Ouverture:</span>
-                  <span className="font-semibold">Août 2025</span>
+                  <span className="font-semibold">debut Decembre 2025</span>
                 </div>
               </div>
             </div>
@@ -297,7 +297,7 @@ export default function FinancementParticipatif() {
                   Nous Contacter
                 </Link>
                 <span className="text-gray-600 text-sm">
-                  ecrivez-nous à: pm@cides.tf
+                  ecrivez-nous à: gm@cides.tf
                 </span>
               </div>
             </div>
@@ -361,7 +361,8 @@ export default function FinancementParticipatif() {
                 🏗️ Nommage d'Équipements
               </h3>
               <ul className="space-y-2 text-sm sm:text-base text-yellow-700">
-                <li>• Don de 500K FCFA: Votre nom sur un équipement</li>
+                <li>• Don de 50K FCFA: Votre nom sur un équipement</li>
+                <li>• Don de 500K FCFA: Nommage d'une salle de cours</li>
                 <li>• Don de 1M FCFA: Nommage d'une salle de cours</li>
                 <li>• Don de 2M FCFA: Plaque commémorative permanente</li>
                 <li>• Don de 5M FCFA: Parrain officiel du centre</li>
