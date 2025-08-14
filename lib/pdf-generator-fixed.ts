@@ -56,7 +56,7 @@ export function generateTraineeFollowUpPDF(
   // En-tête du formulaire - Tableau 4 colonnes, 2 lignes
   const headerData = [
     ['Titre', 'Code Number', 'Revision', 'Creation date'],
-    ['CI.DES TRAINEE FOLLOW UP FORM', 'ENR-CIFRA-FORM 004', '01', new Date().toLocaleDateString('fr-FR')]
+    ['CI.DES TRAINEE FOLLOW UP FORM', 'ENR-CIFRA-FORM 004', '01', '09/10/2023']
   ];
 
   // Générer l'en-tête du formulaire

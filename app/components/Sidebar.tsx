@@ -31,6 +31,7 @@ const navigation = [
   { name: 'Envoyer documents', href: '/admin/documents', icon: FolderIcon },
   { name: 'Trainee Follow Up', href: '/admin/trainee-folow-up', icon: UserIcon },
   { name: 'Questionnaires', href: '/admin/formulaires-quotidiens', icon: ClipboardDocumentIcon },
+  { name: 'Questionnaire de satisfaction', href: '/admin/customer-satisfaction', icon: ClipboardDocumentIcon },
 
   { name: 'Inspections', href: '/admin/inspections', icon: ClipboardDocumentCheckIcon },
   

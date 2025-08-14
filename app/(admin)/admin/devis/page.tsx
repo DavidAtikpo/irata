@@ -78,6 +78,24 @@ export default function DevisListPage() {
     }
   };
 
+  // Supprimer un devis (ADMIN)
+  const deleteDevis = async (devisId: string) => {
+    const confirmed = window.confirm('Confirmer la suppression de ce devis ? Cette action est irréversible.');
+    if (!confirmed) return;
+    try {
+      const res = await fetch(`/api/admin/devis/${devisId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Erreur lors de la suppression');
+      }
+      // Mise à jour locale de la liste
+      setDevis(prev => prev.filter(d => d.id !== devisId));
+    } catch (err) {
+      console.error(err);
+      setError((err as Error).message || 'Erreur lors de la suppression du devis');
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
@@ -123,13 +141,22 @@ export default function DevisListPage() {
                 </div>
                 <div className="mt-3 flex justify-between items-center">
                   <Link href={`/admin/devis/${d.id}`} className="text-indigo-600 hover:underline text-sm">Voir</Link>
-                  <button
-                    onClick={() => downloadDevis(d.id, d.numero)}
-                    className="inline-flex items-center text-sm text-gray-700 hover:text-gray-900"
-                    title="Télécharger le PDF"
-                  >
-                    <DocumentArrowDownIcon className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => downloadDevis(d.id, d.numero)}
+                      className="inline-flex items-center text-sm text-gray-700 hover:text-gray-900"
+                      title="Télécharger le PDF"
+                    >
+                      <DocumentArrowDownIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => deleteDevis(d.id)}
+                      className="text-sm text-red-600 hover:text-red-700"
+                      title="Supprimer le devis"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 </div>
               </div>
             ))

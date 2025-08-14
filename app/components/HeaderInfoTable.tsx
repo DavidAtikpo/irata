@@ -24,7 +24,7 @@ export default function HeaderInfoTable({
   logoSrc = '/logo.png',
 }: HeaderInfoTableProps) {
   return (
-    <div className="mb-4 p-3 bg-white border rounded shadow">
+    <div className="mb-4 p-3 bg-white">
       <div className="flex items-start">
         <div className="mr-4 flex-shrink-0">
           <div className="w-16 h-16 bg-gray-200 border border-gray-400 flex items-center justify-center overflow-hidden">
@@ -36,15 +36,18 @@ export default function HeaderInfoTable({
             <tbody>
               <tr>
                 <td className="border p-2 font-bold">Titre</td>
-                <td className="border p-2 font-bold">{codeNumberLabel}</td>
-                <td className="border p-2 font-bold">{revisionLabel}</td>
+                <td className="border p-2">{title}</td>
                 <td className="border p-2 font-bold">{creationDateLabel}</td>
+                <td className="border p-2">{creationDate}</td>
+                
               </tr>
               <tr>
-                <td className="border p-2">{title}</td>
+              <td className="border p-2 font-bold">{codeNumberLabel}</td>
                 <td className="border p-2">{codeNumber}</td>
+              <td className="border p-2 font-bold">{revisionLabel}</td>
                 <td className="border p-2">{revision}</td>
-                <td className="border p-2">{creationDate}</td>
+              
+                
               </tr>
             </tbody>
           </table>
