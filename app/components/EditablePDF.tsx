@@ -105,7 +105,10 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
     page.drawText('Se rapporter aux dispositions des articles L 121-16 et -17 et R 121-1 du code de la consommation.', { x: 50, y: height - 20, size: 8, font, color: rgb(1, 0.4, 0) });
 
     const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    // Create a fresh Uint8Array backed by ArrayBuffer to satisfy BlobPart typing
+    const safeBytes = new Uint8Array(pdfBytes.length);
+    safeBytes.set(pdfBytes);
+    const blob = new Blob([safeBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

@@ -289,7 +289,8 @@ export async function GET(
     await browser.close();
 
     // Retourner le PDF
-    return new NextResponse(pdf, {
+    const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
+    return new NextResponse(arrayBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="contrat_${contrat.devis.numero}.pdf"`,

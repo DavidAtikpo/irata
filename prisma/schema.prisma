@@ -524,6 +524,8 @@ model CustomerSatisfactionResponse {
   date         DateTime                  @default(now())
   items        Json                      // [{ label: string, rating: string, comment?: string }]
   suggestions  String?
+  session      String?
+  signature    String?                   // base64 data URL
   createdAt    DateTime                  @default(now())
   updatedAt    DateTime                  @updatedAt
 

@@ -240,8 +240,8 @@ export default function DashboardPage() {
           <h3 className="text-lg font-medium text-gray-900 mb-4">Évolution des demandes</h3>
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
             <ul className="divide-y divide-gray-200">
-              {stats.demandesParMois.map((item) => (
-                <li key={item.mois} className="px-4 py-4 sm:px-6">
+              {stats.demandesParMois.map((item, idx) => (
+                <li key={`${item.mois}-${idx}`} className="px-4 py-4 sm:px-6">
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-medium text-gray-900">{item.mois}</div>
                     <div className="text-sm text-gray-500">{item.count} demandes</div>

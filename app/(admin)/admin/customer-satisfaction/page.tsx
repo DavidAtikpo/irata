@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import HeaderInfoTable from '@/app/components/HeaderInfoTable';
+import Image from 'next/image';
 
 type ResponseItem = {
   label: string;
@@ -18,6 +20,8 @@ type SatisfactionResponse = {
   createdAt: string;
   items: ResponseItem[];
   suggestions?: string | null;
+  session?: string | null;
+  signature?: string | null;
   user?: {
     email?: string | null;
     nom?: string | null;
@@ -39,6 +43,7 @@ export default function AdminCustomerSatisfactionPage() {
   const [error, setError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<'all' | SatisfactionResponse['type']>('all');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [adminNotes, setAdminNotes] = useState<Record<string, { note1: string; note2: string }>>({});
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -159,7 +164,27 @@ export default function AdminCustomerSatisfactionPage() {
           <div key={r.id} className="mt-4">
             {expanded[r.id] && (
               <div className="bg-white shadow rounded-lg p-4">
-                <h3 className="font-semibold mb-3">Détails</h3>
+                {/* En-tête similaire aux formulaires user */}
+                <HeaderInfoTable
+                  title="CI.DES FORMULAIRE D'ENQUÊTE DE SATISFACTION CLIENT"
+                  codeNumberLabel="Numéro de code"
+                  codeNumber="ENR-CIFRA-QHSE 007"
+                  revisionLabel="Révision"
+                  revision="00"
+                  creationDateLabel="Date"
+                  creationDate={new Date(r.createdAt || r.date).toLocaleDateString('fr-FR')}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <div className="text-sm text-gray-700"><span className="font-medium">Nom du stagiaire:</span> {r.traineeName || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-700"><span className="font-medium">Session:</span> {r.session || '-'}</div>
+                  </div>
+                </div>
+
+                <h3 className="font-semibold mt-6 mb-3">Détails</h3>
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead>
@@ -186,6 +211,58 @@ export default function AdminCustomerSatisfactionPage() {
                     <p className="text-gray-700 whitespace-pre-wrap">{r.suggestions}</p>
                   </div>
                 )}
+
+                {/* Signature du stagiaire */}
+                {r.signature && (
+                  <div className="mt-3">
+                    <h4 className="font-medium mb-2">Signature du stagiaire</h4>
+                    <img src={r.signature} alt="Signature" className=" max-w-50 h-auto" />
+                  </div>
+                )}
+
+                {/* Commentaires Admin: deux lignes avec champs de saisie (longueur réduite) */}
+                <div className="mt-4 ml-130">
+                  <h4 className="font-medium mb-3">Commentaires administrateur</h4>
+                  <div className="space-y-6">
+                    <div className="max-w-xl">
+                      <label className="block text-sm text-gray-700 mb-1">Texte</label>
+                      <input
+                        type="text"
+                        className="w-full md:w-2/2 border-0 border-b border-gray-400 focus:border-gray-600 focus:outline-none px-0 py-1"
+                        value={adminNotes[r.id]?.note1 || ''}
+                        onChange={(e) => setAdminNotes((prev) => ({ ...prev, [r.id]: { ...(prev[r.id] || { note1: '', note2: '' }), note1: e.target.value } }))}
+                        placeholder="Écrire ici..."
+                      />
+                    </div>
+                    <div className="max-w-xl">
+                      {/* <label className="block text-sm text-gray-700 mb-1">Ligne 2</label> */}
+                      <input
+                        type="text"
+                        className="w-full md:w-2/2 border-0 border-b border-gray-400 focus:border-gray-600 focus:outline-none px-0 py-0"
+                        value={adminNotes[r.id]?.note2 || ''}
+                        onChange={(e) => setAdminNotes((prev) => ({ ...prev, [r.id]: { ...(prev[r.id] || { note1: '', note2: '' }), note2: e.target.value } }))}
+                        placeholder="Écrire ici..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pied de page style devis */}
+                <footer className="mt-6 p-4 bg-white ">
+                  <div className="flex justify-between items-center text-xs text-gray-600">
+                    <div>
+                      CI.DES - Satisfaction Client
+                    </div>
+                    <div className="text-center">
+                      <div>CI.DES sasu  Capital 2 500 Euros</div>
+                      <div>SIRET : 87840789900011  VAT : FR71878407899</div>
+                      <div>Page 1 sur 1</div>
+                    </div>
+                    <div>
+                      <Image src="/logo.png" alt="CI.DES" width={32} height={32} />
+                    </div>
+                  </div>
+                </footer>
               </div>
             )}
           </div>

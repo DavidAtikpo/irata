@@ -74,7 +74,8 @@ export async function GET(
 
     // Retourner le PDF
     const sessionLabel = getSessionLabel(formulaire.session).replace(/[^a-zA-Z0-9]/g, '-');
-    return new NextResponse(pdf, {
+    const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
+    return new NextResponse(arrayBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="session-${sessionLabel}-reponses-${new Date().toISOString().split('T')[0]}.pdf"`
