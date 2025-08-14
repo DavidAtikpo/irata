@@ -221,7 +221,7 @@ export default function AdminCustomerSatisfactionPage() {
                 )}
 
                 {/* Commentaires Admin: deux lignes avec champs de saisie (longueur réduite) */}
-                <div className="mt-4 ml-130">
+                <div className="mt-4 ml-130 ">
                   <h4 className="font-medium mb-3">Commentaires administrateur</h4>
                   <div className="space-y-6">
                     <div className="max-w-xl">
