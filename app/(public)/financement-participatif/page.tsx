@@ -4,6 +4,10 @@ import Link from 'next/link';
 import { useState } from 'react';
 import React from 'react';
 
+const XOF_PER_EUR = 655.957;
+const toEUR = (xof: number) => Math.round(xof / XOF_PER_EUR);
+const formatEUR = (value: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+
 const financingOptions = [
   {
     id: 'preformation',
@@ -12,9 +16,9 @@ const financingOptions = [
     icon: '📚',
     baseReturn: 10,
     returnType: 'discount',
-    minAmount: 50000,
-    maxAmount: 500000,
-    currency: 'FCFA'
+    minAmount: Math.round(50000 / 655.957),
+    maxAmount: Math.round(500000 / 655.957),
+    currency: 'EUR'
   },
   {
     id: 'financial',
@@ -23,9 +27,9 @@ const financingOptions = [
     icon: '💸',
     baseReturn: 8,
     returnType: 'interest',
-    minAmount: 100000,
-    maxAmount: 1000000,
-    currency: 'FCFA'
+    minAmount: Math.round(100000 / 655.957),
+    maxAmount: Math.round(1000000 / 655.957),
+    currency: 'EUR'
   },
   {
     id: 'material',
@@ -34,9 +38,9 @@ const financingOptions = [
     icon: '🏆',
     baseReturn: 0,
     returnType: 'material',
-    minAmount: 25000,
-    maxAmount: 200000,
-    currency: 'FCFA'
+    minAmount: Math.round(25000 / 655.957),
+    maxAmount: Math.round(200000 / 655.957),
+    currency: 'EUR'
   }
 ];
 
@@ -57,7 +61,7 @@ function Calculator({ option }: CalculatorProps) {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-FR').format(value);
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
   };
 
   return (
@@ -71,19 +75,19 @@ function Calculator({ option }: CalculatorProps) {
       
       <div className="mb-4">
         <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Montant du don ({option.currency})
+          Montant du don (€)
         </label>
         <input
           type="number"
           min={option.minAmount}
           max={option.maxAmount}
-          step={25000}
+          step={5}
           value={amount}
           onChange={(e) => setAmount(Math.max(option.minAmount, Math.min(option.maxAmount, parseInt(e.target.value) || option.minAmount)))}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm sm:text-base"
         />
         <p className="text-xs text-gray-500 mt-1">
-          Min: {formatCurrency(option.minAmount)} - Max: {formatCurrency(option.maxAmount)} {option.currency}
+          Min: {formatCurrency(option.minAmount)} - Max: {formatCurrency(option.maxAmount)}
         </p>
       </div>
 
@@ -93,23 +97,23 @@ function Calculator({ option }: CalculatorProps) {
             {option.returnType === 'discount' ? 'Remise obtenue' : 'Montant remboursé'}
           </h4>
           <div className="text-xl sm:text-2xl font-bold text-green-600">
-            {formatCurrency(calculateReturn())} {option.currency}
+            {formatCurrency(calculateReturn())}
           </div>
           {option.returnType === 'discount' && (
             <p className="text-xs sm:text-sm text-green-700 mt-1">
-              Économie: {formatCurrency(calculateReturn() - amount)} {option.currency}
+              Économie: {formatCurrency(calculateReturn() - amount)}
             </p>
           )}
           {option.returnType === 'interest' && (
             <p className="text-xs sm:text-sm text-green-700 mt-1">
-              Gain: {formatCurrency(calculateReturn() - amount)} {option.currency}
+              Gain: {formatCurrency(calculateReturn() - amount)}
             </p>
           )}
         </div>
       )}
 
       <button className="w-full bg-green-600 text-white font-semibold py-2 sm:py-3 rounded-lg hover:bg-green-700 transition duration-300 text-sm sm:text-base">
-        Contribuer {formatCurrency(amount)} {option.currency}
+        Contribuer {formatCurrency(amount)}
       </button>
     </div>
   );
@@ -157,13 +161,13 @@ export default function FinancementParticipatif() {
         
         {/* Progress Bar */}
         <div className="bg-white/20 rounded-full h-4 sm:h-6 mb-4 max-w-md mx-auto">
-          <div className="bg-yellow-400 h-full rounded-full" style={{ width: '10%' }}>
-            <span className="sr-only">10% financé</span>
+          <div className="bg-yellow-400 h-full rounded-full" style={{ width: '5%' }}>
+            <span className="sr-only">5% financé</span>
           </div>
         </div>
         <div className="flex justify-between text-xs sm:text-sm opacity-90 max-w-md mx-auto">
-          <span>10% financé</span>
-          <span>Objectif: 15M FCFA</span>
+          <span>5% financé</span>
+          <span>Objectif: {formatEUR(toEUR(15000000))}</span>
         </div>
       </section>
 
@@ -203,7 +207,7 @@ export default function FinancementParticipatif() {
                 🌍 Histoire et Contexte
               </h2>
               <p className="mb-4 text-sm sm:text-base text-gray-700">
-                Ce projet révolutionnaire vise à créer l'un des premiers centres de multi formations en sécurité au Togo. 
+                Ce projet innovant vise à créer l'un des premiers centres de multi formations en sécurité au Togo. 
                 Avec un bâtiment avancé à 95%, nous sommes prêts à équiper les salles de cours, 
                 la structure d'entraînement et les futurs logements.
               </p>
@@ -214,10 +218,10 @@ export default function FinancementParticipatif() {
 
               <h3 className="text-lg font-semibold mb-3 text-gray-800">🎯 Objectifs du Projet</h3>
               <ul className="list-disc list-inside space-y-2 text-sm sm:text-base text-gray-700">
-                <li>Acquisition matériel Cordiste certifié, aux normes avec certificat de conformité et de contrôle</li>
-                <li>Installation d'un appareil à ultrasons pour contrôles non destructifs (CND)</li>
+                <li>Acquisition matériel Cordiste certifié, aux normes avec certificat de conformité et de contrôle</li>
+                <li>Acquisition de 6 appareils complémentaires ultra son pour contrôles non destructifs (CND)</li>
                 <li>Équipement complet en matériel de Santé et Sécurité au Travail (SST)</li>
-                <li>Formation d'une équipe locale de formateurs experts</li>
+                <li>Formation d une équipe locale de formateurs pour qu ils deviennent les référents de nos formations</li>
               </ul>
             </div>
 
@@ -231,7 +235,7 @@ export default function FinancementParticipatif() {
                   <h4 className="font-semibold text-blue-800 mb-2">Matériel Cordiste IRATA</h4>
                   <div className="flex justify-between text-sm">
                     <span>Budget nécessaire:</span>
-                    <span className="font-semibold">8M FCFA</span>
+                    <span className="font-semibold">{formatEUR(toEUR(8000000))}</span>
                   </div>
                 </div>
                 
@@ -239,7 +243,7 @@ export default function FinancementParticipatif() {
                   <h4 className="font-semibold text-green-800 mb-2">Appareil Ultrasons CND</h4>
                   <div className="flex justify-between text-sm">
                     <span>Budget nécessaire:</span>
-                    <span className="font-semibold">4M FCFA</span>
+                    <span className="font-semibold">{formatEUR(toEUR(4000000))}</span>
                   </div>
                 </div>
                 
@@ -247,7 +251,7 @@ export default function FinancementParticipatif() {
                   <h4 className="font-semibold text-yellow-800 mb-2">Équipement SST</h4>
                   <div className="flex justify-between text-sm">
                     <span>Budget nécessaire:</span>
-                    <span className="font-semibold">3M FCFA</span>
+                    <span className="font-semibold">{formatEUR(toEUR(3000000))}</span>
                   </div>
                 </div>
               </div>
@@ -336,25 +340,25 @@ export default function FinancementParticipatif() {
               </ul>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 sm:p-8 rounded-xl">
-              <h3 className="text-lg sm:text-xl font-bold mb-4 text-purple-800 flex items-center">
-                🎁 Récompenses Matérielles
-              </h3>
-              <div className="space-y-3">
-                <div className="border-l-4 border-purple-400 pl-3">
-                  <p className="font-semibold text-purple-700">25K - 50K FCFA</p>
-                  <p className="text-sm text-purple-600">Mug + Stylos de marque</p>
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 sm:p-8 rounded-xl">
+                  <h3 className="text-lg sm:text-xl font-bold mb-4 text-purple-800 flex items-center">
+                    🎁 Récompenses Matérielles
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="border-l-4 border-purple-400 pl-3">
+                      <p className="font-semibold text-purple-700">{formatEUR(toEUR(25000))} - {formatEUR(toEUR(50000))}</p>
+                      <p className="text-sm text-purple-600">Mug + Stylos de marque</p>
+                    </div>
+                    <div className="border-l-4 border-purple-400 pl-3">
+                      <p className="font-semibold text-purple-700">{formatEUR(toEUR(50000))} - {formatEUR(toEUR(100000))}</p>
+                      <p className="text-sm text-purple-600">T-shirt + Sac à dos de marque</p>
+                    </div>
+                    <div className="border-l-4 border-purple-400 pl-3">
+                      <p className="font-semibold text-purple-700">{formatEUR(toEUR(100000))}+</p>
+                      <p className="text-sm text-purple-600">Kit complet + Casquette premium</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="border-l-4 border-purple-400 pl-3">
-                  <p className="font-semibold text-purple-700">50K - 100K FCFA</p>
-                  <p className="text-sm text-purple-600">T-shirt + Sac à dos de marque</p>
-                </div>
-                <div className="border-l-4 border-purple-400 pl-3">
-                  <p className="font-semibold text-purple-700">100K+ FCFA</p>
-                  <p className="text-sm text-purple-600">Kit complet + Casquette premium</p>
-                </div>
-              </div>
-            </div>
 
             <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 sm:p-8 rounded-xl">
               <h3 className="text-lg sm:text-xl font-bold mb-4 text-yellow-800 flex items-center">

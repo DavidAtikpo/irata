@@ -35,6 +35,7 @@ model User {
   traineeSignatures     TraineeSignature[]
   trainingSessions      TrainingSession[] @relation("TrainingSessionTrainees")
   contributions         Contribution[]
+  customerSatisfactionResponses CustomerSatisfactionResponse[]
 
   @@schema("webirata")
 }
@@ -502,6 +503,32 @@ enum PaymentMethod {
   BANK_TRANSFER // Virement bancaire
   CASH          // Espèces
   CRYPTO        // Cryptomonnaie
+
+  @@schema("webirata")
+}
+
+// Customer satisfaction survey models
+enum CustomerSatisfactionType {
+  ENVIRONMENT_RECEPTION
+  EQUIPMENT
+  TRAINING_PEDAGOGY
+
+  @@schema("webirata")
+}
+
+model CustomerSatisfactionResponse {
+  id           String                    @id @default(cuid())
+  userId       String?
+  traineeName  String?
+  type         CustomerSatisfactionType
+  date         DateTime                  @default(now())
+  items        Json                      // [{ label: string, rating: string, comment?: string }]
+  suggestions  String?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+
+  // Relations
+  user         User?                     @relation(fields: [userId], references: [id])
 
   @@schema("webirata")
 }

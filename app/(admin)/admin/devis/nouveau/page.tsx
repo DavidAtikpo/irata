@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import HeaderInfoTable from '@/app/components/HeaderInfoTable';
 import Image from 'next/image';
+import SignaturePad from '@/components/SignaturePad';
 
 interface Demande {
   id: string;
@@ -27,6 +28,7 @@ export default function NouveauDevisPage() {
   const titre = 'TRAME BDC DEVIS FACTURE';
   const numeroCode = 'ENR-CIFRA-COMP 00X';
   const suiviPar = 'CI.DES';
+  const defaultPrixUnitaire = '1350';
   const intituleCompte = 'CI.DES';
   const banque = 'Revolut Bank UAB';
   const bic = 'REVOFRP2';
@@ -39,7 +41,7 @@ export default function NouveauDevisPage() {
 
   // Génération automatique du numéro de facture (ex: DEVIS-20240509-001)
   const today = new Date();
-  const numeroAuto = `DEVIS-${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*900+100)}`;
+  const numeroAuto = `DEVIS-${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}-C.D-${Math.floor(Math.random()*900+100000)}`;
 
   // Champs principaux du formulaire
   const [numero, setNumero] = useState(numeroAuto);
@@ -53,7 +55,7 @@ export default function NouveauDevisPage() {
   const [designation, setDesignation] = useState('');
   const [quantite, setQuantite] = useState(1);
   const [unite, setUnite] = useState('lot');
-  const [prixUnitaire, setPrixUnitaire] = useState('');
+  const [prixUnitaire, setPrixUnitaire] = useState(defaultPrixUnitaire);
   const [tva, setTva] = useState('0');
   const [exoneration, setExoneration] = useState('0');
   const [datePriseEffet, setDatePriseEffet] = useState('');
@@ -63,9 +65,79 @@ export default function NouveauDevisPage() {
   // const [banque, setBanque] = useState('');
   // const [intituleCompte, setIntituleCompte] = useState('');
   const [signature, setSignature] = useState('');
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [savingSignature, setSavingSignature] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [demande, setDemande] = useState<Demande | null>(null);
+
+  // Calcule automatiquement le montant total dès que le prix unitaire ou la quantité changent
+  useEffect(() => {
+    const total = Number(prixUnitaire || 0) * Number(quantite || 0);
+    setMontant(total ? total.toFixed(2) : '');
+  }, [prixUnitaire, quantite]);
+
+  // Formateur d'affichage pour les sessions de type "2025 septembre 01 au 06"
+  const formatSessionFr = (raw: string) => {
+    if (!raw) return '';
+    const m = raw.match(/^(\d{4})\s+([a-zA-Zéèêàùîôïûç]+)\s+(\d{2})\s+au\s+(\d{2})$/i);
+    if (!m) return raw;
+    const [, year, monthFr, dayStart, dayEnd] = m;
+    const monthMap: Record<string, string> = {
+      janvier: '01', fevrier: '02', février: '02', mars: '03', avril: '04',
+      mai: '05', juin: '06', juillet: '07', aout: '08', août: '08',
+      septembre: '09', octobre: '10', novembre: '11', decembre: '12', décembre: '12'
+    };
+    const mm = monthMap[monthFr.toLowerCase()];
+    if (!mm) return raw;
+    return `${dayStart}/${mm}/${year} au ${dayEnd}/${mm}/${year}`;
+  };
+
+  // Formate un ISO "YYYY-MM-DD" en "DD/MM/YYYY" pour l'affichage
+  const formatISOToFr = (iso: string) => {
+    if (!iso) return '';
+    const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return iso;
+    const [, y, mo, d] = m;
+    return `${d}/${mo}/${y}`;
+  };
+
+  // Affichage convivial de la session: du ... au ... (basé sur les dates ISO saisies)
+  const sessionRangeFr = (dateFormation && dateExamen)
+    ? `du ${formatISOToFr(dateFormation)} au ${formatISOToFr(dateExamen)}`
+    : '';
+
+  // Extrait la date de fin au format ISO (YYYY-MM-DD) depuis le même format de session
+  const parseSessionEndISO = (raw: string): string | '' => {
+    if (!raw) return '';
+    const m = raw.match(/^(\d{4})\s+([a-zA-Zéèêàùîôïûç]+)\s+(\d{2})\s+au\s+(\d{2})$/i);
+    if (!m) return '';
+    const [, year, monthFr, _dayStart, dayEnd] = m;
+    const monthMap: Record<string, string> = {
+      janvier: '01', fevrier: '02', février: '02', mars: '03', avril: '04',
+      mai: '05', juin: '06', juillet: '07', aout: '08', août: '08',
+      septembre: '09', octobre: '10', novembre: '11', decembre: '12', décembre: '12'
+    };
+    const mm = monthMap[monthFr.toLowerCase()];
+    if (!mm) return '';
+    return `${year}-${mm}-${dayEnd}`;
+  };
+
+  // Extrait la date de début au format ISO (YYYY-MM-DD) depuis le même format de session
+  const parseSessionStartISO = (raw: string): string | '' => {
+    if (!raw) return '';
+    const m = raw.match(/^(\d{4})\s+([a-zA-Zéèêàùîôïûç]+)\s+(\d{2})\s+au\s+(\d{2})$/i);
+    if (!m) return '';
+    const [, year, monthFr, dayStart] = m as unknown as [string, string, string, string, string?];
+    const monthMap: Record<string, string> = {
+      janvier: '01', fevrier: '02', février: '02', mars: '03', avril: '04',
+      mai: '05', juin: '06', juillet: '07', aout: '08', août: '08',
+      septembre: '09', octobre: '10', novembre: '11', decembre: '12', décembre: '12'
+    };
+    const mm = monthMap[monthFr.toLowerCase()];
+    if (!mm) return '';
+    return `${year}-${mm}-${dayStart}`;
+  };
 
   useEffect(() => {
     if (demandeId) {
@@ -85,6 +157,12 @@ export default function NouveauDevisPage() {
       setClient(`${data.user.prenom} ${data.user.nom}`);
       setMail(data.user.email);
       setDesignation(`Formation Cordiste IRATA - ${data.session}`);
+      // Utiliser la date de début ISO pour dateFormation (attendue par l'API/backend)
+      const startISO = parseSessionStartISO(data.session || '');
+      setDateFormation(startISO || '');
+      // Renseigner automatiquement la date d'examen avec le dernier jour de la session
+      const endISO = parseSessionEndISO(data.session || '');
+      if (endISO) setDateExamen(endISO);
     } catch (error) {
       console.error('Erreur:', error);
       setError('Erreur lors de la récupération de la demande');
@@ -94,6 +172,8 @@ export default function NouveauDevisPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    // Assure que 'montant' est bien renseigné avant l'envoi
+    const montantToSend = (Number(prixUnitaire || 0) * Number(quantite || 0)).toFixed(2);
     const response = await fetch('/api/admin/devis', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -103,7 +183,7 @@ export default function NouveauDevisPage() {
         client,
         mail,
         adresseLivraison,
-        dateLivraison,
+        // dateLivraison,
         dateExamen,
         adresse,
         siret,
@@ -117,12 +197,13 @@ export default function NouveauDevisPage() {
         tva,
         exoneration,
         datePriseEffet,
-        montant,
+        montant: montantToSend,
         iban,
         bic,
         banque,
         intituleCompte,
         signature,
+        statut: 'EN_ATTENTE'
       }),
     });
     setLoading(false);
@@ -138,11 +219,11 @@ export default function NouveauDevisPage() {
     <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
       {demande && (
         <div className="max-w-4xl mx-auto bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">Session de formation demandée</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">Session de {(sessionRangeFr || formatSessionFr(demande.session))} formation demandée</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <span className="font-medium text-blue-800">Session:</span>
-              <span className="ml-2 text-blue-900">{demande.session}</span>
+              <span className="ml-2 text-blue-900">{sessionRangeFr || formatSessionFr(demande.session)}</span>
             </div>
             <div>
               <span className="font-medium text-blue-800">Client:</span>
@@ -188,6 +269,16 @@ export default function NouveauDevisPage() {
                 <label className="block text-base font-semibold text-gray-900 mb-1">Email</label>
                 <input type="email" className="input text-gray-900" value={mail} onChange={e => setMail(e.target.value)} required />
               </div>
+              {/* <div className="md:col-span-2">
+                <label className="block text-base font-semibold text-gray-900 mb-1">Date de formation</label>
+                <input
+                  type="text"
+                  className="input text-gray-900"
+                  value={sessionRangeFr || formatSessionFr(demande?.session || '')}
+                  readOnly
+                />
+                <p className="mt-1 text-xs text-gray-500">Affichage: du JJ/MM/AAAA au JJ/MM/AAAA</p>
+              </div> */}
             </div>
           </fieldset>
 
@@ -204,16 +295,17 @@ export default function NouveauDevisPage() {
                 <input type="text" className="input text-gray-900" value={adresseLivraison} readOnly />
               </div>
               <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Date de livraison</label>
-                <input type="date" className="input text-gray-900" value={dateLivraison} onChange={e => setDateLivraison(e.target.value)} />
+                <label className="block text-base font-semibold text-gray-900 mb-1">Date de formation</label>
+                <input
+                  type="text"
+                  className="input text-gray-900"
+                  value={sessionRangeFr || formatSessionFr(demande?.session || '')}
+                  readOnly
+                />
               </div>
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">Date examen</label>
-                <input type="date" className="input text-gray-900" value={dateExamen} onChange={e => setDateExamen(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Adresse client</label>
-                <input type="text" className="input text-gray-900" value={adresse} onChange={e => setAdresse(e.target.value)} />
+                <input type="text" className="input text-gray-900" value={formatISOToFr(dateExamen)} readOnly />
               </div>
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">SIRET / NIF</label>
@@ -224,21 +316,38 @@ export default function NouveauDevisPage() {
 
           {/* Section Intervention */}
           <fieldset className="border p-6 rounded mb-6 bg-gray-50">
-            <legend className="text-xl font-bold text-gray-900 px-2">Intervention</legend>
+            <legend className="text-xl font-bold text-gray-900 px-2">Informations administratives</legend>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">Numéro NDA</label>
                 <input type="text" className="input text-gray-900" value={numNDA} readOnly />
               </div>
               <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Date formation</label>
-                <input type="date" className="input text-gray-900" value={dateFormation} onChange={e => setDateFormation(e.target.value)} />
+                <label className="block text-base font-semibold text-gray-900 mb-1">Nemero kliop</label>
+                <input type="text" className="input text-gray-900" value={numNDA} readOnly />
               </div>
               <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Suivi par</label>
+                <label className="block text-base font-semibold text-gray-900 mb-1">Centre Irata</label>
                 <input type="text" className="input text-gray-900" value={suiviPar} readOnly />
               </div>
             </div>
+            <fieldset className=" mb-6 bg-gray-50">
+            <legend className="text-xl font-bold text-gray-900 px-2">--</legend>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-1">TVA (%)</label>
+                <input type="number" className="input text-gray-900" value={tva} onChange={e => setTva(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-1">Exonération</label>
+                <input type="text" className="input text-gray-900" value={exoneration} onChange={e => setExoneration(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-base font-semibold text-gray-900 mb-1">Date de prise d'effet</label>
+                <input type="date" className="input text-gray-900" value={datePriseEffet} onChange={e => setDatePriseEffet(e.target.value)} />
+              </div>
+            </div>
+          </fieldset>
           </fieldset>
 
           {/* Section Désignation (tableau) */}
@@ -267,37 +376,14 @@ export default function NouveauDevisPage() {
                       <input type="text" className="input w-full" value={unite} onChange={e => setUnite(e.target.value)} required />
                     </td>
                     <td className="border px-2 py-1">
-                      <input type="number" className="input w-full" value={prixUnitaire} onChange={e => {
-                        setPrixUnitaire(e.target.value);
-                        const total = parseFloat(e.target.value) * quantite;
-                        setMontant(total.toString());
-                      }} required />
+                      <input type="number" className="input w-full" value={prixUnitaire} onChange={e => setPrixUnitaire(e.target.value)} required />
                     </td>
                     <td className="border px-2 py-1">
-                      <input type="number" className="input w-full" value={montant} readOnly />
+                      <input type="number" className="input w-full" value={montant} readOnly required />
                     </td>
                   </tr>
                 </tbody>
               </table>
-            </div>
-          </fieldset>
-
-          {/* Section TVA et Exonération */}
-          <fieldset className="border p-6 rounded mb-6 bg-gray-50">
-            <legend className="text-xl font-bold text-gray-900 px-2">TVA et Exonération</legend>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">TVA (%)</label>
-                <input type="number" className="input text-gray-900" value={tva} onChange={e => setTva(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Exonération</label>
-                <input type="text" className="input text-gray-900" value={exoneration} onChange={e => setExoneration(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Date de prise d'effet</label>
-                <input type="date" className="input text-gray-900" value={datePriseEffet} onChange={e => setDatePriseEffet(e.target.value)} />
-              </div>
             </div>
           </fieldset>
 
@@ -329,8 +415,34 @@ export default function NouveauDevisPage() {
             <legend className="text-xl font-bold text-gray-900 px-2">Signature</legend>
             <div className="grid grid-cols-1 gap-6">
               <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Signature</label>
-                <input type="text" className="input text-gray-900" value={signature} onChange={e => setSignature(e.target.value)} required />
+                <label className="block text-base font-semibold text-gray-900 mb-2">Signature</label>
+                {signature ? (
+                  <div className="flex items-center gap-4">
+                    <img src={signature} alt="Signature" className="border rounded bg-white max-h-32" />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignatureModal(true)}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                    >
+                      Modifier la signature
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-gray-500 mb-2">Aucune signature capturée.</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowSignatureModal(true)}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                    >
+                      Ajouter une signature
+                    </button>
+                  </div>
+                )}
+                {/* Validation visuelle simple */}
+                {!signature && (
+                  <p className="mt-2 text-sm text-red-600">La signature est requise.</p>
+                )}
               </div>
             </div>
           </fieldset>
@@ -358,9 +470,7 @@ export default function NouveauDevisPage() {
             </button>
           </div>
         </form>
-      </div>
-      {/* Pied de page */}
-      <footer className="mt-6 p-4 bg-white border rounded shadow">
+        <footer className="mt-6 p-4 bg-white ">
         <div className="max-w-4xl mx-auto flex justify-between items-center text-xs text-gray-600">
           <div>
             {numero} Trame
@@ -375,11 +485,41 @@ export default function NouveauDevisPage() {
           </div>
         </div>
       </footer>
+      </div>
+      {/* Pied de page */}
+
+      {showSignatureModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold mb-4">Signer le devis</h3>
+            <SignaturePad
+              onSave={(sig) => {
+                setSavingSignature(true);
+                try {
+                  setSignature(sig);
+                  setShowSignatureModal(false);
+                } finally {
+                  setSavingSignature(false);
+                }
+              }}
+              initialValue={signature}
+              disabled={savingSignature}
+              width={500}
+              height={200}
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowSignatureModal(false)}
+                disabled={savingSignature}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-// Style utilitaire pour les inputs
-// Ajoute ceci dans ton fichier CSS global si besoin :
-// .input { @apply mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm; } 
-// .input { @apply mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm; } 

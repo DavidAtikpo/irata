@@ -152,16 +152,12 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
               <div className="input text-gray-900 bg-gray-100">{devis.adresseLivraison || '-'}</div>
             </div>
             <div>
-              <div className="block text-base font-semibold text-gray-900 mb-1">Date de livraison</div>
-              <div className="input text-gray-900 bg-gray-100">{devis.dateLivraison ? new Date(devis.dateLivraison).toLocaleDateString() : '-'}</div>
+              <div className="block text-base font-semibold text-gray-900 mb-1">Date de formation</div>
+              <div className="input text-gray-900 bg-gray-100">{devis.dateFormation ? new Date(devis.dateFormation).toLocaleDateString() : '-'}</div>
             </div>
             <div>
               <div className="block text-base font-semibold text-gray-900 mb-1">Date examen</div>
               <div className="input text-gray-900 bg-gray-100">{devis.dateExamen ? new Date(devis.dateExamen).toLocaleDateString() : '-'}</div>
-            </div>
-            <div>
-              <div className="block text-base font-semibold text-gray-900 mb-1">Adresse client</div>
-              <div className="input text-gray-900 bg-gray-100">{devis.adresse || '-'}</div>
             </div>
             <div>
               <div className="block text-base font-semibold text-gray-900 mb-1">SIRET / NIF</div>
@@ -172,21 +168,39 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
 
         {/* Section Intervention */}
         <fieldset className="border p-6 rounded mb-6 bg-gray-50">
-          <legend className="text-xl font-bold text-gray-900 px-2">Intervention</legend>
+          <legend className="text-xl font-bold text-gray-900 px-2">Informations administratives</legend>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <div className="block text-base font-semibold text-gray-900 mb-1">Numéro NDA</div>
               <div className="input text-gray-900 bg-gray-100">{devis.numNDA || '-'}</div>
             </div>
+            {/* <div>
+              <div className="block text-base font-semibold text-gray-900 mb-1">Numero --</div>
+              <div className="input text-gray-900 bg-gray-100">{devis.numKlio || '-'}</div>
+            </div> */}
             <div>
-              <div className="block text-base font-semibold text-gray-900 mb-1">Date formation</div>
-              <div className="input text-gray-900 bg-gray-100">{devis.dateFormation ? new Date(devis.dateFormation).toLocaleDateString() : '-'}</div>
-            </div>
-            <div>
-              <div className="block text-base font-semibold text-gray-900 mb-1">Suivi par</div>
+              <div className="block text-base font-semibold text-gray-900 mb-1">Centre Irata</div>
               <div className="input text-gray-900 bg-gray-100">{devis.suiviPar || '-'}</div>
             </div>
           </div>
+
+          <fieldset className=" mb-6 bg-gray-50">
+          <legend className="text-xl font-bold text-gray-900 px-2">--</legend>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <div className="block text-base font-semibold text-gray-900 mb-1">TVA (%)</div>
+              <div className="input text-gray-900 bg-gray-100">{devis.tva}</div>
+            </div>
+            <div>
+              <div className="block text-base font-semibold text-gray-900 mb-1">Exonération</div>
+              <div className="input text-gray-900 bg-gray-100">{devis.exoneration || '-'}</div>
+            </div>
+            <div>
+              <div className="block text-base font-semibold text-gray-900 mb-1">Date de prise d'effet</div>
+              <div className="input text-gray-900 bg-gray-100">{devis.datePriseEffet ? new Date(devis.datePriseEffet).toLocaleDateString() : '-'}</div>
+            </div>
+          </div>
+        </fieldset>
         </fieldset>
 
         {/* Section Désignation (tableau) */}
@@ -217,23 +231,7 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
         </fieldset>
 
         {/* Section TVA et Exonération */}
-        <fieldset className="border p-6 rounded mb-6 bg-gray-50">
-          <legend className="text-xl font-bold text-gray-900 px-2">TVA et Exonération</legend>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <div className="block text-base font-semibold text-gray-900 mb-1">TVA (%)</div>
-              <div className="input text-gray-900 bg-gray-100">{devis.tva}</div>
-            </div>
-            <div>
-              <div className="block text-base font-semibold text-gray-900 mb-1">Exonération</div>
-              <div className="input text-gray-900 bg-gray-100">{devis.exoneration || '-'}</div>
-            </div>
-            <div>
-              <div className="block text-base font-semibold text-gray-900 mb-1">Date de prise d'effet</div>
-              <div className="input text-gray-900 bg-gray-100">{devis.datePriseEffet ? new Date(devis.datePriseEffet).toLocaleDateString() : '-'}</div>
-            </div>
-          </div>
-        </fieldset>
+
 
         {/* Section Informations bancaires */}
         <fieldset className="border p-6 rounded mb-6 bg-gray-50">
@@ -258,17 +256,6 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         </fieldset>
 
-        {/* Section Signature */}
-        <fieldset className="border p-6 rounded mb-6 bg-gray-50">
-          <legend className="text-xl font-bold text-gray-900 px-2">Signature</legend>
-          <div className="grid grid-cols-1 gap-6">
-            <div>
-              <div className="block text-base font-semibold text-gray-900 mb-1">Signature</div>
-              <div className="input text-gray-900 bg-gray-100">{devis.signature || '-'}</div>
-            </div>
-          </div>
-        </fieldset>
-
         {/* Section Statut et dates */}
         <fieldset className="border p-6 rounded mb-6 bg-gray-50">
           <legend className="text-xl font-bold text-gray-900 px-2">Statut et dates</legend>
@@ -287,8 +274,23 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
         </fieldset>
+
+        {/* Section Signature */}
+        <fieldset className=" mb-6 bg-gray-50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div className="block text-base font-semibold text-gray-900 mb-1">Signature: Administration</div>
+              {devis.signature ? (
+                <img src={devis.signature} alt="Signature" className=" bg-white max-h-22" />
+              ) : (
+                <div className="input text-gray-900 bg-gray-100">-</div>
+              )}
+            </div>
+          </div>
+        </fieldset>
+
         {/* Pied de page */}
-        <footer className="mt-6 p-4 bg-white border rounded shadow">
+        <footer className="mt-6 p-4 bg-white ">
           <div className="flex justify-between items-center text-xs text-gray-600">
             <div>
               {devis.numero} Trame
@@ -306,4 +308,4 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
       </div>
     </div>
   );
-} 
+}
