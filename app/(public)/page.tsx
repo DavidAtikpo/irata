@@ -188,12 +188,12 @@ function HomeContent() {
   const sessionParam = searchParams.get('session');
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const rotatingMessages = [
-    " EXCLUSIF: Formation cordiste IRATA lancée en France — Saisissez cette chance unique!",
+    "  Formation cordiste IRATA actuellement en cours — Saisissez cette chance unique!",
     " Places ultra-limitées — Réservez MAINTENANT pour ne pas regretter",
     " TOUT INCLUS: Hébergement + formation + certification — 1350€ seulement!",
-    " Certification IRATA: Votre passeport pour l'emploi en France et international",
-    " Transformation garantie: De débutant à cordiste certifié en 6 jours",
-    " Accompagnement VIP: Formateurs experts + suivi personnalisé",
+    " Certification IRATA",
+    "  débutant à cordiste certifié en 6 jours",
+   
   ];
   const [motdIdx, setMotdIdx] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -213,21 +213,21 @@ function HomeContent() {
     },
     {
       src: '/formations/cides2.jpg',
-      alt: 'Formateurs certifiés IRATA en action',
-      title: '👨‍🏫 Formateurs experts',
-      description: 'Encadrement par des professionnels certifiés IRATA'
+      alt: '',
+      title: '',
+      description: ''
     },
     {
       src: '/formations/Formation cordiste.jpg',
-      alt: 'Examen pratique IRATA niveau 1',
+      alt: 'Examen pratique IRATA',
       title: '📝 Examen pratique',
       description: 'Évaluation rigoureuse selon les standards IRATA'
     },
     {
       src: '/formations/formation-cordiste-1',
       alt: 'Centre CI.DES en Nouvelle-Aquitaine',
-      title: '🏢 Centre CI.DES 🇫🇷',
-      description: 'Notre campus exclusif en pleine campagne, Nouvelle-Aquitaine'
+      title: '🏢 Centre CI.DES ',
+      description: 'France Nouvelle-Aquitaine'
     }
   ];
 
@@ -274,20 +274,17 @@ function HomeContent() {
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
         <div className="relative z-10">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold leading-tight mb-2 sm:mb-3">
-          🎯 OPPORTUNITÉ UNIQUE: Investissez dans l'un des premiers centres de multi-formations en sécurité du Togo
+           OPPORTUNITÉ UNIQUE: Investissez dans l'un des premiers centres de multi-formations en sécurité du Togo
         </h2>
-        <p className="text-sm sm:text-base md:text-lg mb-2 sm:mb-3 opacity-90">
-          <span className="bg-white/20 px-2 py-1 rounded font-bold">PROJET À FORT IMPACT:</span> Votre contribution accélère l'ouverture, modernise les équipements
-          et forme des talents très recherchés. Contreparties exclusives et avantages privilégiés garantis!
-        </p>
+
         <p className="text-xs sm:text-sm md:text-base opacity-90 mb-3 sm:mb-4">
-          <span className="animate-pulse">⏰ DERNIERS JOURS:</span> Rejoignez nos investisseurs pionniers et participez à la success story du centre — Chaque euro compte et rapporte!
+          <span className="animate-pulse"> DERNIERS JOURS:</span> Rejoignez nos investisseurs pionniers et participez à la success story du centre — Chaque euro compte et rapporte!
         </p>
         <Link
           href="/financement-participatif"
           className="inline-block bg-white text-green-600 font-bold px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-md hover:bg-gray-100 hover:scale-105 transition-all duration-300 text-sm sm:text-base mr-2 sm:mr-4 border-2 border-white"
         >
-          📊 Découvrir les opportunités
+           Découvrir les opportunités
         </Link>
         <Link
           href="/financement-participatif#contribuer"
@@ -306,20 +303,20 @@ function HomeContent() {
         <div className="relative z-10">
         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-red-600 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full shadow-lg mb-4 sm:mb-6 animate-bounce">
           <span className="text-2xl sm:text-3xl animate-pulse">🇫🇷</span>
-          <span className="text-sm sm:text-base font-bold tracking-wide">PREMIÈRE EN FRANCE — Opportunité historique à saisir!</span>
+          <span className="text-sm sm:text-base font-bold tracking-wide"> EN FRANCE — Opportunité historique à saisir!</span>
         </div>
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight mb-2 sm:mb-3 animate-fade-in">
           🏆 Formation Cordiste IRATA en France <span className="text-yellow-700 bg-yellow-200/30 px-2 py-1 rounded">– CI.DES</span>
         </h1>
         <p className="text-base sm:text-lg md:text-xl mb-2 font-bold">
-          ⚡ 5 Jours Intensifs + 1 Jour d'Examen, Hébergement VIP Inclus, <span className="bg-blue-700 text-white px-3 py-1 rounded-full text-lg animate-pulse">SEULEMENT 1350 € Net</span>
+          ⚡ 5 Jours Intensifs + 1 Jour d'Examen, Hébergement Inclus, <span className="bg-blue-700 text-white px-3 py-1 rounded-full text-lg animate-pulse">SEULEMENT 1350 € Net</span>
         </p>
         <p className="mb-3 sm:mb-4 text-sm sm:text-base">France, Nouvelle-Aquitaine, en Campagne (17)</p>
         <p className="mb-3 sm:mb-4 text-sm sm:text-base text-gray-700 italic">
           {rotatingMessages[motdIdx]}
         </p>
         <p className="mb-4 sm:mb-6 text-sm sm:text-base text-gray-800 font-medium">
-          <span className="bg-red-100 text-red-800 px-2 py-1 rounded font-bold"> ALERTE:</span> Inscrivez-vous AUJOURD'HUI pour garantir votre place! Accompagnement VIP personnalisé, entraînement ultra-intensif, et certification
+          <span className="bg-red-100 text-red-800 px-2 py-1 rounded font-bold"> ALERTE:</span> Inscrivez-vous AUJOURD'HUI pour garantir votre place! Accompagnement  personnalisé, entraînement, et certification
           plébiscitée par les employeurs. <span className="text-red-600 font-bold animate-pulse">Les places s'envolent — RÉSERVEZ IMMÉDIATEMENT!</span>
         </p>
         <Link
@@ -336,7 +333,7 @@ function HomeContent() {
              {/* Slider photos de formation */}
        <section className="mb-8 sm:mb-12">
          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8 text-blue-800">
-           🇫🇷 Découvrez notre centre de formation en images
+            Découvrez notre centre de formation en images
          </h2>
          <div className="relative max-w-6xl mx-auto">
            <div className="relative h-64 sm:h-80 md:h-96 lg:h-[500px]  overflow-hidden shadow-2xl">
@@ -443,7 +440,7 @@ function HomeContent() {
              </div>
              <div className="mt-4 sm:mt-6 text-center">
                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
-                 🎯 Formation Cordiste IRATA - CI.DES en action
+                  Formation Cordiste IRATA - CI.DES en action
                </h3>
                
              </div>
@@ -484,7 +481,7 @@ function HomeContent() {
       {/* Prochaines sessions */}
       <section id="preinscription" className="mb-8 sm:mb-12 bg-gray-50 rounded-xl sm:rounded-2xl shadow-inner p-4 sm:p-6">
         <h2 className="text-xl sm:text-2xl font-bold mb-4 text-blue-800 animate-fade-in">
-          🇫🇷 Prochaines sessions EXCLUSIVES en France / Pré-inscription URGENTE
+           Prochaines sessions EXCLUSIVES en France / Pré-inscription URGENTE
         </h2>
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white rounded-lg sm:rounded-xl shadow text-xs sm:text-sm border border-gray-200">
@@ -549,7 +546,7 @@ function HomeContent() {
             <li>Maîtriser les manœuvres de secours et bonnes pratiques du travail en hauteur</li>
             <li>Préparer l'examen IRATA selon les normes internationales</li>
           </ul>
-          <h3 className="font-bold mb-1 text-sm sm:text-base text-blue-700">🎯 Cette formation TRANSFORMATRICE s'adresse à VOUS!</h3>
+          <h3 className="font-bold mb-1 text-sm sm:text-base text-blue-700"> Cette formation TRANSFORMATRICE s'adresse à VOUS!</h3>
           <p className="mb-3 text-sm sm:text-base"><span className="bg-blue-200 px-2 py-1 rounded font-bold">ACCESSIBLE À TOUS:</span> Débutants motivés ou professionnels ambitieux souhaitant décrocher la certification IRATA. Conditions: être majeur, médicalement apte, et en bonne condition physique. <span className="text-red-600 font-bold">C'est VOTRE moment!</span></p>
         </div>
         <div>
@@ -597,7 +594,7 @@ function HomeContent() {
             <h4 className="font-semibold mb-1 text-sm sm:text-base">Où se déroule la formation 🇫🇷 ?</h4>
             <p className="mb-3 text-gray-700 text-sm sm:text-base"><span className="font-bold">🇫🇷 EN FRANCE:</span> CI.DES, Chez Chagneau, 17270 Boresse-et-Martron, Nouvelle-Aquitaine.</p>
             <div className="bg-red-50 p-3 rounded-lg mb-3 border-l-4 border-red-500">
-              <h4 className="font-bold mb-1 text-sm sm:text-base text-red-800">📝 Comment s'inscrire ?</h4>
+              <h4 className="font-bold mb-1 text-sm sm:text-base text-red-800"> Comment s'inscrire ?</h4>
               <p className="mb-0 text-gray-700 text-sm sm:text-base"><span className="font-bold text-orange-600">PROCÉDURE EXPRESS:</span> Remplissez notre formulaire pour un devis personnalisé instantané et réservez votre place. <span className="text-red-600 font-bold animate-pulse">⚠️ ATTENTION: Places ultra-limitées!</span></p>
             </div>
           </div>
@@ -606,9 +603,9 @@ function HomeContent() {
 
       {/* CTA final */}
       <section id="demande" className="bg-blue-50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-10 text-center shadow-inner">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 animate-fade-in">🚀 Prêt à TRANSFORMER votre carrière ?</h2>
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 animate-fade-in"> Prêt à TRANSFORMER votre carrière ?</h2>
         <div className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full mb-4 animate-pulse">
-          <span className="text-sm font-bold">⚡ DERNIÈRES PLACES DISPONIBLES</span>
+          <span className="text-sm font-bold"> DERNIÈRES PLACES DISPONIBLES</span>
         </div>
         <p className="text-gray-700 mb-6 max-w-xl mx-auto text-sm sm:text-base font-medium">
           <span className="text-2xl">🇫🇷</span> Suivez une formation cordiste IRATA <span className="bg-blue-200 px-2 py-1 rounded font-bold">EXCLUSIVEMENT en France</span> chez CI.DES et décollez vers un avenir professionnel exceptionnel!
@@ -617,7 +614,7 @@ function HomeContent() {
           href="/register"
           className="bg-gradient-to-r from-blue-700 to-purple-700 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-full font-bold hover:from-blue-800 hover:to-purple-800 hover:scale-110 transition-all duration-300 text-sm sm:text-base shadow-xl border-2 border-white/20 animate-pulse"
         >
-          🔥 ACCÉDER À MON ESPACE VIP
+           ACCÉDER À MON ESPACE
         </Link>
       </section>
     </main>
