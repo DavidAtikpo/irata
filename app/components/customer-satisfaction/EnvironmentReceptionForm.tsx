@@ -1,14 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import HeaderInfoTable from '@/app/components/HeaderInfoTable';
+import Image from 'next/image';
 
 type EnvironmentReceptionFormProps = {
   date?: string;
   traineeName?: string;
+  onNext?: () => void;
+  step?: number;
+  totalSteps?: number;
+  onNextWithData?: (data: {
+    traineeName?: string;
+    session?: string;
+    items: { label: string; rating: string; comment?: string }[];
+  }) => void;
+  onPrev?: () => void;
 };
 
-export default function EnvironmentReceptionForm({ date, traineeName }: EnvironmentReceptionFormProps) {
+export default function EnvironmentReceptionForm({ date, traineeName, onNext, step, totalSteps, onNextWithData, onPrev }: EnvironmentReceptionFormProps) {
   const items: string[] = [
     "Accueil par notre chauffeur à votre arrivée à l'aéroport ou à la gare",
     'La localisation ou la zone du centre de formation',
@@ -25,52 +35,64 @@ export default function EnvironmentReceptionForm({ date, traineeName }: Environm
 
   const [name, setName] = useState(traineeName ?? '');
   const [rows, setRows] = useState(items.map((label) => ({ label, rating: null as null | string, comment: '' })));
+  const [sessionName, setSessionName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const ratingOptions = ['Très satisfaisant', 'Satisfaisant', 'Insatisfaisant', 'Très insatisfaisant'];
+  useEffect(() => {
+    if (traineeName && traineeName !== name) {
+      setName(traineeName);
+    }
+  }, [traineeName]);
+  useEffect(() => {
+    const fetchSession = async () => {
+      try {
+        const r = await fetch('/api/user/training-session');
+        if (r.ok) {
+          const data = await r.json();
+          if (data?.name) setSessionName(data.name);
+        }
+      } catch {}
+    };
+    const fetchProfile = async () => {
+      try {
+        const r = await fetch('/api/user/profile');
+        if (r.ok) {
+          const data = await r.json();
+          const fullName = [data?.prenom, data?.nom].filter(Boolean).join(' ').trim();
+          if (fullName) setName(fullName);
+        }
+      } catch {}
+    };
+    fetchSession();
+    fetchProfile();
+  }, []);
+
   const setRowRating = (index: number, rating: string) => {
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, rating } : r)));
   };
   const setRowComment = (index: number, comment: string) => {
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, comment } : r)));
   };
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleNext = () => {
     if (rows.some((r) => !r.rating)) {
       alert('Veuillez sélectionner une note pour chaque ligne.');
       return;
     }
-    setSubmitting(true);
-    try {
-      const payload = {
-        type: 'ENVIRONMENT_RECEPTION' as const,
-        traineeName: name || undefined,
-        items: rows.map((r) => ({
-          label: r.label,
-          rating: r.rating as string,
-          ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
-        })),
-      };
-      const res = await fetch('/api/user/customer-satisfaction', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Erreur lors de l'enregistrement");
-      }
-      alert('Merci, votre réponse a été enregistrée.');
-      setRows(items.map((label) => ({ label, rating: null as null | string, comment: '' })));
-    } catch (err: any) {
-      alert(err.message || 'Erreur inattendue');
-    } finally {
-      setSubmitting(false);
-    }
+    onNextWithData?.({
+      traineeName: name || undefined,
+      session: sessionName || undefined,
+      items: rows.map((r) => ({
+        label: r.label,
+        rating: r.rating as string,
+        ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
+      })),
+    });
+    onNext?.();
   };
   const today = new Date().toLocaleDateString('fr-FR');
 
   return (
-    <form className="bg-white shadow rounded-lg p-6" onSubmit={handleSubmit}>
+    <div className="bg-white shadow rounded-lg p-6">
       <HeaderInfoTable
         title="CI.DES FORMULAIRE D'ENQUÊTE DE SATISFACTION CLIENT"
         codeNumberLabel="Numéro de code"
@@ -87,15 +109,27 @@ export default function EnvironmentReceptionForm({ date, traineeName }: Environm
       <p className="text-sm text-gray-700">À cette fin, nous souhaitons recueillir votre avis via le questionnaire ci-dessous.</p>
 
       <fieldset className="border p-4 rounded mt-6">
-        <legend className="font-semibold">Cadre, environnement de formation et accueil</legend>
-        <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-800">Nom du stagiaire :</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1 w-full border rounded px-3 py-2 text-sm"
-          />
+        <legend className="font-semibold">Environnement et réception</legend>
+        <div className="mb-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-800">Nom du stagiaire :</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 w-full border rounded px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-800">Session :</label>
+            <input
+              type="text"
+              value={sessionName}
+              onChange={(e) => setSessionName(e.target.value)}
+              className="mt-1 w-full border rounded px-3 py-2 text-sm"
+              placeholder="Session inscrite"
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -138,16 +172,55 @@ export default function EnvironmentReceptionForm({ date, traineeName }: Environm
           </table>
         </div>
       </fieldset>
-      <div className="mt-6 flex justify-end">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        >
-          {submitting ? 'Envoi...' : 'Soumettre'}
-        </button>
+
+      {/* Signature sur le dernier formulaire uniquement */}
+
+      {/* Pied de page - style similaire à devis */}
+      <footer className="mt-6 p-4 bg-white ">
+        <div className="flex justify-between items-center text-xs text-gray-600">
+          <div>
+            CI.DES - Satisfaction Client
+          </div>
+          <div className="text-center">
+            <div>CI.DES sasu  Capital 2 500 Euros</div>
+            <div>SIRET : 87840789900011  VAT : FR71878407899</div>
+            <div>Page 1 sur 1</div>
+          </div>
+          <div>
+            <Image src="/logo.png" alt="CI.DES" width={32} height={32} />
+          </div>
+        </div>
+      </footer>
+      <div className="mt-6 flex items-center justify-between">
+        <div className="text-sm text-gray-600">
+          {typeof step === 'number' && typeof totalSteps === 'number' && (
+            <span>Formulaire {step} / {totalSteps}</span>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {typeof step === 'number' && step > 1 && (
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={onPrev}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+            >
+              Précédent
+            </button>
+          )}
+          {typeof step === 'number' && typeof totalSteps === 'number' && step < totalSteps && (
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={handleNext}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              {submitting ? '...' : 'Suivant'}
+            </button>
+          )}
+        </div>
       </div>
-    </form>
+    </div>
   );
 }
 

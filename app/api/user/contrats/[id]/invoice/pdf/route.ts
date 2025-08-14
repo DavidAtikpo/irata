@@ -157,7 +157,8 @@ export async function GET(
     const pdf = await page.pdf({ format: 'A4', printBackground: true });
     await browser.close();
 
-    return new NextResponse(pdf, {
+    const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
+    return new NextResponse(arrayBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="facture_${devis.numero}.pdf"`,

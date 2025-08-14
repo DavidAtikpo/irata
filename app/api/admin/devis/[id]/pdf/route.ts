@@ -121,7 +121,7 @@ export async function GET(
 
     const pdfBytes = await pdfDoc.save();
 
-    return new Response(pdfBytes, {
+    return new Response(new Uint8Array(pdfBytes), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

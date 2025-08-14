@@ -132,9 +132,9 @@ export async function GET(
     page.drawText('Devis valable 30 jours', { x: 50, y: 30, size: 8, font, color: rgb(0,0,0) });
 
     const pdfBytes = await pdfDoc.save();
+    const arrayBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength) as ArrayBuffer;
 
-    return new Response(pdfBytes, {
-      status: 200,
+    return new NextResponse(arrayBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="devis_${devis.numero}.pdf"`,

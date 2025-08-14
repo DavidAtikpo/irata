@@ -128,7 +128,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
       console.log('Vérification PDF:', { isPdf, firstBytes: fileBuffer.slice(0, 4) });
 
-      return new NextResponse(fileBuffer, {
+      const arrayBuffer = fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength) as ArrayBuffer;
+      return new NextResponse(arrayBuffer, {
         headers: {
           'Content-Type': isPdf ? 'application/pdf' : 'application/octet-stream',
           'Content-Disposition': `inline; filename="${document.nom}.pdf"`,

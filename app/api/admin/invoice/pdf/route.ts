@@ -207,7 +207,8 @@ export async function GET() {
     await page.setContent(html, { waitUntil: 'load' });
     const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' } });
     await browser.close();
-    return new NextResponse(pdf, {
+    const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
+    return new NextResponse(arrayBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="facture_modele.pdf"',
@@ -232,7 +233,8 @@ export async function POST(req: Request) {
     await page.setContent(html, { waitUntil: 'load' });
     const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' } });
     await browser.close();
-    return new NextResponse(pdf, {
+    const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
+    return new NextResponse(arrayBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="facture_modele.pdf"',

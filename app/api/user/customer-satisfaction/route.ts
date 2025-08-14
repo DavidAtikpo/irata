@@ -21,11 +21,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { type, traineeName, items, suggestions } = body as {
+    const { type, traineeName, items, suggestions, session: trainingSession, signature } = body as {
       type?: 'ENVIRONMENT_RECEPTION' | 'EQUIPMENT' | 'TRAINING_PEDAGOGY';
       traineeName?: string;
       items?: ItemInput[];
       suggestions?: string;
+      session?: string;
+      signature?: string; // data URL
     };
 
     if (!type || !Array.isArray(items) || items.length === 0) {
@@ -44,11 +46,13 @@ export async function POST(req: NextRequest) {
 
     const created = await prisma.customerSatisfactionResponse.create({
       data: {
-        userId: session.user.id,
+        user: { connect: { id: session.user.id } },
         traineeName: traineeName || null,
         type,
         items: normalizedItems as unknown as object,
         suggestions: suggestions || null,
+        session: trainingSession || null,
+        signature: signature || null,
       },
     });
 

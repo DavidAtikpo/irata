@@ -219,7 +219,10 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
     page.drawText('SIRET: 87840789900011 - VAT: FR71878407899', { x: 50, y: 45, size: 8, font, color: rgb(0,0,0) });
 
     const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    // Copy into a fresh Uint8Array backed by ArrayBuffer (avoids ArrayBufferLike typing issues)
+    const safeBytes = new Uint8Array(pdfBytes.length);
+    safeBytes.set(pdfBytes);
+    const blob = new Blob([safeBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
