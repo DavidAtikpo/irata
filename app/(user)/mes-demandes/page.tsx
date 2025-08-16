@@ -17,8 +17,7 @@ interface Demande {
 }
 
 export default function MesDemandesPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+  const { status } = useSession();
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +78,7 @@ export default function MesDemandesPage() {
 
         {demandes.length === 0 ? (
           <div className="text-center py-8 sm:py-12">
-            <p className="text-sm sm:text-base text-gray-600">Vous n'avez pas encore fait de demande de formation</p>
+            <p className="text-sm sm:text-base text-gray-600">Vous n&apos;avez pas encore fait de demande de formation</p>
             <Link
               href="/demande"
               className="mt-4 inline-flex items-center px-3 sm:px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
@@ -108,7 +107,7 @@ export default function MesDemandesPage() {
                         )}
                         {demande.commentaire && (
                           <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                            <strong>Commentaire de l'administrateur:</strong> {demande.commentaire}
+                            <strong>Commentaire de l&apos;administrateur:</strong> {demande.commentaire}
                           </p>
                         )}
                       </div>
