@@ -1,88 +1,277 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import IrataDisclaimerFormClient from '@/app/(user)/irata-disclaimer/IrataDisclaimerFormClient';
+"use client";
 
-export default async function IrataDisclaimerPage() {
-  const session = await getServerSession(authOptions);
-  const currentDate = new Date().toLocaleDateString('en-GB'); // DD/MM/YYYY format
+import React, { useState, useEffect } from 'react';
+import SignaturePad from '@/components/SignaturePad';
+
+export default function Page() {
+  const [userName, setUserName] = useState('');
+  const [userAddress, setUserAddress] = useState('');
+  const [signature, setSignature] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
+  const [hasSigned, setHasSigned] = useState(false);
+  const [existingSubmission, setExistingSubmission] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Vérifier le statut de signature IRATA Disclaimer
+        const statusRes = await fetch('/api/user/irata-disclaimer-status');
+        let statusData = null;
+        
+        if (statusRes.ok) {
+          statusData = await statusRes.json();
+          setHasSigned(statusData.hasSigned);
+          setExistingSubmission(statusData.submission);
+          
+          // Si déjà signé, pré-remplir les données
+          if (statusData.submission) {
+            setUserName(statusData.submission.name || '');
+            setUserAddress(statusData.submission.address || '');
+            setSignature(statusData.submission.signature || '');
+          }
+        }
+
+        // Si pas encore signé, récupérer les données utilisateur
+        if (!statusData?.hasSigned) {
+          // Récupérer le nom de l'utilisateur
+          const profileRes = await fetch('/api/user/profile');
+          if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            const fullName = `${profileData.prenom || ''} ${profileData.nom || ''}`.trim();
+            setUserName(fullName);
+          }
+
+          // Récupérer l'adresse depuis la table contrat
+          const addressRes = await fetch('/api/user/address');
+          if (addressRes.ok) {
+            const addressData = await addressRes.json();
+            setUserAddress(addressData.address || '');
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (hasSigned) {
+      setMessage('Vous avez déjà signé ce document.');
+      return;
+    }
+    if (!signature) {
+      setMessage('Veuillez fournir une signature.');
+      return;
+    }
+    setSubmitting(true);
+    setMessage(null);
+
+    try {
+      const res = await fetch('/api/documents/irata-disclaimer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: userName,
+          address: userAddress,
+          signature,
+          date: new Date().toLocaleDateString('en-GB'),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || 'Erreur');
+      
+      setMessage('Document soumis avec succès.');
+      setHasSigned(true);
+      setExistingSubmission(data);
+    } catch (err) {
+      console.error(err);
+      setMessage(err instanceof Error ? err.message : 'Erreur lors de la soumission');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSignatureSave = (data: string) => {
+    setSignature(data);
+    setShowSignaturePad(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-neutral-50 text-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement...</p>
+      </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto p-4 max-w-2xl">
-      <div className="border border-gray-300 p-6 rounded-lg shadow-md">
-        {/* Header Section */}
-        <div className="grid grid-cols-3 gap-4 mb-6 text-sm">
-          <div>
-            <p><strong>N° Doc. :</strong> FM014ENG</p>
-            <p><strong>Date d'émission :</strong> 01/07/19</p>
-            <p><strong>N° d'édition :</strong> 005</p>
-            <p><strong>Page 1 sur 1</strong></p>
-          </div>
-          <div className="col-span-1 text-center font-bold text-lg flex items-center justify-center">
-            DÉCLARATION DE NON-RESPONSABILITÉ <br /> ET DÉCHARGE DE RESPONSABILITÉ DU CANDIDAT
-          </div>
-          <div className="flex justify-end items-start">
-            {/* Placeholder for IRATA logo */}
-            <img src="/logo.png" alt="Logo IRATA International" className="h-16" />
-          </div>
+    <div className="min-h-screen bg-neutral-50 text-black">
+      <main className='p-15'>
+        {/* Header image */}
+        <div className="w-full">
+          <img src="/header declaimer.png" alt="IRATA Disclaimer Header" className="w-full h-auto" />
         </div>
 
-        {/* Main Content (static) */}
-        <p className="mb-4 text-sm">
-          Ceci est un document important - veuillez le lire attentivement avant de le signer, car vous acceptez l&apos;entière responsabilité de
-          votre propre santé et condition médicale et déchargez l&apos;IRATA, ses sociétés membres, et leur
-          personnel respectif, les instructeurs de formation et les évaluateurs IRATA (collectivement dénommés <strong>Fournisseurs</strong>) de toute responsabilité.
-        </p>
-        <p className="mb-4 text-sm">
-          L&apos;accès par corde en altitude ou en profondeur est une composante intrinsèque de la formation et de l&apos;évaluation. Par conséquent, les candidats doivent être physiquement aptes et non affectés par toute condition médicale qui pourrait les empêcher d&apos;entreprendre leurs exigences de formation et d&apos;effectuer toute manœuvre requise pendant la formation et l&apos;évaluation.
-        </p>
+        {/* Body content images */}
+        <div className="w-full mt-5">
+          <img src="/corps1.png" alt="IRATA Disclaimer Body Content Part 1" className="w-full h-auto" />
+          <img src="/corps2.png" alt="IRATA Disclaimer Body Content Part 2" className="w-full h-auto" />
+        </div>
 
-        <h2 className="font-bold text-md mb-2">Déclaration</h2>
-        <p className="mb-4 text-sm">
-          Je déclare être en bonne santé, physiquement apte et me considérer comme apte à entreprendre une formation et une évaluation d&apos;accès par corde. Je n&apos;ai aucune condition médicale ou contre-indication qui pourrait m&apos;empêcher de travailler en toute sécurité.
-        </p>
+        {/* Status message if already signed */}
+        {hasSigned && (
+          <div className="px-3 mt-4 mb-4">
+            <div className="bg-green-50 border border-green-200 rounded-md p-4">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-green-800">
+                    Document déjà signé
+                  </h3>
+                  <div className="mt-2 text-sm text-green-700">
+                    <p>Vous avez signé ce document le {existingSubmission?.date || existingSubmission?.createdAt?.split('T')[0] || 'N/A'}.</p>
+                    <p>Statut: {existingSubmission?.status || 'En attente de validation'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-        <h3 className="font-semibold text-sm mb-2">Les principales contre-indications au travail en hauteur incluent (mais ne sont pas limitées à) :</h3>
-        <ul className="list-disc list-inside ml-4 mb-4 text-sm">
-          <li>médicaments sur ordonnance pouvant altérer les fonctions physiques et/ou mentales ;</li>
-          <li>dépendance à l&apos;alcool ou aux drogues ;</li>
-          <li>diabète, glycémie élevée ou basse ;</li>
-          <li>hypertension ou hypotension ;</li>
-          <li>épilepsie, crises ou périodes d&apos;inconscience, par ex. évanouissements ;</li>
-          <li>vertiges, étourdissements ou difficultés d&apos;équilibre ;</li>
-          <li>maladie cardiaque ou douleurs thoraciques ;</li>
-          <li>fonction des membres altérée ;</li>
-          <li>problèmes musculo-squelettiques, par ex. maux de dos ;</li>
-          <li>maladie psychiatrique ;</li>
-          <li>peur des hauteurs ;</li>
-          <li>déficience sensorielle, par ex. cécité, surdité.</li>
-        </ul>
+        {/* Signature block */}
+        <form onSubmit={handleSubmit} className="px-3 mt-4">
+          <table className="w-full border-collapse" style={{ border: '1px solid black' }}>
+            <tr>
+              <td className="p-1 border border-black" style={{ width: '15%' }}>
+                <strong>Name:</strong>
+              </td>
+              <td className="p-1 border border-black" style={{ width: '50%' }}>
+                <input 
+                  value={userName} 
+                  onChange={(e) => setUserName(e.target.value)}
+                  className="w-full border-none outline-none bg-transparent" 
+                  required
+                />
+              </td>
+              <td className="p-1 border border-black" style={{ width: '15%' }}>
+                <strong>IRATA No :</strong>
+              </td>
+              <td className="p-1 border border-black" style={{ width: '20%' }}>
+                <input 
+                  value="" 
+                  readOnly 
+                  className="w-full border-none outline-none bg-transparent" 
+                />
+              </td>
+            </tr>
+            <tr>
+              <td className="p-1 border border-black" style={{ width: '15%' }}>
+                <strong>Address:</strong>
+              </td>
+              <td className="p-1 border border-black" colSpan={3} style={{ width: '85%' }}>
+                <input 
+                  value={userAddress} 
+                  onChange={(e) => setUserAddress(e.target.value)} 
+                  required 
+                  className="w-full border-none outline-none bg-transparent" 
+                />
+              </td>
+            </tr>
+                         <tr>
+               <td className="p-1 border border-black" style={{ width: '15%' }}>
+                 <strong>Signature:</strong>
+               </td>
+               <td className="p-1 border border-black" style={{ width: '50%' }}>
+                 <div 
+                   className={`h-4 flex items-center justify-center ${!hasSigned ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                   onClick={() => !hasSigned && setShowSignaturePad(true)}
+                 >
+                   {signature ? (
+                     <div className="flex items-center gap-2">
+                       <img src={signature} alt="Signature" className="max-h-12 max-w-full" />
+                       <span className="text-green-600 text-xs">✓ Signé</span>
+                     </div>
+                   ) : (
+                     <span className="text-gray-400 text-sm">
+                       {hasSigned ? 'Déjà signé' : 'Cliquez pour signer'}
+                     </span>
+                   )}
+                 </div>
+               </td>
+               <td className="p-1 border border-black" style={{ width: '15%' }}>
+                 <strong>Date:</strong>
+               </td>
+               <td className="p-1 border border-black" style={{ width: '20%' }}>
+                 <input 
+                   value={new Date().toLocaleDateString('en-GB')} 
+                   readOnly 
+                   className="w-full border-none outline-none bg-transparent" 
+                   placeholder="DD/MM/YYYY"
+                 />
+               </td>
+             </tr>
+          </table>
+          
+                     <div className="flex justify-center mt-6">
+             <button 
+               type="submit" 
+               disabled={submitting || hasSigned} 
+               className={`px-6 py-2 rounded-md disabled:opacity-50 ${
+                 hasSigned 
+                   ? 'bg-gray-400 text-white cursor-not-allowed' 
+                   : 'bg-blue-600 text-white hover:bg-blue-700'
+               }`}
+             >
+               {submitting ? 'Soumission...' : hasSigned ? 'Document déjà soumis' : 'Soumettre le document'}
+             </button>
+           </div>
+          {message && <p className="text-center text-sm mt-3">{message}</p>}
+        </form>
 
-        <h2 className="font-bold text-md mb-2">Risque et Déni de Responsabilité</h2>
-        <p className="mb-4 text-sm">
-          Je comprends que l&apos;accès par corde en hauteur ou en profondeur, ainsi que la formation et l&apos;évaluation y afférentes, comportent des risques pour ma personne et autrui de blessures corporelles (y compris l&apos;invalidité permanente et le décès) en raison de la possibilité de chutes et de collisions, et qu&apos;il s&apos;agit d&apos;une activité intense.
-        </p>
-        <p className="mb-4 text-sm">
-          En mon nom et au nom de ma succession, je décharge irrévocablement les Fournisseurs, leurs dirigeants et leur personnel de toutes responsabilités, réclamations, demandes et dépenses, y compris les frais juridiques découlant de ou en relation avec mon engagement dans la formation et l&apos;évaluation d&apos;accès par corde impliquant l&apos;obtention de la certification IRATA.
-        </p>
+        <div className="mt-8 ml-5 mr-5 border-b-3" style={{ borderBottomColor: '#3365BE' }}></div>
+        
+                 {/* Footer */}
+         <div className="text-center text-xs tracking-wide text-neutral-800 py-3">
+           UNCONTROLLED WHEN PRINTED
+         </div>
+       </main>
 
-        <h3 className="font-semibold text-sm mb-2">En signant cette déclaration, je garantis et reconnais que :</h3>
-        <ol className="list-lower-alpha list-inside ml-4 mb-6 text-sm">
-          <li>les informations que j&apos;ai fournies sont exactes et sur lesquelles les Fournisseurs s&apos;appuieront ;</li>
-          <li>au meilleur de mes connaissances et de ma conviction, l&apos;engagement dans des activités d&apos;accès par corde ne serait pas préjudiciable à ma santé, mon bien-être ou ma condition physique, ni à d&apos;autres personnes qui pourraient être affectées par mes actes ou omissions ;</li>
-          <li>une société membre a le droit de m&apos;exclure de la formation et un évaluateur a le droit de m&apos;exclure de l&apos;évaluation, s&apos;ils ont des préoccupations concernant ma santé, ma forme physique ou mon attitude envers la sécurité ;</li>
-          <li>(sauf lorsque les Fournisseurs ne peuvent exclure leur responsabilité par la loi), j&apos;accepte que cette Déclaration de Non-responsabilité et de Dégagement de Responsabilité du Candidat reste légalement contraignante même si les garanties et la déclaration données par moi sont fausses et j&apos;accepte les risques impliqués dans l&apos;entreprise de la formation et de l&apos;évaluation ; et</li>
-          <li>je conseillerai à l&apos;IRATA si ma santé ou ma vulnérabilité à une blessure change et cesserai immédiatement les activités d&apos;accès par corde, à moins d&apos;approbation d&apos;un médecin.</li>
-        </ol>
-
-        <p className="mb-6 text-sm">
-          Cette Déclaration de Non-responsabilité et de Dégagement de Responsabilité du Candidat sera interprétée et régie conformément au droit anglais et les parties se soumettent à la compétence exclusive des tribunaux anglais.
-        </p>
-
-        {/* Client form component */}
-        <IrataDisclaimerFormClient user={session?.user as any || {}} currentDate={currentDate} />
-
-        <p className="text-center text-xs text-gray-500 mt-6">NON CONTRÔLÉ LORS DE L'IMPRESSION</p>
-      </div>
+               {/* Signature Pad Popup */}
+        {showSignaturePad && !hasSigned && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Signature</h3>
+              <p className="text-sm text-gray-600 mb-4">Attention : Vous ne pourrez plus modifier votre signature après l'avoir sauvegardée.</p>
+              <SignaturePad onSave={handleSignatureSave} />
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={() => setShowSignaturePad(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
