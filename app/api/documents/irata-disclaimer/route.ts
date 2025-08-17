@@ -6,6 +6,7 @@ import { join } from 'path';
 
 const DATA_PATH = join(process.cwd(), 'data');
 const FILE_PATH = join(DATA_PATH, 'irata-disclaimer-submissions.json');
+const GLOBAL_IRATA_FILE = join(DATA_PATH, 'global-irata-no.json');
 
 async function ensureDataFile() {
   try {
@@ -27,6 +28,17 @@ export async function POST(request: Request) {
 
     await ensureDataFile();
 
+    // Récupérer le numéro IRATA global
+    let globalIrataNo = null;
+    try {
+      const globalIrataRaw = await fs.readFile(GLOBAL_IRATA_FILE, 'utf8');
+      const globalIrataData = JSON.parse(globalIrataRaw);
+      globalIrataNo = globalIrataData.irataNo;
+    } catch (error) {
+      // Si le fichier global n'existe pas, ce n'est pas grave
+      console.log('Aucun numéro IRATA global défini');
+    }
+
     const raw = await fs.readFile(FILE_PATH, 'utf8');
     const list = JSON.parse(raw || '[]');
 
@@ -37,6 +49,7 @@ export async function POST(request: Request) {
       signature: data.signature || null,
       session: data.session || null,
       user: data.user || null,
+      irataNo: globalIrataNo,
       createdAt: new Date().toISOString(),
       adminSignature: null,
       adminSignedAt: null,

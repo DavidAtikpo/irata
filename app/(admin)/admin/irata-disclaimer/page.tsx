@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import SignaturePad from '@/components/SignaturePad';
-import { generateIrataPDF, downloadPDF } from '@/app/utils/pdfGenerator';
+
 
 type Submission = {
   id: string;
@@ -16,6 +16,7 @@ type Submission = {
   adminSignature?: string | null;
   adminSignedAt?: string | null;
   status: 'pending' | 'signed' | 'sent';
+  irataNo?: string | null;
 };
 
 export default function AdminIrataDisclaimerPage() {
@@ -27,10 +28,27 @@ export default function AdminIrataDisclaimerPage() {
   const [adminSignature, setAdminSignature] = useState('');
   const [signingLoading, setSigningLoading] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [irataNo, setIrataNo] = useState('');
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
 
   useEffect(() => {
     fetchSubmissions();
+    fetchGlobalIrataNo();
   }, []);
+
+  const fetchGlobalIrataNo = async () => {
+    try {
+      const res = await fetch('/api/admin/irata-disclaimer/update-global-irata');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.irataNo) {
+          setIrataNo(data.irataNo);
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération du numéro IRATA global:', error);
+    }
+  };
 
   const fetchSubmissions = async () => {
     setLoading(true);
@@ -46,6 +64,76 @@ export default function AdminIrataDisclaimerPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const saveGlobalIrataNo = async () => {
+    if (!irataNo.trim()) {
+      setError('Veuillez saisir le numéro IRATA');
+      return;
+    }
+
+    setSigningLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/admin/irata-disclaimer/update-global-irata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          irataNo: irataNo.trim()
+        })
+      });
+
+      if (!res.ok) throw new Error('Erreur lors de la mise à jour');
+      
+      // Rafraîchir la liste
+      await fetchSubmissions();
+      setError(null);
+      
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setSigningLoading(false);
+    }
+  };
+
+  const saveIrataNo = async (submissionId: string) => {
+    if (!irataNo.trim()) {
+      setError('Veuillez saisir le numéro IRATA');
+      return;
+    }
+
+    setSigningLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/admin/irata-disclaimer/update-irata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionId,
+          irataNo: irataNo.trim()
+        })
+      });
+
+      if (!res.ok) throw new Error('Erreur lors de la mise à jour');
+      
+      // Rafraîchir la liste
+      await fetchSubmissions();
+      setIrataNo('');
+      
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setSigningLoading(false);
+    }
+  };
+
+  const handleSignatureSave = (data: string) => {
+    setAdminSignature(data);
+    setShowSignaturePad(false);
   };
 
   const signDocument = async (submissionId: string) => {
@@ -131,18 +219,31 @@ export default function AdminIrataDisclaimerPage() {
     setError(null);
 
     try {
-      const pdfBlob = await generateIrataPDF({
-        id: submission.id,
-        name: submission.name,
-        address: submission.address,
-        signature: submission.signature,
-        adminSignature: submission.adminSignature || null,
-        adminSignedAt: submission.adminSignedAt || null,
-        createdAt: submission.createdAt
+      // Générer le PDF avec le document exact
+      const response = await fetch('/api/admin/irata-disclaimer/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          submissionId: submission.id,
+          irataNo: submission.irataNo || irataNo,
+        }),
       });
 
-      const filename = `IRATA_Disclaimer_${submission.name?.replace(/\s+/g, '_') || 'Document'}_${submission.id}.pdf`;
-      downloadPDF(pdfBlob, filename);
+      if (!response.ok) {
+        throw new Error('Erreur lors de la génération du PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `IRATA_Disclaimer_${submission.name?.replace(/\s+/g, '_') || 'Document'}_${submission.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (err) {
       console.error('Erreur lors de la génération du PDF:', err);
       setError('Erreur lors de la génération du PDF');
@@ -154,7 +255,7 @@ export default function AdminIrataDisclaimerPage() {
   if (selectedSubmission) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6 no-print">
           <h1 className="text-2xl font-bold">Signature Admin - IRATA Disclaimer</h1>
           <button
             onClick={() => setSelectedSubmission(null)}
@@ -165,148 +266,176 @@ export default function AdminIrataDisclaimerPage() {
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 no-print">
             {error}
           </div>
         )}
 
         {/* Document complet */}
-        <div className="bg-white border border-gray-300 p-6 rounded-lg shadow-md mb-6">
-          {/* Header du document */}
-          <div className="grid grid-cols-3 gap-4 mb-6 text-sm">
-            <div>
-              <p><strong>N° Doc. :</strong> FM014ENG</p>
-              <p><strong>Date d'émission :</strong> 01/07/19</p>
-              <p><strong>N° d'édition :</strong> 005</p>
-              <p><strong>Page 1 sur 1</strong></p>
-            </div>
-            <div className="col-span-1 text-center font-bold text-lg flex items-center justify-center">
-              DÉCLARATION DE NON-RESPONSABILITÉ <br /> ET DÉCHARGE DE RESPONSABILITÉ DU CANDIDAT
-            </div>
-            <div className="flex justify-end items-start">
-              <img src="/logo.png" alt="Logo IRATA International" className="h-16" />
-            </div>
-          </div>
+        <div className="bg-white border border-gray-300 p-10  shadow-md mb-6 print-document">
+          <style jsx>{`
+            @media print {
+              body * {
+                visibility: hidden;
+              }
+              .print-document, .print-document * {
+                visibility: visible;
+              }
+              .print-document {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 20px;
+                border: none;
+                box-shadow: none;
+              }
+              .no-print {
+                display: none !important;
+              }
+            }
+          `}</style>
+                     {/* Header image */}
+           <div className="w-full">
+             <img src="/header declaimer.png" alt="IRATA Disclaimer Header" className="w-full h-auto" />
+           </div>
 
-          {/* Contenu principal du document IRATA */}
-          <div className="text-sm space-y-4 mb-6">
-            <p>
-              Ceci est un document important - veuillez le lire attentivement avant de le signer, car vous acceptez l'entière responsabilité de
-              votre propre santé et condition médicale et déchargez l'IRATA, ses sociétés membres, et leur
-              personnel respectif, les instructeurs de formation et les évaluateurs IRATA (collectivement dénommés <strong>Fournisseurs</strong>) de toute responsabilité.
-            </p>
-            <p>
-              L'accès par corde en altitude ou en profondeur est une composante intrinsèque de la formation et de l'évaluation. Par conséquent, les candidats doivent être physiquement aptes et non affectés par toute condition médicale qui pourrait les empêcher d'entreprendre leurs exigences de formation et d'effectuer toute manœuvre requise pendant la formation et l'évaluation.
-            </p>
+           {/* Body content images */}
+           <div className="w-full mt-3">
+             <img src="/corps1.png" alt="IRATA Disclaimer Body Content Part 1" className="w-full h-auto" />
+             <img src="/corps2.png" alt="IRATA Disclaimer Body Content Part 2" className="w-full h-auto" />
+           </div>
 
-            <h3 className="font-bold text-base mt-6 mb-3">Déclaration</h3>
-            <p>
-              Je déclare être en bonne santé, physiquement apte et me considérer comme apte à entreprendre une formation et une évaluation d'accès par corde. Je n'ai aucune condition médicale ou contre-indication qui pourrait m'empêcher de travailler en toute sécurité.
-            </p>
+                     {/* Signature block */}
+           <div className="px-3 mt-4">
+             <table className="w-full border-collapse" style={{ border: '1px solid black' }}>
+               <tr>
+                 <td className="p-1 border border-black" style={{ width: '15%' }}>
+                   <strong>Name:</strong>
+                 </td>
+                 <td className="p-1 border border-black" style={{ width: '50%' }}>
+                   <input 
+                     value={selectedSubmission.name || ''} 
+                     readOnly
+                     className="w-full border-none outline-none bg-transparent" 
+                   />
+                 </td>
+                 <td className="p-1 border border-black" style={{ width: '15%' }}>
+                   <strong>IRATA No :</strong>
+                 </td>
+                 <td className="p-1 border border-black" style={{ width: '20%' }}>
+                   <input 
+                     value={selectedSubmission.irataNo || ''} 
+                     readOnly 
+                     className="w-full border-none outline-none bg-transparent" 
+                   />
+                 </td>
+               </tr>
+               <tr>
+                 <td className="p-1 border border-black" style={{ width: '15%' }}>
+                   <strong>Address:</strong>
+                 </td>
+                 <td className="p-1 border border-black" colSpan={3} style={{ width: '85%' }}>
+                   <input 
+                     value={selectedSubmission.address || ''} 
+                     readOnly 
+                     className="w-full border-none outline-none bg-transparent" 
+                   />
+                 </td>
+               </tr>
+               <tr>
+                 <td className="p-1 border border-black" style={{ width: '15%' }}>
+                   <strong>Signature:</strong>
+                 </td>
+                 <td className="p-1 border border-black" style={{ width: '50%' }}>
+                   <div className="h-4 flex items-center justify-center">
+                     {selectedSubmission.signature ? (
+                       <img src={selectedSubmission.signature} alt="Signature" className="max-h-12 max-w-full" />
+                     ) : (
+                       <span className="text-gray-400 text-sm">Aucune signature</span>
+                     )}
+                   </div>
+                 </td>
+                 <td className="p-1 border border-black" style={{ width: '15%' }}>
+                   <strong>Date:</strong>
+                 </td>
+                 <td className="p-1 border border-black" style={{ width: '20%' }}>
+                   <input 
+                     value={new Date(selectedSubmission.createdAt).toLocaleDateString('en-GB')} 
+                     readOnly 
+                     className="w-full border-none outline-none bg-transparent" 
+                   />
+                 </td>
+               </tr>
+             </table>
+           </div>
 
-            <h4 className="font-semibold text-sm mt-4 mb-2">Les principales contre-indications au travail en hauteur incluent (mais ne sont pas limitées à) :</h4>
-            <ul className="list-disc list-inside ml-4 space-y-1 text-sm">
-              <li>médicaments sur ordonnance pouvant altérer les fonctions physiques et/ou mentales ;</li>
-              <li>dépendance à l'alcool ou aux drogues ;</li>
-              <li>diabète, glycémie élevée ou basse ;</li>
-              <li>hypertension ou hypotension ;</li>
-              <li>épilepsie, crises ou périodes d'inconscience, par ex. évanouissements ;</li>
-              <li>vertiges, étourdissements ou difficultés d'équilibre ;</li>
-              <li>maladie cardiaque ou douleurs thoraciques ;</li>
-              <li>fonction des membres altérée ;</li>
-              <li>problèmes musculo-squelettiques, par ex. maux de dos ;</li>
-              <li>maladie psychiatrique ;</li>
-              <li>peur des hauteurs ;</li>
-              <li>déficience sensorielle, par ex. cécité, surdité.</li>
-            </ul>
-
-            <h3 className="font-bold text-base mt-6 mb-3">Risque et Déni de Responsabilité</h3>
-            <p>
-              Je comprends que l'accès par corde en hauteur ou en profondeur, ainsi que la formation et l'évaluation y afférentes, comportent des risques pour ma personne et autrui de blessures corporelles (y compris l'invalidité permanente et le décès) en raison de la possibilité de chutes et de collisions, et qu'il s'agit d'une activité intense.
-            </p>
-            <p>
-              En mon nom et au nom de ma succession, je décharge irrévocablement les Fournisseurs, leurs dirigeants et leur personnel de toutes responsabilités, réclamations, demandes et dépenses, y compris les frais juridiques découlant de ou en relation avec mon engagement dans la formation et l'évaluation d'accès par corde impliquant l'obtention de la certification IRATA.
-            </p>
-
-            <h4 className="font-semibold text-sm mt-4 mb-2">En signant cette déclaration, je garantis et reconnais que :</h4>
-            <ol className="list-lower-alpha list-inside ml-4 space-y-1 text-sm">
-              <li>les informations que j'ai fournies sont exactes et sur lesquelles les Fournisseurs s'appuieront ;</li>
-              <li>au meilleur de mes connaissances et de ma conviction, l'engagement dans des activités d'accès par corde ne serait pas préjudiciable à ma santé, mon bien-être ou ma condition physique, ni à d'autres personnes qui pourraient être affectées par mes actes ou omissions ;</li>
-              <li>une société membre a le droit de m'exclure de la formation et un évaluateur a le droit de m'exclure de l'évaluation, s'ils ont des préoccupations concernant ma santé, ma forme physique ou mon attitude envers la sécurité ;</li>
-              <li>(sauf lorsque les Fournisseurs ne peuvent exclure leur responsabilité par la loi), j'accepte que cette Déclaration de Non-responsabilité et de Dégagement de Responsabilité du Candidat reste légalement contraignante même si les garanties et la déclaration données par moi sont fausses et j'accepte les risques impliqués dans l'entreprise de la formation et de l'évaluation ; et</li>
-              <li>je conseillerai à l'IRATA si ma santé ou ma vulnérabilité à une blessure change et cesserai immédiatement les activités d'accès par corde, à moins d'approbation d'un médecin.</li>
-            </ol>
-
-            <p className="text-xs mt-4">
-              Cette Déclaration de Non-responsabilité et de Dégagement de Responsabilité du Candidat sera interprétée et régie conformément au droit anglais et les parties se soumettent à la compétence exclusive des tribunaux anglais.
-            </p>
-          </div>
-
-          {/* Informations utilisateur */}
-          <div className="bg-gray-50 p-4 rounded mb-4">
-            <h3 className="font-semibold mb-2">Informations du candidat :</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><strong>Nom :</strong> {selectedSubmission.name}</div>
-              <div><strong>N° IRATA :</strong> ENR-CIFRA-FORM 004</div>
-              <div><strong>Date de soumission :</strong> {new Date(selectedSubmission.createdAt).toLocaleDateString('fr-FR')}</div>
-              <div><strong>Session :</strong> {selectedSubmission.session || 'Non spécifiée'}</div>
-              <div className="col-span-2"><strong>Adresse :</strong> {selectedSubmission.address}</div>
-            </div>
-          </div>
-
-          {/* Signature utilisateur */}
-          <div className="mb-6">
-            <h4 className="font-semibold mb-2">Signature du candidat :</h4>
-            {selectedSubmission.signature && (
-              <div className="border rounded p-2 bg-gray-50">
-                <img 
-                  src={selectedSubmission.signature} 
-                  alt="Signature du candidat" 
-                  className="max-h-32 mx-auto"
-                />
-              </div>
-            )}
-          </div>
+           <div className="mt-8 ml-5 mr-5 border-b-3" style={{ borderBottomColor: '#3365BE' }}></div>
+           
+           {/* Footer */}
+           <div className="text-center text-xs tracking-wide text-neutral-800 py-3">
+             UNCONTROLLED WHEN PRINTED
+           </div>
 
           {/* Section signature admin */}
           <div className="border-t pt-6">
-            <h4 className="font-semibold mb-4">Signature de l'administrateur IRATA :</h4>
+            <h4 className="font-semibold mb-4">IRATA Administrator Signature:</h4>
             
             {selectedSubmission.adminSignature ? (
               <div className="space-y-4">
                 <div className="border rounded p-4 bg-green-50">
-                  <p className="text-sm text-green-700 mb-2">Document signé par l'administrateur le {new Date(selectedSubmission.adminSignedAt!).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-sm text-green-700 mb-2">Document signed by administrator on {new Date(selectedSubmission.adminSignedAt!).toLocaleDateString('en-GB')}</p>
                   <img 
                     src={selectedSubmission.adminSignature} 
-                    alt="Signature administrateur" 
+                    alt="Administrator signature" 
                     className="max-h-32 mx-auto border"
                   />
                 </div>
                 
                 {selectedSubmission.status === 'signed' && (
-                  <div className="flex justify-center gap-4">
+                  <div className="flex justify-center gap-4 no-print">
                     <button
                       onClick={() => handleDownloadPDF(selectedSubmission)}
                       disabled={downloadingPDF}
                       className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
                     >
-                      {downloadingPDF ? 'Génération...' : 'Télécharger PDF'}
+                      {downloadingPDF ? 'Generating...' : 'Download PDF'}
+                    </button>
+                    <button
+                      onClick={() => window.print()}
+                      className="px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+                    >
+                      Print
                     </button>
                     <button
                       onClick={() => sendToUser(selectedSubmission.id)}
                       disabled={signingLoading}
                       className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
                     >
-                      {signingLoading ? 'Envoi...' : 'Envoyer le document à l\'utilisateur'}
+                      {signingLoading ? 'Sending...' : 'Send document to user'}
                     </button>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-4 no-print">
                 <div>
-                  <label className="block font-medium text-gray-700 mb-2">Votre signature :</label>
-                  <SignaturePad onSave={(data) => setAdminSignature(data)} />
+                  <label className="block font-medium text-gray-700 mb-2">Your signature:</label>
+                  <div 
+                    className={`h-12 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${!adminSignature ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                    onClick={() => !adminSignature && setShowSignaturePad(true)}
+                  >
+                    {adminSignature ? (
+                      <div className="flex items-center gap-2">
+                        <img src={adminSignature} alt="Admin signature" className="max-h-8 max-w-full" />
+                        <span className="text-green-600 text-xs">✓ Signé</span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-sm">Cliquez pour signer</span>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="flex justify-center">
@@ -315,7 +444,7 @@ export default function AdminIrataDisclaimerPage() {
                     disabled={signingLoading || !adminSignature}
                     className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
                   >
-                    {signingLoading ? 'Signature...' : 'Signer le document'}
+                    {signingLoading ? 'Signing...' : 'Sign document'}
                   </button>
                 </div>
               </div>
@@ -336,6 +465,33 @@ export default function AdminIrataDisclaimerPage() {
         >
           Actualiser
         </button>
+      </div>
+
+      {/* Section pour enregistrer le numéro IRATA global */}
+      <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6 shadow-sm">
+        <h2 className="text-lg font-semibold mb-4">Numéro IRATA Global</h2>
+        <div className="flex items-end gap-4">
+          <div className="flex-1">
+            <label className="block font-medium text-gray-700 mb-2">Numéro IRATA pour tous les documents :</label>
+            <input
+              type="text"
+              value={irataNo}
+              onChange={(e) => setIrataNo(e.target.value)}
+              placeholder="Ex: ENR-CIFRA-FORM 004"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <button
+            onClick={() => saveGlobalIrataNo()}
+            disabled={signingLoading || !irataNo.trim()}
+            className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            {signingLoading ? 'Saving...' : 'Enregistrer pour tous'}
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 mt-2">
+          Ce numéro sera automatiquement appliqué à tous les documents IRATA Disclaimer.
+        </p>
       </div>
 
       {loading ? (
@@ -399,31 +555,28 @@ export default function AdminIrataDisclaimerPage() {
               </div>
 
               {/* Aperçu des signatures */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {s.signature && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Signature candidat :</h4>
-                    <img 
-                      src={s.signature} 
-                      alt={`Signature ${s.name}`} 
-                      className="max-h-20 border rounded bg-gray-50 mx-auto"
-                    />
-                  </div>
-                )}
-                
-                {s.adminSignature && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Signature admin :</h4>
-                    <img 
-                      src={s.adminSignature} 
-                      alt="Signature admin" 
-                      className="max-h-20 border rounded bg-gray-50 mx-auto"
-                    />
-                  </div>
-                )}
-              </div>
+
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Signature Pad Popup */}
+      {showSignaturePad && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Signature Administrateur</h3>
+            <p className="text-sm text-gray-600 mb-4">Attention : Vous ne pourrez plus modifier votre signature après l'avoir sauvegardée.</p>
+            <SignaturePad onSave={handleSignatureSave} />
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setShowSignaturePad(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

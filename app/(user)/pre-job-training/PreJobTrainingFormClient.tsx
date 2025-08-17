@@ -508,8 +508,8 @@ export default function CidesPreJobPage() {
             </div>
             <span>EF294b234964f4222b6cb6a2c60c02c985744ce573cd8aa58afee76de8b202ce0</span>
           </div>
-                 </div>
-       </div>
+        </div>
+      </div>
 
        {/* Modal SignaturePad */}
        {showSignatureModal && (
@@ -534,8 +534,8 @@ export default function CidesPreJobPage() {
          </div>
        )}
 
-       {/* Print helpers */}
-       <style jsx>{`
+      {/* Print helpers */}
+      <style jsx>{`
         @media print {
           @page { size: A4 landscape; margin: 10mm; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
