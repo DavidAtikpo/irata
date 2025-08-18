@@ -120,19 +120,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-neutral-50 text-black">
-      <main className='p-15'>
-        {/* Header image */}
-        <div className="w-full">
-          <img src="/header declaimer.png" alt="IRATA Disclaimer Header" className="w-full h-auto" />
-        </div>
-
-        {/* Body content images */}
-        <div className="w-full mt-5">
-          <img src="/corps1.png" alt="IRATA Disclaimer Body Content Part 1" className="w-full h-auto" />
-          <img src="/corps2.png" alt="IRATA Disclaimer Body Content Part 2" className="w-full h-auto" />
-        </div>
-
-        {/* Status message if already signed */}
+      <div className="no-print">
         {hasSigned && (
           <div className="px-3 mt-4 mb-4">
             <div className="bg-green-50 border border-green-200 rounded-md p-4">
@@ -155,82 +143,146 @@ export default function Page() {
             </div>
           </div>
         )}
+      </div>
+
+      <main className='p-15'>
+        <div className="bg-white border border-gray-300 p-10 shadow-md mb-6 print-document">
+          <style jsx>{`
+            @media print {
+              body * {
+                visibility: hidden;
+              }
+              .print-document, .print-document * {
+                visibility: visible;
+              }
+              .print-document {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 20px;
+                border: none;
+                box-shadow: none;
+              }
+              .no-print {
+                display: none !important;
+              }
+            }
+          `}</style>
+        {/* Header image */}
+        <div className="w-full">
+          <img src="/header declaimer.png" alt="IRATA Disclaimer Header" className="w-full h-auto" />
+        </div>
+
+        {/* Body content images */}
+        <div className="w-full mt-5">
+          <img src="/corps1.png" alt="IRATA Disclaimer Body Content Part 1" className="w-full h-auto" />
+          <img src="/corps2.png" alt="IRATA Disclaimer Body Content Part 2" className="w-full h-auto" />
+        </div>
+
+        {/* Status message if already signed */}
+        {/* {hasSigned && (
+          <div className="px-3 mt-4 mb-4">
+            <div className="bg-green-50 border border-green-200 rounded-md p-4">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-green-800">
+                    Document déjà signé
+                  </h3>
+                  <div className="mt-2 text-sm text-green-700">
+                    <p>Vous avez signé ce document le {existingSubmission?.date || existingSubmission?.createdAt?.split('T')[0] || 'N/A'}.</p>
+                    <p>Statut: {existingSubmission?.status || 'En attente de validation'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )} */}
 
         {/* Signature block */}
         <form onSubmit={handleSubmit} className="px-3 mt-4">
           <table className="w-full border-collapse" style={{ border: '1px solid black' }}>
-            <tr>
-              <td className="p-1 border border-black" style={{ width: '15%' }}>
-                <strong>Name:</strong>
-              </td>
-              <td className="p-1 border border-black" style={{ width: '50%' }}>
-                <input 
-                  value={userName} 
-                  onChange={(e) => setUserName(e.target.value)}
-                  className="w-full border-none outline-none bg-transparent" 
-                  required
-                />
-              </td>
-              <td className="p-1 border border-black" style={{ width: '15%' }}>
-                <strong>IRATA No :</strong>
-              </td>
-              <td className="p-1 border border-black" style={{ width: '20%' }}>
-                <input 
-                  value="" 
-                  readOnly 
-                  className="w-full border-none outline-none bg-transparent" 
-                />
-              </td>
-            </tr>
-            <tr>
-              <td className="p-1 border border-black" style={{ width: '15%' }}>
-                <strong>Address:</strong>
-              </td>
-              <td className="p-1 border border-black" colSpan={3} style={{ width: '85%' }}>
-                <input 
-                  value={userAddress} 
-                  onChange={(e) => setUserAddress(e.target.value)} 
-                  required 
-                  className="w-full border-none outline-none bg-transparent" 
-                />
-              </td>
-            </tr>
-                         <tr>
-               <td className="p-1 border border-black" style={{ width: '15%' }}>
-                 <strong>Signature:</strong>
-               </td>
-               <td className="p-1 border border-black" style={{ width: '50%' }}>
-                 <div 
-                   className={`h-4 flex items-center justify-center ${!hasSigned ? 'cursor-pointer hover:bg-gray-50' : ''}`}
-                   onClick={() => !hasSigned && setShowSignaturePad(true)}
-                 >
-                   {signature ? (
-                     <div className="flex items-center gap-2">
-                       <img src={signature} alt="Signature" className="max-h-12 max-w-full" />
-                       <span className="text-green-600 text-xs">✓ Signé</span>
-                     </div>
-                   ) : (
-                     <span className="text-gray-400 text-sm">
-                       {hasSigned ? 'Déjà signé' : 'Cliquez pour signer'}
-                     </span>
-                   )}
-                 </div>
-               </td>
-               <td className="p-1 border border-black" style={{ width: '15%' }}>
-                 <strong>Date:</strong>
-               </td>
-               <td className="p-1 border border-black" style={{ width: '20%' }}>
-                 <input 
-                   value={new Date().toLocaleDateString('en-GB')} 
-                   readOnly 
-                   className="w-full border-none outline-none bg-transparent" 
-                   placeholder="DD/MM/YYYY"
-                 />
-               </td>
-             </tr>
+            <tbody>
+              <tr>
+                <td className="p-1 border border-black" style={{ width: '15%' }}>
+                  <strong>Name:</strong>
+                </td>
+                <td className="p-1 border border-black" style={{ width: '50%' }}>
+                  <input 
+                    value={userName} 
+                    onChange={(e) => setUserName(e.target.value)}
+                    className="w-full border-none outline-none bg-transparent" 
+                    required
+                  />
+                </td>
+                <td className="p-1 border border-black" style={{ width: '15%' }}>
+                  <strong>IRATA No :</strong>
+                </td>
+                <td className="p-1 border border-black" style={{ width: '20%' }}>
+                  <input 
+                    value="" 
+                    readOnly 
+                    className="w-full border-none outline-none bg-transparent" 
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="p-1 border border-black" style={{ width: '15%' }}>
+                  <strong>Address:</strong>
+                </td>
+                <td className="p-1 border border-black" colSpan={3} style={{ width: '85%' }}>
+                  <input 
+                    value={userAddress} 
+                    onChange={(e) => setUserAddress(e.target.value)} 
+                    required 
+                    className="w-full border-none outline-none bg-transparent" 
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="p-1 border border-black" style={{ width: '15%' }}>
+                  <strong>Signature:</strong>
+                </td>
+                <td className="p-1 border border-black" style={{ width: '50%' }}>
+                  <div 
+                    className={`h-4 flex items-center justify-center ${!hasSigned ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                    onClick={() => !hasSigned && setShowSignaturePad(true)}
+                  >
+                    {signature ? (
+                      <div className="flex items-center gap-2">
+                        <img src={signature} alt="Signature" className="max-h-12 max-w-full" />
+                        <span className="text-green-600 text-xs">✓ Signé</span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-sm">
+                        {hasSigned ? 'Déjà signé' : 'Cliquez pour signer'}
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="p-1 border border-black" style={{ width: '15%' }}>
+                  <strong>Date:</strong>
+                </td>
+                <td className="p-1 border border-black" style={{ width: '20%' }}>
+                  <input 
+                    value={new Date().toLocaleDateString('en-GB')} 
+                    readOnly 
+                    className="w-full border-none outline-none bg-transparent" 
+                    placeholder="DD/MM/YYYY"
+                  />
+                </td>
+              </tr>
+            </tbody>
           </table>
           
-                     <div className="flex justify-center mt-6">
+                     <div className="flex justify-center gap-4 mt-6 no-print">
              <button 
                type="submit" 
                disabled={submitting || hasSigned} 
@@ -242,6 +294,15 @@ export default function Page() {
              >
                {submitting ? 'Soumission...' : hasSigned ? 'Document déjà soumis' : 'Soumettre le document'}
              </button>
+             
+             {hasSigned && (
+               <button
+                 onClick={() => window.print()}
+                 className="px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+               >
+                 Imprimer
+               </button>
+             )}
            </div>
           {message && <p className="text-center text-sm mt-3">{message}</p>}
         </form>
@@ -252,6 +313,7 @@ export default function Page() {
          <div className="text-center text-xs tracking-wide text-neutral-800 py-3">
            UNCONTROLLED WHEN PRINTED
          </div>
+        </div>
        </main>
 
                {/* Signature Pad Popup */}
@@ -269,7 +331,7 @@ export default function Page() {
                   Annuler
                 </button>
               </div>
-            </div>
+      </div>
           </div>
         )}
     </div>

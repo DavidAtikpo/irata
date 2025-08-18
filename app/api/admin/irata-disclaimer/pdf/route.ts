@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import puppeteer from 'puppeteer';
+import { readFileSync, existsSync } from 'fs';
 
 const DATA_PATH = join(process.cwd(), 'data');
 const FILE_PATH = join(DATA_PATH, 'irata-disclaimer-submissions.json');
@@ -43,22 +44,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Soumission non trouvée' }, { status: 404 });
     }
 
-    // Générer le HTML du document complet
-    const htmlContent = generateIrataHTML(submission, irataNo);
+    // Générer le HTML du document complet avec les images en base64
+    const htmlContent = await generateIrataHTML(submission, irataNo);
 
     // Générer le PDF avec Puppeteer
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
+    
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    
+    // Attendre que le contenu soit complètement chargé
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     const pdf = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '20mm',
-        right: '20mm',
-        bottom: '20mm',
-        left: '20mm'
+        top: '5mm',
+        right: '5mm',
+        bottom: '5mm',
+        left: '5mm'
       }
     });
 
@@ -74,13 +79,49 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
     return NextResponse.json(
-      { error: 'Erreur lors de la génération du PDF' },
+      { 
+        error: 'Erreur lors de la génération du PDF',
+        details: error instanceof Error ? error.message : 'Erreur inconnue'
+      },
       { status: 500 }
     );
   }
 }
 
-function generateIrataHTML(submission: any, irataNo: string): string {
+async function generateIrataHTML(submission: any, irataNo: string): Promise<string> {
+  // Convertir les images en base64
+  const publicPath = join(process.cwd(), 'public');
+  
+  let headerImageBase64 = '';
+  let corps1ImageBase64 = '';
+  let corps2ImageBase64 = '';
+  
+  try {
+    const headerImagePath = join(publicPath, 'header declaimer.png');
+    const corps1ImagePath = join(publicPath, 'corps1.png');
+    const corps2ImagePath = join(publicPath, 'corps2.png');
+    
+    // Vérifier si les fichiers existent
+    if (existsSync(headerImagePath)) {
+      headerImageBase64 = readFileSync(headerImagePath).toString('base64');
+    } else {
+      console.warn('Fichier header declaimer.png non trouvé');
+    }
+    
+    if (existsSync(corps1ImagePath)) {
+      corps1ImageBase64 = readFileSync(corps1ImagePath).toString('base64');
+    } else {
+      console.warn('Fichier corps1.png non trouvé');
+    }
+    
+    if (existsSync(corps2ImagePath)) {
+      corps2ImageBase64 = readFileSync(corps2ImagePath).toString('base64');
+    } else {
+      console.warn('Fichier corps2.png non trouvé');
+    }
+  } catch (error) {
+    console.error('Erreur lors de la lecture des images:', error);
+  }
   return `
     <!DOCTYPE html>
     <html>
@@ -91,40 +132,58 @@ function generateIrataHTML(submission: any, irataNo: string): string {
         body {
           font-family: Arial, sans-serif;
           margin: 0;
-          padding: 20px;
-          background-color: #fafafa;
+          padding: 5px;
+          background-color: white;
+          font-size: 8px;
+          line-height: 1.1;
         }
         .document {
           background: white;
-          padding: 30px;
-          box-shadow: 0 0 10px rgba(0,0,0,0.1);
+          padding: 10px;
+          box-shadow: none;
+          max-height: 100vh;
+          overflow: hidden;
         }
-                 .header-image {
-           margin-bottom: 20px;
-         }
-         .header-image img {
-           width: 100%;
-           height: auto;
-           display: block;
-         }
+        .header-image {
+          margin-bottom: 5px;
+        }
+        .header-image img {
+          width: 100%;
+          max-height: 40px;
+          height: auto;
+          display: block;
+        }
+        .header-image h2 {
+          margin: 5px 0;
+          font-size: 12px;
+          text-align: center;
+          color: #3365BE;
+        }
         .body-images {
-          margin: 20px 0;
+          margin: 5px 0;
         }
         .body-images img {
           max-width: 100%;
+          max-height: 60px;
           height: auto;
           display: block;
-          margin: 10px 0;
+          margin: 2px 0;
+        }
+        .body-images p {
+          margin: 5px 0;
+          font-size: 7px;
+          line-height: 1.2;
         }
         .signature-table {
           width: 100%;
           border-collapse: collapse;
-          margin: 30px 0;
+          margin: 10px 0;
           border: 1px solid black;
+          font-size: 6px;
         }
         .signature-table td {
           border: 1px solid black;
-          padding: 8px;
+          padding: 2px;
           vertical-align: top;
         }
         .signature-table input {
@@ -132,53 +191,77 @@ function generateIrataHTML(submission: any, irataNo: string): string {
           border: none;
           outline: none;
           background: transparent;
-          font-size: 12px;
+          font-size: 6px;
+          padding: 0;
         }
         .signature-cell {
-          height: 60px;
+          height: 30px;
           text-align: center;
           vertical-align: middle;
         }
         .signature-image {
-          max-height: 50px;
+          max-height: 25px;
           max-width: 100%;
         }
         .footer-line {
-          border-bottom: 3px solid #3365BE;
-          margin: 30px 0;
+          border-bottom: 2px solid #3365BE;
+          margin: 10px 0;
         }
         .footer-text {
           text-align: center;
-          font-size: 10px;
+          font-size: 8px;
           color: #666;
           letter-spacing: 1px;
-          padding: 10px 0;
+          padding: 5px 0;
         }
         .status-badge {
           display: inline-block;
-          padding: 4px 8px;
-          border-radius: 12px;
-          font-size: 10px;
+          padding: 2px 4px;
+          border-radius: 8px;
+          font-size: 6px;
           font-weight: bold;
-          margin-left: 10px;
+          margin-left: 5px;
         }
         .status-pending { background-color: #fef3c7; color: #92400e; }
         .status-signed { background-color: #dbeafe; color: #1e40af; }
         .status-sent { background-color: #dcfce7; color: #166534; }
+        @page {
+          margin: 5mm;
+          size: A4;
+        }
       </style>
     </head>
     <body>
       <div class="document">
-                 <!-- Header image -->
-         <div class="header-image">
-           <img src="/header declaimer.png" alt="IRATA Disclaimer Header" style="width: 100%; height: auto;">
-         </div>
+        <!-- Header image -->
+        ${headerImageBase64 ? `
+        <div class="header-image">
+          <img src="data:image/png;base64,${headerImageBase64}" alt="IRATA Disclaimer Header" style="width: 100%; height: auto;">
+        </div>
+        ` : '<div class="header-image"><h2 style="text-align: center; color: #3365BE; margin: 20px 0;">IRATA DISCLAIMER</h2></div>'}
 
-         <!-- Body content images -->
-         <div class="body-images">
-           <img src="/corps1.png" alt="IRATA Disclaimer Body Content Part 1" style="width: 100%; height: auto;">
-           <img src="/corps2.png" alt="IRATA Disclaimer Body Content Part 2" style="width: 100%; height: auto;">
-         </div>
+        <!-- Body content images -->
+        ${corps1ImageBase64 && corps2ImageBase64 ? `
+        <div class="body-images">
+          <img src="data:image/png;base64,${corps1ImageBase64}" alt="IRATA Disclaimer Body Content Part 1" style="width: 100%; height: auto;">
+          <img src="data:image/png;base64,${corps2ImageBase64}" alt="IRATA Disclaimer Body Content Part 2" style="width: 100%; height: auto;">
+        </div>
+        ` : `
+        <div class="body-images">
+          <p style="margin: 20px 0; line-height: 1.6;">
+            <strong>Risk and Disclaimer of Liability</strong><br><br>
+            I understand that rope access activities involve inherent risks including, but not limited to, permanent disability and death due to falls and collisions. I acknowledge that I am engaging in these activities at my own risk and I release all providers from any liability, claims, demands, and expenses related to IRATA certification.
+          </p>
+          <p style="margin: 20px 0; line-height: 1.6;">
+            <strong>By signing this declaration, I warrant and acknowledge that:</strong><br>
+            a) All information given is correct and will be relied upon.<br>
+            b) Engaging in rope access activities is not detrimental to my health or that of others.<br>
+            c) A member company or assessor can exclude me based on health, fitness, or attitude to safety.<br>
+            d) This disclaimer remains legally binding even if declarations are untrue, and I accept all risks.<br>
+            e) I will advise IRATA of any health changes and cease activities unless approved by a doctor.
+          </p>
+        </div>
+        `}
 
         <!-- Tableau de signature -->
         <table class="signature-table">
@@ -218,18 +301,7 @@ function generateIrataHTML(submission: any, irataNo: string): string {
           UNCONTROLLED WHEN PRINTED
         </div>
 
-        <!-- Informations de statut -->
-        <div style="margin-top: 20px; font-size: 10px; color: #666;">
-          <p><strong>Status:</strong> 
-            <span class="status-badge status-${submission.status || 'pending'}">
-              ${submission.status === 'pending' ? 'En attente' : 
-                submission.status === 'signed' ? 'Signé par admin' : 
-                submission.status === 'sent' ? 'Envoyé à l\'utilisateur' : 'En attente'}
-            </span>
-          </p>
-          ${submission.adminSignedAt ? `<p><strong>Signé par admin le:</strong> ${new Date(submission.adminSignedAt).toLocaleDateString('fr-FR')}</p>` : ''}
-          <p><strong>Document ID:</strong> ${submission.id}</p>
-        </div>
+
       </div>
     </body>
     </html>

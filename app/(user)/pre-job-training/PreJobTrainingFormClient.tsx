@@ -82,6 +82,28 @@ export default function CidesPreJobPage() {
             setFormData(prev => ({ ...prev, session: sessionData.name }));
           }
         }
+
+        // Récupérer les signatures automatiques du Pre-Job Training
+        const preJobSignaturesResponse = await fetch('/api/user/pre-job-training-signature');
+        if (preJobSignaturesResponse.ok) {
+          const preJobData = await preJobSignaturesResponse.json();
+          if (preJobData.signatures && preJobData.signatures.length > 0) {
+            // Mettre à jour les signatures dans le formulaire
+            setFormData(prev => ({
+              ...prev,
+              attendees: prev.attendees.map((attendee, index) => {
+                if (index === 0) { // Utilisateur connecté
+                  const updatedSignatures = { ...attendee.signatures };
+                  preJobData.signatures.forEach((sig: any) => {
+                    updatedSignatures[sig.day] = sig.signatureData;
+                  });
+                  return { ...attendee, signatures: updatedSignatures };
+                }
+                return attendee;
+              })
+            }));
+          }
+        }
       } catch (error) {
         console.error('Erreur lors de la récupération des données utilisateur:', error);
       }
@@ -407,16 +429,19 @@ export default function CidesPreJobPage() {
                                      {daysOfWeek.map((day) => {
                      const signatureKey = `${attendeeIndex}-${day}`;
                      const isModified = modifiedSignatures.has(signatureKey);
+                     const isAutoSigned = attendee.signatures[day] && attendeeIndex === 0; // Seulement pour l'utilisateur connecté
                      
                      return (
                        <Td key={day} className="text-center p-1">
                          <div className={`h-16 w-full border relative group cursor-pointer ${
                            isModified 
                              ? 'border-green-400 bg-green-50' 
+                             : isAutoSigned
+                             ? 'border-blue-400 bg-blue-50'
                              : 'border-gray-300 bg-gray-50'
                          }`}
                          onClick={() => handleSignatureClick(attendeeIndex, day)}
-                         title="Cliquer pour signer">
+                         title={isAutoSigned ? "Signature automatique (attendance matin)" : "Cliquer pour signer"}>
                            {attendee.signatures[day] ? (
                              <div className="h-full w-full flex items-center justify-center relative">
                                <img 
@@ -436,6 +461,9 @@ export default function CidesPreJobPage() {
                                </button>
                                {isModified && (
                                  <div className="absolute bottom-0 left-0 w-2 h-2 bg-green-500 rounded-full"></div>
+                               )}
+                               {isAutoSigned && (
+                                 <div className="absolute bottom-0 right-0 w-2 h-2 bg-blue-500 rounded-full" title="Signature automatique"></div>
                                )}
                              </div>
                            ) : (
@@ -474,11 +502,15 @@ export default function CidesPreJobPage() {
           <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md print:hidden">
             <h3 className="text-sm font-semibold text-green-800 mb-2">Instructions pour les signatures :</h3>
             <div className="text-sm text-green-700 space-y-1">
+              <p>• <strong>Signature automatique :</strong> Quand vous signez l'attendance du matin, le Pre-Job Training est automatiquement signé (bordure bleue, point bleu)</p>
               <p>• <strong>Ajouter une signature :</strong> Cliquez dans une case vide pour ouvrir le pad de signature</p>
               <p>• <strong>Modifier une signature :</strong> Cliquez sur une signature existante pour la modifier</p>
               <p>• <strong>Effacer une signature :</strong> Survolez une signature et cliquez sur le "×" rouge</p>
               <p>• <strong>Signature manuelle :</strong> Dessinez votre signature avec la souris ou le doigt</p>
-              <p>• <strong>Indicateur visuel :</strong> Les signatures modifiées ont une bordure verte et un point vert</p>
+              <p>• <strong>Indicateurs visuels :</strong> 
+                <br/>- Bordure verte + point vert = signature modifiée manuellement
+                <br/>- Bordure bleue + point bleu = signature automatique (attendance matin)
+              </p>
             </div>
           </div>
 
