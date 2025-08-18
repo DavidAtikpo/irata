@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import { PrismaClient } from '@prisma/client';
 
-const DATA_PATH = join(process.cwd(), 'data');
-const FILE_PATH = join(DATA_PATH, 'irata-disclaimer-submissions.json');
+const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
@@ -22,32 +20,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Données manquantes' }, { status: 400 });
     }
 
-    // Lire le fichier existant
-    const raw = await fs.readFile(FILE_PATH, 'utf8');
-    const submissions = JSON.parse(raw || '[]');
-
-    // Trouver et mettre à jour la soumission
-    const submissionIndex = submissions.findIndex((s: any) => s.id === submissionId);
-    
-    if (submissionIndex === -1) {
-      return NextResponse.json({ message: 'Soumission non trouvée' }, { status: 404 });
-    }
-
-    // Mettre à jour avec la signature admin
-    submissions[submissionIndex] = {
-      ...submissions[submissionIndex],
-      adminSignature,
-      adminName,
-      adminSignedAt: new Date().toISOString(),
-      status: 'signed'
-    };
-
-    // Sauvegarder
-    await fs.writeFile(FILE_PATH, JSON.stringify(submissions, null, 2), 'utf8');
+    const updatedSubmission = await prisma.irataDisclaimerSubmission.update({
+      where: { id: submissionId },
+      data: {
+        adminSignature,
+        adminName,
+        adminSignedAt: new Date(),
+        status: 'SIGNED'
+      }
+    });
 
     return NextResponse.json({ 
       message: 'Document signé avec succès',
-      submission: submissions[submissionIndex]
+      submission: updatedSubmission
     });
 
   } catch (error) {

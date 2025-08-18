@@ -28,14 +28,13 @@ export async function POST(request: Request) {
 
     await ensureDataFile();
 
-    // Récupérer le numéro IRATA global
+    // Récupérer le numéro IRATA global depuis le fichier JSON
     let globalIrataNo = null;
     try {
       const globalIrataRaw = await fs.readFile(GLOBAL_IRATA_FILE, 'utf8');
       const globalIrataData = JSON.parse(globalIrataRaw);
       globalIrataNo = globalIrataData.irataNo;
     } catch (error) {
-      // Si le fichier global n'existe pas, ce n'est pas grave
       console.log('Aucun numéro IRATA global défini');
     }
 

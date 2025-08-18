@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import SignaturePad from '@/components/SignaturePad';
 
 
 type Submission = {
@@ -25,11 +24,9 @@ export default function AdminIrataDisclaimerPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
-  const [adminSignature, setAdminSignature] = useState('');
   const [signingLoading, setSigningLoading] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [irataNo, setIrataNo] = useState('');
-  const [showSignaturePad, setShowSignaturePad] = useState(false);
 
   useEffect(() => {
     fetchSubmissions();
@@ -131,45 +128,9 @@ export default function AdminIrataDisclaimerPage() {
     }
   };
 
-  const handleSignatureSave = (data: string) => {
-    setAdminSignature(data);
-    setShowSignaturePad(false);
-  };
 
-  const signDocument = async (submissionId: string) => {
-    if (!adminSignature) {
-      setError('Veuillez fournir votre signature');
-      return;
-    }
 
-    setSigningLoading(true);
-    setError(null);
 
-    try {
-      const res = await fetch('/api/admin/irata-disclaimer/sign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          submissionId,
-          adminSignature,
-          adminName: session?.user?.name || 'Administrateur'
-        })
-      });
-
-      if (!res.ok) throw new Error('Erreur lors de la signature');
-      
-      // Rafraîchir la liste
-      await fetchSubmissions();
-      setSelectedSubmission(null);
-      setAdminSignature('');
-      
-    } catch (err) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : 'Erreur');
-    } finally {
-      setSigningLoading(false);
-    }
-  };
 
   const sendToUser = async (submissionId: string) => {
     setSigningLoading(true);
@@ -195,23 +156,17 @@ export default function AdminIrataDisclaimerPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const classes = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      signed: 'bg-blue-100 text-blue-800',
-      sent: 'bg-green-100 text-green-800'
-    };
-    const labels = {
-      pending: 'En attente',
-      signed: 'Signé par admin',
-      sent: 'Envoyé à l\'utilisateur'
-    };
+  const groupSubmissionsBySession = (submissions: Submission[]) => {
+    const grouped = submissions.reduce((acc, submission) => {
+      const session = submission.session || 'Sans session';
+      if (!acc[session]) {
+        acc[session] = [];
+      }
+      acc[session].push(submission);
+      return acc;
+    }, {} as Record<string, Submission[]>);
     
-    return (
-      <span className={`px-2 py-1 text-xs rounded-full ${classes[status as keyof typeof classes]}`}>
-        {labels[status as keyof typeof labels]}
-      </span>
-    );
+    return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
   };
 
   const handleDownloadPDF = async (submission: Submission) => {
@@ -232,7 +187,8 @@ export default function AdminIrataDisclaimerPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la génération du PDF');
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'Erreur lors de la génération du PDF');
       }
 
       const blob = await response.blob();
@@ -311,7 +267,8 @@ export default function AdminIrataDisclaimerPage() {
                      {/* Signature block */}
            <div className="px-3 mt-4">
              <table className="w-full border-collapse" style={{ border: '1px solid black' }}>
-               <tr>
+               <tbody>
+                 <tr>
                  <td className="p-1 border border-black" style={{ width: '15%' }}>
                    <strong>Name:</strong>
                  </td>
@@ -369,6 +326,7 @@ export default function AdminIrataDisclaimerPage() {
                    />
                  </td>
                </tr>
+               </tbody>
              </table>
            </div>
 
@@ -379,76 +337,21 @@ export default function AdminIrataDisclaimerPage() {
              UNCONTROLLED WHEN PRINTED
            </div>
 
-          {/* Section signature admin */}
-          <div className="border-t pt-6">
-            <h4 className="font-semibold mb-4">IRATA Administrator Signature:</h4>
-            
-            {selectedSubmission.adminSignature ? (
-              <div className="space-y-4">
-                <div className="border rounded p-4 bg-green-50">
-                  <p className="text-sm text-green-700 mb-2">Document signed by administrator on {new Date(selectedSubmission.adminSignedAt!).toLocaleDateString('en-GB')}</p>
-                  <img 
-                    src={selectedSubmission.adminSignature} 
-                    alt="Administrator signature" 
-                    className="max-h-32 mx-auto border"
-                  />
-                </div>
-                
-                {selectedSubmission.status === 'signed' && (
-                  <div className="flex justify-center gap-4 no-print">
-                    <button
-                      onClick={() => handleDownloadPDF(selectedSubmission)}
-                      disabled={downloadingPDF}
-                      className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                    >
-                      {downloadingPDF ? 'Generating...' : 'Download PDF'}
-                    </button>
-                    <button
-                      onClick={() => window.print()}
-                      className="px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
-                    >
-                      Print
-                    </button>
-                    <button
-                      onClick={() => sendToUser(selectedSubmission.id)}
-                      disabled={signingLoading}
-                      className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
-                    >
-                      {signingLoading ? 'Sending...' : 'Send document to user'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4 no-print">
-                <div>
-                  <label className="block font-medium text-gray-700 mb-2">Your signature:</label>
-                  <div 
-                    className={`h-12 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center ${!adminSignature ? 'cursor-pointer hover:bg-gray-50' : ''}`}
-                    onClick={() => !adminSignature && setShowSignaturePad(true)}
-                  >
-                    {adminSignature ? (
-                      <div className="flex items-center gap-2">
-                        <img src={adminSignature} alt="Admin signature" className="max-h-8 max-w-full" />
-                        <span className="text-green-600 text-xs">✓ Signé</span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400 text-sm">Cliquez pour signer</span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex justify-center">
-                  <button
-                    onClick={() => signDocument(selectedSubmission.id)}
-                    disabled={signingLoading || !adminSignature}
-                    className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                  >
-                    {signingLoading ? 'Signing...' : 'Sign document'}
-                  </button>
-                </div>
-              </div>
-            )}
+          {/* Boutons d'action */}
+          <div className="flex justify-center gap-4 no-print mt-6">
+            <button
+              onClick={() => handleDownloadPDF(selectedSubmission)}
+              disabled={downloadingPDF}
+              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {downloadingPDF ? 'Generating...' : 'Download PDF'}
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+            >
+              Print
+            </button>
           </div>
         </div>
       </div>
@@ -507,78 +410,55 @@ export default function AdminIrataDisclaimerPage() {
           <p>Aucune soumission pour le moment.</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {submissions.map((s) => (
-            <div key={s.id} className="border rounded-lg p-4 bg-white shadow-sm">
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <p className="font-semibold text-lg">{s.name || (s.user && s.user.name) || '—'}</p>
-                    {getStatusBadge(s.status || 'pending')}
+        <div className="space-y-6">
+          {groupSubmissionsBySession(submissions).map(([session, sessionSubmissions]) => (
+            <div key={session} className="border rounded-lg p-4 bg-white shadow-sm">
+              <h3 className="text-lg font-semibold mb-4 text-blue-600 border-b pb-2">
+                Session: {session}
+              </h3>
+              <div className="space-y-3">
+                {sessionSubmissions.map((s) => (
+                  <div key={s.id} className="border rounded p-3 bg-gray-50">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <p className="font-semibold text-lg">{s.name || (s.user && s.user.name) || '—'}</p>
+                        <p className="text-sm text-gray-600 mb-1">{s.address}</p>
+                        <p className="text-xs text-gray-500">Soumis le {new Date(s.createdAt).toLocaleString('fr-FR')}</p>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setSelectedSubmission(s)}
+                          className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                        >
+                          Voir
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDownloadPDF(s)}
+                          disabled={downloadingPDF}
+                          className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
+                        >
+                          PDF
+                        </button>
+                        
+                        <button
+                          onClick={() => window.print()}
+                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors"
+                        >
+                          Imprimer
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-1">{s.address}</p>
-                  <p className="text-sm text-blue-600 mb-1"><strong>Session :</strong> {s.session || 'Non spécifiée'}</p>
-                  <p className="text-xs text-gray-500">Soumis le {new Date(s.createdAt).toLocaleString('fr-FR')}</p>
-                  {s.adminSignedAt && (
-                    <p className="text-xs text-green-600">Signé par admin le {new Date(s.adminSignedAt).toLocaleString('fr-FR')}</p>
-                  )}
-                </div>
-                
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setSelectedSubmission(s)}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                  >
-                    {s.adminSignature ? 'Voir document' : 'Signer'}
-                  </button>
-                  
-                  {(s.status === 'signed' || s.status === 'sent') && (
-                    <button
-                      onClick={() => handleDownloadPDF(s)}
-                      disabled={downloadingPDF}
-                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                    >
-                      PDF
-                    </button>
-                  )}
-                  
-                  {s.status === 'signed' && (
-                    <button
-                      onClick={() => sendToUser(s.id)}
-                      disabled={signingLoading}
-                      className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
-                    >
-                      Envoyer
-                    </button>
-                  )}
-                </div>
+                ))}
               </div>
-
-              {/* Aperçu des signatures */}
-
             </div>
           ))}
         </div>
       )}
 
-      {/* Signature Pad Popup */}
-      {showSignaturePad && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Signature Administrateur</h3>
-            <p className="text-sm text-gray-600 mb-4">Attention : Vous ne pourrez plus modifier votre signature après l'avoir sauvegardée.</p>
-            <SignaturePad onSave={handleSignatureSave} />
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() => setShowSignaturePad(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Annuler
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
         }
       },
       update: { completed },
-      create: { syllabusItem, traineeId, day, completed },
+      create: { syllabusItem, traineeId, day, completed }
     });
 
     // Générer automatiquement les signatures d'attendance pour ce jour

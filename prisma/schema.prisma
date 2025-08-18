@@ -10,32 +10,32 @@ datasource db {
 }
 
 model User {
-  id                    String    @id @default(cuid())
-  email                 String    @unique
-  password              String
-  nom                   String?
-  prenom                String?
-  role                  Role      @default(USER)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  passwordResetToken    String?   @unique
-  passwordResetExpires  DateTime?
-  
-  // Relations
-  demandes              Demande[]
-  devis                 Devis[]
-  contrats              Contrat[]
-  documents             Document[]
-  inspections           EquipmentInspection[]
-  jobPlans              JobPlan[]
-  assessorInspections   EquipmentInspection[] @relation("AssessorInspections")
-  formulairesCrees      FormulairesQuotidiens[] @relation("AdminFormulaires")
-  reponsesFormulaires   ReponseFormulaire[] @relation("StagiaireReponses")
-  traineeProgress       TraineeProgress[]
-  traineeSignatures     TraineeSignature[]
-  trainingSessions      TrainingSession[] @relation("TrainingSessionTrainees")
-  contributions         Contribution[]
+  id                            String                         @id @default(cuid())
+  email                         String                         @unique
+  password                      String
+  nom                           String?
+  prenom                        String?
+  role                          Role                           @default(USER)
+  createdAt                     DateTime                       @default(now())
+  updatedAt                     DateTime                       @updatedAt
+  passwordResetToken            String?                        @unique
+  passwordResetExpires          DateTime?
+  contrats                      Contrat[]
+  contributions                 Contribution[]
   customerSatisfactionResponses CustomerSatisfactionResponse[]
+  demandes                      Demande[]
+  devis                         Devis[]
+  documents                     Document[]
+  assessorInspections           EquipmentInspection[]          @relation("AssessorInspections")
+  inspections                   EquipmentInspection[]
+  formulairesCrees              FormulairesQuotidiens[]        @relation("AdminFormulaires")
+  IrataDisclaimerSubmission     IrataDisclaimerSubmission[]
+  jobPlans                      JobPlan[]
+  preJobTrainingSignatures      PreJobTrainingSignature[]
+  reponsesFormulaires           ReponseFormulaire[]            @relation("StagiaireReponses")
+  traineeProgress               TraineeProgress[]
+  traineeSignatures             TraineeSignature?
+  trainingSessions              TrainingSession[]              @relation("TrainingSessionTrainees")
 
   @@schema("webirata")
 }
@@ -69,13 +69,13 @@ model Demande {
 }
 
 model Devis {
-  id               String    @id @default(cuid())
-  demandeId        String    @unique
+  id               String     @id @default(cuid())
+  demandeId        String     @unique
   userId           String
   numero           String
   client           String
   mail             String
-  mail2            String    @default("atikpododzi4@gmail.com")
+  mail2            String     @default("atikpododzi4@gmail.com")
   adresseLivraison String?
   dateLivraison    DateTime?
   dateExamen       DateTime?
@@ -97,12 +97,12 @@ model Devis {
   banque           String?
   intituleCompte   String?
   signature        String?
-  statut           Statut    @default(EN_ATTENTE)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  statut           Statut     @default(EN_ATTENTE)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
   contrat          Contrat?
-  demande          Demande   @relation(fields: [demandeId], references: [id])
-  user             User      @relation(fields: [userId], references: [id])
+  demande          Demande    @relation(fields: [demandeId], references: [id])
+  user             User       @relation(fields: [userId], references: [id])
   documents        Document[]
 
   @@schema("webirata")
@@ -150,70 +150,265 @@ model PasswordResetToken {
 }
 
 model Document {
-  id          String   @id @default(cuid())
-  nom         String
-  description String?
-  cloudinaryId String  @unique
-  url         String
-  type        String   // 'formation', 'contrat', 'general', 'examen', 'certificat', etc.
-  public      Boolean  @default(false) // Si accessible à tous les utilisateurs
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations optionnelles
-  userId      String?  // Si spécifique à un utilisateur
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  devisId     String?  // Si lié à un devis spécifique
-  devis       Devis?   @relation(fields: [devisId], references: [id], onDelete: SetNull)
-  certificationId String? // Si lié à une certification IRATA
+  id              String   @id @default(cuid())
+  nom             String
+  description     String?
+  cloudinaryId    String   @unique
+  url             String
+  type            String
+  public          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  userId          String?
+  devisId         String?
+  certificationId String?
+  devis           Devis?   @relation(fields: [devisId], references: [id])
+  user            User?    @relation(fields: [userId], references: [id])
 
   @@schema("webirata")
 }
 
 model FormulairesQuotidiens {
-  id          String   @id @default(cuid())
-  titre       String
-  description String?
-  session     String   // Session de formation (ex: "2025 février 03 au 08")
-  dateCreation DateTime @default(now())
-  dateDebut   DateTime
-  dateFin     DateTime
-  actif       Boolean  @default(true)
-  valide      Boolean  @default(false) // Nouveau champ pour valider les formulaires
-  questions   Json     // Array de questions
-  createdBy   String   // ID de l'admin qui l'a créé
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  reponses    ReponseFormulaire[]
-  admin       User     @relation("AdminFormulaires", fields: [createdBy], references: [id])
+  id           String              @id @default(cuid())
+  titre        String
+  description  String?
+  session      String
+  dateCreation DateTime            @default(now())
+  dateDebut    DateTime
+  dateFin      DateTime
+  actif        Boolean             @default(true)
+  valide       Boolean             @default(false)
+  questions    Json
+  createdBy    String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  admin        User                @relation("AdminFormulaires", fields: [createdBy], references: [id])
+  reponses     ReponseFormulaire[]
 
   @@schema("webirata")
 }
 
 model ReponseFormulaire {
-  id              String   @id @default(cuid())
-  formulaireId    String
-  stagiaireId     String
-  dateReponse     DateTime @default(now())
-  reponses        Json     // Array des réponses aux questions
-  commentaires    String?
-  soumis          Boolean  @default(false)
-  score           Int?     // Score obtenu pour les questions notées
-  maxScore        Int?     // Score maximum possible
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  // Champs d'évaluation/admin
-  decisionAdmin   DecisionAdmin?
+  id               String                @id @default(cuid())
+  formulaireId     String
+  stagiaireId      String
+  dateReponse      DateTime              @default(now())
+  reponses         Json
+  commentaires     String?
+  soumis           Boolean               @default(false)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
   commentaireAdmin String?
-  scoreAdmin      Int?
-
-  // Relations
-  formulaire      FormulairesQuotidiens @relation(fields: [formulaireId], references: [id], onDelete: Cascade)
-  stagiaire       User                  @relation("StagiaireReponses", fields: [stagiaireId], references: [id], onDelete: Cascade)
+  decisionAdmin    DecisionAdmin?
+  maxScore         Int?
+  score            Int?
+  scoreAdmin       Int?
+  formulaire       FormulairesQuotidiens @relation(fields: [formulaireId], references: [id], onDelete: Cascade)
+  stagiaire        User                  @relation("StagiaireReponses", fields: [stagiaireId], references: [id], onDelete: Cascade)
 
   @@unique([formulaireId, stagiaireId, dateReponse])
+  @@schema("webirata")
+}
+
+model EquipmentInspection {
+  id                           String           @id @default(cuid())
+  docNumber                    String           @default("HS019ENG")
+  dateOfIssue                  DateTime         @default(now())
+  issueNumber                  String           @default("001")
+  inspectionDate               DateTime
+  technicianName               String
+  technicianIrataNo            String
+  makeOfItem                   String
+  modelOfItem                  String
+  itemIdNumber                 String
+  standardsConformance         String?
+  suitabilityOfItem            String?
+  ageOfItem                    String?
+  historyOfItem                String?
+  metalPartsCondition          String?
+  textilePartsCondition        String?
+  plasticPartsCondition        String?
+  movingPartsFunction          String?
+  operationalCheck             String?
+  compatibilityCheck           String?
+  overallComments              String?
+  technicianVerdict            Verdict?
+  assessorVerdict              Verdict?
+  assessorComments             String?
+  candidateCorrectlyIdentified Boolean?
+  status                       InspectionStatus @default(DRAFT)
+  createdAt                    DateTime         @default(now())
+  updatedAt                    DateTime         @updatedAt
+  technicianId                 String
+  assessorId                   String?
+  assessor                     User?            @relation("AssessorInspections", fields: [assessorId], references: [id])
+  technician                   User             @relation(fields: [technicianId], references: [id])
+
+  @@schema("webirata")
+}
+
+model JobPlan {
+  id                   String           @id @default(cuid())
+  docNumber            String           @default("HS061ENG")
+  dateOfIssue          DateTime         @default(now())
+  issueNumber          String           @default("001")
+  technicianName       String
+  technicianIrataNo    String
+  jobDate              DateTime
+  jobLength            String?
+  clientDetails        String?
+  taskDetails          String
+  location             String
+  height               String?
+  accessMethod         String?
+  communicationMethods String?
+  permitRequirements   String?
+  anchorStructure      String
+  anchorEquipment      String
+  accessPlan           String
+  evacuationPlan       String
+  rescuePlan           String
+  status               InspectionStatus @default(DRAFT)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  technicianId         String
+  technician           User             @relation(fields: [technicianId], references: [id])
+
+  @@schema("webirata")
+}
+
+model TraineeFollowUp {
+  id           String             @id @default(cuid())
+  title        String             @default("CI.DES TRAINEE FOLLOW UP FORM")
+  codeNumber   String             @default("ENR-CIFRA-FORM 004")
+  revision     String             @default("01")
+  creationDate DateTime           @default(now())
+  status       String             @default("ACTIVE")
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  levelData    TraineeLevelData[]
+  progress     TraineeProgress[]
+  signatures   TraineeSignature[]
+
+  @@schema("webirata")
+}
+
+model TraineeProgress {
+  id           String           @id @default(cuid())
+  syllabusItem String
+  traineeId    String
+  day          String
+  completed    Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  followUpId   String?
+  followUp     TraineeFollowUp? @relation(fields: [followUpId], references: [id])
+  trainee      User             @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+
+  @@unique([syllabusItem, traineeId, day])
+  @@schema("webirata")
+}
+
+model TraineeLevelData {
+  id           String           @id @default(cuid())
+  syllabusItem String
+  level        String
+  required     Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  followUpId   String?
+  followUp     TraineeFollowUp? @relation(fields: [followUpId], references: [id])
+
+  @@unique([syllabusItem, level])
+  @@schema("webirata")
+}
+
+model TraineeSignature {
+  id             String           @id @default(cuid())
+  traineeId      String           @unique
+  signature      String
+  adminSignature String?
+  isValidated    Boolean          @default(false)
+  validatedAt    DateTime?
+  currentDay     Int              @default(1)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  followUpId     String?
+  sessionId      String?
+  followUp       TraineeFollowUp? @relation(fields: [followUpId], references: [id])
+  session        TrainingSession? @relation(fields: [sessionId], references: [id])
+  trainee        User             @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+
+  @@schema("webirata")
+}
+
+model TrainingSession {
+  id         String             @id @default(cuid())
+  name       String
+  startDate  DateTime
+  endDate    DateTime
+  status     String             @default("ACTIVE")
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  signatures TraineeSignature[]
+  trainees   User[]             @relation("TrainingSessionTrainees")
+
+  @@schema("webirata")
+}
+
+model Contribution {
+  id                String             @id @default(cuid())
+  donorName         String
+  donorEmail        String
+  donorPhone        String?
+  amount            Int
+  type              ContributionType
+  returnAmount      Int
+  returnDescription String?
+  paymentMethod     PaymentMethod      @default(MOBILE_MONEY)
+  status            ContributionStatus @default(PENDING)
+  notes             String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  userId            String?
+  user              User?              @relation(fields: [userId], references: [id])
+
+  @@schema("webirata")
+}
+
+model CustomerSatisfactionResponse {
+  id          String                   @id @default(cuid())
+  userId      String?
+  traineeName String?
+  type        CustomerSatisfactionType
+  date        DateTime                 @default(now())
+  items       Json
+  suggestions String?
+  session     String?
+  signature   String?
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  user        User?                    @relation(fields: [userId], references: [id])
+
+  @@schema("webirata")
+}
+
+model IrataDisclaimerSubmission {
+  id             String                @id
+  name           String?
+  address        String
+  signature      String
+  session        String?
+  irataNo        String?
+  userId         String?
+  adminSignature String?
+  adminSignedAt  DateTime?
+  adminName      String?
+  status         IrataDisclaimerStatus @default(PENDING)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime
+  User           User?                 @relation(fields: [userId], references: [id])
+
   @@schema("webirata")
 }
 
@@ -252,7 +447,6 @@ enum Verdict {
   @@schema("webirata")
 }
 
-// Décision de l'admin sur une réponse de formulaire
 enum DecisionAdmin {
   ACCEPTE
   REFUSE
@@ -261,253 +455,32 @@ enum DecisionAdmin {
   @@schema("webirata")
 }
 
-model EquipmentInspection {
-  id                    String    @id @default(cuid())
-  
-  // Document details
-  docNumber             String    @default("HS019ENG")
-  dateOfIssue           DateTime  @default(now())
-  issueNumber           String    @default("001")
-  
-  // Equipment and technician details
-  inspectionDate        DateTime
-  technicianName        String
-  technicianIrataNo     String
-  makeOfItem            String
-  modelOfItem           String
-  itemIdNumber          String
-  
-  // Conformance and History
-  standardsConformance  String?
-  suitabilityOfItem     String?
-  ageOfItem             String?
-  historyOfItem         String?
-  
-  // Visual & Tactile check
-  metalPartsCondition   String?
-  textilePartsCondition String?
-  plasticPartsCondition String?
-  
-  // Operational check
-  movingPartsFunction   String?
-  operationalCheck      String?
-  compatibilityCheck    String?
-  
-  // Overall assessment
-  overallComments       String?
-  technicianVerdict     Verdict?
-  
-  // Assessor section
-  assessorVerdict       Verdict?
-  assessorComments      String?
-  candidateCorrectlyIdentified Boolean?
-  
-  // Status and metadata
-  status                InspectionStatus @default(DRAFT)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
-  // Relations
-  technicianId          String
-  technician            User      @relation(fields: [technicianId], references: [id])
-  assessorId            String?
-  assessor              User?     @relation("AssessorInspections", fields: [assessorId], references: [id])
-
-  @@schema("webirata")
-}
-
-model JobPlan {
-  id                    String    @id @default(cuid())
-  
-  // Document details
-  docNumber             String    @default("HS061ENG")
-  dateOfIssue           DateTime  @default(now())
-  issueNumber           String    @default("001")
-  
-  // Site and company details
-  technicianName        String
-  technicianIrataNo     String
-  jobDate               DateTime
-  jobLength             String?
-  clientDetails         String?
-  
-  // Work description
-  taskDetails           String
-  location              String
-  height                String?
-  accessMethod          String?
-  communicationMethods  String?
-  permitRequirements    String?
-  
-  // Anchor selection
-  anchorStructure       String
-  anchorEquipment       String
-  
-  // Emergency planning
-  accessPlan            String
-  evacuationPlan        String
-  rescuePlan            String
-  
-  // Status and metadata
-  status                InspectionStatus @default(DRAFT)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
-  // Relations
-  technicianId          String
-  technician            User      @relation(fields: [technicianId], references: [id])
-
-  @@schema("webirata")
-}
-
-// Tables pour le Trainee Follow Up
-model TraineeFollowUp {
-  id          String   @id @default(cuid())
-  title       String   @default("CI.DES TRAINEE FOLLOW UP FORM")
-  codeNumber  String   @default("ENR-CIFRA-FORM 004")
-  revision    String   @default("01")
-  creationDate DateTime @default(now())
-  status      String   @default("ACTIVE")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  progress    TraineeProgress[]
-  levelData   TraineeLevelData[]
-  signatures  TraineeSignature[]
-
-  @@schema("webirata")
-}
-
-model TraineeProgress {
-  id           String   @id @default(cuid())
-  syllabusItem String   // Élément du programme (ex: "Planification et gestion")
-  traineeId    String   // ID du stagiaire
-  day          String   // J1, J2, J3, J4, J5
-  completed    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  trainee      User     @relation(fields: [traineeId], references: [id], onDelete: Cascade)
-  followUpId   String?
-  followUp     TraineeFollowUp? @relation(fields: [followUpId], references: [id], onDelete: SetNull)
-
-  @@unique([syllabusItem, traineeId, day])
-  @@schema("webirata")
-}
-
-model TraineeLevelData {
-  id           String   @id @default(cuid())
-  syllabusItem String   // Élément du programme
-  level        String   // Level 1, Level 2, Level 3
-  required     Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  followUpId   String?
-  followUp     TraineeFollowUp? @relation(fields: [followUpId], references: [id], onDelete: SetNull)
-
-  @@unique([syllabusItem, level])
-  @@schema("webirata")
-}
-
-model TraineeSignature {
-  id            String   @id @default(cuid())
-  traineeId     String   // ID du stagiaire
-  signature     String   // Signature du stagiaire
-  adminSignature String? // Signature de l'admin
-  isValidated   Boolean  @default(false) // Si le formulaire est validé
-  validatedAt   DateTime? // Date de validation
-  currentDay    Int      @default(1) // Jour actuel autorisé (1-5)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  trainee       User     @relation(fields: [traineeId], references: [id], onDelete: Cascade)
-  followUpId    String?
-  followUp      TraineeFollowUp? @relation(fields: [followUpId], references: [id], onDelete: SetNull)
-  sessionId     String?
-  session       TrainingSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-
-  @@unique([traineeId])
-  @@schema("webirata")
-}
-
-model TrainingSession {
-  id          String   @id @default(cuid())
-  name        String   // Nom de la session (ex: "Session Juillet 2025")
-  startDate   DateTime
-  endDate     DateTime
-  status      String   @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  trainees    User[]   @relation("TrainingSessionTrainees")
-  signatures  TraineeSignature[]
-
-  @@schema("webirata")
-}
-
-model Contribution {
-  id                    String   @id @default(cuid())
-  
-  // Informations du donateur
-  donorName             String   // Nom complet du donateur
-  donorEmail            String   // Email du donateur
-  donorPhone            String?  // Téléphone du donateur
-  
-  // Détails de la contribution
-  amount                Int      // Montant en FCFA
-  type                  ContributionType // Type de contribution
-  returnAmount          Int      // Montant de retour calculé
-  returnDescription     String?  // Description du retour
-  
-  // Informations de paiement
-  paymentMethod         PaymentMethod @default(MOBILE_MONEY)
-  status                ContributionStatus @default(PENDING)
-  
-  // Métadonnées
-  notes                 String?  // Notes administratives
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
-  // Relations optionnelles
-  userId                String?  // Si lié à un utilisateur enregistré
-  user                  User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@schema("webirata")
-}
-
 enum ContributionType {
-  PREFORMATION  // Pré-financement formation avec remise
-  FINANCIAL     // Don financier avec rendement
-  MATERIAL      // Récompenses matérielles
+  PREFORMATION
+  FINANCIAL
+  MATERIAL
 
   @@schema("webirata")
 }
 
 enum ContributionStatus {
-  PENDING       // En attente de paiement
-  CONFIRMED     // Paiement confirmé
-  PROCESSED     // Traité et bénéfice accordé
-  CANCELLED     // Annulé
+  PENDING
+  CONFIRMED
+  PROCESSED
+  CANCELLED
 
   @@schema("webirata")
 }
 
 enum PaymentMethod {
-  MOBILE_MONEY  // Mobile Money (Flooz, TMoney, etc.)
-  BANK_TRANSFER // Virement bancaire
-  CASH          // Espèces
-  CRYPTO        // Cryptomonnaie
+  MOBILE_MONEY
+  BANK_TRANSFER
+  CASH
+  CRYPTO
 
   @@schema("webirata")
 }
 
-// Customer satisfaction survey models
 enum CustomerSatisfactionType {
   ENVIRONMENT_RECEPTION
   EQUIPMENT
@@ -516,21 +489,26 @@ enum CustomerSatisfactionType {
   @@schema("webirata")
 }
 
-model CustomerSatisfactionResponse {
-  id           String                    @id @default(cuid())
-  userId       String?
-  traineeName  String?
-  type         CustomerSatisfactionType
-  date         DateTime                  @default(now())
-  items        Json                      // [{ label: string, rating: string, comment?: string }]
-  suggestions  String?
-  session      String?
-  signature    String?                   // base64 data URL
-  createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @updatedAt
+enum IrataDisclaimerStatus {
+  PENDING
+  SIGNED
+  SENT
 
-  // Relations
-  user         User?                     @relation(fields: [userId], references: [id])
+  @@schema("webirata")
+}
+
+model PreJobTrainingSignature {
+  id            String   @id @default(cuid())
+  day           String   // Jour de la semaine (Lundi, Mardi, etc.)
+  signatureData String   // Signature en base64
+  userId        String
+  userName      String?
+  signedAt      DateTime @default(now())
+  autoSigned    Boolean  @default(true) // Indique si c'est une signature automatique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@schema("webirata")
 }

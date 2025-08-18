@@ -97,6 +97,12 @@ export default function AttendanceForm() {
     
     // Mettre à jour automatiquement le système de suivi des stagiaires
     await updateTraineeProgress(currentSignatureKey);
+    
+    // Si c'est une signature du matin, signer automatiquement le Pre-Job Training
+    const [day, period] = currentSignatureKey.split('-');
+    if (period === 'matin') {
+      await signPreJobTraining(day, signatureData);
+    }
   };
 
   const updateTraineeProgress = async (signatureKey: string) => {
@@ -132,6 +138,31 @@ export default function AttendanceForm() {
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la progression:', error);
+    }
+  };
+
+  const signPreJobTraining = async (day: string, signatureData: string) => {
+    try {
+      const response = await fetch('/api/user/pre-job-training-signature', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          day: day,
+          signatureData: signatureData,
+          userId: session?.user?.id,
+          userName: userName
+        }),
+      });
+      
+      if (response.ok) {
+        console.log(`Pre-Job Training signé automatiquement pour ${day}`);
+      } else {
+        console.error('Erreur lors de la signature automatique du Pre-Job Training');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la signature automatique du Pre-Job Training:', error);
     }
   };
 
@@ -311,17 +342,18 @@ export default function AttendanceForm() {
         </button>
       </div>
 
-      {/* Informations */}
-      <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f0f8ff", border: "1px solid #b0d4f1", borderRadius: "8px" }}>
-        <h3 style={{ margin: "0 0 10px 0", color: "#1e40af" }}>Instructions :</h3>
-        <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "14px" }}>
-          <li><strong>Signatures automatiques :</strong> Quand vous cochez un jour dans "Suivi Stagiaire", les signatures d'attendance sont créées automatiquement</li>
-          <li><strong>Signatures manuelles :</strong> Vous pouvez aussi signer directement dans chaque case (matin et après-midi)</li>
-          <li><strong>Modification :</strong> Cliquez sur une signature existante pour la modifier</li>
-          <li><strong>Indicateurs :</strong> Les cases vertes (✓) indiquent une présence confirmée</li>
-          <li><strong>Synchronisation :</strong> Utilisez le bouton "Actualiser" pour voir les signatures générées depuis le suivi stagiaire</li>
-        </ul>
-      </div>
+             {/* Informations */}
+       <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f0f8ff", border: "1px solid #b0d4f1", borderRadius: "8px" }}>
+         <h3 style={{ margin: "0 0 10px 0", color: "#1e40af" }}>Instructions :</h3>
+         <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "14px" }}>
+           <li><strong>Signatures automatiques :</strong> Quand vous cochez un jour dans "Suivi Stagiaire", les signatures d'attendance sont créées automatiquement</li>
+           <li><strong>Signatures manuelles :</strong> Vous pouvez aussi signer directement dans chaque case (matin et après-midi)</li>
+           <li><strong>Pre-Job Training automatique :</strong> Quand vous signez l'attendance du matin, le Pre-Job Training est automatiquement signé pour le même jour</li>
+           <li><strong>Modification :</strong> Cliquez sur une signature existante pour la modifier</li>
+           <li><strong>Indicateurs :</strong> Les cases vertes (✓) indiquent une présence confirmée</li>
+           <li><strong>Synchronisation :</strong> Utilisez le bouton "Actualiser" pour voir les signatures générées depuis le suivi stagiaire</li>
+         </ul>
+       </div>
 
       {/* Modal de signature */}
       {showSignatureModal && (
