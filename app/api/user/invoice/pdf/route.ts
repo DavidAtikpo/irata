@@ -1,0 +1,320 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import puppeteer from 'puppeteer';
+
+type InvoiceLineItem = {
+  reference: string;
+  designation: string;
+  quantity: number;
+  unitPrice: number;
+  tva: number;
+  imageUrl?: string;
+};
+
+type InvoiceData = {
+  title: string;
+  codeNumberLabel?: string;
+  codeNumber?: string;
+  revisionLabel?: string;
+  revision?: string | number;
+  creationDateLabel?: string;
+  creationDate?: string;
+  company: {
+    name: string;
+    contactName?: string;
+    addressLines: string[];
+    email?: string;
+    phone?: string;
+    siret?: string;
+    nif?: string;
+    invoiceNumberLabel?: string;
+    invoiceNumber?: string;
+    invoiceDateLabel?: string;
+    invoiceDate?: string;
+  };
+  customer: {
+    name?: string;
+    addressLines: string[];
+    email?: string;
+    phone?: string;
+    siretLabel?: string;
+    siret?: string;
+    convLabel?: string;
+    conv?: string;
+    companyTitle?: string;
+  };
+  recipient: {
+    name: string;
+    addressLines: string[];
+    email?: string;
+    phone?: string;
+  };
+  items: InvoiceLineItem[];
+  footerLeft?: string;
+  footerRight?: string;
+  showQr?: boolean;
+  trainee?: { fullName?: string; email?: string };
+};
+
+function euro(n: number) {
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n);
+}
+
+function buildHtml(data: InvoiceData, originalAmount?: number) {
+  const logoUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/logo.png`;
+  const totalHT = data.items.reduce((s, it) => s + it.quantity * it.unitPrice, 0);
+  const totalTVA = data.items.reduce((s, it) => s + (it.quantity * it.unitPrice * it.tva) / 100, 0);
+  const totalTTC = totalHT + totalTVA;
+  const remainingAmount = originalAmount ? originalAmount - totalTTC : 0;
+
+  return `<!DOCTYPE html>
+  <html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Facture ${data.company.invoiceNumber ?? ''}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; color: #111827; }
+      .header { display:flex; align-items:flex-start; gap:16px; margin-bottom:16px; }
+      .logo { width:60px; height:60px; object-fit:contain; }
+      table { border-collapse: collapse; width: 100%; }
+      .meta th, .meta td { border: 1px solid #e5e7eb; padding: 6px 8px; font-size: 12px; }
+      .meta th { background: #f9fafb; text-align:left; }
+      .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+      .card { border:1px solid #e5e7eb; border-radius:6px; padding:10px; font-size:12px; }
+      .title { font-weight:600; margin-bottom:6px; font-size:12px; }
+      .items th, .items td { border:1px solid #e5e7eb; padding:6px 8px; font-size:12px; }
+      .items th { background:#f9fafb; text-align:left; }
+      .text-right { text-align:right; }
+      .footer { margin-top:18px; text-align:center; font-size:11px; color:#6b7280; border-top:1px solid #e5e7eb; padding-top:10px; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <img class="logo" src="${logoUrl}" alt="CI.DES Logo" />
+      <table class="meta">
+        <tbody>
+          <tr>
+            <th>Titre</th>
+            <th>${data.codeNumberLabel ?? 'Numéro de code'}</th>
+            <th>${data.revisionLabel ?? 'Révision'}</th>
+            <th>${data.creationDateLabel ?? 'Création date'}</th>
+          </tr>
+          <tr>
+            <td>${data.title}</td>
+            <td>${data.codeNumber ?? ''}</td>
+            <td>${data.revision ?? ''}</td>
+            <td>${data.creationDate ?? ''}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="title">${data.company.name}</div>
+        <div>${data.company.contactName ?? ''}</div>
+        <div>${data.company.addressLines.join('<br/>')}</div>
+        <div>${data.company.email ?? ''}</div>
+        <div>${data.company.phone ?? ''}</div>
+        <div>SIRET : ${data.company.siret ?? ''}</div>
+        <div>${data.company.invoiceNumberLabel ?? 'FACTURE N°'} ${data.company.invoiceNumber ?? ''}</div>
+        <div>${data.company.invoiceDateLabel ?? 'Le'} ${data.company.invoiceDate ?? ''}</div>
+      </div>
+
+      <div class="card">
+        <div class="title">${data.customer.companyTitle ?? 'Client'}</div>
+        <div>${data.customer.addressLines.join('<br/>')}</div>
+        <div>${data.customer.siretLabel ?? 'N°SIRET :'} ${data.customer.siret ?? ''}</div>
+        <div>${data.customer.convLabel ?? 'N°Convention'} ${data.customer.conv ?? ''}</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 12px;">
+      <div class="title">Destinataire</div>
+      <div>${data.recipient.name}</div>
+      <div>${data.recipient.addressLines.join('<br/>')}</div>
+      <div>${data.recipient.email ?? ''}</div>
+      <div>${data.recipient.phone ?? ''}</div>
+    </div>
+
+    <table class="items" style="margin-top: 12px;">
+      <thead>
+        <tr>
+          <th>Référence</th>
+          <th>Désignation</th>
+          <th>Quantité</th>
+          <th>Prix unitaire</th>
+          <th>TVA %</th>
+          <th>Montant HT</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.items.map(it => {
+          const montantHT = it.quantity * it.unitPrice;
+          return `<tr>
+            <td>${it.reference}</td>
+            <td>${(it.designation || '').replace(/\n/g, '<br/>')}</td>
+            <td class="text-right">${it.quantity.toFixed(2)}</td>
+            <td class="text-right">${euro(it.unitPrice)}</td>
+            <td class="text-right">${it.tva.toFixed(2)} %</td>
+            <td class="text-right">${euro(montantHT)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+             <tfoot>
+         <tr>
+           <td colspan="5" class="text-right"><strong>Total HT</strong></td>
+           <td class="text-right"><strong>${euro(totalHT)}</strong></td>
+         </tr>
+         <tr>
+           <td colspan="5" class="text-right">Total TVA</td>
+           <td class="text-right">${euro(totalTVA)}</td>
+         </tr>
+         <tr>
+           <td colspan="5" class="text-right"><strong>Total TTC</strong></td>
+           <td class="text-right"><strong>${euro(totalTTC)}</strong></td>
+         </tr>
+         ${remainingAmount > 0 ? `
+         <tr>
+           <td colspan="5" class="text-right" style="color: #dc2626;"><strong>Reste à payer</strong></td>
+           <td class="text-right" style="color: #dc2626;"><strong>${euro(remainingAmount)}</strong></td>
+         </tr>
+         ` : ''}
+       </tfoot>
+    </table>
+
+    <div class="footer">
+      <div><strong>CI.DES sasu</strong> · Capital 2 500 Euros</div>
+      <div>SIRET : 87840789900011 · VAT : FR71878407899</div>
+      <div>${data.footerRight ?? 'Page 1 sur 1'}</div>
+    </div>
+  </body>
+  </html>`;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+              // Récupérer la facture de l'utilisateur avec les données utilisateur et session
+     const userInvoice = await prisma.invoice.findFirst({
+       where: {
+         userId: session.user.id
+       },
+       include: {
+         user: {
+           select: {
+             nom: true,
+             prenom: true,
+             email: true,
+           }
+         },
+         contrat: {
+           include: {
+             devis: {
+               include: {
+                 demande: {
+                   select: {
+                     session: true,
+                   }
+                 }
+               }
+             }
+           }
+         }
+       },
+       orderBy: {
+         createdAt: 'desc'
+       }
+     });
+
+         if (!userInvoice) {
+       return NextResponse.json({ error: 'Aucune facture trouvée' }, { status: 404 });
+     }
+
+     // Générer le numéro de facture côté utilisateur
+     const currentYear = new Date().getFullYear();
+     const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+     const invoiceNumber = `CI.FF ${currentYear}${currentMonth} ${String(userInvoice.id).slice(-3).padStart(3, '0')}`;
+
+     // Préparer les données pour la génération PDF
+     const invoiceData: InvoiceData = {
+      title: 'TRAME BDC DEVIS FACTURE',
+      codeNumberLabel: 'Numéro de code',
+      codeNumber: 'ENR-CIDFA-COMP 002',
+      revisionLabel: 'Révision',
+      revision: '00',
+      creationDateLabel: 'Création date',
+      creationDate: new Date().toLocaleDateString('fr-FR'),
+             company: {
+         name: 'CI.DES',
+         contactName: 'CHEZ CHAGNEAU',
+         addressLines: ['17270 BORESSE-ET-MARTRON', 'admin38@cides.fr'],
+         siret: '87840789900011',
+         invoiceNumberLabel: 'FACTURE N°',
+         invoiceNumber: invoiceNumber,
+         invoiceDateLabel: 'Le',
+         invoiceDate: new Date(userInvoice.createdAt).toLocaleDateString('fr-FR'),
+       },
+      customer: {
+        companyTitle: 'FRANCE TRAVAIL DR BRETAGNE',
+        addressLines: ['Adresses :'],
+        siretLabel: 'N°SIRET :',
+        siret: '13000548108070',
+        convLabel: 'N°Convention (Enregistrement)',
+        conv: '41C27G263296',
+        name: '',
+        email: '',
+        phone: '',
+      },
+             recipient: {
+         name: `Monsieur ${userInvoice.user.prenom || ''} ${userInvoice.user.nom || ''}`.trim() || 'Utilisateur',
+         addressLines: [userInvoice.contrat.adresse || ''],
+         phone: '',
+         email: userInvoice.user.email || '',
+       },
+             items: [
+         {
+           reference: 'CI.IFF',
+           designation: `Formation Cordiste IRATA\nDevis #${userInvoice.contrat.devis.numero}\nSession: ${userInvoice.contrat.devis.demande.session}${userInvoice.paymentStatus === 'PARTIAL' ? '\n(Paiement partiel)' : ''}`,
+           quantity: 1,
+           unitPrice: userInvoice.paidAmount || userInvoice.amount,
+           tva: 0,
+         },
+       ],
+      footerRight: 'Page 1 sur 2',
+      showQr: true,
+    };
+
+         // Générer le PDF directement
+     const html = buildHtml(invoiceData, userInvoice.amount);
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'load' });
+    const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' } });
+    await browser.close();
+    
+    const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
+    
+    return new NextResponse(arrayBuffer, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="facture_${userInvoice.invoiceNumber}.pdf"`,
+      },
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF:', error);
+    return NextResponse.json(
+      { error: 'Erreur lors de la génération du PDF' },
+      { status: 500 }
+    );
+  }
+}

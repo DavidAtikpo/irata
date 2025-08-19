@@ -41,6 +41,7 @@ export default function MonContratPage() {
   const [contrats, setContrats] = useState<Contrat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showInvoicePopup, setShowInvoicePopup] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -58,6 +59,12 @@ export default function MonContratPage() {
       }
       const data = await response.json();
       setContrats(data);
+      
+      // Vérifier si un contrat est validé pour afficher le popup
+      const hasValidatedContract = data.some((contrat: Contrat) => contrat.statut === 'VALIDE');
+      if (hasValidatedContract) {
+        setShowInvoicePopup(true);
+      }
     } catch (error) {
       setError('Erreur lors de la récupération des contrats');
       console.error('Erreur:', error);
@@ -124,11 +131,52 @@ export default function MonContratPage() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-indigo-600 mx-auto"></div>
             <h2 className="mt-2 sm:mt-4 text-lg sm:text-xl font-semibold text-gray-900">Chargement...</h2>
+                  </div>
+      </div>
+
+      {/* Popup de notification de facture générée */}
+      {showInvoicePopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-green-100 rounded-full mb-4">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Facture générée !
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Votre contrat a été validé et votre facture a été générée. 
+                Vous pouvez maintenant procéder au paiement pour accéder à tous les documents et activités de formation.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => {
+                    setShowInvoicePopup(false);
+                    router.push('/facture-trame');
+                  }}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                >
+                  Passer au paiement
+                </button>
+                <button
+                  onClick={() => setShowInvoicePopup(false)}
+                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                >
+                  Plus tard
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    );
-  }
+      )}
+    </div>
+  );
+}
 
   return (
     <div className="py-2 sm:py-4 lg:py-6 px-2 sm:px-4 lg:px-6" suppressHydrationWarning>
@@ -324,7 +372,7 @@ export default function MonContratPage() {
                             <p className="text-xs sm:text-sm font-medium text-green-900">Contrat validé</p>
                             <p className="text-xs sm:text-sm text-green-800">
                               Votre contrat a été validé par l'administrateur. 
-                              Vous pouvez maintenant accéder aux documents de formation.
+                              Une facture vous sera générée et envoyée par email dans les plus brefs délais.
                             </p>
                           </div>
                         </div>
@@ -341,11 +389,53 @@ export default function MonContratPage() {
         <div className="mt-6 sm:mt-8 bg-blue-50 rounded-lg p-3 sm:p-4 lg:p-6">
           <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-blue-900 mb-2">Information</h3>
           <p className="text-xs sm:text-sm text-blue-800">
-            Cette page affiche tous vos contrats de formation. Un contrat validé vous donne accès aux documents de formation 
-            et confirme votre inscription à la session de formation.
+            Cette page affiche tous vos contrats de formation. Après validation de votre contrat par l'administration, 
+            une facture vous sera générée et envoyée par email. L'accès à tous les documents de formation et activités 
+            sera disponible après le paiement de cette facture.
           </p>
         </div>
       </div>
+
+      {/* Popup de notification de facture générée */}
+      {showInvoicePopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-green-100 rounded-full mb-4">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Facture générée !
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Votre contrat a été validé et votre facture a été générée. 
+                Vous pouvez maintenant procéder au paiement pour accéder à tous les documents et activités de formation.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => {
+                    setShowInvoicePopup(false);
+                    router.push('/facture-trame');
+                  }}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                >
+                  Passer au paiement
+                </button>
+                <button
+                  onClick={() => setShowInvoicePopup(false)}
+                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                >
+                  Plus tard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

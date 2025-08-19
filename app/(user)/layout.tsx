@@ -49,6 +49,10 @@ export default function UserLayout({
     setIsMobileSidebarOpen(false);
   };
 
+  const toggleMobileSidebar = () => {
+    setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  };
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-100">
@@ -76,7 +80,7 @@ export default function UserLayout({
       <UserHeader 
         sidebarCollapsed={isSidebarCollapsed}
         onToggleSidebar={toggleSidebar}
-        onMobileToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+        onMobileToggle={toggleMobileSidebar}
       />
       
       <div className="flex pt-16">

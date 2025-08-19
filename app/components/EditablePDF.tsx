@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -13,6 +14,7 @@ interface EditablePDFProps {
 }
 
 export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signature, setSignature] = useState<string | null>(null);
@@ -25,6 +27,48 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
     dateSignature: new Date().toISOString().split('T')[0],
   });
   const [submittedData, setSubmittedData] = useState<any | null>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  // Pré-remplir les informations de l'utilisateur depuis la session
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (session?.user) {
+        const user = session.user as any;
+        
+        // Si nom et prénom sont dans la session, les utiliser
+        if (user.nom && user.prenom) {
+          setFormData(prev => ({
+            ...prev,
+            nom: user.nom || '',
+            prenom: user.prenom || '',
+            adresse: user.adresse || '',
+            profession: user.profession || '',
+            statut: user.statut || '',
+          }));
+        } else {
+          // Sinon, récupérer via l'API
+          try {
+            const response = await fetch('/api/user/profile');
+            if (response.ok) {
+              const profileData = await response.json();
+              setFormData(prev => ({
+                ...prev,
+                nom: profileData.nom || '',
+                prenom: profileData.prenom || '',
+                adresse: profileData.adresse || '',
+                profession: profileData.profession || '',
+                statut: profileData.statut || '',
+              }));
+            }
+          } catch (error) {
+            console.error('Erreur lors de la récupération du profil:', error);
+          }
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [session]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +86,7 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
         devisId: devis.id,
       });
       setSubmittedData({ ...formData, signature });
+      setShowSuccessMessage(true);
     } catch (error) {
       console.error('Erreur lors de la soumission du contrat:', error);
       setError('Erreur lors de la soumission du contrat');
@@ -170,53 +215,111 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">B. Si Particulier Cocontractant :</h3>
-            <div className="grid grid-cols-2 gap-4">
+            
+            {/* Message d'information */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>Informations pré-remplies :</strong> Vos informations personnelles ont été automatiquement récupérées depuis votre profil. 
+                    Vous pouvez les modifier si nécessaire avant de signer le contrat.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="nom" className="text-gray-700">NOM</Label>
+                <Label htmlFor="nom" className="text-gray-700 flex items-center">
+                  NOM
+                  {formData.nom && (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                      Pré-rempli
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="nom"
                   value={formData.nom}
                   onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
                   required
                   className="text-gray-900"
+                  placeholder="Votre nom"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="prenom" className="text-gray-700">Prénom</Label>
+                <Label htmlFor="prenom" className="text-gray-700 flex items-center">
+                  Prénom
+                  {formData.prenom && (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                      Pré-rempli
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="prenom"
                   value={formData.prenom}
                   onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
                   required
                   className="text-gray-900"
+                  placeholder="Votre prénom"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="adresse" className="text-gray-700">Adresse</Label>
+                <Label htmlFor="adresse" className="text-gray-700 flex items-center">
+                  Adresse
+                  {formData.adresse && formData.adresse !== 'À compléter' && (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                      Pré-rempli
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="adresse"
                   value={formData.adresse}
                   onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
                   required
                   className="text-gray-900"
+                  placeholder="Votre adresse complète"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="profession" className="text-gray-700">Profession</Label>
+                <Label htmlFor="profession" className="text-gray-700 flex items-center">
+                  Profession
+                  {formData.profession && formData.profession !== 'Stagiaire' && (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                      Pré-rempli
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="profession"
                   value={formData.profession}
                   onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
                   className="text-gray-900"
+                  placeholder="Votre profession"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="statut" className="text-gray-700">Statut</Label>
+                <Label htmlFor="statut" className="text-gray-700 flex items-center">
+                  Statut
+                  {formData.statut && formData.statut !== 'Particulier' && (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                      Pré-rempli
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="statut"
                   value={formData.statut}
                   onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
                   className="text-gray-900"
+                  placeholder="Votre statut"
                 />
               </div>
             </div>
@@ -281,13 +384,13 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Signature</h3>
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
               <div>
                 <p className="font-medium mb-2 text-gray-700">Signature du stagiaire :</p>
-                <div className="border rounded-lg p-4 bg-white">
+                <div className="border rounded-lg p-3 sm:p-4 bg-white">
                   <SignaturePad
                     canvasProps={{
-                      className: 'signature-canvas w-full h-48 border rounded bg-white',
+                      className: 'signature-canvas w-full h-32 sm:h-48 border rounded bg-white',
                     }}
                     onEnd={() => {
                       const signaturePad = document.querySelector('.signature-canvas') as HTMLCanvasElement;
@@ -299,7 +402,7 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
                   <Button
                     type="button"
                     variant="outline"
-                    className="mt-2"
+                    className="mt-2 w-full sm:w-auto"
                     onClick={() => {
                       const signaturePad = document.querySelector('.signature-canvas') as HTMLCanvasElement;
                       if (signaturePad) {
@@ -322,17 +425,56 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
             </div>
           </div>
 
-          <div className="flex justify-end space-x-4">
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              {loading ? 'Envoi en cours...' : 'Signer le contrat'}
-            </Button>
-          </div>
+          {!showSuccessMessage && (
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                {loading ? 'Envoi en cours...' : 'Signer le contrat'}
+              </Button>
+            </div>
+          )}
         </div>
       </form>
+      {showSuccessMessage && (
+        <div className="mt-8 p-6 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-lg font-medium text-green-800 mb-2">
+                Contrat signé avec succès !
+              </h3>
+              <div className="text-sm text-green-700 space-y-2">
+                <p>
+                  Votre contrat a été signé et enregistré avec succès. Vous recevrez une confirmation par email.
+                </p>
+                <div className="bg-white p-4 rounded border border-green-200">
+                  <h4 className="font-semibold text-green-800 mb-2">📁 Suivre l'évolution de votre contrat :</h4>
+                  <p className="text-green-700 mb-3">
+                    Pour suivre l'évolution de votre contrat et accéder à tous vos documents :
+                  </p>
+                  <ol className="list-decimal list-inside space-y-1 text-green-700">
+                    <li>Retournez à votre <strong>espace personnel</strong></li>
+                    <li>Accédez à la section <strong>"Mes Devis"</strong></li>
+                    <li>Cliquez sur <strong>"Voir"</strong> pour votre devis</li>
+                    <li>Vous trouverez votre <strong>contrat signé</strong> dans le dossier</li>
+                  </ol>
+                </div>
+                <p className="text-xs text-green-600 mt-3">
+                  Notre équipe vous contactera prochainement pour finaliser les détails de votre formation.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {submittedData && (
         <div className="flex justify-end mt-4">
           <Button type="button" onClick={generatePDF} className="bg-green-600 hover:bg-green-700">

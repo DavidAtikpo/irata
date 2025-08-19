@@ -23,6 +23,7 @@ interface Devis {
     session: string;
     message?: string;
   };
+  hasContract?: boolean;
 }
 
 export default function MesDevisPage() {
@@ -47,7 +48,26 @@ export default function MesDevisPage() {
         throw new Error('Erreur lors de la récupération des devis');
       }
       const data = await response.json();
-      setDevis(data);
+      
+      // Vérifier les contrats pour chaque devis validé
+      const devisWithContracts = await Promise.all(
+        data.map(async (devis: Devis) => {
+          if (devis.statut === 'VALIDE') {
+            try {
+              const contractResponse = await fetch(`/api/user/devis/${devis.id}/contrat/check`);
+              if (contractResponse.ok) {
+                const contractData = await contractResponse.json();
+                return { ...devis, hasContract: contractData.hasContract };
+              }
+            } catch (error) {
+              console.error('Erreur lors de la vérification du contrat:', error);
+            }
+          }
+          return { ...devis, hasContract: false };
+        })
+      );
+      
+      setDevis(devisWithContracts);
     } catch (error) {
       setError('Erreur lors de la récupération des devis');
       console.error('Erreur:', error);
@@ -218,23 +238,23 @@ export default function MesDevisPage() {
                           <DocumentArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           PDF
                         </button>
-                        {devis.statut === 'VALIDE' && (
-                          <>
-                            <button
-                              onClick={() => router.push(`/mes-devis/${devis.id}/contrat`)}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                            >
-                              <DocumentDuplicateIcon className="h-4 w-4 mr-1" />
-                              Contrat
-                            </button>
-                            <button
-                              onClick={() => downloadContract(devis.id, devis.numero)}
-                              className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            >
-                              <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
-                              PDF Contrat
-                            </button>
-                          </>
+                        {devis.statut === 'VALIDE' && !devis.hasContract && (
+                          <button
+                            onClick={() => router.push(`/mes-devis/${devis.id}/contrat`)}
+                            className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                          >
+                            <DocumentDuplicateIcon className="h-4 w-4 mr-1" />
+                            Contrat
+                          </button>
+                        )}
+                        {devis.statut === 'VALIDE' && devis.hasContract && (
+                          <button
+                            onClick={() => downloadContract(devis.id, devis.numero)}
+                            className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                          >
+                            <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
+                            PDF Contrat
+                          </button>
                         )}
                       </div>
                     </div>

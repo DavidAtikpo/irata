@@ -30,6 +30,7 @@ model User {
   inspections                   EquipmentInspection[]
   formulairesCrees              FormulairesQuotidiens[]        @relation("AdminFormulaires")
   IrataDisclaimerSubmission     IrataDisclaimerSubmission[]
+  invoices                      Invoice[]
   jobPlans                      JobPlan[]
   preJobTrainingSignatures      PreJobTrainingSignature[]
   reponsesFormulaires           ReponseFormulaire[]            @relation("StagiaireReponses")
@@ -123,6 +124,7 @@ model Contrat {
   statut        String   @default("EN_ATTENTE")
   devis         Devis    @relation(fields: [devisId], references: [id])
   user          User     @relation(fields: [userId], references: [id])
+  invoices      Invoice[]
 
   @@index([devisId])
   @@index([userId])
@@ -477,6 +479,16 @@ enum PaymentMethod {
   BANK_TRANSFER
   CASH
   CRYPTO
+  VIREMENT
+
+  @@schema("webirata")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+  CANCELLED
 
   @@schema("webirata")
 }
@@ -509,6 +521,25 @@ model PreJobTrainingSignature {
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@schema("webirata")
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  amount        Float
+  paymentStatus PaymentStatus @default(PENDING)
+  paidAmount    Float?        // Montant déjà payé pour les paiements partiels
+  paymentMethod PaymentMethod?
+  notes         String?       // Notes du paiement
+  userId        String
+  contratId     String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contrat       Contrat       @relation(fields: [contratId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@schema("webirata")
 }

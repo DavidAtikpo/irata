@@ -15,7 +15,6 @@ interface UserHeaderProps {
 export default function UserHeader({ sidebarCollapsed, onToggleSidebar, onMobileToggle }: UserHeaderProps) {
   const { data: session } = useSession();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const getInitials = () => {
@@ -39,13 +38,13 @@ export default function UserHeader({ sidebarCollapsed, onToggleSidebar, onMobile
   }, []);
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
+    <header className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-[60]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo et bouton sidebar */}
           <div className="flex items-center">
             <button
-              onClick={onToggleSidebar}
+              onClick={onMobileToggle}
               className="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 mr-3"
             >
               <span className="sr-only">Ouvrir le menu</span>
@@ -89,16 +88,18 @@ export default function UserHeader({ sidebarCollapsed, onToggleSidebar, onMobile
               )}
             </button>
 
-            <Link href="/dashboard" className="flex items-center">
-              <Image
-                src="/logo.png"
-                alt="CI.DES Logo"
-                width={200}
-                height={70}
-                className="object-contain w-10 sm:w-10 md:w-10 lg:w-10"
-                priority
-              />
-            </Link>
+            <div className="flex items-center">
+              <Link href="/dashboard">
+                <Image
+                  src="/logo.png"
+                  alt="CI.DES Logo"
+                  width={200}
+                  height={70}
+                  className="object-contain w-10 sm:w-10 md:w-10 lg:w-10"
+                  priority
+                />
+              </Link>
+            </div>
           </div>
 
           {/* Notifications et profil */}
@@ -165,48 +166,10 @@ export default function UserHeader({ sidebarCollapsed, onToggleSidebar, onMobile
               )}
             </div>
 
-            {/* Menu mobile */}
-            <button
-              onClick={onMobileToggle}
-              className="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-            >
-              <span className="sr-only">Ouvrir le menu mobile</span>
-              <svg
-                className="h-6 w-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
           </div>
         </div>
 
-        {/* Menu mobile déroulant */}
-        {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-gray-200 bg-white">
-            <div className="px-2 pt-2 pb-3 space-y-1">
-              <Link
-                href="/profile"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Mon profil
-              </Link>
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  signOut({ callbackUrl: '/' });
-                }}
-                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-              >
-                Se déconnecter
-              </button>
-            </div>
-          </div>
-        )}
+                    {/* Menu mobile déroulant - Supprimé car géré par UserSidebar */}
       </div>
     </header>
   );

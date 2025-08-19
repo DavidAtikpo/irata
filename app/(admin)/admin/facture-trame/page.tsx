@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import InvoiceTemplate, { InvoiceData, InvoiceLineItem } from '@/components/InvoiceTemplate';
+import { useSession } from 'next-auth/react';
+import InvoiceTemplate, { InvoiceData } from '@/components/InvoiceTemplate';
 
 const defaultData: InvoiceData = {
   title: 'TRAME BDC DEVIS FACTURE',
@@ -40,298 +41,616 @@ const defaultData: InvoiceData = {
   items: [
     {
       reference: 'CI.IFF',
-      designation:
-        'Formation Cordiste IRATA sur 5 jours\nDu 31/03/2025 au 04/04/2025\nSoit 40 heures',
+      designation: 'Formation Cordiste IRATA sur 5 jours\nDu 31/03/2025 au 04/04/2025\nSoit 40 heures',
       quantity: 1,
       unitPrice: 1350,
       tva: 0,
     },
   ],
-  footerRight: 'Page 1 sur 2',
+  footerRight: 'Page 1 sur 1',
   showQr: true,
 };
 
 export default function FactureTramePage() {
+  const { data: session } = useSession();
   const [data, setData] = useState<InvoiceData>(defaultData);
   const [loading, setLoading] = useState<boolean>(true);
-  const [saving, setSaving] = useState<boolean>(false);
   const [message, setMessage] = useState<string>('');
   const [showEditor, setShowEditor] = useState<boolean>(false);
-  const [downloading, setDownloading] = useState<boolean>(false);
+  const [userInvoices, setUserInvoices] = useState<any[]>([]);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [showPartialPaymentModal, setShowPartialPaymentModal] = useState<boolean>(false);
+  const [partialAmount, setPartialAmount] = useState<number>(0);
+  const [invoiceToMarkPartial, setInvoiceToMarkPartial] = useState<any>(null);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    fullyPaid: 0,
+    partiallyPaid: 0,
+    pendingPayment: 0
+  });
+  const [sessions, setSessions] = useState<string[]>([]);
+  const [selectedSession, setSelectedSession] = useState<string>('all');
+  const [availableSessions, setAvailableSessions] = useState<any[]>([]);
+  const [selectedStatType, setSelectedStatType] = useState<string | null>(null);
+  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+  const [sessionStats, setSessionStats] = useState<{[key: string]: number}>({});
 
+  // Chargement initial des données
   useEffect(() => {
-    const load = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        const res = await fetch('/api/admin/settings/invoice');
-        if (res.ok) {
-          const json = await res.json();
-          if (json.invoiceTemplate) {
-            setData(json.invoiceTemplate as InvoiceData);
-          }
+        console.log('Chargement des données...');
+        
+        // Charger les sessions
+        const sessionResponse = await fetch('/api/admin/training-sessions');
+        if (sessionResponse.ok) {
+          const sessionsData = await sessionResponse.json();
+          console.log('Sessions chargées:', sessionsData.length);
+          setAvailableSessions(sessionsData);
+          
+          const sessionNames = sessionsData.map((session: any) => session.name);
+          setSessions(sessionNames);
+        } else {
+          console.error('Erreur lors du chargement des sessions');
         }
-      } catch (e) {
-        // noop
+        
+        // Charger les factures
+        await loadUserInvoices();
+        
+      } catch (error) {
+        console.error('Erreur lors du chargement:', error);
+        setMessage('Erreur lors du chargement des données');
       } finally {
         setLoading(false);
       }
     };
-    load();
-  }, []);
 
-  const handlePrint = () => window.print();
-
-  const updateCompany = (field: keyof InvoiceData['company'], value: any) => {
-    setData(prev => ({ ...prev, company: { ...prev.company, [field]: value } }));
-  };
-  const updateCustomer = (field: keyof InvoiceData['customer'], value: any) => {
-    setData(prev => ({ ...prev, customer: { ...prev.customer, [field]: value } }));
-  };
-  const updateRecipient = (field: keyof InvoiceData['recipient'], value: any) => {
-    setData(prev => ({ ...prev, recipient: { ...prev.recipient, [field]: value } }));
-  };
-
-  const updateItem = (index: number, patch: Partial<InvoiceLineItem>) => {
-    setData(prev => ({
-      ...prev,
-      items: prev.items.map((it, i) => (i === index ? { ...it, ...patch } : it)),
-    }));
-  };
-
-  const addItem = () => {
-    setData(prev => ({
-      ...prev,
-      items: [
-        ...prev.items,
-        { reference: '', designation: '', quantity: 1, unitPrice: 0, tva: 0 },
-      ],
-    }));
-  };
-
-  const removeItem = (index: number) => {
-    setData(prev => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index),
-    }));
-  };
-
-  const save = async () => {
-    try {
-      setSaving(true);
-      setMessage('');
-      const res = await fetch('/api/admin/settings/invoice', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Erreur de sauvegarde');
-      setMessage('Modèle de facture enregistré');
-    } catch (e) {
-      setMessage("Erreur lors de l'enregistrement");
-    } finally {
-      setSaving(false);
-      setTimeout(() => setMessage(''), 2500);
+    if (session?.user?.role === 'ADMIN') {
+      loadData();
     }
-  };
+  }, [session]);
 
-  const downloadPdf = async () => {
+  const loadUserInvoices = async () => {
     try {
-      setDownloading(true);
-      const res = await fetch('/api/admin/invoice/pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        throw new Error('Erreur génération PDF');
+      console.log('Chargement des factures...');
+      const response = await fetch('/api/admin/invoices');
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Factures chargées:', data.invoices.length);
+        console.log('Statistiques de session:', data.sessionStats);
+        
+        setUserInvoices(data.invoices);
+        setSessionStats(data.sessionStats);
+        calculateStats(data.invoices);
+      } else {
+        console.error('Erreur lors du chargement des factures');
+        const errorData = await response.json();
+        console.error('Détails de l\'erreur:', errorData);
       }
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const num = data.company.invoiceNumber?.replace(/\s+/g, '_') || 'modele';
-      a.download = `facture_${num}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (e) {
-      setMessage('Erreur lors du téléchargement du PDF');
-    } finally {
-      setDownloading(false);
-      setTimeout(() => setMessage(''), 2500);
+    } catch (error) {
+      console.error('Erreur lors du chargement des factures:', error);
     }
   };
+
+  const calculateStats = (invoices: any[]) => {
+    console.log('Calcul des statistiques pour', invoices.length, 'factures');
+    
+    const filteredInvoices = selectedSession === 'all' 
+      ? invoices 
+      : invoices.filter((invoice: any) => invoice.session === selectedSession);
+    
+    console.log('Factures filtrées par session:', filteredInvoices.length);
+    
+    const userPaymentStatus = new Map();
+    
+    filteredInvoices.forEach((invoice: any) => {
+      const userId = invoice.userId;
+      const status = invoice.paymentStatus;
+      
+      if (!userPaymentStatus.has(userId)) {
+        userPaymentStatus.set(userId, status);
+      } else {
+        const currentStatus = userPaymentStatus.get(userId);
+        if (currentStatus === 'PENDING' && status !== 'PENDING') {
+          userPaymentStatus.set(userId, status);
+        } else if (currentStatus === 'PARTIAL' && status === 'PAID') {
+          userPaymentStatus.set(userId, status);
+        }
+      }
+    });
+    
+    const statusCounts = {
+      PAID: 0,
+      PARTIAL: 0,
+      PENDING: 0
+    };
+    
+    userPaymentStatus.forEach(status => {
+      statusCounts[status as keyof typeof statusCounts]++;
+    });
+    
+    const newStats = {
+      totalUsers: userPaymentStatus.size,
+      fullyPaid: statusCounts.PAID,
+      partiallyPaid: statusCounts.PARTIAL,
+      pendingPayment: statusCounts.PENDING
+    };
+    
+    console.log('Nouvelles statistiques:', newStats);
+    setStats(newStats);
+  };
+
+  const handleStatClick = (statType: string) => {
+    console.log('Clic sur statistique:', statType);
+    setSelectedStatType(statType);
+    
+    const filteredInvoices = selectedSession === 'all' 
+      ? userInvoices 
+      : userInvoices.filter((invoice: any) => invoice.session === selectedSession);
+    
+    let targetStatus: string;
+    switch (statType) {
+      case 'total':
+        targetStatus = 'all';
+        break;
+      case 'fullyPaid':
+        targetStatus = 'PAID';
+        break;
+      case 'partiallyPaid':
+        targetStatus = 'PARTIAL';
+        break;
+      case 'pendingPayment':
+        targetStatus = 'PENDING';
+        break;
+      default:
+        targetStatus = 'all';
+    }
+    
+    if (targetStatus === 'all') {
+      const uniqueUsers = new Map();
+      filteredInvoices.forEach((invoice: any) => {
+        if (!uniqueUsers.has(invoice.userId)) {
+          uniqueUsers.set(invoice.userId, invoice);
+        }
+      });
+      setFilteredUsers(Array.from(uniqueUsers.values()));
+    } else {
+      const userPaymentStatus = new Map();
+      filteredInvoices.forEach((invoice: any) => {
+        const userId = invoice.userId;
+        const status = invoice.paymentStatus;
+        
+        if (!userPaymentStatus.has(userId)) {
+          userPaymentStatus.set(userId, status);
+        } else {
+          const currentStatus = userPaymentStatus.get(userId);
+          if (currentStatus === 'PENDING' && status !== 'PENDING') {
+            userPaymentStatus.set(userId, status);
+          } else if (currentStatus === 'PARTIAL' && status === 'PAID') {
+            userPaymentStatus.set(userId, status);
+          }
+        }
+      });
+      
+      const matchingUsers = filteredInvoices.filter((invoice: any) => {
+        const userStatus = userPaymentStatus.get(invoice.userId);
+        return userStatus === targetStatus;
+      });
+      
+      const uniqueMatchingUsers = new Map();
+      matchingUsers.forEach((invoice: any) => {
+        if (!uniqueMatchingUsers.has(invoice.userId)) {
+          uniqueMatchingUsers.set(invoice.userId, invoice);
+        }
+      });
+      
+      setFilteredUsers(Array.from(uniqueMatchingUsers.values()));
+    }
+  };
+
+  const selectInvoice = (invoice: any) => {
+    console.log('Sélection de la facture:', invoice);
+    setSelectedInvoice(invoice);
+    
+    // Mettre à jour les données de la facture pour l'affichage
+    setData({
+      ...defaultData,
+      company: {
+        ...defaultData.company,
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceDate: new Date(invoice.createdAt).toLocaleDateString('fr-FR'),
+      },
+      recipient: {
+        name: invoice.userName,
+        addressLines: [invoice.userAddress || 'Adresse non disponible'],
+        phone: '',
+        email: invoice.userEmail,
+      },
+      items: [
+        {
+          reference: 'CI.IFF',
+          designation: `Formation Cordiste IRATA\nDevis #${invoice.devisNumber}\nSession: ${invoice.session || 'Non spécifiée'}`,
+          quantity: 1,
+          unitPrice: invoice.paymentStatus === 'PARTIAL' ? invoice.paidAmount : invoice.amount,
+          tva: 0,
+        },
+      ],
+    });
+  };
+
+  const markAsPaid = async (invoiceId: string, paymentType: 'full' | 'partial') => {
+    try {
+      const amount = paymentType === 'partial' ? partialAmount : undefined;
+      
+      const response = await fetch(`/api/admin/invoices/${invoiceId}/mark-paid`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          paymentType,
+          amount,
+        }),
+      });
+
+      if (response.ok) {
+        setMessage('Paiement enregistré avec succès');
+        setShowPartialPaymentModal(false);
+        setPartialAmount(0);
+        setInvoiceToMarkPartial(null);
+        await loadUserInvoices(); // Recharger les données
+      } else {
+        setMessage('Erreur lors de l\'enregistrement du paiement');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      setMessage('Erreur lors de l\'enregistrement du paiement');
+    }
+  };
+
+  const downloadUserInvoicePdf = async (invoice: any) => {
+    try {
+      const response = await fetch('/api/admin/invoice/user-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          invoiceId: invoice.id,
+          userId: invoice.userId,
+        }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `facture_${invoice.invoiceNumber.replace(/\s+/g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        setMessage('Erreur lors du téléchargement du PDF');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      setMessage('Erreur lors du téléchargement du PDF');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement des données...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Trame de facture</h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowEditor((v) => !v)}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 print:hidden"
-            aria-expanded={showEditor}
-            aria-controls="invoice-editor"
-          >
-            {showEditor ? 'Masquer la modification' : 'Modifier'}
-          </button>
-          <button
-            onClick={downloadPdf}
-            disabled={downloading}
-            className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-60 print:hidden"
-          >
-            {downloading ? 'Génération…' : 'Télécharger PDF'}
-          </button>
-          <button
-            onClick={save}
-            disabled={saving}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-60 print:hidden"
-          >
-            {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
-          <button
-            onClick={handlePrint}
-            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 print:hidden"
-          >
-            Imprimer
-          </button>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900">Gestion des factures</h1>
+        {!selectedInvoice && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowEditor(!showEditor)}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-sm"
+            >
+              {showEditor ? 'Masquer l\'éditeur' : 'Afficher l\'éditeur'}
+            </button>
+          </div>
+        )}
       </div>
 
       {message && (
-        <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-2 print:hidden">{message}</div>
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+          {message}
+        </div>
       )}
 
-      {/* Editor + Preview */}
-      <div className="grid grid-cols-1 gap-4">
-        {showEditor && (
-          <div id="invoice-editor" className="bg-white rounded border p-3 space-y-3 text-sm print:hidden max-h-[80vh] overflow-auto">
-          {loading ? (
-            <div>Chargement…</div>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Titre</label>
-                  <input className="w-full border rounded px-2 py-1" value={data.title}
-                    onChange={e => setData({ ...data, title: e.target.value })} />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Numéro de code</label>
-                  <input className="w-full border rounded px-2 py-1" value={data.codeNumber ?? ''}
-                    onChange={e => setData({ ...data, codeNumber: e.target.value })} />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Révision</label>
-                  <input className="w-full border rounded px-2 py-1" value={String(data.revision ?? '')}
-                    onChange={e => setData({ ...data, revision: e.target.value })} />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Date de création</label>
-                  <input className="w-full border rounded px-2 py-1" value={data.creationDate ?? ''}
-                    onChange={e => setData({ ...data, creationDate: e.target.value })} />
-                </div>
-              </div>
+      {/* Filtre par session */}
+      <div className="bg-white rounded-lg border p-4">
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium text-gray-700">Filtrer par session :</label>
+          <select
+            value={selectedSession}
+            onChange={(e) => {
+              setSelectedSession(e.target.value);
+              calculateStats(userInvoices);
+            }}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">Toutes les sessions</option>
+            {sessions.map((session) => (
+              <option key={session} value={session}>
+                {session} ({sessionStats[session] || 0} inscrits)
+              </option>
+            ))}
+          </select>
+        </div>
+        
+                 {/* Résumé de la session sélectionnée */}
+         <div className="mt-4">
+           <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+             <div className="flex items-center justify-between">
+               <div>
+                 <h3 className="text-sm font-medium text-blue-800">
+                   {selectedSession === 'all' ? 'Toutes les sessions' : `Session: ${selectedSession}`}
+                 </h3>
+                 <p className="text-xs text-blue-600 mt-1">
+                   {selectedSession === 'all' ? 'Nombre total d\'utilisateurs inscrits' : 'Nombre d\'utilisateurs inscrits'}
+                 </p>
+               </div>
+               <div className="text-right">
+                 <span className="text-2xl font-bold text-blue-600">
+                   {selectedSession === 'all' 
+                     ? Object.values(sessionStats).reduce((sum: number, count: number) => sum + count, 0)
+                     : sessionStats[selectedSession] || 0
+                   }
+                 </span>
+                 <p className="text-xs text-blue-600">utilisateurs</p>
+               </div>
+             </div>
+           </div>
+         </div>
+      </div>
 
-              <div className="border-t pt-3">
-                <h3 className="font-medium mb-2">Société</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <input className="border rounded px-2 py-1" placeholder="Nom"
-                    value={data.company.name}
-                    onChange={e => updateCompany('name', e.target.value)} />
-                  <input className="border rounded px-2 py-1" placeholder="Contact"
-                    value={data.company.contactName ?? ''}
-                    onChange={e => updateCompany('contactName', e.target.value)} />
-                  <textarea className="col-span-2 border rounded px-2 py-1" rows={2}
-                    placeholder={'Adresses (une par ligne)'}
-                    value={(data.company.addressLines || []).join('\n')}
-                    onChange={e => updateCompany('addressLines', e.target.value.split('\n'))}
-                  />
-                  <input className="border rounded px-2 py-1" placeholder="SIRET"
-                    value={data.company.siret ?? ''}
-                    onChange={e => updateCompany('siret', e.target.value)} />
-                  <input className="border rounded px-2 py-1" placeholder="FACTURE N°"
-                    value={data.company.invoiceNumber ?? ''}
-                    onChange={e => updateCompany('invoiceNumber', e.target.value)} />
-                  <input className="border rounded px-2 py-1" placeholder="Date facture (Le)"
-                    value={data.company.invoiceDate ?? ''}
-                    onChange={e => updateCompany('invoiceDate', e.target.value)} />
-                </div>
-              </div>
+      {/* Statistiques */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div 
+          className="bg-white rounded-lg border p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => handleStatClick('total')}
+        >
+          <div className="text-2xl font-bold text-blue-600">{stats.totalUsers}</div>
+          <div className="text-sm text-gray-600">Total utilisateurs</div>
+          <div className="text-xs text-blue-500 mt-1">Cliquez pour voir</div>
+        </div>
+        <div 
+          className="bg-white rounded-lg border p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => handleStatClick('fullyPaid')}
+        >
+          <div className="text-2xl font-bold text-green-600">{stats.fullyPaid}</div>
+          <div className="text-sm text-gray-600">Paiement total</div>
+          <div className="text-xs text-green-500 mt-1">Cliquez pour voir</div>
+        </div>
+        <div 
+          className="bg-white rounded-lg border p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => handleStatClick('partiallyPaid')}
+        >
+          <div className="text-2xl font-bold text-yellow-600">{stats.partiallyPaid}</div>
+          <div className="text-sm text-gray-600">Paiement partiel</div>
+          <div className="text-xs text-yellow-500 mt-1">Cliquez pour voir</div>
+        </div>
+        <div 
+          className="bg-white rounded-lg border p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => handleStatClick('pendingPayment')}
+        >
+          <div className="text-2xl font-bold text-red-600">{stats.pendingPayment}</div>
+          <div className="text-sm text-gray-600">En attente</div>
+          <div className="text-xs text-red-500 mt-1">Cliquez pour voir</div>
+        </div>
+      </div>
 
-              <div className="border-t pt-3">
-                <h3 className="font-medium mb-2">Client</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <input className="border rounded px-2 py-1" placeholder="Intitulé"
-                    value={data.customer.companyTitle ?? ''}
-                    onChange={e => updateCustomer('companyTitle', e.target.value)} />
-                  <textarea className="col-span-2 border rounded px-2 py-1" rows={2}
-                    placeholder={'Adresses (une par ligne)'}
-                    value={(data.customer.addressLines || []).join('\n')}
-                    onChange={e => updateCustomer('addressLines', e.target.value.split('\n'))}
-                  />
-                  <input className="border rounded px-2 py-1" placeholder="N°SIRET"
-                    value={data.customer.siret ?? ''}
-                    onChange={e => updateCustomer('siret', e.target.value)} />
-                  <input className="border rounded px-2 py-1" placeholder="N°Convention"
-                    value={data.customer.conv ?? ''}
-                    onChange={e => updateCustomer('conv', e.target.value)} />
-                </div>
-              </div>
-
-              <div className="border-t pt-3">
-                <h3 className="font-medium mb-2">Destinataire</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <input className="border rounded px-2 py-1 col-span-2" placeholder="Nom"
-                    value={data.recipient.name}
-                    onChange={e => updateRecipient('name', e.target.value)} />
-                  <textarea className="col-span-2 border rounded px-2 py-1" rows={2}
-                    placeholder={'Adresses (une par ligne)'}
-                    value={(data.recipient.addressLines || []).join('\n')}
-                    onChange={e => updateRecipient('addressLines', e.target.value.split('\n'))}
-                  />
-                  <input className="border rounded px-2 py-1" placeholder="Téléphone"
-                    value={data.recipient.phone ?? ''}
-                    onChange={e => updateRecipient('phone', e.target.value)} />
-                  <input className="border rounded px-2 py-1" placeholder="Email"
-                    value={data.recipient.email ?? ''}
-                    onChange={e => updateRecipient('email', e.target.value)} />
-                </div>
-              </div>
-
-              <div className="border-t pt-3">
-                <h3 className="font-medium mb-2">Articles</h3>
-                <div className="space-y-3">
-                  {data.items.map((it, idx) => (
-                    <div key={idx} className="grid grid-cols-12 gap-2 border rounded p-2">
-                      <input className="col-span-2 border rounded px-2 py-1" placeholder="Référence"
-                        value={it.reference}
-                        onChange={e => updateItem(idx, { reference: e.target.value })} />
-                      <textarea className="col-span-5 border rounded px-2 py-1" rows={2} placeholder="Désignation"
-                        value={it.designation}
-                        onChange={e => updateItem(idx, { designation: e.target.value })} />
-                      <input type="number" className="col-span-1 border rounded px-2 py-1" placeholder="Qté"
-                        value={it.quantity}
-                        onChange={e => updateItem(idx, { quantity: Number(e.target.value) })} />
-                      <input type="number" className="col-span-2 border rounded px-2 py-1" placeholder="PU"
-                        value={it.unitPrice}
-                        onChange={e => updateItem(idx, { unitPrice: Number(e.target.value) })} />
-                      <input type="number" className="col-span-1 border rounded px-2 py-1" placeholder="TVA %"
-                        value={it.tva}
-                        onChange={e => updateItem(idx, { tva: Number(e.target.value) })} />
-                      <button onClick={() => removeItem(idx)} className="col-span-1 text-red-600 hover:underline">Suppr.</button>
-                    </div>
-                  ))}
-                  <button onClick={addItem} className="px-3 py-1 border rounded hover:bg-gray-50">Ajouter un article</button>
-                </div>
-              </div>
-            </>
-          )}
+      {/* Liste des utilisateurs filtrés */}
+      {selectedStatType && (
+        <div className="bg-white rounded-lg border p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">
+              {selectedStatType === 'total' && 'Tous les utilisateurs'}
+              {selectedStatType === 'fullyPaid' && 'Utilisateurs avec paiement total'}
+              {selectedStatType === 'partiallyPaid' && 'Utilisateurs avec paiement partiel'}
+              {selectedStatType === 'pendingPayment' && 'Utilisateurs en attente'}
+              <span className="text-sm text-gray-500 ml-2">({filteredUsers.length})</span>
+            </h2>
+            <button
+              onClick={() => setSelectedStatType(null)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕ Fermer
+            </button>
           </div>
-        )}
+          {filteredUsers.length === 0 ? (
+            <p className="text-gray-500">Aucun utilisateur trouvé</p>
+          ) : (
+            <div className="space-y-3">
+              {filteredUsers.map((invoice) => (
+                <div key={invoice.id} className="border rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-medium">{invoice.userName}</h3>
+                      <p className="text-sm text-gray-600">{invoice.userEmail}</p>
+                      <div className="grid grid-cols-2 gap-4 mt-2">
+                        <div>
+                          <p className="text-xs text-gray-500">Facture</p>
+                          <p className="text-sm font-medium text-blue-600">{invoice.invoiceNumber}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Montant</p>
+                          <p className="text-sm font-medium">{invoice.amount}€</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Statut</p>
+                          <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
+                            invoice.paymentStatus === 'PAID' 
+                              ? 'bg-green-100 text-green-800' 
+                              : invoice.paymentStatus === 'PARTIAL'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {invoice.paymentStatus === 'PAID' ? 'Payée' : 
+                             invoice.paymentStatus === 'PARTIAL' ? 'Partiel' : 'En attente'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => selectInvoice(invoice)}
+                        className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                      >
+                        Voir détails
+                      </button>
+                      <button
+                        onClick={() => downloadUserInvoicePdf(invoice)}
+                        className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                      >
+                        Télécharger PDF
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* Preview */}
+      {/* Détails de la facture sélectionnée */}
+      {selectedInvoice && (
+        <div className="bg-white rounded-lg border p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Détails de la facture</h2>
+            <button
+              onClick={() => setSelectedInvoice(null)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕ Fermer
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <h3 className="font-medium mb-2">Informations utilisateur</h3>
+              <p><strong>Nom:</strong> {selectedInvoice.userName}</p>
+              <p><strong>Email:</strong> {selectedInvoice.userEmail}</p>
+              <p><strong>Facture:</strong> {selectedInvoice.invoiceNumber}</p>
+              <p><strong>Montant:</strong> {selectedInvoice.amount}€</p>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2">Statut de paiement</h3>
+              <p><strong>Statut:</strong> 
+                <span className={`ml-2 inline-flex px-2 py-1 rounded text-xs font-medium ${
+                  selectedInvoice.paymentStatus === 'PAID' 
+                    ? 'bg-green-100 text-green-800' 
+                    : selectedInvoice.paymentStatus === 'PARTIAL'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {selectedInvoice.paymentStatus === 'PAID' ? 'Payée' : 
+                   selectedInvoice.paymentStatus === 'PARTIAL' ? 'Paiement partiel' : 'En attente'}
+                </span>
+              </p>
+              {selectedInvoice.paymentStatus === 'PARTIAL' && (
+                <p><strong>Montant payé:</strong> {selectedInvoice.paidAmount}€</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => markAsPaid(selectedInvoice.id, 'full')}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Marquer comme payée
+            </button>
+            <button
+              onClick={() => {
+                setInvoiceToMarkPartial(selectedInvoice);
+                setShowPartialPaymentModal(true);
+              }}
+              className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+            >
+              Paiement partiel
+            </button>
+            <button
+              onClick={() => downloadUserInvoicePdf(selectedInvoice)}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Télécharger PDF
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pour paiement partiel */}
+      {showPartialPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">Paiement partiel</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Montant payé (€)
+              </label>
+              <input
+                type="number"
+                value={partialAmount}
+                onChange={(e) => setPartialAmount(Number(e.target.value))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                placeholder="Montant"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => markAsPaid(invoiceToMarkPartial.id, 'partial')}
+                className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+              >
+                Confirmer
+              </button>
+              <button
+                onClick={() => {
+                  setShowPartialPaymentModal(false);
+                  setPartialAmount(0);
+                  setInvoiceToMarkPartial(null);
+                }}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Éditeur - seulement si demandé */}
+      {showEditor && (
+        <div className="bg-white rounded-lg border p-4">
+          <h2 className="text-lg font-semibold mb-4">Éditeur de facture</h2>
+          <div className="text-gray-500">Éditeur en cours de développement...</div>
+        </div>
+      )}
+
+      {/* Aperçu de la facture - toujours visible comme sur la page utilisateur */}
+      <div className="bg-white rounded-lg border p-4">
+        <h2 className="text-lg font-semibold mb-4">
+          {selectedInvoice ? 'Aperçu de la facture sélectionnée' : 'Aperçu de la facture'}
+        </h2>
         <div className="overflow-auto">
           <InvoiceTemplate data={data} />
         </div>
@@ -339,5 +658,3 @@ export default function FactureTramePage() {
     </div>
   );
 }
-
-
