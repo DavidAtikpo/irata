@@ -143,20 +143,28 @@ export default function MedicalDeclarationPage() {
           <div className="p-6">
             <div className="bg-white border-2 border-gray-300 p-6 max-w-4xl mx-auto">
               
-              {/* En-tête avec logo */}
-              <div className="flex items-start justify-between border-b-2 border-black pb-2 mb-4">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gray-200 border border-black mr-4 flex items-center justify-center">
-                    <span className="text-xs">LOGO</span>
-                  </div>
-                  <div className="text-sm">
-                    <div><strong>Title :</strong> CLDES STATEMENT OF MEDICAL CONDITION / SELF CERTIFICATION</div>
-                    <div><strong>Code Number :</strong> ENR-CIFRA-RH 034</div>
-                  </div>
+              {/* En-tête spécifique aux déclarations médicales */}
+              <div className="flex flex-col sm:flex-row items-start mb-4">
+                <div className="mr-4 flex-shrink-0 mb-4 sm:mb-0">
+                  <img src="/logo.png" alt="CI.DES Logo" className="w-16 h-20 object-contain" />
                 </div>
-                <div className="text-sm text-right">
-                  <div><strong>Revision :</strong> 00</div>
-                  <div><strong>Creation Date :</strong> 03/10/2023</div>
+                <div className="flex-1">
+                  <table className="w-full border-collapse text-xs mt-3">
+                    <tbody>
+                      <tr>
+                        <td className="border p-1 font-bold">Titre</td>
+                        <td className="border p-1 font-bold">Numéro de code</td>
+                        <td className="border p-1 font-bold">Révision</td>
+                        <td className="border p-1 font-bold">Création date</td>
+                      </tr>
+                      <tr>
+                        <td className="border p-1">CLDES STATEMENT OF MEDICAL CONDITION / SELF CERTIFICATION</td>
+                        <td className="border p-1">ENR-CIFRA-RH 034</td>
+                        <td className="border p-1">00</td>
+                        <td className="border p-1">03/10/2023</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
