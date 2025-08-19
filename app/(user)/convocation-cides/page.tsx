@@ -5,16 +5,29 @@ import React from "react";
 export default function ConvocationPage() {
   return (
     <div className="p-6 bg-gray-100 min-h-screen text-sm text-gray-800">
-      {/* Header */}
+      {/* En-tête spécifique aux convocations */}
       <div className="border p-4 bg-white shadow rounded-md mb-6">
-        <div className="flex justify-between text-xs">
-          <div>
-            <p><strong>Titre :</strong> CLIDES CONVOCATION</p>
-            <p><strong>Numéro de Code :</strong> ENR-CFRA-HSE 013</p>
+        <div className="flex flex-col sm:flex-row items-start">
+          <div className="mr-4 flex-shrink-0 mb-4 sm:mb-0">
+            <img src="/logo.png" alt="CI.DES Logo" className="w-16 h-20 object-contain" />
           </div>
-          <div>
-            <p><strong>Révision :</strong> 02</p>
-            <p><strong>Date Création :</strong> 09/10/2023</p>
+          <div className="flex-1">
+            <table className="w-full border-collapse text-xs mt-3">
+              <tbody>
+                <tr>
+                  <td className="border p-1 font-bold">Titre</td>
+                  <td className="border p-1 font-bold">Numéro de code</td>
+                  <td className="border p-1 font-bold">Révision</td>
+                  <td className="border p-1 font-bold">Création date</td>
+                </tr>
+                <tr>
+                  <td className="border p-1">CLIDES CONVOCATION</td>
+                  <td className="border p-1">ENR-CFRA-HSE 013</td>
+                  <td className="border p-1">02</td>
+                  <td className="border p-1">09/10/2023</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
