@@ -606,12 +606,12 @@ export default function FactureTramePage() {
           
           {paymentStatus === 'pending' && (
             <>
-              <button
+          <button
                 onClick={signalPaymentToAdmin}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
+          >
                 Déjà payé - Signaler l'administration
-              </button>
+          </button>
             </>
           )}
         </div>
@@ -668,16 +668,16 @@ export default function FactureTramePage() {
               <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
-            </div>
+                </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-800">Contrat en cours de traitement</h3>
               <p className="text-sm text-yellow-700 mt-1">
                 Votre contrat de formation est actuellement en cours de validation par l'administration. 
                 Une fois validé, votre facture sera générée automatiquement et vous pourrez la consulter ici.
               </p>
-            </div>
-          </div>
-        </div>
+                </div>
+                </div>
+              </div>
       )}
 
       {/* Information sur le chargement des données */}
@@ -688,7 +688,7 @@ export default function FactureTramePage() {
             Cliquez sur "Charger mes données" pour récupérer automatiquement votre nom complet et votre adresse 
             depuis votre contrat de formation. Ces informations seront pré-remplies dans la section "Destinataire".
           </p>
-        </div>
+                </div>
       )}
 
       {/* Information sur le paiement - seulement si contrat validé */}
@@ -704,19 +704,19 @@ export default function FactureTramePage() {
             <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
               <p className="text-blue-800 font-medium">💡 <strong>Information importante :</strong></p>
               <p className="text-blue-700">Pour toute question concernant les modalités de paiement, contactez directement l'administration. Vous recevrez une réponse personnalisée avec les instructions détaillées.</p>
-            </div>
+                </div>
+              </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Editor + Preview - seulement si contrat validé */}
       {contractValidated && (
         <div className="grid grid-cols-1 gap-4">
-          {/* Preview */}
-          <div className="overflow-auto">
-            <InvoiceTemplate data={data} />
-          </div>
+        {/* Preview */}
+        <div className="overflow-auto">
+          <InvoiceTemplate data={data} />
         </div>
+      </div>
       )}
 
       {/* Popup de paiement */}

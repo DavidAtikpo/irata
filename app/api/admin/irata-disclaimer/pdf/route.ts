@@ -47,41 +47,74 @@ export async function POST(request: NextRequest) {
     // Générer le HTML du document complet avec les images en base64
     const htmlContent = await generateIrataHTML(submission, irataNo);
 
-    // Générer le PDF avec Puppeteer
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
-    
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-    
-    // Attendre que le contenu soit complètement chargé
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '5mm',
-        right: '5mm',
-        bottom: '5mm',
-        left: '5mm'
-      }
-    });
+    try {
+      // Générer le PDF avec Puppeteer
+      const browser = await puppeteer.launch({ 
+        headless: true,
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox', 
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+          '--disable-extensions',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-features=TranslateUI',
+          '--disable-ipc-flooding-protection'
+        ],
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
+      });
+      const page = await browser.newPage();
+      
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      
+      // Attendre que le contenu soit complètement chargé
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const pdf = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '10mm',
+          right: '10mm',
+          bottom: '10mm',
+          left: '10mm'
+        }
+      });
 
-    await browser.close();
+      await browser.close();
 
-    return new NextResponse(Buffer.from(pdf), {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="IRATA_Disclaimer_${submission.name?.replace(/\s+/g, '_') || 'Document'}_${submission.id}.pdf"`
-      }
-    });
+      // Convertir le PDF en ArrayBuffer pour une meilleure compatibilité
+      const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
+      
+      return new NextResponse(arrayBuffer, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="IRATA_Disclaimer_${submission.name?.replace(/\s+/g, '_') || 'Document'}_${submission.id}.pdf"`
+        }
+      });
+
+    } catch (puppeteerError) {
+      console.error('Erreur Puppeteer, tentative avec alternative:', puppeteerError);
+      
+      // Alternative: retourner le HTML pour impression côté client
+      return new NextResponse(htmlContent, {
+        headers: {
+          'Content-Type': 'text/html',
+          'Content-Disposition': `inline; filename="IRATA_Disclaimer_${submission.name?.replace(/\s+/g, '_') || 'Document'}_${submission.id}.html"`
+        }
+      });
+    }
 
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
     return NextResponse.json(
       { 
         error: 'Erreur lors de la génération du PDF',
-        details: error instanceof Error ? error.message : 'Erreur inconnue'
+        details: error instanceof Error ? error.message : 'Erreur inconnue',
+        stack: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
@@ -132,87 +165,92 @@ async function generateIrataHTML(submission: any, irataNo: string): Promise<stri
         body {
           font-family: Arial, sans-serif;
           margin: 0;
-          padding: 5px;
+          padding: 1px;
           background-color: white;
-          font-size: 8px;
-          line-height: 1.1;
+          font-size: 10px;
+          line-height: 1.3;
         }
         .document {
           background: white;
-          padding: 10px;
+          padding: 1px;
           box-shadow: none;
-          max-height: 100vh;
-          overflow: hidden;
+          min-height: 95vh;
+          width: 100%;
         }
         .header-image {
-          margin-bottom: 5px;
+          margin-bottom: 1px;
         }
         .header-image img {
           width: 100%;
-          max-height: 40px;
-          height: auto;
+          height: 10px;
+          object-fit: contain;
           display: block;
         }
         .header-image h2 {
-          margin: 5px 0;
-          font-size: 12px;
+          margin: 8px 0;
+          font-size: 14px;
           text-align: center;
           color: #3365BE;
         }
         .body-images {
-          margin: 5px 0;
+          margin: 1px 0;
         }
         .body-images img {
-          max-width: 100%;
-          max-height: 60px;
-          height: auto;
+          width: 100%;
+          height: 40px;
+          object-fit: contain;
           display: block;
           margin: 2px 0;
         }
         .body-images p {
-          margin: 5px 0;
-          font-size: 7px;
-          line-height: 1.2;
+          margin: 6px 0;
+          font-size: 8px;
+          line-height: 1.3;
         }
         .signature-table {
           width: 100%;
           border-collapse: collapse;
-          margin: 10px 0;
+          margin: 3px 0;
           border: 1px solid black;
-          font-size: 6px;
+          font-size: 13px;
         }
         .signature-table td {
           border: 1px solid black;
-          padding: 2px;
-          vertical-align: top;
+          padding: 1px;
+          vertical-align: middle;
+        }
+        .name-address-row {
+          height: 30px;
         }
         .signature-table input {
           width: 100%;
           border: none;
           outline: none;
           background: transparent;
-          font-size: 6px;
+          font-size: 13px;
           padding: 0;
         }
         .signature-cell {
-          height: 30px;
+          height: 20px;
           text-align: center;
           vertical-align: middle;
         }
         .signature-image {
-          max-height: 25px;
+          max-height: 20px;
+          padding: 0;
           max-width: 100%;
         }
         .footer-line {
           border-bottom: 2px solid #3365BE;
-          margin: 10px 0;
+          margin-top: 10px;
+          margin-bottom: 0px;
         }
         .footer-text {
           text-align: center;
-          font-size: 8px;
+          font-size: 10px;
           color: #666;
           letter-spacing: 1px;
-          padding: 5px 0;
+
         }
         .status-badge {
           display: inline-block;
@@ -226,7 +264,7 @@ async function generateIrataHTML(submission: any, irataNo: string): Promise<stri
         .status-signed { background-color: #dbeafe; color: #1e40af; }
         .status-sent { background-color: #dcfce7; color: #166534; }
         @page {
-          margin: 5mm;
+          margin: 10mm;
           size: A4;
         }
       </style>
@@ -264,18 +302,18 @@ async function generateIrataHTML(submission: any, irataNo: string): Promise<stri
         `}
 
         <!-- Tableau de signature -->
-        <table class="signature-table">
-          <tr>
+        <table class="signature-table" ;">
+          <tr class="name-address-row">
             <td style="width: 15%;"><strong>Name:</strong></td>
             <td style="width: 50%;">
               <input type="text" value="${submission.name || ''}" readonly>
             </td>
             <td style="width: 15%;"><strong>IRATA No:</strong></td>
-            <td style="width: 20%;">
+            <td style="width: 20%; ">
               <input type="text" value="${irataNo || ''}" readonly>
             </td>
           </tr>
-          <tr>
+          <tr class="name-address-row">
             <td style="width: 15%;"><strong>Address:</strong></td>
             <td colspan="3" style="width: 85%;">
               <input type="text" value="${submission.address || ''}" readonly>
@@ -284,7 +322,7 @@ async function generateIrataHTML(submission: any, irataNo: string): Promise<stri
           <tr>
             <td style="width: 15%;"><strong>Signature:</strong></td>
             <td style="width: 50%;" class="signature-cell">
-              ${submission.signature ? `<img src="${submission.signature}" class="signature-image" alt="Signature">` : ''}
+             ${submission.signature ? `<img src="${submission.signature}" class="signature-image" alt="Signature">` : ''} 
             </td>
             <td style="width: 15%;"><strong>Date:</strong></td>
             <td style="width: 20%;">
@@ -297,7 +335,7 @@ async function generateIrataHTML(submission: any, irataNo: string): Promise<stri
         <div class="footer-line"></div>
 
         <!-- Footer -->
-        <div class="footer-text">
+        <div class="footer-text" style="padding-top: 0px;">
           UNCONTROLLED WHEN PRINTED
         </div>
 

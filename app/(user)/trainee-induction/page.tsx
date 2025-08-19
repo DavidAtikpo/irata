@@ -4,57 +4,57 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import SignaturePad from '@/components/SignaturePad';
 
-interface InductionDocument {
+interface InductionData {
   id: string;
   sessionId: string;
-  sessionName: string;
   courseDate: string;
   courseLocation: string;
   diffusion: string;
   copie: string;
   adminSignature: string;
-  status: string;
-  userHasSigned: boolean;
-  userSignature?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function TraineeInductionPage() {
   const { data: session } = useSession();
-  const [documents, setDocuments] = useState<InductionDocument[]>([]);
-  const [selectedDocument, setSelectedDocument] = useState<InductionDocument | null>(null);
-  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [inductionData, setInductionData] = useState<InductionData | null>(null);
+  const [sessionName, setSessionName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [userSignature, setUserSignature] = useState('');
   const [signing, setSigning] = useState(false);
+  const [signed, setSigned] = useState(false);
 
   useEffect(() => {
-    if (session?.user?.email) {
-      fetchDocuments();
-    }
+    fetchInductionData();
   }, [session]);
 
-  const fetchDocuments = async () => {
+  const fetchInductionData = async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/user/trainee-induction');
+      
       if (response.ok) {
         const data = await response.json();
-        setDocuments(data);
+        setInductionData(data.induction);
+        setSessionName(data.sessionName);
+      } else {
+        const errorData = await response.json();
+        console.error('Erreur:', errorData);
       }
     } catch (error) {
-      console.error('Erreur lors du chargement des documents:', error);
+      console.error('Erreur lors du chargement:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignDocument = (document: InductionDocument) => {
-    setSelectedDocument(document);
+  const handleSignatureClick = () => {
     setShowSignatureModal(true);
   };
 
   const handleSignatureSave = async (signature: string) => {
-    if (!selectedDocument) return;
-
     setSigning(true);
     try {
       const response = await fetch('/api/user/trainee-induction/sign', {
@@ -63,22 +63,22 @@ export default function TraineeInductionPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          documentId: selectedDocument.id,
-          signature: signature,
+          inductionId: inductionData?.id,
+          userSignature: signature,
         }),
       });
 
       if (response.ok) {
-        alert('Document signé avec succès !');
+        setUserSignature(signature);
+        setSigned(true);
         setShowSignatureModal(false);
-        setSelectedDocument(null);
-        fetchDocuments(); // Recharger la liste
+        alert('Induction signée avec succès !');
       } else {
         throw new Error('Erreur lors de la signature');
       }
     } catch (error) {
       console.error('Erreur:', error);
-      alert('Erreur lors de la signature du document');
+      alert('Erreur lors de la signature');
     } finally {
       setSigning(false);
     }
@@ -89,7 +89,30 @@ export default function TraineeInductionPage() {
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-12">
-            <div className="text-lg">Chargement des documents...</div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Chargement de l'induction...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!inductionData) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="text-center py-12">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Aucune induction disponible</h2>
+              <p className="text-gray-600">
+                Aucun document d'induction n'a été publié pour votre session de formation.
+              </p>
+              {sessionName && (
+                <p className="text-sm text-gray-500 mt-2">
+                  Session : {sessionName}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -101,63 +124,55 @@ export default function TraineeInductionPage() {
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg shadow-sm">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">Documents d'Induction</h1>
-            <p className="text-gray-600 mt-1">Consultez et signez vos documents d'induction de formation</p>
+            <h1 className="text-2xl font-bold text-gray-900">Document d'Induction des Stagiaires</h1>
+            <p className="text-gray-600 mt-1">
+              Session : {sessionName} • Date du cours : {new Date(inductionData.courseDate).toLocaleDateString('fr-FR')}
+            </p>
           </div>
 
-          <div className="p-6">
-            {documents.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-gray-500">Aucun document d'induction disponible</div>
-              </div>
-            ) : (
-              <div className="grid gap-6">
-                {documents.map((document) => (
-                  <div key={document.id} className="border border-gray-200 rounded-lg p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          Document d'Induction - {document.sessionName}
-                        </h3>
-                        <div className="text-sm text-gray-600 mt-2">
-                          <p><strong>Date du cours:</strong> {document.courseDate}</p>
-                          <p><strong>Lieu du cours:</strong> {document.courseLocation}</p>
-                          <p><strong>Diffusion:</strong> {document.diffusion}</p>
-                          <p><strong>Copie:</strong> {document.copie}</p>
+          {/* Statut de signature */}
+          {signed && (
+            <div className="p-4 bg-green-50 border-b border-green-200">
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-2 bg-green-100 text-green-800 rounded-md text-sm">
+                  ✓ Induction signée avec succès
+                </span>
                         </div>
                       </div>
-                                             <div className="flex items-center gap-3">
-                         {document.userHasSigned ? (
-                           <span className="px-3 py-2 bg-green-100 text-green-800 rounded-md text-sm">
-                             ✓ Document signé
-                           </span>
-                         ) : (
-                           <span className="px-3 py-2 bg-yellow-100 text-yellow-800 rounded-md text-sm">
-                             ⚠ En attente de signature
-                           </span>
-                         )}
-                       </div>
-                    </div>
+          )}
 
-                                         {/* Document complet */}
-                     <div className="bg-white border border-gray-300 rounded-lg p-6 max-w-5xl mx-auto text-black">
-                       {/* HEADER */}
-                       <div className="flex justify-between border p-2 text-sm">
-                         <div>
-                           <p><strong>Titre:</strong> CLDES INDUCTION DES STAGIAIRES</p>
-                           <p><strong>Numéro de Code:</strong> ENR-CIFRA-HSE 029</p>
+          {/* Document */}
+          <div className="p-6 max-w-5xl mx-auto bg-white text-black">
+            {/* En-tête spécifique aux inductions */}
+            <div className="flex flex-col sm:flex-row items-start mb-4">
+              <div className="mr-4 flex-shrink-0 mb-4 sm:mb-0">
+                <img src="/logo.png" alt="CI.DES Logo" className="w-16 h-20 object-contain" />
                          </div>
-                         <div>
-                           <p><strong>Révision:</strong> 00</p>
-                           <p><strong>Date de création:</strong> 09/10/2023</p>
+              <div className="flex-1">
+                <table className="w-full border-collapse text-xs mt-3">
+                  <tbody>
+                    <tr>
+                      <td className="border p-1 font-bold">Titre</td>
+                      <td className="border p-1 font-bold">Numéro de code</td>
+                      <td className="border p-1 font-bold">Révision</td>
+                      <td className="border p-1 font-bold">Création date</td>
+                    </tr>
+                    <tr>
+                      <td className="border p-1">CLDES INDUCTION DES STAGIAIRES</td>
+                      <td className="border p-1">ENR-CIFRA-HSE 029</td>
+                      <td className="border p-1">00</td>
+                      <td className="border p-1">09/10/2023</td>
+                    </tr>
+                  </tbody>
+                </table>
                          </div>
                        </div>
 
                        <h1 className="text-center font-bold mt-6 border p-2">INDUCTION DES STAGIAIRES</h1>
 
                        <div className="mt-4">
-                         <p><strong>Diffusion:</strong> {document.diffusion}</p>
-                         <p><strong>Copie:</strong> {document.copie}</p>
+              <p><strong>Diffusion:</strong> {inductionData.diffusion}</p>
+              <p><strong>Copie:</strong> {inductionData.copie}</p>
                        </div>
 
                        {/* VALIDATION */}
@@ -174,8 +189,9 @@ export default function TraineeInductionPage() {
                            <tr className="border">
                              <td className="border p-2">
                                Laurent ARDOUIN<br/>TA / RAMR<br/>Date: 09/10/2023<br/>
-                               <strong>Signature:</strong> {document.adminSignature ? (
-                                 <img src={document.adminSignature} alt="Signature Admin" className="h-8 w-auto inline-block" />
+                    <strong>Signature:</strong> 
+                    {inductionData.adminSignature ? (
+                      <img src={inductionData.adminSignature} alt="Signature Admin" className="h-8 w-auto inline-block" />
                                ) : (
                                  <span className="text-red-600">Non signé</span>
                                )}
@@ -243,45 +259,40 @@ export default function TraineeInductionPage() {
                        <h2 className="mt-6 font-bold">DÉCLARATION D'INDUCTION</h2>
                        <div className="mt-2 text-sm">
                          <p>
-                           <strong>DATE DU COURS:</strong> {document.courseDate} 
+                <strong>DATE DU COURS:</strong> {new Date(inductionData.courseDate).toLocaleDateString('fr-FR')} 
                            &nbsp;&nbsp;&nbsp;&nbsp;
-                           <strong>LIEU DU COURS:</strong> {document.courseLocation}
+                <strong>LIEU DU COURS:</strong> {inductionData.courseLocation}
                          </p>
                          <p className="mt-4">
                            J'ai reçu l'induction du cours, compris tous ses aspects et accepte de respecter son contenu.
                            De plus, j'ai lu et compris l'évaluation complète des risques de la zone de formation :
                          </p>
                          
-                         {/* Signature du stagiaire */}
+              {/* Section signature utilisateur */}
                          <div className="mt-6 p-4 border border-gray-300 bg-gray-50">
-                           <h3 className="font-bold mb-2">Signature du Stagiaire :</h3>
-                           {document.userHasSigned && document.userSignature ? (
-                             <div className="flex items-center gap-4">
-                               <img 
-                                 src={document.userSignature} 
-                                 alt="Votre signature" 
-                                 className="h-16 w-auto border border-gray-400"
-                               />
-                               <span className="text-green-600 font-medium">✓ Document signé</span>
-                             </div>
-                           ) : (
-                             <div className="text-center py-4">
-                               <p className="text-gray-600 mb-2">Vous devez signer ce document pour confirmer votre compréhension</p>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold">Signature du stagiaire</h3>
+                  {!signed && (
                                <button
-                                 onClick={() => handleSignDocument(document)}
-                                 className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                      onClick={handleSignatureClick}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                                >
-                                 Signer maintenant
+                      Signer l'induction
                                </button>
+                  )}
                              </div>
+                
+                <div className="border-b border-gray-400 pb-2 h-16 flex items-center">
+                  {userSignature ? (
+                    <img src={userSignature} alt="Signature utilisateur" className="h-12 w-auto" />
+                  ) : signed ? (
+                    <span className="text-green-600 font-medium">✓ Induction signée</span>
+                  ) : (
+                    <span className="text-gray-400">Cliquez sur "Signer l'induction" pour signer ce document</span>
                            )}
                          </div>
                        </div>
                      </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -290,23 +301,16 @@ export default function TraineeInductionPage() {
       {showSignatureModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4">Signer le document d'induction</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              En signant ce document, vous confirmez avoir lu et compris toutes les informations d'induction.
-            </p>
+            <h3 className="text-lg font-semibold mb-4">Signature de l'induction</h3>
             <SignaturePad
               onSave={handleSignatureSave}
               width={350}
               height={150}
             />
-            <div className="flex justify-end gap-3 mt-4">
+            <div className="flex justify-end mt-4">
               <button
-                onClick={() => {
-                  setShowSignatureModal(false);
-                  setSelectedDocument(null);
-                }}
+                onClick={() => setShowSignatureModal(false)}
                 className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-                disabled={signing}
               >
                 Annuler
               </button>

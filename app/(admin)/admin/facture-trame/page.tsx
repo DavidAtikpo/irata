@@ -325,13 +325,13 @@ export default function FactureTramePage() {
 
       if (response.ok) {
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
         a.download = `facture_${invoice.invoiceNumber.replace(/\s+/g, '_')}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
         setMessage('Erreur lors du téléchargement du PDF');
@@ -358,14 +358,14 @@ export default function FactureTramePage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Gestion des factures</h1>
         {!selectedInvoice && (
-          <div className="flex items-center gap-2">
-            <button
+        <div className="flex items-center gap-2">
+          <button
               onClick={() => setShowEditor(!showEditor)}
               className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-sm"
             >
               {showEditor ? 'Masquer l\'éditeur' : 'Afficher l\'éditeur'}
-            </button>
-          </div>
+          </button>
+        </div>
         )}
       </div>
 
@@ -394,20 +394,20 @@ export default function FactureTramePage() {
               </option>
             ))}
           </select>
-        </div>
+                </div>
         
                  {/* Résumé de la session sélectionnée */}
          <div className="mt-4">
            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
              <div className="flex items-center justify-between">
-               <div>
+                <div>
                  <h3 className="text-sm font-medium text-blue-800">
                    {selectedSession === 'all' ? 'Toutes les sessions' : `Session: ${selectedSession}`}
                  </h3>
                  <p className="text-xs text-blue-600 mt-1">
                    {selectedSession === 'all' ? 'Nombre total d\'utilisateurs inscrits' : 'Nombre d\'utilisateurs inscrits'}
                  </p>
-               </div>
+                </div>
                <div className="text-right">
                  <span className="text-2xl font-bold text-blue-600">
                    {selectedSession === 'all' 
@@ -416,11 +416,11 @@ export default function FactureTramePage() {
                    }
                  </span>
                  <p className="text-xs text-blue-600">utilisateurs</p>
-               </div>
-             </div>
-           </div>
-         </div>
-      </div>
+                </div>
+                </div>
+              </div>
+                </div>
+              </div>
 
       {/* Statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -455,8 +455,8 @@ export default function FactureTramePage() {
           <div className="text-2xl font-bold text-red-600">{stats.pendingPayment}</div>
           <div className="text-sm text-gray-600">En attente</div>
           <div className="text-xs text-red-500 mt-1">Cliquez pour voir</div>
-        </div>
-      </div>
+                </div>
+              </div>
 
       {/* Liste des utilisateurs filtrés */}
       {selectedStatType && (
@@ -508,8 +508,8 @@ export default function FactureTramePage() {
                              invoice.paymentStatus === 'PARTIAL' ? 'Partiel' : 'En attente'}
                           </span>
                         </div>
-                      </div>
-                    </div>
+                </div>
+              </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => selectInvoice(invoice)}
@@ -527,10 +527,10 @@ export default function FactureTramePage() {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
           )}
-        </div>
-      )}
+          </div>
+        )}
 
       {/* Détails de la facture sélectionnée */}
       {selectedInvoice && (

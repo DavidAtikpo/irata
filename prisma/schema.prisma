@@ -37,6 +37,7 @@ model User {
   traineeProgress               TraineeProgress[]
   traineeSignatures             TraineeSignature?
   trainingSessions              TrainingSession[]              @relation("TrainingSessionTrainees")
+  traineeInductionSignatures    TraineeInductionSignature[]
 
   @@schema("webirata")
 }
@@ -540,6 +541,38 @@ model Invoice {
   
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+
+  @@schema("webirata")
+}
+
+model TraineeInduction {
+  id             String   @id @default(cuid())
+  sessionId      String   // ID de la session de formation
+  courseDate     String   // Date du cours
+  courseLocation String   // Lieu du cours
+  diffusion      String   // Diffusion
+  copie          String   // Copie
+  adminSignature String   // Signature de l'administrateur
+  signatures     TraineeInductionSignature[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@schema("webirata")
+}
+
+model TraineeInductionSignature {
+  id             String          @id @default(cuid())
+  inductionId    String
+  userId         String
+  userSignature  String          // Signature de l'utilisateur
+  induction      TraineeInduction @relation(fields: [inductionId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([inductionId, userId])
 
   @@schema("webirata")
 }
