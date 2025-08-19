@@ -171,40 +171,56 @@ export default function NouveauDevisPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation de la signature
+    if (!signature) {
+      setError('La signature est requise pour créer le devis');
+      return;
+    }
+    
+    if (!signature.startsWith('data:image/')) {
+      setError('La signature doit être au format image valide');
+      return;
+    }
+    
     setLoading(true);
+    
     // Assure que 'montant' est bien renseigné avant l'envoi
     const montantToSend = (Number(prixUnitaire || 0) * Number(quantite || 0)).toFixed(2);
+    
+    const devisData = {
+      demandeId,
+      numero,
+      client,
+      mail,
+      adresseLivraison,
+      // dateLivraison,
+      dateExamen,
+      adresse,
+      siret,
+      numNDA,
+      dateFormation,
+      suiviPar,
+      designation,
+      quantite,
+      unite,
+      prixUnitaire,
+      tva,
+      exoneration,
+      datePriseEffet,
+      montant: montantToSend,
+      iban,
+      bic,
+      banque,
+      intituleCompte,
+      signature,
+      statut: 'EN_ATTENTE'
+    };
+    
     const response = await fetch('/api/admin/devis', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        demandeId,
-        numero,
-        client,
-        mail,
-        adresseLivraison,
-        // dateLivraison,
-        dateExamen,
-        adresse,
-        siret,
-        numNDA,
-        dateFormation,
-        suiviPar,
-        designation,
-        quantite,
-        unite,
-        prixUnitaire,
-        tva,
-        exoneration,
-        datePriseEffet,
-        montant: montantToSend,
-        iban,
-        bic,
-        banque,
-        intituleCompte,
-        signature,
-        statut: 'EN_ATTENTE'
-      }),
+      body: JSON.stringify(devisData),
     });
     setLoading(false);
     if (response.ok) {
@@ -322,10 +338,10 @@ export default function NouveauDevisPage() {
                 <label className="block text-base font-semibold text-gray-900 mb-1">Numéro NDA</label>
                 <input type="text" className="input text-gray-900" value={numNDA} readOnly />
               </div>
-              <div>
+              {/* <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">Nemero kliop</label>
                 <input type="text" className="input text-gray-900" value={numNDA} readOnly />
-              </div>
+              </div> */}
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">Centre Irata</label>
                 <input type="text" className="input text-gray-900" value={suiviPar} readOnly />
@@ -415,33 +431,47 @@ export default function NouveauDevisPage() {
             <legend className="text-xl font-bold text-gray-900 px-2">Signature</legend>
             <div className="grid grid-cols-1 gap-6">
               <div>
-                <label className="block text-base font-semibold text-gray-900 mb-2">Signature</label>
+                <label className="block text-base font-semibold text-gray-900 mb-2">Signature: Administration</label>
                 {signature ? (
                   <div className="flex items-center gap-4">
-                    <img src={signature} alt="Signature" className="border rounded bg-white max-h-32" />
-                    <button
-                      type="button"
-                      onClick={() => setShowSignatureModal(true)}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                    >
-                      Modifier la signature
-                    </button>
+                    <img 
+                      src={signature} 
+                      alt="Signature" 
+                      className="border rounded bg-white max-h-32 object-contain" 
+                    />
+                    <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowSignatureModal(true)}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
+                      >
+                        Modifier la signature
+                      </button>
+                      <div className="text-sm text-gray-600">
+                        <p>Signature capturée</p>
+                        <p className="text-xs text-gray-500">Format: Base64</p>
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <div>
-                    <p className="text-gray-500 mb-2">Aucune signature capturée.</p>
-                    <button
-                      type="button"
-                      onClick={() => setShowSignatureModal(true)}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                    >
-                      Ajouter une signature
-                    </button>
+                  <div className="flex items-center gap-4">
+                    <div className="w-32 h-16 border-2 border-dashed border-gray-300 rounded bg-gray-50 flex items-center justify-center">
+                      <span className="text-gray-400 text-sm">Aucune signature</span>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowSignatureModal(true)}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
+                      >
+                        Ajouter une signature
+                      </button>
+                      <div className="text-sm text-gray-600">
+                        <p>Aucune signature capturée</p>
+                        <p className="text-xs text-red-600">La signature est requise</p>
+                      </div>
+                    </div>
                   </div>
-                )}
-                {/* Validation visuelle simple */}
-                {!signature && (
-                  <p className="mt-2 text-sm text-red-600">La signature est requise.</p>
                 )}
               </div>
             </div>

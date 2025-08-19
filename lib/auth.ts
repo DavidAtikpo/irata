@@ -76,10 +76,14 @@ export const authOptions: NextAuthOptions = {
         console.log('🔧 JWT Callback - User:', {
           id: user.id,
           role: user.role,
-          email: user.email
+          email: user.email,
+          nom: user.nom,
+          prenom: user.prenom
         });
         token.id = user.id;
         token.role = user.role;
+        token.nom = user.nom;
+        token.prenom = user.prenom;
       }
       return token;
     },
@@ -88,10 +92,14 @@ export const authOptions: NextAuthOptions = {
         console.log('🔧 Session Callback - Token:', {
           id: token.id,
           role: token.role,
-          email: token.email
+          email: token.email,
+          nom: token.nom,
+          prenom: token.prenom
         });
         session.user.id = token.id;
         session.user.role = token.role;
+        session.user.nom = token.nom;
+        session.user.prenom = token.prenom;
       }
       return session;
     }

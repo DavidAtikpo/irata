@@ -84,33 +84,56 @@ export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
       {/* A4 ratio container */}
       <div className="px-6 py-6 sm:px-8 sm:py-8">
         {/* Header with Logo and Info Table */}
-        <div className="flex items-start">
-          <div className="mr-4 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row items-start">
+          <div className="mr-4 flex-shrink-0 mb-4 sm:mb-0">
             <Image src="/logo.png" alt="CI.DES Logo" width={60} height={60} />
           </div>
           <div className="flex-1">
-            <table className="w-full border-collapse text-sm">
-              <tbody>
-                <tr>
-                  <td className="border p-2 font-bold">Titre</td>
-                  <td className="border p-2 font-bold">{data.codeNumberLabel ?? "Numéro de code"}</td>
-                  <td className="border p-2 font-bold">{data.revisionLabel ?? "Révision"}</td>
-                  <td className="border p-2 font-bold">{data.creationDateLabel ?? "Création date"}</td>
-                </tr>
-                <tr>
-                  <td className="border p-2">{data.title}</td>
-                  <td className="border p-2">{data.codeNumber}</td>
-                  <td className="border p-2">{String(data.revision ?? "")}</td>
-                  <td className="border p-2">{data.creationDate}</td>
-                </tr>
-              </tbody>
-            </table>
+            {/* Desktop Table */}
+            <div className="hidden sm:block">
+              <table className="w-full border-collapse text-sm">
+                <tbody>
+                  <tr>
+                    <td className="border p-2 font-bold">Titre</td>
+                    <td className="border p-2 font-bold">{data.codeNumberLabel ?? "Numéro de code"}</td>
+                    <td className="border p-2 font-bold">{data.revisionLabel ?? "Révision"}</td>
+                    <td className="border p-2 font-bold">{data.creationDateLabel ?? "Création date"}</td>
+                  </tr>
+                  <tr>
+                    <td className="border p-2">{data.title}</td>
+                    <td className="border p-2">{data.codeNumber}</td>
+                    <td className="border p-2">{String(data.revision ?? "")}</td>
+                    <td className="border p-2">{data.creationDate}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Mobile Cards */}
+            <div className="sm:hidden space-y-2">
+              <div className="border rounded p-2">
+                <div className="font-bold text-xs text-gray-600">Titre</div>
+                <div className="text-sm">{data.title}</div>
+              </div>
+              <div className="border rounded p-2">
+                <div className="font-bold text-xs text-gray-600">{data.codeNumberLabel ?? "Numéro de code"}</div>
+                <div className="text-sm">{data.codeNumber}</div>
+              </div>
+              <div className="border rounded p-2">
+                <div className="font-bold text-xs text-gray-600">{data.revisionLabel ?? "Révision"}</div>
+                <div className="text-sm">{String(data.revision ?? "")}</div>
+              </div>
+              <div className="border rounded p-2">
+                <div className="font-bold text-xs text-gray-600">{data.creationDateLabel ?? "Création date"}</div>
+                <div className="text-sm">{data.creationDate}</div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Company / Customer blocks + Numéro facture et stagiaire */}
-        <div className="mt-6 grid grid-cols-12 gap-4">
-          <div className="col-span-6 border rounded p-3 text-[11px]">
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div className="lg:col-span-6 border rounded p-3 text-[11px]">
             <div className="font-semibold mb-1">{data.company.name}</div>
             {data.company.contactName && <div>{data.company.contactName}</div>}
             {data.company.addressLines.map((l, i) => (
@@ -129,7 +152,7 @@ export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
             )}
           </div>
 
-          <div className="col-span-6 border rounded p-3 text-[11px]">
+          <div className="lg:col-span-6 border rounded p-3 text-[11px]">
             <div className="font-semibold mb-1">{data.customer.companyTitle ?? "FRANCE TRAVAIL DR BRETAGNE"}</div>
             {data.customer.addressLines.map((l, i) => (
               <div key={i}>{l}</div>
@@ -169,7 +192,8 @@ export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
 
         {/* Table */}
         <div className="mt-6">
-          <div className="overflow-x-auto">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full text-[12px] border">
               <thead className="bg-gray-50">
                 <tr className="divide-x">
@@ -236,15 +260,84 @@ export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
               </tfoot>
             </table>
           </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-4">
+            {data.items.map((it, idx) => {
+              const montantHT = it.quantity * it.unitPrice;
+              return (
+                <div key={idx} className="border rounded-lg p-4 bg-white">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-600">Référence:</span>
+                      <div className="text-gray-900">{it.reference}</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600">Quantité:</span>
+                      <div className="text-gray-900 text-right">{it.quantity.toFixed(2)}</div>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="font-medium text-gray-600">Désignation:</span>
+                      <div className="text-gray-900 whitespace-pre-line">{it.designation}</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600">Prix unitaire:</span>
+                      <div className="text-gray-900 text-right">{formatCurrency(it.unitPrice)}</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600">TVA:</span>
+                      <div className="text-gray-900 text-right">{it.tva.toFixed(2)} %</div>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="font-medium text-gray-600">Montant HT:</span>
+                      <div className="text-gray-900 text-right font-semibold">{formatCurrency(montantHT)}</div>
+                    </div>
+                    {it.imageUrl && (
+                      <div className="col-span-2">
+                        <span className="font-medium text-gray-600">Image:</span>
+                        <div className="mt-1">
+                          <Image
+                            src={it.imageUrl}
+                            alt="item"
+                            width={60}
+                            height={60}
+                            className="rounded"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Mobile Totals */}
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="font-medium">Total HT:</span>
+                  <span className="font-semibold">{formatCurrency(totalHT)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Total TVA:</span>
+                  <span className="font-semibold">{formatCurrency(totalTVA)}</span>
+                </div>
+                <div className="flex justify-between border-t pt-2">
+                  <span className="font-semibold">Total TTC:</span>
+                  <span className="font-bold text-lg">{formatCurrency(totalTTC)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-8 flex items-center justify-between text-[10px] text-gray-600 border-t pt-3">
-          <div className="text-center flex-1">
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between text-[10px] text-gray-600 border-t pt-3 space-y-2 sm:space-y-0">
+          <div className="text-center sm:text-left flex-1">
             <div><strong>CI.DES sasu</strong> · Capital 2 500 Euros</div>
             <div>SIRET : 87840789900011 · VAT : FR71878407899</div>
           </div>
-          <div className="ml-4">{data.footerRight ?? "Page 1 sur 1"}</div>
+          <div className="sm:ml-4">Page 1 sur 1</div>
         </div>
       </div>
     </div>

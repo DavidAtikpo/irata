@@ -19,11 +19,26 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log('Body reçu pour création devis:', body);
 
-    const { demandeId, numero, client, mail, designation, quantite, unite, prixUnitaire, tva, montant } = body;
+    const { demandeId, numero, client, mail, designation, quantite, unite, prixUnitaire, tva, montant, signature } = body;
 
     if (!demandeId || !numero || !client || !mail || !designation || !quantite || !unite || !prixUnitaire || !tva || !montant) {
       return NextResponse.json(
         { message: 'Tous les champs obligatoires sont requis' },
+        { status: 400 }
+      );
+    }
+
+    // Validation de la signature
+    if (!signature) {
+      return NextResponse.json(
+        { message: 'La signature est requise' },
+        { status: 400 }
+      );
+    }
+
+    if (!signature.startsWith('data:image/')) {
+      return NextResponse.json(
+        { message: 'La signature doit être au format image valide' },
         { status: 400 }
       );
     }
@@ -101,6 +116,8 @@ export async function POST(req: Request) {
         },
       },
     });
+
+
 
     // Envoyer l'email de notification
     try {

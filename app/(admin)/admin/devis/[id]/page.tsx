@@ -18,6 +18,48 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
   // Utiliser le hook pour les notifications de devis
   useDevisNotifications();
 
+  // Fonctions de formatage des dates
+  const formatISOToFr = (iso: string) => {
+    if (!iso) return '';
+    const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return iso;
+    const [, y, mo, d] = m;
+    return `${d}/${mo}/${y}`;
+  };
+
+  // Formateur d'affichage pour les sessions de type "2025 septembre 01 au 06"
+  const formatSessionFr = (raw: string) => {
+    if (!raw) return '';
+    const m = raw.match(/^(\d{4})\s+([a-zA-Zéèêàùîôïûç]+)\s+(\d{2})\s+au\s+(\d{2})$/i);
+    if (!m) return raw;
+    const [, year, monthFr, dayStart, dayEnd] = m;
+    const monthMap: Record<string, string> = {
+      janvier: '01', fevrier: '02', février: '02', mars: '03', avril: '04',
+      mai: '05', juin: '06', juillet: '07', aout: '08', août: '08',
+      septembre: '09', octobre: '10', novembre: '11', decembre: '12', décembre: '12'
+    };
+    const mm = monthMap[monthFr.toLowerCase()];
+    if (!mm) return raw;
+    return `${dayStart}/${mm}/${year} au ${dayEnd}/${mm}/${year}`;
+  };
+
+  // Affichage convivial de la session: du ... au ... (basé sur les dates ISO saisies)
+  const sessionRangeFr = (dateFormation: string, dateExamen: string) => {
+    if (!dateFormation || !dateExamen) return '';
+    return `du ${formatDateToFr(dateFormation)} au ${formatDateToFr(dateExamen)}`;
+  };
+
+  // Fonction pour formater une date ISO en français
+  const formatDateToFr = (dateString: string | null) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR');
+    } catch {
+      return formatISOToFr(dateString);
+    }
+  };
+
   useEffect(() => {
     const getParams = async () => {
       const { id } = await params;
@@ -43,6 +85,7 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
         throw new Error('Erreur lors de la récupération du devis');
       }
       const data = await response.json();
+      
       setDevis(data);
     } catch (error) {
       setError('Erreur lors de la récupération du devis');
@@ -153,11 +196,17 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
             </div>
             <div>
               <div className="block text-base font-semibold text-gray-900 mb-1">Date de formation</div>
-              <div className="input text-gray-900 bg-gray-100">{devis.dateFormation ? new Date(devis.dateFormation).toLocaleDateString() : '-'}</div>
+              <div className="input text-gray-900 bg-gray-100">
+                {sessionRangeFr(devis.dateFormation || '', devis.dateExamen || '') || 
+                 formatSessionFr(devis.demande?.session || '') || 
+                 (devis.dateFormation ? formatDateToFr(devis.dateFormation) : '-')}
+              </div>
             </div>
             <div>
               <div className="block text-base font-semibold text-gray-900 mb-1">Date examen</div>
-              <div className="input text-gray-900 bg-gray-100">{devis.dateExamen ? new Date(devis.dateExamen).toLocaleDateString() : '-'}</div>
+              <div className="input text-gray-900 bg-gray-100">
+                {devis.dateExamen ? formatDateToFr(devis.dateExamen) : '-'}
+              </div>
             </div>
             <div>
               <div className="block text-base font-semibold text-gray-900 mb-1">SIRET / NIF</div>
@@ -276,14 +325,28 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
         </fieldset>
 
         {/* Section Signature */}
-        <fieldset className=" mb-6 bg-gray-50">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <fieldset className=" p-4  mb-6 bg-gray-50">
+          {/* <legend className="text-xl font-bold text-gray-900 px-2">Signature</legend> */}
+          <div className="grid grid-cols-1 gap-6">
             <div>
-              <div className="block text-base font-semibold text-gray-900 mb-1">Signature: Administration</div>
-              {devis.signature ? (
-                <img src={devis.signature} alt="Signature" className=" bg-white max-h-22" />
+              <div className="block text-base font-semibold text-gray-900 mb-2">Signature: Administration</div>
+              {devis.signature && devis.signature.startsWith('data:image/') ? (
+                <div className="flex items-center gap-4">
+                  <img 
+                    src={devis.signature} 
+                    alt="Signature" 
+                    className=" bg-white max-h-20 object-contain" 
+                  />
+                </div>
               ) : (
-                <div className="input text-gray-900 bg-gray-100">-</div>
+                <div className="flex items-center gap-4">
+                  <div className="w-32 h-16 border-2 border-dashed border-gray-300 rounded bg-gray-50 flex items-center justify-center">
+                    <span className="text-gray-400 text-sm">Aucune signature</span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <p>Aucune signature capturée</p>
+                  </div>
+                </div>
               )}
             </div>
           </div>
