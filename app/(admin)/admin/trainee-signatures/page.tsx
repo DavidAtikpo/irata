@@ -4,14 +4,25 @@ import { useState, useEffect } from 'react';
 
 interface TraineeSignature {
   id: string;
-  documentId: string;
-  sessionId: string;
+  inductionId: string;
   sessionName: string;
   userId: string;
   userName: string;
   userEmail: string;
-  signature: string;
-  signedAt: string;
+  userSignature: string;
+  createdAt: string;
+}
+
+interface InductionData {
+  id: string;
+  sessionId: string;
+  courseDate: string;
+  courseLocation: string;
+  diffusion: string;
+  copie: string;
+  adminSignature: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function TraineeSignaturesPage() {
@@ -26,7 +37,7 @@ export default function TraineeSignaturesPage() {
   const fetchSignatures = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/trainee-signatures');
+      const response = await fetch('/api/admin/trainee-induction-signatures');
       if (response.ok) {
         const data = await response.json();
         setSignatures(data);
@@ -38,16 +49,22 @@ export default function TraineeSignaturesPage() {
     }
   };
 
-  const downloadPDF = async (documentId: string) => {
+  const downloadPDF = async (inductionId: string) => {
     try {
-      const response = await fetch(`/api/admin/trainee-induction/pdf/${documentId}`);
+      const response = await fetch(`/api/admin/trainee-induction-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ inductionId }),
+      });
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = `induction_document_${documentId}.pdf`;
+        a.download = `induction_document_${inductionId}.pdf`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -68,7 +85,7 @@ export default function TraineeSignaturesPage() {
     : signatures;
 
   const groupedByDocument = filteredSignatures.reduce((acc, signature) => {
-    const docId = signature.documentId;
+    const docId = signature.inductionId;
     if (!acc[docId]) {
       acc[docId] = {
         sessionName: signature.sessionName,
@@ -174,9 +191,9 @@ export default function TraineeSignaturesPage() {
                                 {signature.userEmail}
                               </td>
                               <td className="border border-gray-400 text-xs px-3 py-2">
-                                {signature.signature ? (
+                                {signature.userSignature ? (
                                   <img 
-                                    src={signature.signature} 
+                                    src={signature.userSignature} 
                                     alt="Signature" 
                                     className="h-8 w-auto" 
                                   />
@@ -185,7 +202,7 @@ export default function TraineeSignaturesPage() {
                                 )}
                               </td>
                               <td className="border border-gray-400 text-xs px-3 py-2">
-                                {new Date(signature.signedAt).toLocaleDateString('fr-FR', {
+                                {new Date(signature.createdAt).toLocaleDateString('fr-FR', {
                                   year: 'numeric',
                                   month: 'short',
                                   day: 'numeric',

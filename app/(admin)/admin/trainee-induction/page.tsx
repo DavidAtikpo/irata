@@ -11,17 +11,13 @@ interface Session {
   commentaire?: string;
   createdAt: string;
   updatedAt: string;
-  user: {
-    nom?: string;
-    prenom?: string;
-    email: string;
-  };
+  inscrits?: number;
 }
 
 export default function TraineeInductionPage() {
   const [form, setForm] = useState({
     courseDate: '',
-    courseLocation: '',
+    courseLocation: 'CIDES. centre de formation de Boresse et Matron FRANCE',
     sessionId: '',
     diffusion: '',
     copie: '',
@@ -60,7 +56,8 @@ export default function TraineeInductionPage() {
   const handleSignatureSave = async (signature: string) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/trainee-induction/sign', {
+      // Sauvegarder les données d'induction en base
+      const saveResponse = await fetch('/api/admin/trainee-induction/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,13 +72,13 @@ export default function TraineeInductionPage() {
         }),
       });
 
-      if (response.ok) {
+      if (saveResponse.ok) {
         setForm({ ...form, adminSignature: signature });
         setSigned(true);
         setShowSignatureModal(false);
-        alert('Document signé avec succès !');
+        alert('Document signé et sauvegardé avec succès !');
       } else {
-        throw new Error('Erreur lors de la signature');
+        throw new Error('Erreur lors de la sauvegarde');
       }
     } catch (error) {
       console.error('Erreur:', error);
@@ -120,6 +117,30 @@ export default function TraineeInductionPage() {
 
   const selectedSession = sessions.find(s => s.id === form.sessionId);
 
+  // Fonction pour mettre à jour la date du cours quand une session est sélectionnée
+  const handleSessionChange = (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (session && session.createdAt) {
+      // Extraire la date de la session (format: "2025 avril 21 au 11/08/2025")
+      const sessionText = session.session;
+      const dateMatch = sessionText.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      
+      if (dateMatch) {
+        const [, day, month, year] = dateMatch;
+        // Formater en YYYY-MM-DD pour l'input date
+        const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        setForm({ ...form, sessionId, courseDate: formattedDate });
+      } else {
+        // Fallback: utiliser la date de création
+        const sessionDate = new Date(session.createdAt);
+        const formattedDate = sessionDate.toISOString().split('T')[0];
+        setForm({ ...form, sessionId, courseDate: formattedDate });
+      }
+    } else {
+      setForm({ ...form, sessionId });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -136,14 +157,14 @@ export default function TraineeInductionPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Session *</label>
                 <select
                   value={form.sessionId}
-                  onChange={(e) => setForm({ ...form, sessionId: e.target.value })}
+                  onChange={(e) => handleSessionChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={signed}
                 >
                   <option value="">Sélectionner une session</option>
                                      {sessions.map((session) => (
                      <option key={session.id} value={session.id}>
-                       {session.session} - {session.createdAt ? new Date(session.createdAt).toLocaleDateString('fr-FR') : 'Date non définie'}
+                       {session.session} ({session.inscrits || 0} inscrits)
                      </option>
                    ))}
                 </select>
@@ -166,7 +187,6 @@ export default function TraineeInductionPage() {
                   type="text"
                   value={form.courseLocation}
                   onChange={(e) => setForm({ ...form, courseLocation: e.target.value })}
-                  placeholder="Ex: Centre de formation IRATA"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={signed}
                 />
@@ -174,26 +194,34 @@ export default function TraineeInductionPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Diffusion *</label>
-                <input
-                  type="text"
+                <select
                   value={form.diffusion}
                   onChange={(e) => setForm({ ...form, diffusion: e.target.value })}
-                  placeholder="Ex: Tous les stagiaires"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={signed}
-                />
+                >
+                  <option value="">Sélectionner une option</option>
+                  <option value="Tous les stagiaires">Tous les stagiaires</option>
+                  <option value="Formateurs">Formateurs</option>
+                  <option value="Administration">Administration</option>
+                  <option value="Direction">Direction</option>
+                </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Copie *</label>
-                <input
-                  type="text"
+                <select
                   value={form.copie}
                   onChange={(e) => setForm({ ...form, copie: e.target.value })}
-                  placeholder="Ex: Archives"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={signed}
-                />
+                >
+                  <option value="">Sélectionner une option</option>
+                  <option value="Archives">Archives</option>
+                  <option value="Formation">Formation</option>
+                  <option value="RH">RH</option>
+                  <option value="Sécurité">Sécurité</option>
+                </select>
               </div>
             </div>
 
@@ -236,15 +264,28 @@ export default function TraineeInductionPage() {
 
           {/* Document */}
           <div className="p-6 max-w-5xl mx-auto bg-white text-black">
-            {/* HEADER */}
-            <div className="flex justify-between border p-2 text-sm">
-              <div>
-                <p><strong>Titre:</strong> CLDES INDUCTION DES STAGIAIRES</p>
-                <p><strong>Numéro de Code:</strong> ENR-CIFRA-HSE 029</p>
+            {/* En-tête spécifique aux inductions */}
+            <div className="flex flex-col sm:flex-row items-start mb-4">
+              <div className="mr-4 flex-shrink-0 mb-4 sm:mb-0">
+                <img src="/logo.png" alt="CI.DES Logo" className="w-16 h-20 object-contain" />
               </div>
-              <div>
-                <p><strong>Révision:</strong> 00</p>
-                <p><strong>Date de création:</strong> 09/10/2023</p>
+              <div className="flex-1">
+                <table className="w-full border-collapse text-xs mt-3">
+                  <tbody>
+                    <tr>
+                      <td className="border p-1 font-bold">Titre</td>
+                      <td className="border p-1 font-bold">Numéro de code</td>
+                      <td className="border p-1 font-bold">Révision</td>
+                      <td className="border p-1 font-bold">Création date</td>
+                    </tr>
+                    <tr>
+                      <td className="border p-1">CLDES INDUCTION DES STAGIAIRES</td>
+                      <td className="border p-1">ENR-CIFRA-HSE 029</td>
+                      <td className="border p-1">00</td>
+                      <td className="border p-1">09/10/2023</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -338,7 +379,7 @@ export default function TraineeInductionPage() {
             <h2 className="mt-6 font-bold">DÉCLARATION D'INDUCTION</h2>
             <div className="mt-2 text-sm">
               <p>
-                <strong>DATE DU COURS:</strong> {form.courseDate || '________________________'} 
+                <strong>DATE DU COURS:</strong> {form.courseDate ? new Date(form.courseDate).toLocaleDateString('fr-FR') : '________________________'} 
                 &nbsp;&nbsp;&nbsp;&nbsp;
                 <strong>LIEU DU COURS:</strong> {form.courseLocation || '________________________'}
               </p>

@@ -14,29 +14,31 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const sessions = await prisma.demande.findMany({
-      select: {
-        id: true,
-        session: true,
-        statut: true,
-        message: true,
-        commentaire: true,
-        createdAt: true,
-        updatedAt: true,
-        user: {
-          select: {
-            nom: true,
-            prenom: true,
-            email: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+    // Récupérer les sessions uniques avec le nombre d'inscrits
+    const sessions = await prisma.$queryRaw`
+      SELECT 
+        session,
+        COUNT(*) as inscrits,
+        MIN("createdAt") as "createdAt",
+        MAX("updatedAt") as "updatedAt"
+      FROM "webirata"."Demande"
+      GROUP BY session
+      ORDER BY "createdAt" DESC
+    `;
 
-    return NextResponse.json(sessions);
+    // Formater les résultats pour correspondre à l'interface attendue
+    const formattedSessions = Array.isArray(sessions) ? sessions.map((session: any, index: number) => ({
+      id: session.session, // Utiliser le nom de session comme ID
+      session: session.session,
+      statut: 'ACTIVE', // Statut par défaut pour les sessions
+      message: null,
+      commentaire: null,
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt,
+      inscrits: parseInt(session.inscrits)
+    })) : [];
+
+    return NextResponse.json(formattedSessions);
 
   } catch (error) {
     console.error('Erreur lors de la récupération des sessions:', error);

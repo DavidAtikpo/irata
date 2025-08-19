@@ -191,15 +191,33 @@ export default function AdminIrataDisclaimerPage() {
         throw new Error(errorData.details || 'Erreur lors de la génération du PDF');
       }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `IRATA_Disclaimer_${submission.name?.replace(/\s+/g, '_') || 'Document'}_${submission.id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType?.includes('text/html')) {
+        // Si c'est du HTML, ouvrir dans un nouvel onglet pour impression
+        const htmlContent = await response.text();
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.write(htmlContent);
+          newWindow.document.close();
+          newWindow.focus();
+          // Attendre un peu puis imprimer
+          setTimeout(() => {
+            newWindow.print();
+          }, 1000);
+        }
+      } else {
+        // Si c'est du PDF, télécharger normalement
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `IRATA_Disclaimer_${submission.name?.replace(/\s+/g, '_') || 'Document'}_${submission.id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
     } catch (err) {
       console.error('Erreur lors de la génération du PDF:', err);
       setError('Erreur lors de la génération du PDF');
