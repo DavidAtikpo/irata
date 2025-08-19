@@ -48,12 +48,14 @@ export async function POST(request: NextRequest) {
     const htmlContent = await generateIrataHTML(submission, irataNo);
 
     try {
-      // Générer le PDF avec Puppeteer
-      const browser = await puppeteer.launch({ 
+      // Configuration Puppeteer pour production
+      const isProduction = process.env.NODE_ENV === 'production';
+      
+      const browserConfig = {
         headless: true,
         args: [
-          '--no-sandbox', 
-          '--disable-setuid-sandbox', 
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
           '--disable-gpu',
           '--disable-software-rasterizer',
@@ -61,17 +63,32 @@ export async function POST(request: NextRequest) {
           '--disable-background-timer-throttling',
           '--disable-backgrounding-occluded-windows',
           '--disable-renderer-backgrounding',
-          '--disable-features=TranslateUI',
-          '--disable-ipc-flooding-protection'
+          '--disable-features=TranslateUI,VizDisplayCompositor',
+          '--disable-ipc-flooding-protection',
+          '--memory-pressure-off',
+          '--max_old_space_size=4096',
+          '--no-zygote',
+          '--single-process'
         ],
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
-      });
+        ...(isProduction && {
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
+        }),
+        timeout: 30000
+      };
+
+      const browser = await puppeteer.launch(browserConfig);
       const page = await browser.newPage();
       
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      // Configurer la page pour le rendu
+      await page.setViewport({ width: 1200, height: 1600 });
+      
+      await page.setContent(htmlContent, { 
+        waitUntil: ['networkidle0', 'domcontentloaded'],
+        timeout: 30000 
+      });
       
       // Attendre que le contenu soit complètement chargé
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       const pdf = await page.pdf({
         format: 'A4',
@@ -97,27 +114,34 @@ export async function POST(request: NextRequest) {
       });
 
     } catch (puppeteerError) {
-      console.error('Erreur Puppeteer, tentative avec alternative:', puppeteerError);
+      console.error('Erreur Puppeteer, utilisation de l\'alternative client-side:', puppeteerError);
       
-      // Alternative: retourner le HTML pour impression côté client
-      return new NextResponse(htmlContent, {
-        headers: {
-          'Content-Type': 'text/html',
-          'Content-Disposition': `inline; filename="IRATA_Disclaimer_${submission.name?.replace(/\s+/g, '_') || 'Document'}_${submission.id}.html"`
-        }
-      });
+      // Alternative: retourner une réponse JSON avec le HTML pour génération côté client
+      return NextResponse.json({
+        fallbackToClientSide: true,
+        htmlContent,
+        fileName: `IRATA_Disclaimer_${submission.name?.replace(/\s+/g, '_') || 'Document'}_${submission.id}.pdf`,
+        submission,
+        irataNo
+      }, { status: 200 });
     }
 
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
-    return NextResponse.json(
-      { 
-        error: 'Erreur lors de la génération du PDF',
-        details: error instanceof Error ? error.message : 'Erreur inconnue',
-        stack: error instanceof Error ? error.stack : undefined
-      },
-      { status: 500 }
-    );
+              console.error('Environment:', {
+       NODE_ENV: process.env.NODE_ENV,
+       PUPPETEER_EXECUTABLE_PATH: process.env.PUPPETEER_EXECUTABLE_PATH
+     });
+     
+     return NextResponse.json(
+       { 
+         error: 'Erreur lors de la génération du PDF',
+         details: error instanceof Error ? error.message : 'Erreur inconnue',
+         stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined,
+         fallbackToClientSide: true
+       },
+       { status: 500 }
+     );
   }
 }
 
