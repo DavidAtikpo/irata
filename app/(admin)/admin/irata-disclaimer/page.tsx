@@ -169,12 +169,90 @@ export default function AdminIrataDisclaimerPage() {
     return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
   };
 
+  const generatePDFClientSide = async (submission: Submission, irataNo: string) => {
+    // Import dynamique de jsPDF
+    const { jsPDF } = await import('jspdf');
+    const html2canvas = (await import('html2canvas')).default;
+
+    // Créer un container temporaire pour le document
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    tempContainer.style.top = '-9999px';
+    tempContainer.style.width = '210mm';
+    tempContainer.style.padding = '10mm';
+    tempContainer.style.backgroundColor = 'white';
+    tempContainer.style.fontFamily = 'Arial, sans-serif';
+    
+    tempContainer.innerHTML = `
+      <div style="font-size: 12px; line-height: 1.4;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="/header declaimer.png" style="width: 100%; height: auto;" />
+        </div>
+        <div style="margin: 15px 0;">
+          <img src="/corps1.png" style="width: 100%; height: auto;" />
+          <img src="/corps2.png" style="width: 100%; height: auto;" />
+        </div>
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid black; margin: 20px 0;">
+          <tr>
+            <td style="border: 1px solid black; padding: 8px; width: 15%;"><strong>Name:</strong></td>
+            <td style="border: 1px solid black; padding: 8px; width: 50%;">${submission.name || ''}</td>
+            <td style="border: 1px solid black; padding: 8px; width: 15%;"><strong>IRATA No:</strong></td>
+            <td style="border: 1px solid black; padding: 8px; width: 20%;">${irataNo}</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid black; padding: 8px;"><strong>Address:</strong></td>
+            <td style="border: 1px solid black; padding: 8px;" colspan="3">${submission.address || ''}</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid black; padding: 8px;"><strong>Signature:</strong></td>
+            <td style="border: 1px solid black; padding: 8px; text-align: center;">
+              ${submission.signature ? `<img src="${submission.signature}" style="max-height: 40px; max-width: 100%;" />` : ''}
+            </td>
+            <td style="border: 1px solid black; padding: 8px;"><strong>Date:</strong></td>
+            <td style="border: 1px solid black; padding: 8px;">${new Date(submission.createdAt).toLocaleDateString('en-GB')}</td>
+          </tr>
+        </table>
+        <div style="border-bottom: 2px solid #3365BE; margin: 20px 0;"></div>
+        <div style="text-align: center; font-size: 10px; color: #666; letter-spacing: 1px;">
+          UNCONTROLLED WHEN PRINTED
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(tempContainer);
+
+    try {
+      // Attendre que les images se chargent
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const canvas = await html2canvas(tempContainer, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const imgWidth = 190; // A4 width minus margins
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      pdf.save(`IRATA_Disclaimer_${submission.name?.replace(/\s+/g, '_') || 'Document'}_${submission.id}.pdf`);
+      
+    } finally {
+      document.body.removeChild(tempContainer);
+    }
+  };
+
   const handleDownloadPDF = async (submission: Submission) => {
     setDownloadingPDF(true);
     setError(null);
 
     try {
-      // Générer le PDF avec le document exact
+      // Tenter la génération PDF côté serveur
       const response = await fetch('/api/admin/irata-disclaimer/pdf', {
         method: 'POST',
         headers: {
@@ -187,26 +265,29 @@ export default function AdminIrataDisclaimerPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
+        
+        // Si l'erreur contient un fallback client-side, l'utiliser
+        if (errorData.fallbackToClientSide) {
+          console.log('Utilisation du fallback client-side après erreur serveur');
+          await generatePDFClientSide(submission, errorData.irataNo || submission.irataNo || irataNo);
+          return;
+        }
+        
         throw new Error(errorData.details || 'Erreur lors de la génération du PDF');
       }
 
       const contentType = response.headers.get('content-type');
       
-      if (contentType?.includes('text/html')) {
-        // Si c'est du HTML, ouvrir dans un nouvel onglet pour impression
-        const htmlContent = await response.text();
-        const newWindow = window.open('', '_blank');
-        if (newWindow) {
-          newWindow.document.write(htmlContent);
-          newWindow.document.close();
-          newWindow.focus();
-          // Attendre un peu puis imprimer
-          setTimeout(() => {
-            newWindow.print();
-          }, 1000);
+      if (contentType?.includes('application/json')) {
+        // Vérifier si c'est le fallback client-side
+        const data = await response.json();
+        if (data.fallbackToClientSide) {
+          console.log('Utilisation du fallback client-side pour PDF');
+          await generatePDFClientSide(submission, data.irataNo || irataNo);
+          return;
         }
-      } else {
+      } else if (contentType?.includes('application/pdf')) {
         // Si c'est du PDF, télécharger normalement
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -217,10 +298,29 @@ export default function AdminIrataDisclaimerPage() {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+      } else if (contentType?.includes('text/html')) {
+        // Si c'est du HTML, ouvrir dans un nouvel onglet pour impression
+        const htmlContent = await response.text();
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.write(htmlContent);
+          newWindow.document.close();
+          newWindow.focus();
+          setTimeout(() => {
+            newWindow.print();
+          }, 1000);
+        }
       }
     } catch (err) {
       console.error('Erreur lors de la génération du PDF:', err);
-      setError('Erreur lors de la génération du PDF');
+      // En cas d'erreur, essayer le fallback client-side
+      try {
+        console.log('Tentative de fallback client-side après erreur');
+        await generatePDFClientSide(submission, submission.irataNo || irataNo);
+      } catch (fallbackErr) {
+        console.error('Erreur du fallback client-side:', fallbackErr);
+        setError('Erreur lors de la génération du PDF');
+      }
     } finally {
       setDownloadingPDF(false);
     }
