@@ -94,8 +94,32 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Erreur lors du téléversement:', error);
+    
+    // Log détaillé pour le débogage
+    if (error instanceof Error) {
+      console.error('Type d\'erreur:', error.constructor.name);
+      console.error('Message d\'erreur:', error.message);
+      console.error('Stack trace:', error.stack);
+    }
+    
+    // Messages d'erreur plus spécifiques
+    let errorMessage = 'Erreur lors du téléversement du document';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('cloudinary')) {
+        errorMessage = 'Erreur de configuration Cloudinary. Vérifiez vos clés API.';
+      } else if (error.message.includes('network')) {
+        errorMessage = 'Erreur de connexion réseau. Vérifiez votre connexion internet.';
+      } else if (error.message.includes('permission')) {
+        errorMessage = 'Erreur de permissions. Vérifiez les droits d\'accès.';
+      }
+    }
+    
     return NextResponse.json(
-      { message: 'Erreur lors du téléversement du document' },
+      { 
+        message: errorMessage,
+        details: error instanceof Error ? error.message : 'Erreur inconnue'
+      },
       { status: 500 }
     );
   }

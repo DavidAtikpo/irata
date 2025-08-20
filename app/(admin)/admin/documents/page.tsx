@@ -456,6 +456,25 @@ export default function AdminDocumentsPage() {
           </div>
         </div>
 
+        {/* Message d'erreur */}
+        {error && (
+          <div className="mb-6">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex">
+                <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    Erreur de téléversement
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    {error}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Statistiques */}
         <div className="mb-6">
           <div className="bg-white p-4 rounded-lg shadow">
@@ -599,6 +618,156 @@ export default function AdminDocumentsPage() {
           )}
         </div>
 
+        {/* Modal de téléversement */}
+        {showUploadForm && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Nouveau document</h3>
+                  <button
+                    onClick={() => setShowUploadForm(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleUpload} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Fichier PDF
+                    </label>
+                    <input
+                      type="file"
+                      name="file"
+                      accept=".pdf"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nom du document
+                    </label>
+                    <input
+                      type="text"
+                      name="nom"
+                      value={uploadForm.nom}
+                      onChange={(e) => setUploadForm({...uploadForm, nom: e.target.value})}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      name="description"
+                      value={uploadForm.description}
+                      onChange={(e) => setUploadForm({...uploadForm, description: e.target.value})}
+                      rows={3}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Type
+                    </label>
+                    <select
+                      name="type"
+                      value={uploadForm.type}
+                      onChange={(e) => setUploadForm({...uploadForm, type: e.target.value})}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="formation">Formation</option>
+                      <option value="contrat">Contrat</option>
+                      <option value="procedure">Procédure</option>
+                      <option value="general">Général</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="public"
+                      checked={uploadForm.public}
+                      onChange={(e) => setUploadForm({...uploadForm, public: e.target.checked})}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label className="ml-2 block text-sm text-gray-900">
+                      Document public
+                    </label>
+                  </div>
+
+                  {!uploadForm.public && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Utilisateur spécifique (optionnel)
+                        </label>
+                        <select
+                          name="userId"
+                          value={uploadForm.userId}
+                          onChange={(e) => setUploadForm({...uploadForm, userId: e.target.value})}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                          <option value="">Aucun utilisateur spécifique</option>
+                          {users.map((user) => (
+                            <option key={user.id} value={user.id}>
+                              {user.prenom} {user.nom} ({user.email})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Devis spécifique (optionnel)
+                        </label>
+                        <select
+                          name="devisId"
+                          value={uploadForm.devisId}
+                          onChange={(e) => setUploadForm({...uploadForm, devisId: e.target.value})}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                          <option value="">Aucun devis spécifique</option>
+                          {devis.map((devis) => (
+                            <option key={devis.id} value={devis.id}>
+                              Devis #{devis.numero}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowUploadForm(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={uploading}
+                      className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                    >
+                      {uploading ? 'Téléversement...' : 'Téléverser'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Modal d'édition */}
         {showEditModal && editingDocument && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -636,7 +805,7 @@ export default function AdminDocumentsPage() {
                       value={editForm.description}
                       onChange={(e) => setEditForm({...editForm, description: e.target.value})}
                       rows={3}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
 

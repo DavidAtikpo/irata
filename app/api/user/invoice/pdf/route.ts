@@ -204,36 +204,31 @@ export async function POST(request: NextRequest) {
     }
 
               // Récupérer la facture de l'utilisateur avec les données utilisateur et session
-     const userInvoice = await prisma.invoice.findFirst({
-       where: {
-         userId: session.user.id
-       },
-       include: {
-         user: {
-           select: {
-             nom: true,
-             prenom: true,
-             email: true,
-           }
-         },
-         contrat: {
-           include: {
-             devis: {
-               include: {
-                 demande: {
-                   select: {
-                     session: true,
-                   }
-                 }
-               }
-             }
-           }
-         }
-       },
-       orderBy: {
-         createdAt: 'desc'
-       }
-     });
+     const userInvoices = await prisma.$queryRaw`
+       SELECT 
+         i.id,
+         i."userId",
+         i."invoiceNumber",
+         i.amount,
+         i."paidAmount",
+         i."paymentStatus",
+         i."createdAt",
+         u.prenom,
+         u.nom,
+         u.email,
+         c.adresse,
+         d.numero as "devisNumero",
+         d.session
+       FROM "webirata"."Invoice" i
+       JOIN "webirata"."User" u ON i."userId" = u.id
+       JOIN "webirata"."Contrat" c ON i."contratId" = c.id
+       JOIN "webirata"."Devis" d ON c."devisId" = d.id
+       WHERE i."userId" = ${session.user.id}
+       ORDER BY i."createdAt" DESC
+       LIMIT 1
+     `;
+
+     const userInvoice = Array.isArray(userInvoices) && userInvoices.length > 0 ? userInvoices[0] : null;
 
          if (!userInvoice) {
        return NextResponse.json({ error: 'Aucune facture trouvée' }, { status: 404 });
@@ -275,15 +270,15 @@ export async function POST(request: NextRequest) {
         phone: '',
       },
              recipient: {
-         name: `Monsieur ${userInvoice.user.prenom || ''} ${userInvoice.user.nom || ''}`.trim() || 'Utilisateur',
-         addressLines: [userInvoice.contrat.adresse || ''],
+         name: `Monsieur ${userInvoice.prenom || ''} ${userInvoice.nom || ''}`.trim() || 'Utilisateur',
+         addressLines: [userInvoice.adresse || ''],
          phone: '',
-         email: userInvoice.user.email || '',
+         email: userInvoice.email || '',
        },
              items: [
          {
            reference: 'CI.IFF',
-           designation: `Formation Cordiste IRATA\nDevis #${userInvoice.contrat.devis.numero}\nSession: ${userInvoice.contrat.devis.demande.session}${userInvoice.paymentStatus === 'PARTIAL' ? '\n(Paiement partiel)' : ''}`,
+           designation: `Formation Cordiste IRATA\nDevis #${userInvoice.devisNumero}\nSession: ${userInvoice.session}${userInvoice.paymentStatus === 'PARTIAL' ? '\n(Paiement partiel)' : ''}`,
            quantity: 1,
            unitPrice: userInvoice.paidAmount || userInvoice.amount,
            tva: 0,
@@ -295,10 +290,50 @@ export async function POST(request: NextRequest) {
 
          // Générer le PDF directement
      const html = buildHtml(invoiceData, userInvoice.amount);
-    const browser = await puppeteer.launch({ headless: true });
+     
+     // Configuration Puppeteer pour production
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    const browserConfig = {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-extensions',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=TranslateUI,VizDisplayCompositor',
+        '--disable-ipc-flooding-protection',
+        '--memory-pressure-off',
+        '--max_old_space_size=4096',
+        '--no-zygote',
+        '--single-process'
+      ],
+      ...(isProduction && {
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
+      }),
+      timeout: 30000
+    };
+    
+    const browser = await puppeteer.launch(browserConfig);
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'load' });
-    const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' } });
+    
+    await page.setViewport({ width: 1200, height: 1600 });
+    await page.setContent(html, { 
+      waitUntil: ['networkidle0', 'domcontentloaded'],
+      timeout: 30000 
+    });
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const pdf = await page.pdf({ 
+      format: 'A4', 
+      printBackground: true, 
+      margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' } 
+    });
     await browser.close();
     
     const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;

@@ -23,13 +23,21 @@ export async function GET() {
             email: true,
           },
         },
+        devis: true,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    return NextResponse.json(demandes);
+    // Ajouter l'information hasDevis à chaque demande
+    const demandesWithDevisInfo = demandes.map(demande => ({
+      ...demande,
+      hasDevis: Array.isArray(demande.devis) && demande.devis.length > 0,
+      devis: undefined // Supprimer les données devis pour éviter la pollution
+    }));
+
+    return NextResponse.json(demandesWithDevisInfo);
   } catch (error) {
     console.error('Erreur lors de la récupération des demandes:', error);
     return NextResponse.json(
