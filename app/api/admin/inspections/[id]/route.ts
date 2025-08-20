@@ -170,7 +170,6 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -178,11 +177,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    await prisma.equipmentInspection.delete({
-      where: { id }
+    const { id } = await params;
+
+    // Supprimer l'inspection
+    const deletedInspection = await prisma.equipmentInspection.delete({
+      where: {
+        id
+      }
     });
 
-    return NextResponse.json({ message: 'Inspection supprimée avec succès' });
+    return NextResponse.json({ success: true, message: 'Inspection supprimée avec succès' });
   } catch (error) {
     console.error('Erreur lors de la suppression de l\'inspection:', error);
     return NextResponse.json(

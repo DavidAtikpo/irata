@@ -16,6 +16,7 @@ model User {
   nom                           String?
   prenom                        String?
   role                          Role                           @default(USER)
+  niveau                        String?                        @default("1") // Niveau IRATA (1, 2, 3)
   createdAt                     DateTime                       @default(now())
   updatedAt                     DateTime                       @updatedAt
   passwordResetToken            String?                        @unique
@@ -38,6 +39,7 @@ model User {
   traineeSignatures             TraineeSignature?
   trainingSessions              TrainingSession[]              @relation("TrainingSessionTrainees")
   traineeInductionSignatures    TraineeInductionSignature[]
+  notifications                 Notification[]
 
   @@schema("webirata")
 }
@@ -176,6 +178,7 @@ model FormulairesQuotidiens {
   titre        String
   description  String?
   session      String
+  niveau       String              @default("1") // Niveau IRATA ciblé (1, 2, 3)
   dateCreation DateTime            @default(now())
   dateDebut    DateTime
   dateFin      DateTime
@@ -573,6 +576,20 @@ model TraineeInductionSignature {
   updatedAt      DateTime        @updatedAt
 
   @@unique([inductionId, userId])
+
+  @@schema("webirata")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  read      Boolean  @default(false)
+  relatedId String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@schema("webirata")
 }

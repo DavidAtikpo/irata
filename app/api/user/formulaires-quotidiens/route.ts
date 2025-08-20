@@ -15,11 +15,20 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Récupérer tous les formulaires validés et actifs
+    // Récupérer le niveau de l'utilisateur
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { niveau: true }
+    });
+
+    const userNiveau = user?.niveau || '1';
+
+    // Récupérer les formulaires validés et actifs correspondant au niveau de l'utilisateur
     const formulaires = await prisma.formulairesQuotidiens.findMany({
       where: {
         valide: true,
-        actif: true
+        actif: true,
+        niveau: userNiveau // Filtrer par niveau
       },
       include: {
         reponses: {
@@ -45,6 +54,7 @@ export async function GET(req: NextRequest) {
         titre: formulaire.titre,
         description: formulaire.description,
         session: formulaire.session,
+        niveau: (formulaire as any).niveau || '1',
         dateCreation: formulaire.dateCreation,
         dateDebut: formulaire.dateDebut,
         dateFin: formulaire.dateFin,

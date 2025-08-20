@@ -37,6 +37,7 @@ interface FormulaireQuotidien {
   titre: string;
   description?: string;
   session: string;
+  niveau: string;
   dateCreation: string;
   dateDebut: string;
   dateFin: string;
@@ -480,6 +481,11 @@ export default function FormulairesQuotidiensPage() {
                             <span className="flex items-center">
                               <ClockIcon className="h-3 w-3 mr-1" />
                               Du {new Date(formulaire.dateDebut).toLocaleDateString('fr-FR')} au {new Date(formulaire.dateFin).toLocaleDateString('fr-FR')}
+                            </span>
+                            <span className="flex items-center">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Niveau {formulaire.niveau}
+                              </span>
                             </span>
                           </div>
 

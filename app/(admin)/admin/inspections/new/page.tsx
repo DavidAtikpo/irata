@@ -139,7 +139,7 @@ export default function InspectionReportPage() {
 
       if (response.ok) {
         const result = await response.json();
-        alert('Rapport d\'inspection enregistré avec succès !');
+        alert('Rapport d\'inspection enregistré avec succès ! Une notification a été envoyée au technicien.');
         router.push('/admin/inspections');
       } else {
         const error = await response.json();
