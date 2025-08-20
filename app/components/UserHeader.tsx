@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
+import NotificationBell from './NotificationBell';
 
 interface UserHeaderProps {
   sidebarCollapsed?: boolean;
@@ -105,18 +106,9 @@ export default function UserHeader({ sidebarCollapsed, onToggleSidebar, onMobile
           {/* Notifications et profil */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Notifications - visible sur tablette et desktop */}
-            <button className="hidden sm:inline-flex p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
-              <span className="sr-only">Notifications</span>
-              <svg
-                className="h-6 w-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM10.5 3.75a6 6 0 00-6 6v3.75a6 6 0 006 6h3a6 6 0 006-6V9.75a6 6 0 00-6-6h-3z" />
-              </svg>
-            </button>
+            <div className="hidden sm:block">
+              <NotificationBell />
+            </div>
 
             {/* Profil */}
             <div className="relative" ref={profileMenuRef}>

@@ -111,8 +111,8 @@ export async function POST(request: NextRequest) {
         compatibilityCheck,
         overallComments,
         technicianVerdict,
-        technicianId: session.user.id,
-        status: 'DRAFT'
+        technicianId: body.technicianId || session.user.id,
+        status: 'SUBMITTED' // Changé de DRAFT à SUBMITTED
       },
       include: {
         technician: {
@@ -125,6 +125,38 @@ export async function POST(request: NextRequest) {
         }
       }
     });
+
+    // Envoyer une notification au technicien
+    if (body.technicianId && body.technicianId !== session.user.id) {
+      try {
+        // Créer une notification pour le technicien
+        await prisma.notification.create({
+          data: {
+            userId: body.technicianId,
+            title: 'Nouvelle inspection d\'équipement',
+            message: `Une nouvelle inspection d'équipement vous a été assignée (${inspection.docNumber}).`,
+            type: 'INSPECTION',
+            relatedId: inspection.id,
+            read: false
+          }
+        });
+
+        console.log(`Notification envoyée au technicien ${body.technicianId} pour l'inspection ${inspection.id}`);
+
+        // Optionnel : Envoyer un email au technicien
+        // await sendEmail({
+        //   to: inspection.technician.email,
+        //   subject: 'Nouvelle inspection d\'équipement assignée',
+        //   template: 'inspection-assigned',
+        //   data: { inspection }
+        // });
+      } catch (error) {
+        console.error('Erreur lors de l\'envoi de la notification:', error);
+        // Ne pas faire échouer la création de l'inspection si la notification échoue
+      }
+    } else {
+      console.log('Aucune notification envoyée - inspection créée pour l\'admin lui-même');
+    }
 
     return NextResponse.json(inspection, { status: 201 });
   } catch (error) {

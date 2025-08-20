@@ -108,6 +108,28 @@ export default function InspectionsPage() {
     );
   };
 
+  const handleDelete = async (inspectionId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette inspection ?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/inspections/${inspectionId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Recharger la liste après suppression
+        fetchInspections();
+      } else {
+        alert('Erreur lors de la suppression');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -279,6 +301,15 @@ export default function InspectionsPage() {
                       </svg>
                       <span>Modifier</span>
                     </Link>
+                    <button
+                      onClick={() => handleDelete(inspection.id)}
+                      className="text-red-600 hover:text-red-900 flex items-center space-x-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      <span>Supprimer</span>
+                    </button>
                   </div>
                 </td>
               </tr>

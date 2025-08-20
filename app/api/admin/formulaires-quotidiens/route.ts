@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
       titre: formulaire.titre,
       description: formulaire.description,
       session: formulaire.session,
+      niveau: (formulaire as any).niveau || '1',
       dateCreation: formulaire.dateCreation,
       dateDebut: formulaire.dateDebut,
       dateFin: formulaire.dateFin,
@@ -64,12 +65,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { titre, description, session: sessionName, dateDebut, dateFin, questions, valide = false } = body;
+    const { titre, description, session: sessionName, niveau, dateDebut, dateFin, questions, valide = false } = body;
 
     // Validation des données
-    if (!titre || !sessionName || !dateDebut || !dateFin) {
+    if (!titre || !sessionName || !niveau || !dateDebut || !dateFin) {
       return NextResponse.json(
-        { message: 'Les champs titre, session, date de début et date de fin sont obligatoires' },
+        { message: 'Les champs titre, session, niveau, date de début et date de fin sont obligatoires' },
         { status: 400 }
       );
     }
@@ -118,6 +119,7 @@ export async function POST(req: NextRequest) {
         titre: titre.trim(),
         description: description?.trim() || null,
         session: sessionName.trim(),
+        niveau: niveau.trim(),
         dateDebut: debut,
         dateFin: fin,
         questions,
@@ -134,6 +136,7 @@ export async function POST(req: NextRequest) {
         titre: formulaire.titre,
         description: formulaire.description,
         session: formulaire.session,
+        niveau: (formulaire as any).niveau,
         dateCreation: formulaire.dateCreation,
         dateDebut: formulaire.dateDebut,
         dateFin: formulaire.dateFin,

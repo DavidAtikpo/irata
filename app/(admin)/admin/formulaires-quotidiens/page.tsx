@@ -44,6 +44,7 @@ interface FormulaireQuotidien {
   titre: string;
   description?: string;
   session: string;
+  niveau: string;
   dateCreation: string;
   dateDebut: string;
   dateFin: string;
@@ -76,6 +77,7 @@ export default function FormulairesQuotidiensPage() {
     titre: '',
     description: '',
     session: '',
+    niveau: '1',
     dateDebut: '',
     dateFin: '',
     questions: [] as Question[]
@@ -173,6 +175,7 @@ export default function FormulairesQuotidiensPage() {
       titre: '',
       description: '',
       session: '',
+      niveau: '1',
       dateDebut: '',
       dateFin: '',
       questions: []
@@ -299,12 +302,45 @@ export default function FormulairesQuotidiensPage() {
     }
   };
 
+  const handleOpenNow = async (formulaireId: string) => {
+    try {
+      const now = new Date();
+      const dateDebut = new Date();
+      dateDebut.setHours(0, 0, 0, 0); // Début de la journée
+      
+      const dateFin = new Date();
+      dateFin.setDate(dateFin.getDate() + 7); // +7 jours
+
+      const response = await fetch(`/api/admin/formulaires-quotidiens/${formulaireId}/dates`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          dateDebut: dateDebut.toISOString(),
+          dateFin: dateFin.toISOString()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la modification des dates');
+      }
+
+      await fetchFormulaires();
+      alert('Formulaire ouvert immédiatement ! Les stagiaires peuvent maintenant y répondre.');
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de l\'ouverture du formulaire');
+    }
+  };
+
   const handleEditFormulaire = (formulaire: FormulaireQuotidien) => {
     setEditingFormulaire(formulaire);
     setCreateForm({
       titre: formulaire.titre,
       description: formulaire.description || '',
       session: formulaire.session,
+      niveau: formulaire.niveau || '1',
       dateDebut: formulaire.dateDebut,
       dateFin: formulaire.dateFin,
       questions: [...formulaire.questions]
@@ -697,11 +733,16 @@ export default function FormulairesQuotidiensPage() {
                         <p className="line-clamp-2">{formulaire.description || 'Aucune description'}</p>
                       </div>
                       
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-500">
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-sm text-gray-500">
                         <div className="flex items-center">
                           <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
                           <span className="font-medium">Session:</span>
                           <span className="ml-1">{SESSIONS.find(s => s.value === formulaire.session)?.label || formulaire.session}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Niveau {formulaire.niveau}
+                          </span>
                         </div>
                         <div className="flex items-center">
                           <DocumentTextIcon className="h-4 w-4 mr-2 text-gray-400" />
@@ -743,6 +784,17 @@ export default function FormulairesQuotidiensPage() {
                           </>
                         )}
                       </button>
+
+                      {formulaire.valide && new Date() < new Date(formulaire.dateDebut) && (
+                        <button
+                          onClick={() => handleOpenNow(formulaire.id)}
+                          className="inline-flex items-center px-3 py-2 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+                          title="Ouvrir le formulaire immédiatement pour les stagiaires"
+                        >
+                          <ClockIcon className="h-4 w-4 mr-1" />
+                          Ouvrir maintenant
+                        </button>
+                      )}
 
                       <button
                         onClick={() => handleEditFormulaire(formulaire)}
@@ -814,7 +866,7 @@ export default function FormulairesQuotidiensPage() {
                       <h4 className="font-semibold text-gray-900">Informations générales</h4>
                     </div>
                     <div className="space-y-4">
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Titre du formulaire *
@@ -845,6 +897,22 @@ export default function FormulairesQuotidiensPage() {
                                 {session.label}
                               </option>
                             ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Niveau IRATA ciblé *
+                          </label>
+                          <select
+                            required
+                            value={createForm.niveau}
+                            onChange={(e) => setCreateForm({ ...createForm, niveau: e.target.value })}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          >
+                            <option value="1">Niveau 1 - Débutant</option>
+                            <option value="2">Niveau 2 - Intermédiaire</option>
+                            <option value="3">Niveau 3 - Avancé</option>
                           </select>
                         </div>
                       </div>
