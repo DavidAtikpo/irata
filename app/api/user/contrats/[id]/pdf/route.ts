@@ -270,10 +270,44 @@ export async function GET(
       </html>
     `;
 
+    // Configuration Puppeteer pour production
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    const browserConfig = {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-extensions',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=TranslateUI,VizDisplayCompositor',
+        '--disable-ipc-flooding-protection',
+        '--memory-pressure-off',
+        '--max_old_space_size=4096',
+        '--no-zygote',
+        '--single-process'
+      ],
+      ...(isProduction && {
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
+      }),
+      timeout: 30000
+    };
+
     // Générer le PDF avec Puppeteer
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch(browserConfig);
     const page = await browser.newPage();
-    await page.setContent(html);
+    
+    await page.setViewport({ width: 1200, height: 1600 });
+    await page.setContent(html, { 
+      waitUntil: ['networkidle0', 'domcontentloaded'],
+      timeout: 30000 
+    });
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     const pdf = await page.pdf({
       format: 'A4',

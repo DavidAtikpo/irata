@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { DocumentArrowDownIcon } from '@heroicons/react/24/outline';
+import { DocumentArrowDownIcon, MagnifyingGlassIcon, FunnelIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useDevisNotifications } from '../../../../hooks/useDevisNotifications';
 
 interface Devis {
@@ -18,15 +18,102 @@ interface Devis {
   demande?: { user?: { prenom?: string; nom?: string } };
 }
 
+type FilterStatus = 'tous' | 'VALIDE' | 'INVALIDE' | 'BROUILLON' | 'EN_ATTENTE';
+type SortField = 'date' | 'numero' | 'montant' | 'client';
+type SortOrder = 'asc' | 'desc';
+
 export default function DevisListPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [devis, setDevis] = useState<Devis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // États pour les filtres et la recherche
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>('tous');
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  
+  // États pour la pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
 
   // Utiliser le hook pour les notifications de devis
   useDevisNotifications();
+
+  // Logique de filtrage et tri
+  const filteredAndSortedDevis = useMemo(() => {
+    let filtered = devis.filter(d => {
+      // Filtre par statut
+      if (statusFilter !== 'tous' && d.statut !== statusFilter) {
+        return false;
+      }
+      
+      // Filtre par recherche
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const client = d.demande?.user ? `${d.demande.user.prenom ?? ''} ${d.demande.user.nom ?? ''}`.trim() : (d.client ?? '');
+        return (
+          d.numero.toLowerCase().includes(searchLower) ||
+          client.toLowerCase().includes(searchLower) ||
+          (d.mail ?? '').toLowerCase().includes(searchLower)
+        );
+      }
+      
+      return true;
+    });
+
+    // Tri
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortField) {
+        case 'date':
+          aValue = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          bValue = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          break;
+        case 'numero':
+          aValue = a.numero || '';
+          bValue = b.numero || '';
+          break;
+        case 'montant':
+          aValue = a.montant || 0;
+          bValue = b.montant || 0;
+          break;
+        case 'client':
+          aValue = a.demande?.user ? `${a.demande.user.prenom ?? ''} ${a.demande.user.nom ?? ''}`.trim() : (a.client ?? '');
+          bValue = b.demande?.user ? `${b.demande.user.prenom ?? ''} ${b.demande.user.nom ?? ''}`.trim() : (b.client ?? '');
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [devis, statusFilter, searchTerm, sortField, sortOrder]);
+
+  // Logique de pagination
+  const totalPages = Math.ceil(filteredAndSortedDevis.length / itemsPerPage);
+  const paginatedDevis = filteredAndSortedDevis.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Statistiques
+  const stats = useMemo(() => {
+    const total = devis.length;
+    const valides = devis.filter(d => d.statut === 'VALIDE').length;
+    const invalides = devis.filter(d => d.statut === 'INVALIDE').length;
+    const brouillons = devis.filter(d => d.statut === 'BROUILLON').length;
+    const enAttente = devis.filter(d => d.statut === 'EN_ATTENTE').length;
+    
+    return { total, valides, invalides, brouillons, enAttente };
+  }, [devis]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -37,6 +124,11 @@ export default function DevisListPage() {
       fetchDevis();
     }
   }, [status, session, router]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchTerm, sortField, sortOrder]);
 
 
 
@@ -96,6 +188,32 @@ export default function DevisListPage() {
     }
   };
 
+  // Fonction pour obtenir les couleurs du badge de statut
+  const getStatusColor = (statut: string) => {
+    switch (statut) {
+      case 'VALIDE':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'INVALIDE':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'BROUILLON':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'EN_ATTENTE':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  // Fonction pour trier les colonnes
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
@@ -110,56 +228,408 @@ export default function DevisListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto bg-white shadow rounded-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Gestion des devis</h2>
-          <Link href="/admin/devis/nouveau" className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Nouveau devis</Link>
+    <div className="min-h-screen bg-gray-50 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Gestion des devis</h1>
+              <p className="mt-2 text-sm text-gray-700">
+                Gérez tous les devis de votre organisation
+              </p>
+            </div>
+            <div className="mt-4 sm:mt-0">
+              <Link
+                href="/admin/devis/nouveau"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Nouveau devis
+              </Link>
+            </div>
+          </div>
         </div>
 
+        {/* Statistiques */}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-5 mb-8">
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Total</dt>
+                    <dd className="text-lg font-medium text-gray-900">{stats.total}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Valides</dt>
+                    <dd className="text-lg font-medium text-green-600">{stats.valides}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Invalides</dt>
+                    <dd className="text-lg font-medium text-red-600">{stats.invalides}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Brouillons</dt>
+                    <dd className="text-lg font-medium text-gray-600">{stats.brouillons}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">En attente</dt>
+                    <dd className="text-lg font-medium text-yellow-600">{stats.enAttente}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Erreurs */}
         {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-4">
-            <div className="text-sm text-red-800">{error}</div>
+          <div className="mb-6 rounded-md bg-red-50 p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Erreur</h3>
+                <div className="mt-2 text-sm text-red-700">{error}</div>
+              </div>
+            </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {devis.length === 0 ? (
-            <div className="col-span-full text-center text-gray-500 py-8">Aucun devis trouvé.</div>
-          ) : (
-            devis.map((d) => (
-              <div key={d.id} className="border rounded-lg p-4 bg-white shadow-sm hover:shadow transition">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm text-gray-500">N° {d.numero}</div>
-                  <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700">{d.statut || '-'}</span>
+        {/* Filtres et recherche */}
+        <div className="bg-white shadow rounded-lg mb-6">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+              {/* Recherche */}
+              <div className="relative flex-1 max-w-md">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
                 </div>
-                <div className="space-y-1 text-sm">
-                  <div><span className="text-gray-500">Stagiaire:</span> <span className="font-medium">{d.demande?.user ? `${d.demande.user.prenom ?? ''} ${d.demande.user.nom ?? ''}`.trim() : (d.client ?? '-')}</span></div>
-                  <div><span className="text-gray-500">Email:</span> <span>{d.mail ?? '-'}</span></div>
-                  <div><span className="text-gray-500">Date:</span> <span>{d.createdAt ? new Date(d.createdAt).toLocaleDateString('fr-FR') : '-'}</span></div>
-                  <div><span className="text-gray-500">Montant:</span> <span className="font-semibold">{typeof d.montant === 'number' ? d.montant.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '-'}</span></div>
+                <input
+                  type="text"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="Rechercher par numéro, client ou email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              <div className="flex items-center space-x-4">
+                {/* Filtre par statut */}
+                <div className="relative">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
+                    className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  >
+                    <option value="tous">Tous les statuts</option>
+                    <option value="VALIDE">Valides</option>
+                    <option value="INVALIDE">Invalides</option>
+                    <option value="BROUILLON">Brouillons</option>
+                    <option value="EN_ATTENTE">En attente</option>
+                  </select>
                 </div>
-                <div className="mt-3 flex justify-between items-center">
-                  <Link href={`/admin/devis/${d.id}`} className="text-indigo-600 hover:underline text-sm">Voir</Link>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => downloadDevis(d.id, d.numero)}
-                      className="inline-flex items-center text-sm text-gray-700 hover:text-gray-900"
-                      title="Télécharger le PDF"
-                    >
-                      <DocumentArrowDownIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => deleteDevis(d.id)}
-                      className="text-sm text-red-600 hover:text-red-700"
-                      title="Supprimer le devis"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
+
+                {/* Tri */}
+                <div className="relative">
+                  <select
+                    value={`${sortField}-${sortOrder}`}
+                    onChange={(e) => {
+                      const [field, order] = e.target.value.split('-') as [SortField, SortOrder];
+                      setSortField(field);
+                      setSortOrder(order);
+                    }}
+                    className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  >
+                    <option value="date-desc">Date (récent)</option>
+                    <option value="date-asc">Date (ancien)</option>
+                    <option value="numero-asc">Numéro (A-Z)</option>
+                    <option value="numero-desc">Numéro (Z-A)</option>
+                    <option value="client-asc">Client (A-Z)</option>
+                    <option value="client-desc">Client (Z-A)</option>
+                    <option value="montant-desc">Montant (élevé)</option>
+                    <option value="montant-asc">Montant (faible)</option>
+                  </select>
+                </div>
+
+                {/* Items per page */}
+                <div className="relative">
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                    className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  >
+                    <option value={12}>12 par page</option>
+                    <option value={24}>24 par page</option>
+                    <option value={48}>48 par page</option>
+                    <option value={96}>96 par page</option>
+                  </select>
                 </div>
               </div>
-            ))
+            </div>
+
+            {/* Compteur de résultats */}
+            <div className="mt-4 text-sm text-gray-700">
+              Affichage de <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> à{' '}
+              <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredAndSortedDevis.length)}</span> sur{' '}
+              <span className="font-medium">{filteredAndSortedDevis.length}</span> résultats
+            </div>
+          </div>
+        </div>
+
+        {/* Liste des devis */}
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          {filteredAndSortedDevis.length === 0 ? (
+            <div className="text-center py-12">
+              <FunnelIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">Aucun devis trouvé</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {searchTerm || statusFilter !== 'tous'
+                  ? 'Essayez de modifier vos critères de recherche.'
+                  : 'Commencez par créer un nouveau devis.'}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* En-têtes du tableau */}
+              <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+                <div className="grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="col-span-2">
+                    <button 
+                      onClick={() => handleSort('numero')}
+                      className="flex items-center space-x-1 hover:text-gray-700"
+                    >
+                      <span>N° Devis</span>
+                      {sortField === 'numero' && (
+                        <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </button>
+                  </div>
+                  <div className="col-span-1">
+                    <button 
+                      onClick={() => handleSort('date')}
+                      className="flex items-center space-x-1 hover:text-gray-700"
+                    >
+                      <span>Date</span>
+                      {sortField === 'date' && (
+                        <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </button>
+                  </div>
+                  <div className="col-span-2">
+                    <button 
+                      onClick={() => handleSort('client')}
+                      className="flex items-center space-x-1 hover:text-gray-700"
+                    >
+                      <span>Client</span>
+                      {sortField === 'client' && (
+                        <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </button>
+                  </div>
+                  <div className="col-span-3">Email</div>
+                  <div className="col-span-1">
+                    <button 
+                      onClick={() => handleSort('montant')}
+                      className="flex items-center space-x-1 hover:text-gray-700"
+                    >
+                      <span>Montant</span>
+                      {sortField === 'montant' && (
+                        <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </button>
+                  </div>
+                  <div className="col-span-1">Statut</div>
+                  <div className="col-span-2 text-center">Actions</div>
+                </div>
+              </div>
+
+              {/* Lignes du tableau */}
+              <div className="divide-y divide-gray-200">
+                {paginatedDevis.map((d) => (
+                  <div key={d.id} className="px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      {/* Numéro */}
+                      <div className="col-span-2">
+                        <div className="text-sm font-medium text-gray-900">#{d.numero}</div>
+                      </div>
+
+                      {/* Date */}
+                      <div className="col-span-1">
+                        <div className="text-sm text-gray-900">
+                          {d.createdAt ? new Date(d.createdAt).toLocaleDateString('fr-FR') : '-'}
+                        </div>
+                      </div>
+
+                      {/* Client */}
+                      <div className="col-span-2">
+                        <div className="text-sm text-gray-900">
+                          {d.demande?.user 
+                            ? `${d.demande.user.prenom ?? ''} ${d.demande.user.nom ?? ''}`.trim() || 'N/A'
+                            : d.client || 'N/A'
+                          }
+                        </div>
+                      </div>
+
+                      {/* Email */}
+                      <div className="col-span-3">
+                        <div className="text-sm text-gray-900 truncate" title={d.mail || 'N/A'}>
+                          {d.mail || 'N/A'}
+                        </div>
+                      </div>
+
+                      {/* Montant */}
+                      <div className="col-span-1">
+                        <div className="text-sm font-semibold text-gray-900">
+                          {typeof d.montant === 'number' 
+                            ? d.montant.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
+                            : 'N/A'
+                          }
+                        </div>
+                      </div>
+
+                      {/* Statut */}
+                      <div className="col-span-1">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(d.statut)}`}>
+                          {d.statut || 'N/A'}
+                        </span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="col-span-2 text-center">
+                        <div className="flex items-center justify-center space-x-2">
+                          <Link
+                            href={`/admin/devis/${d.id}`}
+                            className="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
+                            title="Voir détails"
+                          >
+                            Voir
+                          </Link>
+                          <button
+                            onClick={() => downloadDevis(d.id, d.numero)}
+                            className="p-1 text-gray-400 hover:text-gray-600"
+                            title="Télécharger PDF"
+                          >
+                            <DocumentArrowDownIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteDevis(d.id)}
+                            className="p-1 text-red-400 hover:text-red-600"
+                            title="Supprimer"
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                  <div className="flex-1 flex justify-between sm:hidden">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Précédent
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Suivant
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">
+                        Page <span className="font-medium">{currentPage}</span> sur <span className="font-medium">{totalPages}</span>
+                      </p>
+                    </div>
+                    <div>
+                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button
+                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          disabled={currentPage === 1}
+                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeftIcon className="h-5 w-5" aria-hidden="true" />
+                        </button>
+                        {[...Array(totalPages)].map((_, i) => {
+                          const page = i + 1;
+                          if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                            return (
+                              <button
+                                key={page}
+                                onClick={() => setCurrentPage(page)}
+                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                  currentPage === page
+                                    ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            );
+                          } else if (page === currentPage - 2 || page === currentPage + 2) {
+                            return (
+                              <span key={page} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                ...
+                              </span>
+                            );
+                          }
+                          return null;
+                        })}
+                        <button
+                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                          disabled={currentPage === totalPages}
+                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
+                        </button>
+                      </nav>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

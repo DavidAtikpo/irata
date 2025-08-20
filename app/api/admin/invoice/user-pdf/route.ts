@@ -41,7 +41,9 @@ export async function POST(request: NextRequest) {
       WHERE i.id = ${invoiceId} AND i."userId" = ${userId}
     `;
     
-    const userInvoice = Array.isArray(userInvoices) ? userInvoices[0] : null;
+    console.log('Résultat de la requête:', userInvoices);
+    
+    const userInvoice = Array.isArray(userInvoices) && userInvoices.length > 0 ? userInvoices[0] : null;
 
     if (!userInvoice) {
       return NextResponse.json({ error: 'Facture non trouvée' }, { status: 404 });
@@ -59,6 +61,15 @@ export async function POST(request: NextRequest) {
       session: userInvoice.session,
       userAddress: userInvoice.adresse
     });
+
+    // Vérifier que toutes les données nécessaires sont présentes
+    if (!userInvoice.prenom || !userInvoice.nom || !userInvoice.email) {
+      console.error('Données utilisateur manquantes:', userInvoice);
+      return NextResponse.json({ 
+        error: 'Données utilisateur incomplètes',
+        details: 'Prénom, nom ou email manquant'
+      }, { status: 400 });
+    }
 
     // Construire les données de la facture (comme l'API utilisateur)
     const invoiceData = {
@@ -112,42 +123,102 @@ export async function POST(request: NextRequest) {
     // Générer le HTML (comme l'API utilisateur)
     const html = buildHtml(invoiceData, userInvoice.amount);
 
-    // Générer le PDF
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    // Configuration Puppeteer pour production
+    const isProduction = process.env.NODE_ENV === 'production';
     
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '20mm',
-        right: '20mm',
-        bottom: '20mm',
-        left: '20mm'
-      }
-    });
+    const browserConfig = {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-extensions',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=TranslateUI,VizDisplayCompositor',
+        '--disable-ipc-flooding-protection',
+        '--memory-pressure-off',
+        '--max_old_space_size=4096',
+        '--no-zygote',
+        '--single-process'
+      ],
+      ...(isProduction && {
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
+      }),
+      timeout: 30000
+    };
 
-    await browser.close();
+    // Générer le PDF avec gestion d'erreur Puppeteer
+    try {
+      const browser = await puppeteer.launch(browserConfig);
+      const page = await browser.newPage();
+      
+      await page.setViewport({ width: 1200, height: 1600 });
+      await page.setContent(html, { 
+        waitUntil: ['networkidle0', 'domcontentloaded'],
+        timeout: 30000 
+      });
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      const pdf = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '20mm',
+          right: '20mm',
+          bottom: '20mm',
+          left: '20mm'
+        }
+      });
 
-    // Vérifier que le numéro de facture existe et le nettoyer
-    const invoiceNumber = userInvoice.invoiceNumber || 'facture';
-    const cleanInvoiceNumber = invoiceNumber.toString().replace(/\s+/g, '_');
-    
-    // Convertir le PDF en ArrayBuffer
-    const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
-    
-    return new NextResponse(arrayBuffer, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="facture_${cleanInvoiceNumber}.pdf"`
-      }
-    });
+      await browser.close();
+
+      // Vérifier que le numéro de facture existe et le nettoyer
+      const invoiceNumber = userInvoice.invoiceNumber || 'facture';
+      const cleanInvoiceNumber = invoiceNumber.toString().replace(/\s+/g, '_');
+      
+      // Convertir le PDF en ArrayBuffer
+      const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
+      
+      return new NextResponse(arrayBuffer, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="facture_${cleanInvoiceNumber}.pdf"`
+        }
+      });
+
+    } catch (puppeteerError) {
+      console.error('Erreur Puppeteer, utilisation de l\'alternative client-side:', puppeteerError);
+      
+      // Alternative: retourner une réponse JSON avec le HTML pour génération côté client
+      return NextResponse.json({
+        fallbackToClientSide: true,
+        htmlContent: html,
+        fileName: `facture_${userInvoice.invoiceNumber || 'facture'}.pdf`,
+        invoiceData: {
+          invoiceNumber: userInvoice.invoiceNumber,
+          userName: `${userInvoice.prenom} ${userInvoice.nom}`,
+          amount: userInvoice.amount,
+          paidAmount: userInvoice.paidAmount,
+          paymentStatus: userInvoice.paymentStatus
+        }
+      }, { status: 200 });
+    }
 
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
+    console.error('Détails de l\'erreur:', {
+      message: error instanceof Error ? error.message : 'Erreur inconnue',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return NextResponse.json(
-      { error: 'Erreur lors de la génération du PDF' },
+      { 
+        error: 'Erreur lors de la génération du PDF',
+        details: error instanceof Error ? error.message : 'Erreur inconnue'
+      },
       { status: 500 }
     );
   }

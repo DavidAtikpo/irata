@@ -153,6 +153,7 @@ export default function FactureTramePage() {
         userPaymentStatus.set(userId, status);
       } else {
         const currentStatus = userPaymentStatus.get(userId);
+        // Priorité: PAID > PARTIAL > PENDING
         if (currentStatus === 'PENDING' && status !== 'PENDING') {
           userPaymentStatus.set(userId, status);
         } else if (currentStatus === 'PARTIAL' && status === 'PAID') {
@@ -218,21 +219,22 @@ export default function FactureTramePage() {
       setFilteredUsers(Array.from(uniqueUsers.values()));
     } else {
       const userPaymentStatus = new Map();
-      filteredInvoices.forEach((invoice: any) => {
-        const userId = invoice.userId;
-        const status = invoice.paymentStatus;
-        
-        if (!userPaymentStatus.has(userId)) {
+          filteredInvoices.forEach((invoice: any) => {
+      const userId = invoice.userId;
+      const status = invoice.paymentStatus;
+      
+      if (!userPaymentStatus.has(userId)) {
+        userPaymentStatus.set(userId, status);
+      } else {
+        const currentStatus = userPaymentStatus.get(userId);
+        // Priorité: PAID > PARTIAL > PENDING (même logique que calculateStats)
+        if (currentStatus === 'PENDING' && status !== 'PENDING') {
           userPaymentStatus.set(userId, status);
-        } else {
-          const currentStatus = userPaymentStatus.get(userId);
-          if (currentStatus === 'PENDING' && status !== 'PENDING') {
-            userPaymentStatus.set(userId, status);
-          } else if (currentStatus === 'PARTIAL' && status === 'PAID') {
-            userPaymentStatus.set(userId, status);
-          }
+        } else if (currentStatus === 'PARTIAL' && status === 'PAID') {
+          userPaymentStatus.set(userId, status);
         }
-      });
+      }
+    });
       
       const matchingUsers = filteredInvoices.filter((invoice: any) => {
         const userStatus = userPaymentStatus.get(invoice.userId);
@@ -323,22 +325,98 @@ export default function FactureTramePage() {
         }),
       });
 
-      if (response.ok) {
+      const contentType = response.headers.get('Content-Type');
+      
+      if (contentType === 'application/pdf') {
+        // PDF généré côté serveur
         const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
         a.download = `facture_${invoice.invoiceNumber.replace(/\s+/g, '_')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+      } else if (contentType === 'application/json') {
+        // Fallback client-side
+        const data = await response.json();
+        if (data.fallbackToClientSide) {
+          // Générer le PDF côté client
+          await generatePDFClientSide(data.htmlContent, data.fileName);
+        } else {
+          setMessage('Erreur lors du téléchargement du PDF');
+        }
       } else {
         setMessage('Erreur lors du téléchargement du PDF');
       }
     } catch (error) {
       console.error('Erreur:', error);
-      setMessage('Erreur lors du téléchargement du PDF');
+      // Essayer la génération client-side en cas d'erreur
+      try {
+        const response = await fetch('/api/admin/invoice/user-pdf', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            invoiceId: invoice.id,
+            userId: invoice.userId,
+          }),
+        });
+        
+        const data = await response.json();
+        if (data.fallbackToClientSide) {
+          await generatePDFClientSide(data.htmlContent, data.fileName);
+        } else {
+          setMessage('Erreur lors du téléchargement du PDF');
+        }
+      } catch (fallbackError) {
+        console.error('Erreur fallback:', fallbackError);
+        setMessage('Erreur lors du téléchargement du PDF');
+      }
+    }
+  };
+
+  const generatePDFClientSide = async (htmlContent: string, fileName: string) => {
+    try {
+      // Importer dynamiquement les bibliothèques
+      const [jsPDF, html2canvas] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas')
+      ]);
+
+      // Créer un élément temporaire pour le contenu HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '0';
+      document.body.appendChild(tempDiv);
+
+      // Capturer le contenu
+      const canvas = await html2canvas.default(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+
+      // Nettoyer l'élément temporaire
+      document.body.removeChild(tempDiv);
+
+      // Générer le PDF
+      const pdf = new jsPDF.default('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(fileName);
+
+    } catch (error) {
+      console.error('Erreur lors de la génération client-side:', error);
+      setMessage('Erreur lors de la génération du PDF côté client');
     }
   };
 
@@ -422,7 +500,7 @@ export default function FactureTramePage() {
                 </div>
               </div>
 
-      {/* Statistiques */}
+      {/* Statistiques - Comptage par utilisateur unique avec priorité PAID > PARTIAL > PENDING */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div 
           className="bg-white rounded-lg border p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
@@ -455,8 +533,8 @@ export default function FactureTramePage() {
           <div className="text-2xl font-bold text-red-600">{stats.pendingPayment}</div>
           <div className="text-sm text-gray-600">En attente</div>
           <div className="text-xs text-red-500 mt-1">Cliquez pour voir</div>
-                </div>
-              </div>
+        </div>
+      </div>
 
       {/* Liste des utilisateurs filtrés */}
       {selectedStatType && (

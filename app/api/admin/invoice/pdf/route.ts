@@ -202,10 +202,50 @@ export async function GET() {
       return NextResponse.json({ message: 'Aucun modèle de facture' }, { status: 404 });
     }
     const html = buildHtml(template);
-    const browser = await puppeteer.launch({ headless: true });
+    
+    // Configuration Puppeteer pour production
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    const browserConfig = {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-extensions',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=TranslateUI,VizDisplayCompositor',
+        '--disable-ipc-flooding-protection',
+        '--memory-pressure-off',
+        '--max_old_space_size=4096',
+        '--no-zygote',
+        '--single-process'
+      ],
+      ...(isProduction && {
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
+      }),
+      timeout: 30000
+    };
+
+    const browser = await puppeteer.launch(browserConfig);
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'load' });
-    const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' } });
+    
+    await page.setViewport({ width: 1200, height: 1600 });
+    await page.setContent(html, { 
+      waitUntil: ['networkidle0', 'domcontentloaded'],
+      timeout: 30000 
+    });
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const pdf = await page.pdf({ 
+      format: 'A4', 
+      printBackground: true, 
+      margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' } 
+    });
     await browser.close();
     const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
     return new NextResponse(arrayBuffer, {
@@ -230,10 +270,50 @@ export async function POST(req: Request) {
     }
     const data = (await req.json()) as InvoiceData;
     const html = buildHtml(data);
-    const browser = await puppeteer.launch({ headless: true });
+    
+    // Configuration Puppeteer pour production
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    const browserConfig = {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-extensions',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=TranslateUI,VizDisplayCompositor',
+        '--disable-ipc-flooding-protection',
+        '--memory-pressure-off',
+        '--max_old_space_size=4096',
+        '--no-zygote',
+        '--single-process'
+      ],
+      ...(isProduction && {
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
+      }),
+      timeout: 30000
+    };
+
+    const browser = await puppeteer.launch(browserConfig);
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'load' });
-    const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' } });
+    
+    await page.setViewport({ width: 1200, height: 1600 });
+    await page.setContent(html, { 
+      waitUntil: ['networkidle0', 'domcontentloaded'],
+      timeout: 30000 
+    });
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const pdf = await page.pdf({ 
+      format: 'A4', 
+      printBackground: true, 
+      margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' } 
+    });
     await browser.close();
     const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
     return new NextResponse(arrayBuffer, {
