@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
 
-    const { day, signatureData, userId, userName } = await request.json();
+    const { day, signatureData, userId, userName, autoSigned = true } = await request.json();
 
     if (!day || !signatureData || !userId) {
       return NextResponse.json({ message: 'Données manquantes' }, { status: 400 });
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
           signatureData: signatureData,
           userName: userName,
           signedAt: new Date(),
-          autoSigned: true
+          autoSigned: autoSigned
         }
       });
     } else {
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
           signatureData: signatureData,
           userId: userId,
           userName: userName,
-          autoSigned: true
+          autoSigned: autoSigned
         }
       });
     }
