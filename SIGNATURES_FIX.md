@@ -47,6 +47,7 @@
 - ✅ Signatures automatiques déclenchées par l'attendance du matin
 - ✅ Signatures manuelles sauvegardées individuellement
 - ✅ Distinction visuelle entre signatures automatiques et manuelles
+- ✅ Interface responsive optimisée pour mobile et tablette
 
 ## Indicateurs visuels
 
@@ -82,6 +83,7 @@
 - `app/api/user/pre-job-training-signature/route.ts` - Gestion des signatures Pre-Job Training
 - `app/api/user/trainee-progress/route.ts` - Génération automatique des signatures
 - `app/api/user/attendance-signatures/route.ts` - Gestion des signatures d'attendance
+- `app/api/user/profile/route.ts` - Récupération du profil utilisateur (incluant le niveau)
 
 ### Composants
 - `app/(user)/pre-job-training/PreJobTrainingFormClient.tsx` - Interface Pre-Job Training
@@ -90,6 +92,7 @@
 ### Scripts
 - `scripts/test-signatures.js` - Script de test
 - `scripts/reset-signatures.js` - Script de réinitialisation
+- `scripts/test-user-levels.js` - Script de test des niveaux utilisateurs
 
 ## Tests recommandés
 
@@ -113,6 +116,13 @@
    ```bash
    # Vérifier que les signatures d'attendance et Pre-Job Training sont synchronisées
    # Vérifier les indicateurs visuels (bordure bleue vs verte)
+   ```
+
+4. **Test des niveaux utilisateurs** :
+   ```bash
+   # Connectez-vous avec différents utilisateurs de niveaux différents
+   # Vérifiez que chaque utilisateur ne voit que sa propre ligne de niveau
+   # Vérifiez que les signatures automatiques fonctionnent pour chaque niveau
    ```
 
 ## Résolution des problèmes
@@ -139,3 +149,6 @@
 - Les signatures d'attendance sont stockées dans un fichier JSON
 - Les signatures Pre-Job Training sont stockées dans PostgreSQL
 - La synchronisation se fait uniquement pour les signatures du matin
+- **Nouveau** : Chaque utilisateur ne voit que sa propre ligne de niveau (Niveau 1, 2, ou 3 selon son niveau)
+- **Nouveau** : L'API `/api/user/profile` retourne maintenant le champ `niveau` de l'utilisateur
+- **Nouveau** : Interface responsive optimisée pour mobile et tablette
