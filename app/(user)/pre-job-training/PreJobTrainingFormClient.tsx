@@ -43,14 +43,13 @@ export default function CidesPreJobPage() {
     consequences: '',
     securityMeasures: '',
     attendees: [
-      { position: 'Niveau 1', name: '', signatures: {} as Record<string, string> },
-      { position: 'Niveau 2', name: '', signatures: {} as Record<string, string> },
-      { position: 'Niveau 3', name: '', signatures: {} as Record<string, string> }
+      { position: 'Niveau 1', name: '', signatures: {} as Record<string, string> }
     ]
   });
 
   const [userName, setUserName] = useState('');
   const [sessionName, setSessionName] = useState('');
+  const [userLevel, setUserLevel] = useState('1');
   const [modifiedSignatures, setModifiedSignatures] = useState<Set<string>>(new Set());
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [currentSignatureKey, setCurrentSignatureKey] = useState('');
@@ -65,13 +64,19 @@ export default function CidesPreJobPage() {
           const profileData = await profileResponse.json();
           const fullName = [profileData.prenom, profileData.nom].filter(Boolean).join(' ').trim();
           setUserName(fullName || profileData.email);
+          setUserLevel(profileData.niveau || '1');
           
-          // Pré-remplir le nom dans le premier niveau (utilisateur connecté)
+          // Créer la ligne correspondant au niveau de l'utilisateur
+          const userLevel = profileData.niveau || '1';
           setFormData(prev => ({
             ...prev,
-            attendees: prev.attendees.map((attendee, index) => 
-              index === 0 ? { ...attendee, name: fullName || profileData.email } : attendee
-            )
+            attendees: [
+              { 
+                position: `Niveau ${userLevel}`, 
+                name: fullName || profileData.email, 
+                signatures: {} as Record<string, string> 
+              }
+            ]
           }));
         }
 
@@ -93,24 +98,21 @@ export default function CidesPreJobPage() {
             // Mettre à jour les signatures dans le formulaire
             setFormData(prev => ({
               ...prev,
-              attendees: prev.attendees.map((attendee, index) => {
-                if (index === 0) { // Utilisateur connecté
-                  const updatedSignatures = { ...attendee.signatures };
-                  preJobData.signatures.forEach((sig: any) => {
-                    updatedSignatures[sig.day] = sig.signatureData;
-                    // Si c'est une signature automatique, on ne la marque pas comme modifiée
-                    if (sig.autoSigned) {
-                      const signatureKey = `${index}-${sig.day}`;
-                      setModifiedSignatures(prev => {
-                        const newSet = new Set(prev);
-                        newSet.delete(signatureKey);
-                        return newSet;
-                      });
-                    }
-                  });
-                  return { ...attendee, signatures: updatedSignatures };
-                }
-                return attendee;
+              attendees: prev.attendees.map((attendee) => {
+                const updatedSignatures = { ...attendee.signatures };
+                preJobData.signatures.forEach((sig: any) => {
+                  updatedSignatures[sig.day] = sig.signatureData;
+                  // Si c'est une signature automatique, on ne la marque pas comme modifiée
+                  if (sig.autoSigned) {
+                    const signatureKey = `0-${sig.day}`; // Toujours index 0 car une seule ligne
+                    setModifiedSignatures(prev => {
+                      const newSet = new Set(prev);
+                      newSet.delete(signatureKey);
+                      return newSet;
+                    });
+                  }
+                });
+                return { ...attendee, signatures: updatedSignatures };
               })
             }));
           }
@@ -252,50 +254,50 @@ export default function CidesPreJobPage() {
   };
 
   return (
-    <main className="min-h-screen w-full bg-neutral-100 p-4 print:bg-white">
-      {/* A4 landscape canvas */}
-      <div className="mx-auto bg-white shadow print:shadow-none" style={{ width: '1123px' /* ~A4 landscape at 96dpi */, minHeight: '794px' }}>
+    <main className="min-h-screen w-full bg-neutral-100 p-2 sm:p-4 print:bg-white">
+      {/* A4 landscape canvas - responsive */}
+      <div className="mx-auto bg-white shadow print:shadow-none w-full max-w-full sm:max-w-4xl lg:max-w-6xl xl:max-w-7xl" style={{ minHeight: '794px', maxWidth: '1123px' }}>
         {/* Outer padding matching the form margins */}
-        <div className="p-4">
-          {/* Top icon strip */}
-          <div className="grid grid-cols-8 gap-4 mb-2">
+        <div className="p-2 sm:p-4">
+          {/* Top icon strip - responsive */}
+          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-4 mb-2">
             <IconSlot label="Ancrages" />
             <IconSlot label="Facteur de chute" />
             <IconSlot label="Port des EPI" />
             <IconSlot label="Gestion du matériel" />
             <div className="flex flex-col items-center gap-1">
-              <div className="w-16 h-16 border border-gray-300 bg-white" />
-              <span className="text-[10px] font-medium text-gray-800 leading-tight">QR</span>
+              <div className="w-12 h-12 sm:w-16 sm:h-16 border border-gray-300 bg-white" />
+              <span className="text-[8px] sm:text-[10px] font-medium text-gray-800 leading-tight">QR</span>
             </div>
             <IconSlot label="Objet tombant" />
             <IconSlot label="Montage/étriers" />
             <IconSlot label="Esprit d'équipe" />
           </div>
 
-          {/* Title block */}
-          <table className="w-full border-collapse mb-2">
+          {/* Title block - responsive */}
+          <table className="w-full border-collapse mb-2 text-xs sm:text-sm">
             <tbody>
               <tr>
-                <Th>Title</Th>
-                <Td>CI.DES PRE JOB TRAINING FORM</Td>
-                <Th className="w-28">REVISION</Th>
-                <Td className="w-20">00</Td>
+                <Th className="w-16 sm:w-20">Title</Th>
+                <Td className="text-xs sm:text-sm">CI.DES PRE JOB TRAINING FORM</Td>
+                <Th className="w-16 sm:w-28">REVISION</Th>
+                <Td className="w-12 sm:w-20">00</Td>
               </tr>
               <tr>
-                <Th>Numéro :</Th>
-                <Td>ENR-CIFRA-HSE 021</Td>
-                <Th>CREATION DATE</Th>
-                <Td>09/10/2023</Td>
+                <Th className="w-16 sm:w-20">Numéro :</Th>
+                <Td className="text-xs sm:text-sm">ENR-CIFRA-HSE 021</Td>
+                <Th className="w-16 sm:w-20">CREATION DATE</Th>
+                <Td className="text-xs sm:text-sm">09/10/2023</Td>
               </tr>
             </tbody>
           </table>
 
-          {/* Instruction box */}
+          {/* Instruction box - responsive */}
           <div className="border border-gray-400 p-2 mb-3">
-            <p className="text-[11px] font-semibold underline mb-1">
+            <p className="text-[10px] sm:text-[11px] font-semibold underline mb-1">
               En tant que Superviseur d'accès sur corde et Responsable HSE, avant de démarrer les interventions, procédons à la réunion pré-intervention avec l'équipe :
             </p>
-            <ol className="text-[11px] space-y-0.5 list-decimal list-inside">
+            <ol className="text-[9px] sm:text-[11px] space-y-0.5 list-decimal list-inside">
               <li>Je m'assure que nous sommes en possession du permis de travail validé par toutes les personnes compétentes, si applicable pour ce lieu d'intervention.</li>
               <li>Je m'assure d'être en possession de tous les documents complémentaires (ARO, procédure générale pour le travail en hauteur sur corde, technique de secours, fiche de tâche et mode opératoire), si applicable.</li>
               <li>L'ensemble de l'équipe a lu le permis et est informé de l'intervention.</li>
@@ -305,12 +307,12 @@ export default function CidesPreJobPage() {
             </ol>
           </div>
 
-          {/* Permit / description / risks row */}
+          {/* Permit / description / risks row - responsive */}
           <table className="w-full border-collapse mb-3">
             <tbody>
-              <tr>
-                <Th className="w-24">Session :</Th>
-                <Td className="w-48">
+              <tr className="flex flex-col sm:table-row">
+                <Th className="w-full sm:w-24">Session :</Th>
+                <Td className="w-full sm:w-48">
                   <input 
                     type="text" 
                     value={formData.session}
@@ -318,8 +320,8 @@ export default function CidesPreJobPage() {
                     className="w-full h-full border-none outline-none text-xs px-1"
                   />
                 </Td>
-                <Th className="w-28">N° Permis :</Th>
-                <Td className="w-48">
+                <Th className="w-full sm:w-28">N° Permis :</Th>
+                <Td className="w-full sm:w-48">
                   <input 
                     type="text" 
                     value={formData.permitNumber}
@@ -327,52 +329,51 @@ export default function CidesPreJobPage() {
                     className="w-full h-full border-none outline-none text-xs px-1"
                   />
                 </Td>
-                <Th className="w-28">Type de permis :</Th>
-                <Td className="w-[360px]">
-                  <div className="grid grid-cols-5 gap-3 text-[11px] items-center">
-                    <div className="grid grid-cols-[1fr_auto] gap-2">
-                      <div className="text-[11px] font-semibold text-gray-800">cold</div>
+                <Th className="w-full sm:w-28">Type de permis :</Th>
+                <Td className="w-full sm:w-auto">
+                  <div className="flex flex-wrap gap-2 sm:gap-3 text-[10px] sm:text-[11px] items-center">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <div className="text-[10px] sm:text-[11px] font-semibold text-gray-800">cold</div>
                       <input 
                         type="checkbox" 
                         checked={formData.permitType.cold}
                         onChange={(e) => handlePermitTypeChange('cold', e.target.checked)}
-                        className="border border-gray-400 h-5 w-5"
+                        className="border border-gray-400 h-4 w-4 sm:h-5 sm:w-5"
                       />
                     </div>
-                    <div className="grid grid-cols-[1fr_auto] gap-2">
-                      <div className="text-[11px] font-semibold text-gray-800">Hot</div>
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <div className="text-[10px] sm:text-[11px] font-semibold text-gray-800">Hot</div>
                       <input 
                         type="checkbox" 
                         checked={formData.permitType.hot}
                         onChange={(e) => handlePermitTypeChange('hot', e.target.checked)}
-                        className="border border-gray-400 h-5 w-5"
+                        className="border border-gray-400 h-4 w-4 sm:h-5 sm:w-5"
                       />
                     </div>
-                    <div className="grid grid-cols-[1fr_auto] gap-2">
-                      <div className="text-[11px] font-semibold text-gray-800">Not Flame</div>
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <div className="text-[10px] sm:text-[11px] font-semibold text-gray-800">Not Flame</div>
                       <input 
                         type="checkbox" 
                         checked={formData.permitType.notFlame}
                         onChange={(e) => handlePermitTypeChange('notFlame', e.target.checked)}
-                        className="border border-gray-400 h-5 w-5"
+                        className="border border-gray-400 h-4 w-4 sm:h-5 sm:w-5"
                       />
                     </div>
-                    <div className="grid grid-cols-[1fr_auto] gap-2">
-                      <div className="text-[11px] font-semibold text-gray-800">Flame</div>
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <div className="text-[10px] sm:text-[11px] font-semibold text-gray-800">Flame</div>
                       <input 
                         type="checkbox" 
                         checked={formData.permitType.flame}
                         onChange={(e) => handlePermitTypeChange('flame', e.target.checked)}
-                        className="border border-gray-400 h-5 w-5"
+                        className="border border-gray-400 h-4 w-4 sm:h-5 sm:w-5"
                       />
                     </div>
-                    <div />
                   </div>
                 </Td>
               </tr>
-              <tr>
-                <Th>Description de la tâche du jour :</Th>
-                <Td colSpan={5}>
+              <tr className="flex flex-col sm:table-row">
+                <Th className="w-full sm:w-auto">Description de la tâche du jour :</Th>
+                <Td className="w-full sm:col-span-5">
                   <textarea 
                     value={formData.taskDescription}
                     onChange={(e) => handleInputChange('taskDescription', e.target.value)}
@@ -381,9 +382,9 @@ export default function CidesPreJobPage() {
                   />
                 </Td>
               </tr>
-              <tr>
-                <Th>Identification d'incidents / dangers :</Th>
-                <Td colSpan={2}>
+              <tr className="flex flex-col sm:table-row">
+                <Th className="w-full sm:w-auto">Identification d'incidents / dangers :</Th>
+                <Td className="w-full sm:col-span-2">
                   <textarea 
                     value={formData.incidentIdentification}
                     onChange={(e) => handleInputChange('incidentIdentification', e.target.value)}
@@ -391,8 +392,8 @@ export default function CidesPreJobPage() {
                     rows={2}
                   />
                 </Td>
-                <Th>Conséquences : Accident / Risque :</Th>
-                <Td>
+                <Th className="w-full sm:w-auto">Conséquences : Accident / Risque :</Th>
+                <Td className="w-full sm:w-auto">
                   <textarea 
                     value={formData.consequences}
                     onChange={(e) => handleInputChange('consequences', e.target.value)}
@@ -400,8 +401,8 @@ export default function CidesPreJobPage() {
                     rows={2}
                   />
                 </Td>
-                <Th>Mesures de sécurité :</Th>
-                <Td>
+                <Th className="w-full sm:w-auto">Mesures de sécurité :</Th>
+                <Td className="w-full sm:w-auto">
                   <textarea 
                     value={formData.securityMeasures}
                     onChange={(e) => handleInputChange('securityMeasures', e.target.value)}
@@ -413,52 +414,56 @@ export default function CidesPreJobPage() {
             </tbody>
           </table>
 
-          {/* Big matrix table */}
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <Th className="w-24 text-center">Position</Th>
-                <Th className="w-40 text-center">Nom</Th>
-                {daysOfWeek.map((day) => (
-                  <Th key={day} className="text-center w-20">{day}<div className="text-[10px] font-normal">date :</div></Th>
-                ))}
-              </tr>
-              {/* Row with vertical labels */}
-              <tr>
-                <Td className="text-center font-semibold">&nbsp;</Td>
-                <Td className="text-center font-semibold">&nbsp;</Td>
-                {daysOfWeek.map((day, dayIndex) => (
-                  <Td key={day} className="h-24 p-0">
-                    <div className="h-24 w-full flex items-center justify-center">
-                      <span className="vertical-label">{categories[dayIndex] || ''}</span>
-                    </div>
-                  </Td>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {/* Rows for each position level */}
-              {formData.attendees.map((attendee, attendeeIndex) => (
-                <tr key={attendeeIndex}>
-                  <Td className="h-8 text-center font-semibold">{attendee.position}</Td>
-                  <Td>
-                    <input 
-                      type="text" 
-                      value={attendee.name}
-                      onChange={(e) => handleAttendeeChange(attendeeIndex, 'name', e.target.value)}
-                      className="w-full h-full border-none outline-none text-xs px-1"
-                      placeholder="Nom"
-                    />
-                  </Td>
+          {/* Big matrix table - responsive */}
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse min-w-[800px] sm:min-w-full">
+              <thead>
+                <tr>
+                  <Th className="w-20 sm:w-24 text-center">Position</Th>
+                  <Th className="w-32 sm:w-40 text-center">Nom</Th>
+                  {daysOfWeek.map((day) => (
+                    <Th key={day} className="text-center w-16 sm:w-20">
+                      <div className="text-[8px] sm:text-[10px]">{day}</div>
+                      <div className="text-[6px] sm:text-[8px] font-normal">date :</div>
+                    </Th>
+                  ))}
+                </tr>
+                {/* Row with vertical labels */}
+                <tr>
+                  <Td className="text-center font-semibold">&nbsp;</Td>
+                  <Td className="text-center font-semibold">&nbsp;</Td>
+                  {daysOfWeek.map((day, dayIndex) => (
+                    <Td key={day} className="h-20 sm:h-24 p-0">
+                      <div className="h-20 sm:h-24 w-full flex items-center justify-center">
+                        <span className="vertical-label text-[8px] sm:text-[10px]">{categories[dayIndex] || ''}</span>
+                      </div>
+                    </Td>
+                  ))}
+                </tr>
+                            </thead>
+              <tbody>
+                {/* Rows for each position level */}
+                {formData.attendees.map((attendee, attendeeIndex) => (
+                  <tr key={attendeeIndex}>
+                    <Td className="h-8 text-center font-semibold text-[10px] sm:text-xs">{attendee.position}</Td>
+                    <Td>
+                      <input 
+                        type="text" 
+                        value={attendee.name}
+                        onChange={(e) => handleAttendeeChange(attendeeIndex, 'name', e.target.value)}
+                        className="w-full h-full border-none outline-none text-[10px] sm:text-xs px-1"
+                        placeholder="Nom"
+                      />
+                    </Td>
                                      {daysOfWeek.map((day) => {
                      const signatureKey = `${attendeeIndex}-${day}`;
                      const isModified = modifiedSignatures.has(signatureKey);
                      const hasSignature = attendee.signatures[day];
-                     const isAutoSigned = hasSignature && attendeeIndex === 0 && !isModified; // Signature automatique si pas modifiée manuellement
+                     const isAutoSigned = hasSignature && !isModified; // Signature automatique si pas modifiée manuellement
                      
                      return (
                        <Td key={day} className="text-center p-1">
-                         <div className={`h-16 w-full border relative group cursor-pointer ${
+                         <div className={`h-12 sm:h-16 w-full border relative group cursor-pointer ${
                            isModified 
                              ? 'border-green-400 bg-green-50' 
                              : isAutoSigned
@@ -472,7 +477,7 @@ export default function CidesPreJobPage() {
                                <img 
                                  src={attendee.signatures[day]} 
                                  alt="Signature" 
-                                 className="h-12 w-auto max-w-full object-contain"
+                                 className="h-8 sm:h-12 w-auto max-w-full object-contain"
                                />
                                <button
                                  onClick={(e) => {
@@ -492,7 +497,7 @@ export default function CidesPreJobPage() {
                                )}
                              </div>
                            ) : (
-                             <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">
+                             <div className="h-full w-full flex items-center justify-center text-gray-400 text-[8px] sm:text-xs">
                                Cliquer pour signer
                              </div>
                            )}
@@ -504,14 +509,19 @@ export default function CidesPreJobPage() {
               ))}
             </tbody>
           </table>
+        </div>
 
-          {/* Informations automatiques */}
+          {/* Informations automatiques - responsive */}
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md print:hidden">
             <h3 className="text-sm font-semibold text-blue-800 mb-2">Informations automatiquement remplies :</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm">
               <div>
                 <span className="font-medium text-blue-700">Utilisateur :</span>
                 <span className="ml-2 text-blue-600">{userName || 'Chargement...'}</span>
+              </div>
+              <div>
+                <span className="font-medium text-blue-700">Niveau :</span>
+                <span className="ml-2 text-blue-600">Niveau {userLevel}</span>
               </div>
               <div>
                 <span className="font-medium text-blue-700">Session :</span>
@@ -523,10 +533,11 @@ export default function CidesPreJobPage() {
             </p>
           </div>
 
-          {/* Instructions pour les signatures */}
+          {/* Instructions pour les signatures - responsive */}
           <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md print:hidden">
             <h3 className="text-sm font-semibold text-green-800 mb-2">Instructions pour les signatures :</h3>
             <div className="text-sm text-green-700 space-y-1">
+              <p>• <strong>Niveau utilisateur :</strong> Vous êtes affiché dans la ligne correspondant à votre niveau (Niveau {userLevel})</p>
               <p>• <strong>Signature automatique :</strong> Quand vous signez l'attendance du matin, le Pre-Job Training est automatiquement signé (bordure bleue, point bleu)</p>
               <p>• <strong>Ajouter une signature :</strong> Cliquez dans une case vide pour ouvrir le pad de signature</p>
               <p>• <strong>Modifier une signature :</strong> Cliquez sur une signature existante pour la modifier</p>
@@ -541,50 +552,50 @@ export default function CidesPreJobPage() {
             </div>
           </div>
 
-          {/* Boutons d'action */}
-          <div className="flex justify-center gap-4 mt-6 print:hidden">
+          {/* Boutons d'action - responsive */}
+          <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mt-6 print:hidden">
             <button
               onClick={saveForm}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+              className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium text-sm sm:text-base"
             >
               Sauvegarder le formulaire
             </button>
             <button
               onClick={() => window.print()}
-              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
+              className="px-4 sm:px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium text-sm sm:text-base"
             >
               Imprimer
             </button>
           </div>
 
-          {/* Footer */}
-          <div className="flex items-end justify-between text-[10px] text-gray-700 mt-2">
+          {/* Footer - responsive */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between text-[8px] sm:text-[10px] text-gray-700 mt-2 space-y-1 sm:space-y-0">
             <span>Page 1 sur 1</span>
             <div className="text-center">
               <div>CI.DES sasu &nbsp;&nbsp; Capital 2 500 Euros</div>
               <div>SIRET: 87840789900011 &nbsp;&nbsp; VAT: FR71878407899</div>
               <div className="italic">Uncontrolled copy printed</div>
             </div>
-            <span>EF294b234964f4222b6cb6a2c60c02c985744ce573cd8aa58afee76de8b202ce0</span>
+            <span className="text-[6px] sm:text-[8px] break-all">EF294b234964f4222b6cb6a2c60c02c985744ce573cd8aa58afee76de8b202ce0</span>
           </div>
         </div>
       </div>
 
-       {/* Modal SignaturePad */}
+       {/* Modal SignaturePad - responsive */}
        {showSignatureModal && (
-         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-             <h3 className="text-lg font-semibold mb-4">Signature</h3>
+         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+           <div className="bg-white rounded-lg p-4 sm:p-6 max-w-sm sm:max-w-md w-full">
+             <h3 className="text-base sm:text-lg font-semibold mb-4">Signature</h3>
              <SignaturePad
                onSave={handleSignatureSave}
                initialValue={currentSignatureKey ? formData.attendees[parseInt(currentSignatureKey.split('-')[0])]?.signatures[currentSignatureKey.split('-')[1]] : ''}
-               width={350}
-               height={150}
+               width={300}
+               height={120}
              />
              <div className="flex justify-end mt-4">
                <button
                  onClick={() => setShowSignatureModal(false)}
-                 className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                 className="px-3 sm:px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors text-sm sm:text-base"
                >
                  Annuler
                </button>
@@ -602,13 +613,20 @@ export default function CidesPreJobPage() {
         .vertical-label {
           writing-mode: vertical-rl;
           transform: rotate(180deg);
-          font-size: 10px;
+          font-size: 8px;
           font-weight: 600;
           color: #374151; /* gray-700 */
           text-align: center;
         }
         .font-handwriting {
           font-family: 'Brush Script MT', cursive, sans-serif;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+          .vertical-label {
+            font-size: 6px;
+          }
         }
       `}</style>
     </main>
