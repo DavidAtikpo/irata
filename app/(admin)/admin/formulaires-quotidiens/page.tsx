@@ -14,11 +14,13 @@ import {
   EyeIcon,
   PencilIcon,
   TrashIcon,
+  FunnelIcon,
   CheckCircleIcon,
   XCircleIcon,
   AdjustmentsHorizontalIcon,
   ClockIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  DocumentDuplicateIcon
 } from '@heroicons/react/24/outline';
 
 interface Question {
@@ -424,6 +426,38 @@ export default function FormulairesQuotidiensPage() {
     }
   };
 
+  const handleDuplicateFormulaire = (formulaire: FormulaireQuotidien) => {
+    // Créer une copie du formulaire avec un nouveau titre
+    const duplicatedFormulaire = {
+      ...formulaire,
+      titre: `${formulaire.titre} (Copie)`,
+      description: formulaire.description ? `${formulaire.description} (Copie)` : '(Copie)',
+      dateCreation: new Date().toISOString(),
+      valide: false, // Le formulaire dupliqué n'est pas validé par défaut
+      actif: false, // Le formulaire dupliqué n'est pas actif par défaut
+      nombreReponses: 0, // Réinitialiser le nombre de réponses
+      questions: formulaire.questions.map(q => ({
+        ...q,
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9) // Nouvel ID unique
+      }))
+    };
+
+    // Pré-remplir le formulaire de création avec les données dupliquées
+    setCreateForm({
+      titre: duplicatedFormulaire.titre,
+      description: duplicatedFormulaire.description || '',
+      session: duplicatedFormulaire.session,
+      niveau: duplicatedFormulaire.niveau || '1',
+      dateDebut: duplicatedFormulaire.dateDebut,
+      dateFin: duplicatedFormulaire.dateFin,
+      questions: [...duplicatedFormulaire.questions]
+    });
+
+    // Ouvrir la modal de création
+    setShowCreateForm(true);
+    setEditingFormulaire(null); // Pas en mode édition, mais en mode création avec données pré-remplies
+  };
+
   const filteredFormulaires = formulaires.filter(form => 
     filterSession === 'all' || form.session === filterSession
   );
@@ -445,60 +479,85 @@ export default function FormulairesQuotidiensPage() {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* En-tête principal */}
-        <div className="sm:flex sm:items-center sm:justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 flex items-center">
-              📋 Formulaires Quotidiens
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Créez et gérez les questionnaires quotidiens pour le suivi des formations
-            </p>
-          </div>
-          <div className="mt-4 sm:mt-0 flex space-x-3">
-            <button
-              onClick={() => router.push('/admin/formulaires-quotidiens/reponses')}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              <EyeIcon className="w-4 h-4 mr-2" />
-              Voir les Réponses
-            </button>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Nouveau Formulaire
-            </button>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8">
+          <div className="sm:flex sm:items-center sm:justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-gradient-to-br from-indigo-500 to-blue-600 p-3 rounded-xl shadow-lg">
+                <DocumentTextIcon className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Formulaires Quotidiens
+                </h1>
+                <p className="mt-2 text-lg text-gray-600">
+                  Gérez les questionnaires de suivi pour vos formations IRATA
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 sm:mt-0 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+              <button
+                onClick={() => router.push('/admin/formulaires-quotidiens/reponses')}
+                className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+              >
+                <EyeIcon className="w-5 h-5 mr-2" />
+                Consulter les Réponses
+              </button>
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >
+                <PlusIcon className="w-5 h-5 mr-2" />
+                Créer un Formulaire
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Indicateur de statut temps réel */}
-        <div className="mb-6 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="mb-8 bg-gradient-to-r from-slate-50 to-gray-50 border border-gray-200/60 rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-gray-900">
-                  Système actif - {formulaires.length} formulaires
-                </span>
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <div className="w-4 h-4 bg-emerald-500 rounded-full animate-pulse shadow-sm"></div>
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-300 rounded-full animate-ping"></div>
+                </div>
+                <div>
+                  <span className="text-base font-semibold text-gray-900">
+                    Système opérationnel
+                  </span>
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    {formulaires.length} formulaires configurés
+                  </p>
+                </div>
               </div>
-              <div className="hidden sm:flex items-center space-x-4 text-sm text-gray-500">
-                <span>
-                  {stats.actifs} formulaires actifs
-                </span>
-                <span>•</span>
-                <span>
-                  {stats.reponses} réponses reçues
-                </span>
+              <div className="hidden lg:flex items-center space-x-6">
+                <div className="flex items-center space-x-2 px-3 py-2 bg-white/60 rounded-lg">
+                  <CheckCircleIcon className="w-4 h-4 text-emerald-600" />
+                  <span className="text-sm font-medium text-gray-700">
+                    {stats.actifs} actifs
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2 px-3 py-2 bg-white/60 rounded-lg">
+                  <UsersIcon className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700">
+                    {stats.reponses} réponses
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <span className="text-xs text-gray-500">
-                Dernière MAJ: {new Date().toLocaleTimeString('fr-FR')}
-              </span>
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-xs text-gray-600">En ligne</span>
+            <div className="flex items-center space-x-4">
+              <div className="text-right hidden sm:block">
+                <span className="text-xs text-gray-500 block">
+                  Dernière synchronisation
+                </span>
+                <span className="text-sm font-medium text-gray-700">
+                  {new Date().toLocaleTimeString('fr-FR')}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 px-3 py-2 bg-emerald-50 rounded-lg border border-emerald-200">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                <span className="text-sm font-medium text-emerald-800">En ligne</span>
               </div>
             </div>
           </div>
@@ -532,82 +591,82 @@ export default function FormulairesQuotidiensPage() {
                           
 
         {/* Dashboard des statistiques */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-gradient-to-br from-white to-indigo-50 border border-indigo-100 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <DocumentTextIcon className="h-8 w-8 text-indigo-600" />
+                  <div className="bg-indigo-500 p-3 rounded-xl">
+                    <DocumentTextIcon className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Total Formulaires
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {stats.total}
-                    </dd>
-                  </dl>
+                <div className="ml-4 flex-1">
+                  <dt className="text-sm font-medium text-gray-600 mb-1">
+                    Total Formulaires
+                  </dt>
+                  <dd className="text-2xl font-bold text-gray-900">
+                    {stats.total}
+                  </dd>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
+          <div className="bg-gradient-to-br from-white to-emerald-50 border border-emerald-100 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <CheckCircleIcon className="h-8 w-8 text-green-600" />
+                  <div className="bg-emerald-500 p-3 rounded-xl">
+                    <CheckCircleIcon className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Formulaires Actifs
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {stats.actifs}
-                    </dd>
-                  </dl>
+                <div className="ml-4 flex-1">
+                  <dt className="text-sm font-medium text-gray-600 mb-1">
+                    Formulaires Actifs
+                  </dt>
+                  <dd className="text-2xl font-bold text-gray-900">
+                    {stats.actifs}
+                  </dd>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
+          <div className="bg-gradient-to-br from-white to-blue-50 border border-blue-100 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <UsersIcon className="h-8 w-8 text-blue-600" />
+                  <div className="bg-blue-500 p-3 rounded-xl">
+                    <UsersIcon className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Réponses Reçues
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {stats.reponses}
-                    </dd>
-                  </dl>
+                <div className="ml-4 flex-1">
+                  <dt className="text-sm font-medium text-gray-600 mb-1">
+                    Réponses Reçues
+                  </dt>
+                  <dd className="text-2xl font-bold text-gray-900">
+                    {stats.reponses}
+                  </dd>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
+          <div className="bg-gradient-to-br from-white to-purple-50 border border-purple-100 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <CalendarIcon className="h-8 w-8 text-purple-600" />
+                  <div className="bg-purple-500 p-3 rounded-xl">
+                    <CalendarIcon className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Taux Participation
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {stats.taux_participation}%
-                    </dd>
-                  </dl>
+                <div className="ml-4 flex-1">
+                  <dt className="text-sm font-medium text-gray-600 mb-1">
+                    Taux Participation
+                  </dt>
+                  <dd className="text-2xl font-bold text-gray-900">
+                    {stats.taux_participation}%
+                  </dd>
                 </div>
               </div>
             </div>
@@ -615,19 +674,26 @@ export default function FormulairesQuotidiensPage() {
         </div>
 
         {/* Filtres et Options */}
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Filtres et Options</h3>
-            <p className="text-sm text-gray-500 mt-1">Affinez votre recherche dans les formulaires</p>
-          </div>
-          <div className="px-6 py-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white border border-gray-200/60 rounded-xl shadow-sm mb-8">
+          <div className="bg-gradient-to-r from-gray-50 to-slate-50 px-6 py-5 border-b border-gray-200/60 rounded-t-xl">
+            <div className="flex items-center space-x-3">
+              <div className="bg-indigo-500 p-2 rounded-lg">
+                <FunnelIcon className="h-5 w-5 text-white" />
+              </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Session</label>
+                <h3 className="text-lg font-semibold text-gray-900">Filtres et Options</h3>
+                <p className="text-sm text-gray-600 mt-0.5">Personnalisez l'affichage de vos formulaires</p>
+              </div>
+            </div>
+          </div>
+          <div className="px-6 py-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Session</label>
                 <select
                   value={filterSession}
                   onChange={(e) => setFilterSession(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
                 >
                   <option value="all">Toutes les sessions</option>
                   {SESSIONS.map((session: Session) => (
@@ -640,7 +706,7 @@ export default function FormulairesQuotidiensPage() {
               <div className="flex items-end">
                 <button
                   onClick={() => setFilterSession('all')}
-                  className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="w-full inline-flex justify-center items-center px-4 py-3 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
                 >
                   Réinitialiser
                 </button>
@@ -648,7 +714,7 @@ export default function FormulairesQuotidiensPage() {
               <div className="flex items-end">
                 <button
                   onClick={fetchFormulaires}
-                  className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md hover:shadow-lg transition-all duration-200"
                 >
                   Actualiser
                 </button>
@@ -658,27 +724,34 @@ export default function FormulairesQuotidiensPage() {
         </div>
 
         {/* Liste des formulaires */}
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white border border-gray-200/60 rounded-xl shadow-sm">
+          <div className="bg-gradient-to-r from-gray-50 to-slate-50 px-6 py-5 border-b border-gray-200/60 rounded-t-xl">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                  <DocumentTextIcon className="w-5 h-5 mr-2 text-gray-400" />
-                  Liste des Formulaires
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  {filteredFormulaires.length} formulaire{filteredFormulaires.length !== 1 ? 's' : ''} • 
-                  {stats.actifs} actif{stats.actifs !== 1 ? 's' : ''} • 
-                  {stats.reponses} réponse{stats.reponses !== 1 ? 's' : ''}
-                </p>
-              </div>
               <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-500">
-                  {Math.round((stats.actifs / Math.max(stats.total, 1)) * 100)}% de formulaires actifs
-                </span>
-                <div className="w-20 bg-gray-200 rounded-full h-2">
+                <div className="bg-indigo-500 p-2 rounded-lg">
+                  <DocumentTextIcon className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Vos Formulaires
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    {filteredFormulaires.length} formulaire{filteredFormulaires.length !== 1 ? 's' : ''} • 
+                    {stats.actifs} actif{stats.actifs !== 1 ? 's' : ''} • 
+                    {stats.reponses} réponse{stats.reponses !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <span className="text-sm font-medium text-gray-700 block">
+                    {Math.round((stats.actifs / Math.max(stats.total, 1)) * 100)}%
+                  </span>
+                  <span className="text-xs text-gray-500">de formulaires actifs</span>
+                </div>
+                <div className="w-24 bg-gray-200 rounded-full h-3 shadow-inner">
                   <div 
-                    className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
+                    className="bg-gradient-to-r from-emerald-500 to-green-500 h-3 rounded-full transition-all duration-700 shadow-sm"
                     style={{ width: `${Math.min((stats.actifs / Math.max(stats.total, 1)) * 100, 100)}%` }}
                   />
                 </div>
@@ -687,99 +760,134 @@ export default function FormulairesQuotidiensPage() {
           </div>
         
         {filteredFormulaires.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <div className="text-4xl mb-4">📝</div>
-            <p>Aucun formulaire trouvé</p>
+          <div className="text-center py-16">
+            <div className="bg-gradient-to-br from-gray-50 to-slate-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+              <DocumentTextIcon className="h-12 w-12 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Aucun formulaire trouvé</h3>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              Commencez par créer votre premier formulaire quotidien pour suivre les progrès de vos stagiaires.
+            </p>
             <button
               onClick={() => setShowCreateForm(true)}
-              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             >
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Créer le premier formulaire
+              <PlusIcon className="w-5 h-5 mr-3" />
+              Créer mon premier formulaire
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <div className="divide-y divide-gray-200">
+          <div className="p-6">
+            <div className="space-y-4">
               {filteredFormulaires.map((formulaire) => (
-                <div key={formulaire.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                <div key={formulaire.id} className="bg-gradient-to-r from-white to-gray-50/50 border border-gray-200/60 rounded-xl p-6 hover:shadow-md hover:border-gray-300/60 transition-all duration-200">
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h4 className="text-lg font-medium text-gray-900 truncate">
-                          {formulaire.titre}
-                        </h4>
-                        <div className="flex space-x-2">
-                          {formulaire.valide ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              <CheckCircleIcon className="h-3 w-3 mr-1" />
-                              Validé
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                              <ClockIcon className="h-3 w-3 mr-1" />
-                              Brouillon
-                            </span>
-                          )}
-                          {formulaire.actif && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              Actif
-                            </span>
-                          )}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-4">
+                          <div className="bg-gradient-to-br from-indigo-500 to-blue-600 p-3 rounded-xl shadow-sm">
+                            <DocumentTextIcon className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-semibold text-gray-900 mb-1">
+                              {formulaire.titre}
+                            </h4>
+                            <div className="flex items-center space-x-3">
+                              {formulaire.valide ? (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 shadow-sm">
+                                  <CheckCircleIcon className="h-3 w-3 mr-1.5" />
+                                  Validé
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 shadow-sm">
+                                  <ClockIcon className="h-3 w-3 mr-1.5" />
+                                  Brouillon
+                                </span>
+                              )}
+                              {formulaire.actif && (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 shadow-sm">
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-1.5 animate-pulse"></div>
+                                  En cours
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                       
-                      <div className="text-sm text-gray-600 mb-2">
-                        <p className="line-clamp-2">{formulaire.description || 'Aucune description'}</p>
+                      <div className="mb-4">
+                        <p className="text-gray-600 line-clamp-2">{formulaire.description || 'Aucune description disponible'}</p>
                       </div>
                       
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="font-medium">Session:</span>
-                          <span className="ml-1">{SESSIONS.find(s => s.value === formulaire.session)?.label || formulaire.session}</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div className="bg-white/60 rounded-lg p-3 border border-gray-200/60">
+                          <div className="flex items-center space-x-2">
+                            <CalendarIcon className="h-4 w-4 text-indigo-600" />
+                            <span className="text-sm font-medium text-gray-700">Session</span>
+                          </div>
+                          <p className="text-sm text-gray-900 mt-1 font-semibold">
+                            {SESSIONS.find(s => s.value === formulaire.session)?.label || formulaire.session}
+                          </p>
                         </div>
-                        <div className="flex items-center">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <div className="bg-white/60 rounded-lg p-3 border border-gray-200/60">
+                          <div className="flex items-center space-x-2">
+                            <span className="w-4 h-4 bg-blue-500 rounded text-white text-xs flex items-center justify-center font-bold">
+                              {formulaire.niveau}
+                            </span>
+                            <span className="text-sm font-medium text-gray-700">Niveau IRATA</span>
+                          </div>
+                          <p className="text-sm text-gray-900 mt-1 font-semibold">
                             Niveau {formulaire.niveau}
-                          </span>
+                          </p>
                         </div>
-                        <div className="flex items-center">
-                          <DocumentTextIcon className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="font-medium">Questions:</span>
-                          <span className="ml-1">{formulaire.questions.length}</span>
+                        <div className="bg-white/60 rounded-lg p-3 border border-gray-200/60">
+                          <div className="flex items-center space-x-2">
+                            <DocumentTextIcon className="h-4 w-4 text-emerald-600" />
+                            <span className="text-sm font-medium text-gray-700">Questions</span>
+                          </div>
+                          <p className="text-sm text-gray-900 mt-1 font-semibold">
+                            {formulaire.questions.length} question{formulaire.questions.length !== 1 ? 's' : ''}
+                          </p>
                         </div>
-                        <div className="flex items-center">
-                          <UsersIcon className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="font-medium">Réponses:</span>
-                          <span className="ml-1 font-semibold text-indigo-600">{formulaire.nombreReponses}</span>
+                        <div className="bg-white/60 rounded-lg p-3 border border-gray-200/60">
+                          <div className="flex items-center space-x-2">
+                            <UsersIcon className="h-4 w-4 text-purple-600" />
+                            <span className="text-sm font-medium text-gray-700">Réponses</span>
+                          </div>
+                          <p className="text-lg text-indigo-600 mt-1 font-bold">
+                            {formulaire.nombreReponses}
+                          </p>
                         </div>
                       </div>
                       
-                      <div className="mt-2 text-xs text-gray-500">
-                        Créé le {new Date(formulaire.dateCreation).toLocaleDateString('fr-FR')} • 
-                        Du {new Date(formulaire.dateDebut).toLocaleDateString('fr-FR')} au {new Date(formulaire.dateFin).toLocaleDateString('fr-FR')}
+                      <div className="flex items-center justify-between text-sm text-gray-500 bg-gray-50/50 rounded-lg p-3">
+                        <span>
+                          Créé le {new Date(formulaire.dateCreation).toLocaleDateString('fr-FR')}
+                        </span>
+                        <span>
+                          Du {new Date(formulaire.dateDebut).toLocaleDateString('fr-FR')} au {new Date(formulaire.dateFin).toLocaleDateString('fr-FR')}
+                        </span>
                       </div>
                     </div>
                     
-                    <div className="ml-4 flex flex-col sm:flex-row gap-2">
+                    <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200/60">
                       <button
                         onClick={() => handleValidateFormulaire(formulaire.id, !formulaire.valide)}
-                        className={`inline-flex items-center px-3 py-2 border text-sm font-medium rounded-md transition-colors ${
+                        className={`inline-flex items-center px-4 py-2.5 text-sm font-semibold rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 ${
                           formulaire.valide
-                            ? 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100'
-                            : 'border-green-300 text-green-700 bg-green-50 hover:bg-green-100'
+                            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-md border border-red-500'
+                            : 'bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:shadow-md border border-emerald-500'
                         }`}
                         title={formulaire.valide ? 'Masquer aux stagiaires' : 'Valider pour les stagiaires et envoyer des notifications par email'}
                       >
                         {formulaire.valide ? (
                           <>
-                            <XCircleIcon className="h-4 w-4 mr-1" />
+                            <XCircleIcon className="h-4 w-4 mr-2" />
                             Masquer
                           </>
                         ) : (
                           <>
-                            <CheckCircleIcon className="h-4 w-4 mr-1" />
+                            <CheckCircleIcon className="h-4 w-4 mr-2" />
                             Valider
                           </>
                         )}
@@ -788,26 +896,35 @@ export default function FormulairesQuotidiensPage() {
                       {formulaire.valide && new Date() < new Date(formulaire.dateDebut) && (
                         <button
                           onClick={() => handleOpenNow(formulaire.id)}
-                          className="inline-flex items-center px-3 py-2 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+                          className="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-105 border border-blue-500"
                           title="Ouvrir le formulaire immédiatement pour les stagiaires"
                         >
-                          <ClockIcon className="h-4 w-4 mr-1" />
+                          <ClockIcon className="h-4 w-4 mr-2" />
                           Ouvrir maintenant
                         </button>
                       )}
 
                       <button
+                        onClick={() => handleDuplicateFormulaire(formulaire)}
+                        className="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-105 border border-purple-500"
+                        title="Dupliquer le formulaire avec possibilité de changer le niveau et modifier les questions"
+                      >
+                        <DocumentDuplicateIcon className="h-4 w-4 mr-2" />
+                        Dupliquer
+                      </button>
+
+                      <button
                         onClick={() => handleEditFormulaire(formulaire)}
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                        className="inline-flex items-center px-4 py-2.5 bg-white text-gray-700 text-sm font-semibold rounded-lg border border-gray-300 shadow-sm hover:bg-gray-50 hover:shadow-md transition-all duration-200 transform hover:scale-105"
                         title="Modifier le formulaire"
                       >
-                        <PencilIcon className="h-4 w-4 mr-1" />
+                        <PencilIcon className="h-4 w-4 mr-2" />
                         Modifier
                       </button>
 
                       <button
                         onClick={() => handleDeleteFormulaire(formulaire.id)}
-                        className="inline-flex items-center px-3 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
+                        className="inline-flex items-center justify-center p-2.5 bg-red-50 text-red-600 rounded-lg border border-red-200 shadow-sm hover:bg-red-100 hover:shadow-md transition-all duration-200 transform hover:scale-105"
                         title="Supprimer le formulaire"
                       >
                         <TrashIcon className="h-4 w-4" />
@@ -833,10 +950,15 @@ export default function FormulairesQuotidiensPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-medium text-gray-900">
-                      {editingFormulaire ? 'Modifier le formulaire' : 'Créer un nouveau formulaire'}
+                      {editingFormulaire ? 'Modifier le formulaire' : createForm.titre.includes('(Copie)') ? 'Dupliquer le formulaire' : 'Créer un nouveau formulaire'}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      {editingFormulaire ? 'Modifiez les informations et questions' : 'Configurez votre questionnaire quotidien'}
+                      {editingFormulaire 
+                        ? 'Modifiez les informations et questions' 
+                        : createForm.titre.includes('(Copie)') 
+                          ? 'Modifiez le niveau, les questions et les informations du formulaire dupliqué'
+                          : 'Configurez votre questionnaire quotidien'
+                      }
                     </p>
                   </div>
                 </div>
@@ -1196,19 +1318,24 @@ export default function FormulairesQuotidiensPage() {
 
               {/* Footer de la modal */}
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                  {createForm.questions.length === 0 ? (
-                    <span className="flex items-center text-amber-600">
-                      <ExclamationTriangleIcon className="h-4 w-4 mr-1" />
-                      Ajoutez au moins une question pour continuer
-                    </span>
-                  ) : (
-                    <span className="flex items-center text-green-600">
-                      <CheckCircleIcon className="h-4 w-4 mr-1" />
-                      {createForm.questions.length} question{createForm.questions.length !== 1 ? 's' : ''} configurée{createForm.questions.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
+                                  <div className="text-sm text-gray-500">
+                    {createForm.questions.length === 0 ? (
+                      <span className="flex items-center text-amber-600">
+                        <ExclamationTriangleIcon className="h-4 w-4 mr-1" />
+                        Ajoutez au moins une question pour continuer
+                      </span>
+                    ) : (
+                      <span className="flex items-center text-green-600">
+                        <CheckCircleIcon className="h-4 w-4 mr-1" />
+                        {createForm.questions.length} question{createForm.questions.length !== 1 ? 's' : ''} configurée{createForm.questions.length !== 1 ? 's' : ''}
+                        {createForm.titre.includes('(Copie)') && (
+                          <span className="ml-2 text-purple-600">
+                            • Formulaire dupliqué
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
                 <div className="flex space-x-3">
                   <button
                     type="button"
@@ -1230,10 +1357,14 @@ export default function FormulairesQuotidiensPage() {
                     {submitting ? (
                       <div className="flex items-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        {editingFormulaire ? 'Mise à jour...' : 'Création...'}
+                        {editingFormulaire ? 'Mise à jour...' : createForm.titre.includes('(Copie)') ? 'Duplication...' : 'Création...'}
                       </div>
                     ) : (
-                      editingFormulaire ? 'Mettre à jour le formulaire' : 'Créer le formulaire'
+                      editingFormulaire 
+                        ? 'Mettre à jour le formulaire' 
+                        : createForm.titre.includes('(Copie)') 
+                          ? 'Créer la copie du formulaire'
+                          : 'Créer le formulaire'
                     )}
                   </button>
                 </div>
