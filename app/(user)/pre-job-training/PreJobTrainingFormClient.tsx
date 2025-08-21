@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import SignaturePad from '@/components/SignaturePad';
 
 // Reusable cell components that accept standard HTML table cell attributes (e.g., colSpan)
@@ -32,6 +33,7 @@ const SmallBox: React.FC<React.PropsWithChildren<{ label?: string }>> = ({ child
 );
 
 export default function CidesPreJobPage() {
+  const { data: session } = useSession();
   const [formData, setFormData] = useState({
     session: '',
     permitNumber: '',
@@ -83,7 +85,7 @@ export default function CidesPreJobPage() {
           }
         }
 
-        // Récupérer les signatures automatiques du Pre-Job Training
+        // Récupérer les signatures du Pre-Job Training
         const preJobSignaturesResponse = await fetch('/api/user/pre-job-training-signature');
         if (preJobSignaturesResponse.ok) {
           const preJobData = await preJobSignaturesResponse.json();
@@ -96,6 +98,15 @@ export default function CidesPreJobPage() {
                   const updatedSignatures = { ...attendee.signatures };
                   preJobData.signatures.forEach((sig: any) => {
                     updatedSignatures[sig.day] = sig.signatureData;
+                    // Si c'est une signature automatique, on ne la marque pas comme modifiée
+                    if (sig.autoSigned) {
+                      const signatureKey = `${index}-${sig.day}`;
+                      setModifiedSignatures(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(signatureKey);
+                        return newSet;
+                      });
+                    }
                   });
                   return { ...attendee, signatures: updatedSignatures };
                 }
@@ -201,29 +212,42 @@ export default function CidesPreJobPage() {
 
   const saveForm = async () => {
     try {
-      const formDataWithUser = {
-        ...formData,
-        userName,
-        sessionName,
-        submittedAt: new Date().toISOString()
-      };
-
-      const response = await fetch('/api/admin/pre-job-training', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formDataWithUser),
+      // Sauvegarder les signatures manuelles modifiées
+      const savePromises = Array.from(modifiedSignatures).map(async (signatureKey) => {
+        const [attendeeIndex, day] = signatureKey.split('-');
+        const attendeeIndexNum = parseInt(attendeeIndex);
+        const signatureData = formData.attendees[attendeeIndexNum]?.signatures[day];
+        
+        if (signatureData) {
+          const response = await fetch('/api/user/pre-job-training-signature', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              day: day,
+              signatureData: signatureData,
+              userId: session?.user?.id,
+              userName: userName,
+              autoSigned: false // Signature manuelle
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Erreur lors de la sauvegarde de la signature pour ${day}`);
+          }
+        }
       });
 
-      if (response.ok) {
-        alert('Formulaire sauvegardé avec succès !');
-      } else {
-        throw new Error('Erreur lors de la sauvegarde');
-      }
+      await Promise.all(savePromises);
+      alert('Signatures sauvegardées avec succès !');
+      
+      // Vider la liste des signatures modifiées
+      setModifiedSignatures(new Set());
+      
     } catch (error) {
       console.error('Erreur:', error);
-      alert('Erreur lors de la sauvegarde du formulaire');
+      alert('Erreur lors de la sauvegarde des signatures');
     }
   };
 
@@ -429,7 +453,8 @@ export default function CidesPreJobPage() {
                                      {daysOfWeek.map((day) => {
                      const signatureKey = `${attendeeIndex}-${day}`;
                      const isModified = modifiedSignatures.has(signatureKey);
-                     const isAutoSigned = attendee.signatures[day] && attendeeIndex === 0; // Seulement pour l'utilisateur connecté
+                     const hasSignature = attendee.signatures[day];
+                     const isAutoSigned = hasSignature && attendeeIndex === 0 && !isModified; // Signature automatique si pas modifiée manuellement
                      
                      return (
                        <Td key={day} className="text-center p-1">
@@ -441,8 +466,8 @@ export default function CidesPreJobPage() {
                              : 'border-gray-300 bg-gray-50'
                          }`}
                          onClick={() => handleSignatureClick(attendeeIndex, day)}
-                         title={isAutoSigned ? "Signature automatique (attendance matin)" : "Cliquer pour signer"}>
-                           {attendee.signatures[day] ? (
+                         title={isAutoSigned ? "Signature automatique (attendance matin)" : isModified ? "Signature manuelle" : "Cliquer pour signer"}>
+                           {hasSignature ? (
                              <div className="h-full w-full flex items-center justify-center relative">
                                <img 
                                  src={attendee.signatures[day]} 
@@ -507,9 +532,11 @@ export default function CidesPreJobPage() {
               <p>• <strong>Modifier une signature :</strong> Cliquez sur une signature existante pour la modifier</p>
               <p>• <strong>Effacer une signature :</strong> Survolez une signature et cliquez sur le "×" rouge</p>
               <p>• <strong>Signature manuelle :</strong> Dessinez votre signature avec la souris ou le doigt</p>
+              <p>• <strong>Sauvegarder :</strong> Cliquez sur "Sauvegarder le formulaire" pour enregistrer vos signatures manuelles</p>
               <p>• <strong>Indicateurs visuels :</strong> 
-                <br/>- Bordure verte + point vert = signature modifiée manuellement
+                <br/>- Bordure verte + point vert = signature modifiée manuellement (à sauvegarder)
                 <br/>- Bordure bleue + point bleu = signature automatique (attendance matin)
+                <br/>- Bordure grise = case vide
               </p>
             </div>
           </div>

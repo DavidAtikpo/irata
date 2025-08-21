@@ -462,3 +462,4 @@ export default function UserInspectionDetailPage({ params }: { params: Promise<{
     </div>
   );
 }
+

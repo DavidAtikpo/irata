@@ -120,6 +120,60 @@ async function generateAttendanceSignatures(traineeId: string, day: string, comp
     await fs.writeFile(ATTENDANCE_SIGNATURES_FILE, JSON.stringify(signatures, null, 2), 'utf8');
     console.log(`Signatures d'attendance générées automatiquement pour ${attendanceDay}`);
     
+    // Déclencher la signature automatique du Pre-Job Training pour le matin
+    try {
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
+      
+      // Récupérer le nom de l'utilisateur
+      const user = await prisma.user.findUnique({
+        where: { id: traineeId },
+        select: { prenom: true, nom: true, email: true }
+      });
+      
+      let userName = 'Utilisateur';
+      if (user) {
+        const fullName = [user.prenom, user.nom].filter(Boolean).join(' ').trim();
+        userName = fullName || user.email || 'Utilisateur';
+      }
+      
+      // Créer la signature Pre-Job Training automatique
+      const existingSignature = await prisma.preJobTrainingSignature.findFirst({
+        where: {
+          day: attendanceDay,
+          userId: traineeId
+        }
+      });
+
+      if (existingSignature) {
+        await prisma.preJobTrainingSignature.update({
+          where: { id: existingSignature.id },
+          data: {
+            signatureData: fakeSignature,
+            userName: userName,
+            signedAt: new Date(),
+            autoSigned: true
+          }
+        });
+      } else {
+        await prisma.preJobTrainingSignature.create({
+          data: {
+            day: attendanceDay,
+            signatureData: fakeSignature,
+            userId: traineeId,
+            userName: userName,
+            autoSigned: true
+          }
+        });
+      }
+      
+      console.log(`Pre-Job Training signé automatiquement pour ${attendanceDay}`);
+      await prisma.$disconnect();
+      
+    } catch (preJobError) {
+      console.error('Erreur lors de la signature automatique du Pre-Job Training:', preJobError);
+    }
+    
   } catch (error) {
     console.error('Erreur lors de la génération des signatures d\'attendance:', error);
   }
