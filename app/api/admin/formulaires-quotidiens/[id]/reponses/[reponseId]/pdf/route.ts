@@ -76,10 +76,17 @@ export async function GET(
     // Attendre que le contenu soit chargé
     await page.waitForSelector('.question', { timeout: 5000 }).catch(() => {});
     
-    // Convertir le logo importé en base64
-    const logoPath = path.join(process.cwd(), 'public', 'cidelogo.png');
-    const logoBuffer = fs.readFileSync(logoPath);
-    const logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    // Convertir le logo importé en base64 avec gestion d'erreur
+    let logoBase64 = '';
+    try {
+      const logoPath = path.join(process.cwd(), 'public', 'cidelogo.png');
+      const logoBuffer = fs.readFileSync(logoPath);
+      logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    } catch (error) {
+      console.log('Logo non trouvé, utilisation du fallback SVG');
+      // Fallback SVG si le logo n'est pas trouvé
+      logoBase64 = `data:image/svg+xml;base64,${Buffer.from('<svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="44" height="44" rx="6" fill="#2563eb"/><text x="22" y="28" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="bold">C</text></svg>').toString('base64')}`;
+    }
     
     // Calculer le nombre de pages approximatif
     const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
@@ -112,6 +119,21 @@ export async function GET(
           </div>
         </div>
       `
+    }).catch(async (error) => {
+      console.error('Erreur lors de la génération du PDF:', error);
+      // Essayer sans le footer si il y a un problème
+      return await page.pdf({
+        format: 'A4',
+        landscape: false,
+        margin: {
+          top: '15mm',
+          right: '15mm',
+          bottom: '15mm',
+          left: '15mm'
+        },
+        printBackground: true,
+        displayHeaderFooter: false
+      });
     });
 
     await browser.close();
