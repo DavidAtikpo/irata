@@ -135,9 +135,21 @@ export default function ReponsesFormulairesPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = reponseId 
-        ? `reponse-${selectedFormulaire.titre}-${new Date().toISOString().split('T')[0]}.pdf`
-        : `reponses-${selectedFormulaire.titre}-${new Date().toISOString().split('T')[0]}.pdf`;
+      
+      // Améliorer le nom du fichier
+      const dateStr = new Date().toISOString().split('T')[0];
+      const sessionLabel = SESSIONS.find(s => s.value === selectedFormulaire.session)?.label || selectedFormulaire.session;
+      
+      if (reponseId) {
+        // Pour une réponse individuelle, trouver le nom de l'utilisateur
+        const reponse = reponses.find(r => r.id === reponseId);
+        const nomUtilisateur = reponse ? reponse.utilisateurNom.replace(/[^a-zA-Z0-9]/g, '-') : 'utilisateur';
+        a.download = `reponse-${sessionLabel}-${nomUtilisateur}-${dateStr}.pdf`;
+      } else {
+        // Pour toutes les réponses
+        a.download = `reponses-${sessionLabel}-${selectedFormulaire.titre.replace(/[^a-zA-Z0-9]/g, '-')}-${dateStr}.pdf`;
+      }
+      
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -145,6 +157,60 @@ export default function ReponsesFormulairesPage() {
     } catch (error) {
       console.error('Erreur:', error);
       alert('Erreur lors du téléchargement du PDF');
+    }
+  };
+
+  // Nouvelle fonction pour télécharger tous les PDF individuels
+  const handleDownloadAllIndividualPDFs = async () => {
+    if (!selectedFormulaire || reponses.length === 0) return;
+
+    try {
+      // Afficher un message de confirmation
+      const confirmed = window.confirm(
+        `Voulez-vous télécharger ${reponses.length} PDF individuels ? Cela peut prendre quelques instants.`
+      );
+      
+      if (!confirmed) return;
+
+      // Télécharger chaque PDF individuellement
+      for (let i = 0; i < reponses.length; i++) {
+        const reponse = reponses[i];
+        
+        try {
+          const response = await fetch(`/api/admin/formulaires-quotidiens/${selectedFormulaire.id}/reponses/${reponse.id}/pdf`);
+          if (!response.ok) {
+            console.error(`Erreur pour ${reponse.utilisateurNom}:`, response.statusText);
+            continue;
+          }
+
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          
+          const dateStr = new Date().toISOString().split('T')[0];
+          const sessionLabel = SESSIONS.find(s => s.value === selectedFormulaire.session)?.label || selectedFormulaire.session;
+          const nomUtilisateur = reponse.utilisateurNom.replace(/[^a-zA-Z0-9]/g, '-');
+          
+          a.download = `reponse-${sessionLabel}-${nomUtilisateur}-${dateStr}.pdf`;
+          
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          
+          // Petite pause entre les téléchargements pour éviter de surcharger le navigateur
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+        } catch (error) {
+          console.error(`Erreur lors du téléchargement pour ${reponse.utilisateurNom}:`, error);
+        }
+      }
+      
+      alert('Téléchargement des PDF individuels terminé !');
+    } catch (error) {
+      console.error('Erreur lors du téléchargement en lot:', error);
+      alert('Erreur lors du téléchargement en lot des PDF');
     }
   };
 
@@ -419,18 +485,59 @@ export default function ReponsesFormulairesPage() {
                             {reponses.length} réponse{reponses.length !== 1 ? 's' : ''} reçue{reponses.length !== 1 ? 's' : ''}
                           </span>
                         </div>
+                        <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200/60">
+                          <DocumentArrowDownIcon className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-700">
+                            PDF disponibles
+                          </span>
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="lg:w-64">
+                    <div className="lg:w-64 space-y-3">
                       <button
                         onClick={() => handleDownloadPDF()}
                         className="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                       >
                         <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                        Télécharger Toutes les Réponses
+                        PDF Complet
+                      </button>
+                      <button
+                        onClick={handleDownloadAllIndividualPDFs}
+                        className="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                      >
+                        <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
+                        PDF Individuels
                       </button>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section d'aide PDF */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/60 rounded-xl shadow-sm mb-6">
+              <div className="px-6 py-4">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="bg-blue-500 p-2 rounded-lg">
+                    <DocumentArrowDownIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-blue-900">Options de Téléchargement PDF</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="bg-white/60 rounded-lg p-3 border border-blue-200/60">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="w-3 h-3 bg-indigo-600 rounded-full"></div>
+                      <span className="font-semibold text-gray-900">PDF Complet</span>
+                    </div>
+                    <p className="text-gray-700">Télécharge un seul fichier PDF contenant toutes les réponses de tous les stagiaires.</p>
+                  </div>
+                  <div className="bg-white/60 rounded-lg p-3 border border-blue-200/60">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="w-3 h-3 bg-emerald-600 rounded-full"></div>
+                      <span className="font-semibold text-gray-900">PDF Individuels</span>
+                    </div>
+                    <p className="text-gray-700">Télécharge un PDF séparé pour chaque stagiaire (un fichier par utilisateur).</p>
                   </div>
                 </div>
               </div>
@@ -544,10 +651,10 @@ export default function ReponsesFormulairesPage() {
                           </button>
                           <button
                             onClick={() => handleDownloadPDF(reponse.id)}
-                            className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-700 font-semibold rounded-lg border border-gray-300 shadow-sm hover:bg-gray-50 hover:shadow-md transition-all duration-200 transform hover:scale-105"
+                            className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                           >
                             <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                            Télécharger PDF
+                            PDF Utilisateur
                           </button>
                         </div>
                       </div>
@@ -594,7 +701,7 @@ export default function ReponsesFormulairesPage() {
                     className="inline-flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-lg transition-all duration-200"
                   >
                     <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
-                    📄 Télécharger PDF
+                    📄 PDF de {selectedReponse.utilisateurNom}
                   </button>
                 </div>
               </div>
