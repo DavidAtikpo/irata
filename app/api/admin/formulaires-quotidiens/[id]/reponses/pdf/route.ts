@@ -58,16 +58,39 @@ export async function GET(
     const page = await browser.newPage();
     await page.setContent(html);
     
+    // Attendre que le contenu soit chargé
+    await page.waitForSelector('.reponse', { timeout: 5000 }).catch(() => {});
+    
+    // Calculer le nombre de pages approximatif
+    const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
+    const pageHeight = 1123; // Hauteur A4 en pixels (297mm)
+    const totalPages = Math.ceil(bodyHeight / pageHeight);
+    
+    // Mettre à jour la numérotation des pages
+    await page.evaluate((totalPages) => {
+      const pageElements = document.querySelectorAll('.page');
+      const topageElements = document.querySelectorAll('.topage');
+      
+      pageElements.forEach((el, index) => {
+        el.textContent = (index + 1).toString();
+      });
+      
+      topageElements.forEach(el => {
+        el.textContent = totalPages.toString();
+      });
+    }, totalPages);
+    
     const pdf = await page.pdf({
       format: 'A4',
-      landscape: true,
+      landscape: false, // Changement en portrait
       margin: {
         top: '15mm',
         right: '15mm',
-        bottom: '15mm',
+        bottom: '25mm', // Augmenté pour le footer
         left: '15mm'
       },
-      printBackground: true
+      printBackground: true,
+      displayHeaderFooter: false // On gère nous-mêmes le header/footer
     });
 
     await browser.close();
@@ -106,98 +129,53 @@ function generatePDFHTML(formulaire: any) {
           color: #333;
           margin: 0;
           padding: 15px;
-          font-size: 11px;
+          font-size: 10px;
         }
+        
+        /* En-tête professionnel */
         .header {
-          text-align: center;
-          border-bottom: 2px solid #2563eb;
-          padding-bottom: 15px;
+          display: flex;
           margin-bottom: 20px;
+          border: 2px solid #000;
+          padding: 10px;
         }
-        .header h1 {
-          color: #2563eb;
-          margin: 0;
-          font-size: 20px;
+        .logo {
+          width: 60px;
+          height: 60px;
+          margin-right: 15px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
-        .header p {
-          margin: 3px 0;
-          color: #666;
-          font-size: 12px;
+        .logo img {
+          max-width: 100%;
+          max-height: 100%;
+          object-fit: contain;
         }
-        .reponses-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 15px;
-          margin-bottom: 20px;
+        .header-table {
+          border-collapse: collapse;
+          width: 100%;
+          font-size: 9px;
         }
-        .reponse {
-          border: 1px solid #e5e7eb;
-          border-radius: 6px;
-          padding: 12px;
-          background-color: #fafafa;
-          page-break-inside: avoid;
+        .header-table td {
+          border: 1px solid #000;
+          padding: 4px;
         }
-        .reponse-header {
-          background-color: #f3f4f6;
-          padding: 8px;
-          border-radius: 4px;
-          margin-bottom: 10px;
-          border-left: 4px solid #2563eb;
-        }
-        .reponse-header h3 {
-          margin: 0;
-          color: #1f2937;
-          font-size: 13px;
+        .header-table .bold {
           font-weight: bold;
         }
-        .reponse-header p {
-          margin: 2px 0;
-          color: #6b7280;
-          font-size: 10px;
-        }
-        .question {
-          margin-bottom: 8px;
-        }
-        .question h4 {
-          margin: 0 0 4px 0;
-          color: #374151;
-          font-size: 11px;
-          font-weight: bold;
-        }
-        .reponse-text {
-          background-color: #ffffff;
-          padding: 6px;
-          border-radius: 3px;
-          border-left: 3px solid #2563eb;
-          font-size: 10px;
-          min-height: 20px;
-        }
-        .commentaires {
-          margin-top: 8px;
-          padding: 6px;
-          background-color: #eff6ff;
-          border-radius: 4px;
-          border-left: 3px solid #3b82f6;
-        }
-        .commentaires h4 {
-          margin: 0 0 4px 0;
-          color: #1e40af;
-          font-size: 11px;
-          font-weight: bold;
-        }
-        .commentaires p {
-          margin: 0;
-          font-size: 10px;
-        }
-        .no-reponses {
+        
+        /* Titre principal */
+        .title {
           text-align: center;
-          padding: 40px;
-          color: #6b7280;
-          font-style: italic;
+          font-weight: bold;
+          border: 2px solid #000;
+          padding: 10px;
+          margin: 15px 0;
+          font-size: 16px;
         }
-        .page-break {
-          page-break-before: always;
-        }
+        
+        /* Informations de session */
         .session-info {
           background-color: #f0f9ff;
           border: 1px solid #0ea5e9;
@@ -208,13 +186,15 @@ function generatePDFHTML(formulaire: any) {
         .session-info h2 {
           margin: 0 0 5px 0;
           color: #0c4a6e;
-          font-size: 16px;
+          font-size: 14px;
         }
         .session-info p {
           margin: 2px 0;
           color: #0369a1;
           font-size: 11px;
         }
+        
+        /* Statistiques */
         .stats {
           display: flex;
           justify-content: space-between;
@@ -222,7 +202,7 @@ function generatePDFHTML(formulaire: any) {
           padding: 8px;
           border-radius: 4px;
           margin-bottom: 15px;
-          font-size: 11px;
+          font-size: 10px;
         }
         .stat-item {
           text-align: center;
@@ -230,41 +210,255 @@ function generatePDFHTML(formulaire: any) {
         .stat-number {
           font-weight: bold;
           color: #2563eb;
-          font-size: 14px;
+          font-size: 12px;
         }
         .stat-label {
           color: #64748b;
+          font-size: 9px;
+        }
+        
+        /* Réponses en colonne unique pour portrait */
+        .reponses-container {
+          margin-bottom: 20px;
+        }
+        .reponse {
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          padding: 10px;
+          background-color: #fafafa;
+          margin-bottom: 15px;
+          page-break-inside: avoid;
+          break-inside: avoid;
+          page-break-before: auto;
+        }
+        .reponse-header {
+          background-color: #f3f4f6;
+          padding: 8px;
+          border-radius: 4px;
+          margin-bottom: 8px;
+          border-left: 4px solid #2563eb;
+        }
+        .reponse-header h3 {
+          margin: 0;
+          color: #1f2937;
+          font-size: 12px;
+          font-weight: bold;
+        }
+        .reponse-header p {
+          margin: 2px 0;
+          color: #6b7280;
+          font-size: 9px;
+        }
+        .question {
+          margin-bottom: 6px;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        .question h4 {
+          margin: 0 0 3px 0;
+          color: #374151;
           font-size: 10px;
+          font-weight: bold;
+        }
+        .reponse-text {
+          background-color: #ffffff;
+          padding: 4px;
+          border-radius: 3px;
+          border-left: 3px solid #2563eb;
+          font-size: 9px;
+          min-height: 15px;
+        }
+        .commentaires {
+          margin-top: 6px;
+          padding: 4px;
+          background-color: #eff6ff;
+          border-radius: 4px;
+          border-left: 3px solid #3b82f6;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        .commentaires h4 {
+          margin: 0 0 3px 0;
+          color: #1e40af;
+          font-size: 10px;
+          font-weight: bold;
+        }
+        .commentaires p {
+          margin: 0;
+          font-size: 9px;
+        }
+        .no-reponses {
+          text-align: center;
+          padding: 40px;
+          color: #6b7280;
+          font-style: italic;
+        }
+        .page-break {
+          page-break-before: always;
+        }
+        
+        /* Numérotation des pages */
+        .page-number {
+          position: fixed;
+          bottom: 60px;
+          right: 15px;
+          font-size: 10px;
+          color: #6b7280;
+          background-color: white;
+          padding: 2px 6px;
+          border-radius: 3px;
+          border: 1px solid #e5e7eb;
+        }
+        
+        /* Règles de pagination */
+        @page {
+          margin: 15mm 15mm 25mm 15mm;
+          size: A4;
+        }
+        
+        /* Éviter les coupures dans les éléments importants */
+        h1, h2, h3, h4 {
+          page-break-after: avoid;
+          break-after: avoid;
+        }
+        
+        table {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        
+        /* Règles strictes pour éviter les coupures de réponses */
+        .reponse {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          page-break-before: auto;
+          orphans: 3;
+          widows: 3;
+        }
+        
+        .reponse-header {
+          page-break-after: avoid;
+          break-after: avoid;
+        }
+        
+        .question {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        
+        .commentaires {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        
+        /* Espacement pour éviter les coupures */
+        .reponse:last-child {
+          margin-bottom: 20px;
+        }
+        
+        /* Forcer les sauts de page si nécessaire */
+        .force-page-break {
+          page-break-before: always;
+          break-before: page;
+        }
+        
+        /* Informations de diffusion */
+        .info-section {
+          margin: 10px 0;
+        }
+        .info-section p {
+          margin: 3px 0;
+          font-size: 10px;
+        }
+        
+        /* Pied de page */
+        .footer {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background-color: white;
+          padding: 10px 15px;
+          border-top: 1px solid #e5e7eb;
+          font-size: 9px;
+          color: #6b7280;
+        }
+        .footer-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .footer-left {
+          font-weight: 500;
+        }
+        .footer-center {
+          text-align: center;
+        }
+        .footer-center div {
+          margin: 1px 0;
+        }
+        .footer-right {
+          display: flex;
+          align-items: center;
+        }
+        .footer-logo {
+          width: 24px;
+          height: 24px;
+          object-fit: contain;
+        }
+        /* Espace pour le footer fixe */
+        body {
+          padding-bottom: 80px;
         }
       </style>
     </head>
     <body>
-      <div class="header">
-        <h1>${formulaire.titre}</h1>
-        <p><strong>Session:</strong> ${getSessionLabel(formulaire.session)}</p>
-        <p><strong>Période:</strong> ${new Date(formulaire.dateDebut).toLocaleDateString('fr-FR')} - ${new Date(formulaire.dateFin).toLocaleDateString('fr-FR')}</p>
-        <p><strong>Généré le:</strong> ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
+      <!-- En-tête professionnel -->
+              <div class="header">
+          <div class="logo">
+            <img src="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/logo.png" alt="CI.DES Logo" style="max-width: 100%; max-height: 100%;">
+          </div>
+        <table class="header-table">
+          <tr>
+            <td class="bold">Titre</td>
+            <td class="bold">Numéro de code</td>
+            <td class="bold">Révision</td>
+            <td class="bold">Création date</td>
+          </tr>
+          <tr>
+            <td>CIDES FORMULAIRE QUOTIDIEN - RÉPONSES</td>
+            <td>ENR-CIFRA-HSE 030</td>
+            <td>00</td>
+            <td>09/10/2023</td>
+          </tr>
+        </table>
       </div>
 
+      <!-- Titre principal -->
+      <h1 class="title">RÉPONSES AU FORMULAIRE QUOTIDIEN</h1>
+
+      <!-- Informations de diffusion -->
+      <div class="info-section">
+        <p><strong>Diffusion:</strong> ${formulaire.titre}</p>
+        <p><strong>Copie:</strong> Tous les stagiaires</p>
+      </div>
+
+      <!-- Informations de session -->
       <div class="session-info">
-        <h2>📊 Résumé de la session</h2>
+        <h2>📊 Réponses - Session ${getSessionLabel(formulaire.session)}</h2>
         <p><strong>Formation:</strong> ${formulaire.titre}</p>
-        <p><strong>Session:</strong> ${getSessionLabel(formulaire.session)}</p>
-        <p><strong>Période de formation:</strong> ${new Date(formulaire.dateDebut).toLocaleDateString('fr-FR')} au ${new Date(formulaire.dateFin).toLocaleDateString('fr-FR')}</p>
+        <p><strong>Période:</strong> ${new Date(formulaire.dateDebut).toLocaleDateString('fr-FR')} au ${new Date(formulaire.dateFin).toLocaleDateString('fr-FR')}</p>
       </div>
 
+      <!-- Statistiques -->
       <div class="stats">
         <div class="stat-item">
           <div class="stat-number">${formulaire.reponses.length}</div>
-          <div class="stat-label">Stagiaires</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">${questions.length}</div>
-          <div class="stat-label">Questions</div>
+          <div class="stat-label">Total Réponses</div>
         </div>
         <div class="stat-item">
           <div class="stat-number">${formulaire.reponses.filter((r: any) => r.soumis).length}</div>
-          <div class="stat-label">Soumis</div>
+          <div class="stat-label">Soumises</div>
         </div>
         <div class="stat-item">
           <div class="stat-number">${formulaire.reponses.filter((r: any) => !r.soumis).length}</div>
@@ -278,9 +472,9 @@ function generatePDFHTML(formulaire: any) {
           <p>Aucun stagiaire n'a encore répondu à ce formulaire.</p>
         </div>
       ` : `
-        <div class="reponses-grid">
+        <div class="reponses-container">
           ${formulaire.reponses.map((reponse: any, index: number) => `
-            <div class="reponse">
+            <div class="reponse" ${index > 0 && index % 3 === 0 ? 'style="page-break-before: always;"' : ''}>
               <div class="reponse-header">
                 <h3>👤 ${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}</h3>
                 <p>📧 ${reponse.stagiaire.email}</p>
@@ -313,6 +507,28 @@ function generatePDFHTML(formulaire: any) {
           `).join('')}
         </div>
       `}
+      
+      <!-- Numérotation des pages -->
+      <div class="page-number">
+        Page <span class="page"></span>
+      </div>
+      
+      <!-- Pied de page fixe sur chaque page -->
+      <div class="footer">
+        <div class="footer-content">
+          <div class="footer-left">
+            CI.DES - Satisfaction Client
+          </div>
+          <div class="footer-center">
+            <div>CI.DES sasu · Capital 2 500 Euros</div>
+            <div>SIRET : 87840789900011 · VAT : FR71878407899</div>
+            <div>Page <span class="page"></span> sur <span class="topage"></span></div>
+          </div>
+          <div class="footer-right">
+            <img src="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/logo.png" alt="CI.DES" class="footer-logo">
+          </div>
+        </div>
+      </div>
     </body>
     </html>
   `;
