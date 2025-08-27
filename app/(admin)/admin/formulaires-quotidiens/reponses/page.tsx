@@ -22,6 +22,11 @@ interface Question {
   question: string;
   options?: string[];
   required: boolean;
+  // Propriétés de scoring
+  correctAnswers?: string[];
+  points?: number;
+  scoringEnabled?: boolean;
+  numberCorrect?: number;
 }
 
 interface FormulaireQuotidien {
@@ -55,6 +60,63 @@ interface ReponseFormulaire {
   score?: number;
   maxScore?: number;
 }
+
+// Fonction de correction automatique
+const correctResponse = (question: Question, userResponse: any) => {
+  const result = {
+    isCorrect: false,
+    points: 0,
+    maxPoints: question.points || 1,
+    explanation: '',
+    correctAnswer: '',
+    userAnswer: userResponse
+  };
+
+  // Si le scoring n'est pas activé, pas de correction
+  if (!question.scoringEnabled) {
+    return result;
+  }
+
+  // Correction pour les questions à choix multiples (radio, select, checkbox)
+  if (question.correctAnswers && question.correctAnswers.length > 0) {
+    if (question.type === 'radio' || question.type === 'select') {
+      result.correctAnswer = question.correctAnswers[0];
+      result.isCorrect = question.correctAnswers.includes(userResponse);
+      result.explanation = result.isCorrect 
+        ? '✅ Réponse correcte' 
+        : `❌ Réponse incorrecte. La bonne réponse était : ${result.correctAnswer}`;
+    } else if (question.type === 'checkbox') {
+      const userAnswersArray = Array.isArray(userResponse) ? userResponse : [userResponse];
+      const correctAnswersSet = new Set(question.correctAnswers);
+      const userAnswersSet = new Set(userAnswersArray);
+      
+      result.correctAnswer = question.correctAnswers.join(', ');
+      result.isCorrect = correctAnswersSet.size === userAnswersSet.size &&
+        [...correctAnswersSet].every(answer => userAnswersSet.has(answer));
+      
+      result.explanation = result.isCorrect 
+        ? '✅ Toutes les bonnes réponses sélectionnées' 
+        : `❌ Réponse incorrecte. Les bonnes réponses étaient : ${result.correctAnswer}`;
+    }
+  }
+
+  // Correction pour les questions numériques
+  if (question.type === 'number' && typeof question.numberCorrect === 'number') {
+    const numericAnswer = typeof userResponse === 'number' ? userResponse : Number(userResponse);
+    result.correctAnswer = question.numberCorrect.toString();
+    result.isCorrect = !Number.isNaN(numericAnswer) && numericAnswer === question.numberCorrect;
+    result.explanation = result.isCorrect 
+      ? '✅ Réponse correcte' 
+      : `❌ Réponse incorrecte. La bonne réponse était : ${result.correctAnswer}`;
+  }
+
+  // Attribution des points
+  if (result.isCorrect) {
+    result.points = result.maxPoints;
+  }
+
+  return result;
+};
 
 export default function ReponsesFormulairesPage() {
   const { data: session, status } = useSession();
@@ -785,33 +847,94 @@ export default function ReponsesFormulairesPage() {
                 </div>
                 
                 <div className="space-y-6">
-                  {selectedReponse.reponses.map((reponse, index) => (
-                    <div key={index} className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
-                      <div className="flex items-start space-x-4 mb-4">
-                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-sm">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1">
-                          <h5 className="font-semibold text-gray-900 text-lg leading-relaxed">
-                            {reponse.question}
-                          </h5>
-                        </div>
-                      </div>
-                      
-                      <div className="ml-12">
-                        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-4">
-                          <div className="text-gray-800 font-medium">
-                            {Array.isArray(reponse.reponse) 
-                              ? reponse.reponse.join(', ')
-                              : reponse.reponse || (
-                                <span className="text-gray-500 italic">Pas de réponse fournie</span>
-                              )
-                            }
+                  {selectedReponse.reponses.map((reponse, index) => {
+                    // Trouver la question correspondante pour la correction
+                    const question = selectedFormulaire?.questions.find(q => q.id === reponse.questionId);
+                    const correction = question ? correctResponse(question, reponse.reponse) : null;
+                    
+                    return (
+                      <div key={index} className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
+                        <div className="flex items-start space-x-4 mb-4">
+                          <div className={`rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-sm ${
+                            correction && question?.scoringEnabled
+                              ? correction.isCorrect
+                                ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white'
+                                : 'bg-gradient-to-br from-red-500 to-red-600 text-white'
+                              : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
+                          }`}>
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="font-semibold text-gray-900 text-lg leading-relaxed">
+                              {reponse.question}
+                            </h5>
+                            {correction && question?.scoringEnabled && (
+                              <div className="mt-2">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                                  correction.isCorrect
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {correction.isCorrect ? '✅' : '❌'} {correction.points}/{correction.maxPoints} points
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
+                        
+                        <div className="ml-12 space-y-3">
+                          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-4">
+                            <div className="text-gray-800 font-medium flex items-center">
+                              {correction && question?.scoringEnabled && (
+                                <span className="mr-2 text-lg">
+                                  {correction.isCorrect ? '✅' : '❌'}
+                                </span>
+                              )}
+                              {Array.isArray(reponse.reponse) 
+                                ? reponse.reponse.join(', ')
+                                : reponse.reponse || (
+                                  <span className="text-gray-500 italic">Pas de réponse fournie</span>
+                                )
+                              }
+                            </div>
+                          </div>
+                          
+                          {/* Affichage de la correction automatique */}
+                          {correction && question?.scoringEnabled && (
+                            <div className={`rounded-lg p-4 border ${
+                              correction.isCorrect
+                                ? 'bg-emerald-50 border-emerald-200'
+                                : 'bg-red-50 border-red-200'
+                            }`}>
+                              <div className="flex items-start space-x-3">
+                                <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
+                                  correction.isCorrect
+                                    ? 'bg-emerald-500 text-white'
+                                    : 'bg-red-500 text-white'
+                                }`}>
+                                  {correction.isCorrect ? '✓' : '✗'}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-gray-900 mb-1">
+                                    Correction automatique
+                                  </div>
+                                  <div className="text-sm text-gray-700 mb-2">
+                                    {correction.explanation}
+                                  </div>
+                                  {!correction.isCorrect && correction.correctAnswer && (
+                                    <div className="text-sm">
+                                      <span className="font-medium text-gray-900">Bonne réponse :</span>
+                                      <span className="ml-2 text-emerald-700 font-medium">{correction.correctAnswer}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

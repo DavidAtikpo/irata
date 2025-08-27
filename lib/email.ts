@@ -1,70 +1,36 @@
 import nodemailer from 'nodemailer';
 
-interface EmailOptions {
-  to: string;
-  subject: string;
-  html: string;
-  attachments?: Array<{
-    filename: string;
-    content: Buffer | string;
-    contentType?: string;
-  }>;
-}
-
-// Configuration unique du transporteur SMTP
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: Number(process.env.SMTP_PORT) || 587,
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT || '587'),
   secure: false,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
-  tls: {
-    rejectUnauthorized: false
-  }
 });
 
-export async function sendEmail({ to, subject, html, attachments }: EmailOptions) {
-  console.log('Configuration SMTP:', {
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    user: process.env.SMTP_USER,
-    fromName: process.env.SMTP_FROM,
-    fromEmail: process.env.SMTP_FROM_EMAIL
-  });
+export interface EmailData {
+  to: string;
+  subject: string;
+  html: string;
+}
 
-  if (!process.env.SMTP_PASS) {
-    console.error('SMTP_PASS non défini dans les variables d\'environnement');
-    throw new Error('Configuration SMTP incomplète');
-  }
-
-  console.log('Tentative d\'envoi d\'email à:', to);
-  console.log('Sujet:', subject);
-
+export async function sendEmail(emailData: EmailData) {
   try {
-    const mailOptions: any = {
-      from: `"${process.env.SMTP_FROM || 'IRATA'}" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}>`,
-      to,
-      subject,
-      html,
+    const mailOptions = {
+      from: `"${process.env.SMTP_FROM}" <${process.env.SMTP_FROM_EMAIL}>`,
+      to: emailData.to,
+      subject: emailData.subject,
+      html: emailData.html,
     };
 
-    if (attachments && attachments.length > 0) {
-      mailOptions.attachments = attachments;
-    }
-
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email envoyé avec succès:', info.messageId);
-    return info;
-  } catch (error: any) {
-    console.error('Erreur détaillée lors de l\'envoi d\'email:', {
-      error: error.message,
-      code: error.code,
-      command: error.command,
-      stack: error.stack
-    });
-    throw error;
+    console.log('Email envoyé:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Erreur envoi email:', error);
+    return { success: false, error };
   }
 }
 
@@ -98,18 +64,7 @@ export async function sendStatusUpdateEmail(
     </div>
   `;
 
-  try {
-    await transporter.sendMail({
-      from: `"${process.env.SMTP_FROM || 'IRATA'}" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}>`,
-      to,
-      subject,
-      html,
-    });
-    console.log('Email envoyé avec succès à:', to);
-  } catch (error) {
-    console.error('Erreur lors de l\'envoi de l\'email:', error);
-    throw error;
-  }
+  return sendEmail({ to, subject, html });
 }
 
 export async function sendFormulaireValidationNotification(
@@ -171,15 +126,121 @@ export async function sendFormulaireValidationNotification(
     </div>
   `;
 
-  try {
-    await sendEmail({
-      to,
-      subject,
-      html,
-    });
-    console.log(`Notification de formulaire envoyée avec succès à: ${to}`);
-  } catch (error) {
-    console.error(`Erreur lors de l'envoi de la notification à ${to}:`, error);
-    throw error;
-  }
+  return sendEmail({ to, subject, html });
+}
+
+export async function sendContributionConfirmationEmail(
+  contributorEmail: string,
+  contributorName: string,
+  amount: number,
+  contributionType: string,
+  returnAmount: number,
+  returnDescription: string
+) {
+  const subject = 'Confirmation de votre contribution - CI.DES';
+  
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px;">CI.DES</h1>
+        <p style="margin: 10px 0 0 0; font-size: 16px;">Centre de Formation Cordiste IRATA</p>
+      </div>
+      
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #333; margin-bottom: 20px;">Merci pour votre contribution !</h2>
+        
+        <p>Bonjour ${contributorName},</p>
+        
+        <p>Nous avons bien reçu votre contribution de <strong>${amount.toLocaleString()} FCFA</strong> pour notre projet de financement participatif.</p>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+          <h3 style="color: #667eea; margin-top: 0;">Détails de votre contribution :</h3>
+          <ul style="list-style: none; padding: 0;">
+            <li style="margin: 10px 0;"><strong>Type :</strong> ${contributionType}</li>
+            <li style="margin: 10px 0;"><strong>Montant :</strong> ${amount.toLocaleString()} FCFA</li>
+            <li style="margin: 10px 0;"><strong>Votre retour :</strong> ${returnDescription}</li>
+            <li style="margin: 10px 0;"><strong>Valeur du retour :</strong> ${returnAmount.toLocaleString()} FCFA</li>
+          </ul>
+        </div>
+        
+        <p>Votre contribution nous aide à équiper notre centre de formation avec les meilleurs équipements cordistes IRATA et de contrôle non destructif.</p>
+        
+        <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #2c5aa0; margin-top: 0;">Prochaines étapes :</h3>
+          <ul>
+            <li>Vous recevrez bientôt un reçu officiel</li>
+            <li>Nous vous tiendrons informés de l'avancement du projet</li>
+            <li>Votre retour sera disponible selon les conditions définies</li>
+          </ul>
+        </div>
+        
+        <p>Pour toute question, n'hésitez pas à nous contacter à <a href="mailto:${process.env.SMTP_FROM_EMAIL}">${process.env.SMTP_FROM_EMAIL}</a></p>
+        
+        <p>Cordialement,<br>
+        <strong>L'équipe CI.DES</strong></p>
+      </div>
+      
+      <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
+        <p>CI.DES - Centre de Formation Cordiste IRATA<br>
+        17270 BORESSE-ET-MARTRON<br>
+        Tél: +33 6 24 67 13 65 | Email: ${process.env.SMTP_FROM_EMAIL}</p>
+      </div>
+    </div>
+  `;
+
+  return sendEmail({ to: contributorEmail, subject, html });
+}
+
+export async function sendPaymentFailureEmail(
+  contributorEmail: string,
+  contributorName: string,
+  amount: number,
+  errorMessage: string
+) {
+  const subject = 'Problème avec votre paiement - CI.DES';
+  
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 30px; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px;">CI.DES</h1>
+        <p style="margin: 10px 0 0 0; font-size: 16px;">Centre de Formation Cordiste IRATA</p>
+      </div>
+      
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #333; margin-bottom: 20px;">Problème avec votre paiement</h2>
+        
+        <p>Bonjour ${contributorName},</p>
+        
+        <p>Nous avons rencontré un problème lors du traitement de votre paiement de <strong>${amount.toLocaleString()} FCFA</strong>.</p>
+        
+        <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+          <h3 style="color: #856404; margin-top: 0;">Détails du problème :</h3>
+          <p style="color: #856404; margin: 0;">${errorMessage}</p>
+        </div>
+        
+        <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #2c5aa0; margin-top: 0;">Solutions possibles :</h3>
+          <ul>
+            <li>Vérifiez que votre carte bancaire est valide</li>
+            <li>Assurez-vous d'avoir suffisamment de fonds</li>
+            <li>Essayez avec une autre méthode de paiement</li>
+            <li>Contactez-nous pour un paiement alternatif</li>
+          </ul>
+        </div>
+        
+        <p>Pour nous contacter : <a href="mailto:${process.env.SMTP_FROM_EMAIL}">${process.env.SMTP_FROM_EMAIL}</a></p>
+        
+        <p>Cordialement,<br>
+        <strong>L'équipe CI.DES</strong></p>
+      </div>
+      
+      <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
+        <p>CI.DES - Centre de Formation Cordiste IRATA<br>
+        17270 BORESSE-ET-MARTRON<br>
+        Tél: +33 6 24 67 13 65 | Email: ${process.env.SMTP_FROM_EMAIL}</p>
+      </div>
+    </div>
+  `;
+
+  return sendEmail({ to: contributorEmail, subject, html });
 } 

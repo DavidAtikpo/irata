@@ -1,12 +1,32 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import React from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import InvestmentModal from './InvestmentModal';
 
-const XOF_PER_EUR = 655.957;
-const toEUR = (xof: number) => Math.round(xof / XOF_PER_EUR);
-const formatEUR = (value: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+// Taux de change (à mettre à jour régulièrement)
+const EXCHANGE_RATES = {
+  FCFA: 1,
+  EUR: 0.00152, // 1 FCFA = 0.00152 EUR
+  USD: 0.00167, // 1 FCFA = 0.00167 USD
+  XOF: 1, // FCFA = XOF
+};
+
+const COUNTRIES = [
+  { code: 'TG', name: 'Togo', currency: 'FCFA', symbol: 'FCFA' },
+  { code: 'FR', name: 'France', currency: 'EUR', symbol: '€' },
+  { code: 'US', name: 'États-Unis', currency: 'USD', symbol: '$' },
+  { code: 'CI', name: 'Côte d\'Ivoire', currency: 'XOF', symbol: 'FCFA' },
+  { code: 'SN', name: 'Sénégal', currency: 'XOF', symbol: 'FCFA' },
+  { code: 'ML', name: 'Mali', currency: 'XOF', symbol: 'FCFA' },
+  { code: 'BF', name: 'Burkina Faso', currency: 'XOF', symbol: 'FCFA' },
+  { code: 'BJ', name: 'Bénin', currency: 'XOF', symbol: 'FCFA' },
+  { code: 'NE', name: 'Niger', currency: 'XOF', symbol: 'FCFA' },
+  { code: 'GW', name: 'Guinée-Bissau', currency: 'XOF', symbol: 'FCFA' },
+];
 
 const financingOptions = [
   {
@@ -16,9 +36,9 @@ const financingOptions = [
     icon: '📚',
     baseReturn: 10,
     returnType: 'discount',
-    minAmount: Math.round(50000 / 655.957),
-    maxAmount: Math.round(500000 / 655.957),
-    currency: 'EUR'
+    minAmount: 50000,
+    maxAmount: 500000,
+    currency: 'FCFA'
   },
   {
     id: 'financial',
@@ -27,9 +47,9 @@ const financingOptions = [
     icon: '💸',
     baseReturn: 8,
     returnType: 'interest',
-    minAmount: Math.round(100000 / 655.957),
-    maxAmount: Math.round(1000000 / 655.957),
-    currency: 'EUR'
+    minAmount: 100000,
+    maxAmount: 1000000,
+    currency: 'FCFA'
   },
   {
     id: 'material',
@@ -38,30 +58,55 @@ const financingOptions = [
     icon: '🏆',
     baseReturn: 0,
     returnType: 'material',
-    minAmount: Math.round(25000 / 655.957),
-    maxAmount: Math.round(200000 / 655.957),
-    currency: 'EUR'
+    minAmount: 25000,
+    maxAmount: 200000,
+    currency: 'FCFA'
   }
 ];
 
-type CalculatorProps = {
-  option: typeof financingOptions[0];
+// Fonction de conversion
+const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string): number => {
+  if (fromCurrency === toCurrency) return amount;
+  
+  // Convertir d'abord en FCFA
+  const inFCFA = fromCurrency === 'FCFA' ? amount : amount / EXCHANGE_RATES[fromCurrency as keyof typeof EXCHANGE_RATES];
+  
+  // Puis convertir vers la devise cible
+  return toCurrency === 'FCFA' ? inFCFA : inFCFA * EXCHANGE_RATES[toCurrency as keyof typeof EXCHANGE_RATES];
 };
 
-function Calculator({ option }: CalculatorProps) {
+// Fonction de formatage de devise
+const formatCurrency = (amount: number, currency: string, symbol: string): string => {
+  if (currency === 'EUR') {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+  } else if (currency === 'USD') {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  } else {
+    return new Intl.NumberFormat('fr-FR').format(amount) + ' ' + symbol;
+  }
+};
+
+type CalculatorProps = {
+  option: typeof financingOptions[0];
+  onContribute: (option: typeof financingOptions[0], amount: number, selectedCurrency: string) => void;
+  selectedCountry: typeof COUNTRIES[0];
+};
+
+function Calculator({ option, onContribute, selectedCountry }: CalculatorProps) {
   const [amount, setAmount] = useState(option.minAmount);
+  
+  // Convertir les montants selon la devise sélectionnée
+  const convertedMinAmount = convertCurrency(option.minAmount, 'FCFA', selectedCountry.currency);
+  const convertedMaxAmount = convertCurrency(option.maxAmount, 'FCFA', selectedCountry.currency);
+  const convertedAmount = convertCurrency(amount, 'FCFA', selectedCountry.currency);
   
   const calculateReturn = () => {
     if (option.returnType === 'discount') {
-      return amount + (amount * option.baseReturn / 100);
+      return convertedAmount + (convertedAmount * option.baseReturn / 100);
     } else if (option.returnType === 'interest') {
-      return amount + (amount * option.baseReturn / 100);
+      return convertedAmount + (convertedAmount * option.baseReturn / 100);
     }
-    return amount;
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+    return convertedAmount;
   };
 
   return (
@@ -75,19 +120,26 @@ function Calculator({ option }: CalculatorProps) {
       
       <div className="mb-4">
         <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Montant du don (€)
+          Montant du don ({selectedCountry.symbol})
         </label>
         <input
           type="number"
-          min={option.minAmount}
-          max={option.maxAmount}
-          step={5}
-          value={amount}
-          onChange={(e) => setAmount(Math.max(option.minAmount, Math.min(option.maxAmount, parseInt(e.target.value) || option.minAmount)))}
+          min={convertedMinAmount}
+          max={convertedMaxAmount}
+          step={selectedCountry.currency === 'EUR' ? 1 : 1000}
+          value={convertedAmount}
+          onChange={(e) => {
+            const newAmount = parseFloat(e.target.value) || convertedMinAmount;
+            const clampedAmount = Math.max(convertedMinAmount, Math.min(convertedMaxAmount, newAmount));
+            // Convertir vers FCFA pour le stockage
+            const fcfAmount = convertCurrency(clampedAmount, selectedCountry.currency, 'FCFA');
+            setAmount(fcfAmount);
+          }}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm sm:text-base"
         />
         <p className="text-xs text-gray-500 mt-1">
-          Min: {formatCurrency(option.minAmount)} - Max: {formatCurrency(option.maxAmount)}
+          Min: {formatCurrency(convertedMinAmount, selectedCountry.currency, selectedCountry.symbol)} - 
+          Max: {formatCurrency(convertedMaxAmount, selectedCountry.currency, selectedCountry.symbol)}
         </p>
       </div>
 
@@ -97,23 +149,26 @@ function Calculator({ option }: CalculatorProps) {
             {option.returnType === 'discount' ? 'Remise obtenue' : 'Montant remboursé'}
           </h4>
           <div className="text-xl sm:text-2xl font-bold text-green-600">
-            {formatCurrency(calculateReturn())}
+            {formatCurrency(calculateReturn(), selectedCountry.currency, selectedCountry.symbol)}
           </div>
           {option.returnType === 'discount' && (
             <p className="text-xs sm:text-sm text-green-700 mt-1">
-              Économie: {formatCurrency(calculateReturn() - amount)}
+              Économie: {formatCurrency(calculateReturn() - convertedAmount, selectedCountry.currency, selectedCountry.symbol)}
             </p>
           )}
           {option.returnType === 'interest' && (
             <p className="text-xs sm:text-sm text-green-700 mt-1">
-              Gain: {formatCurrency(calculateReturn() - amount)}
+              Gain: {formatCurrency(calculateReturn() - convertedAmount, selectedCountry.currency, selectedCountry.symbol)}
             </p>
           )}
         </div>
       )}
 
-      <button className="w-full bg-green-600 text-white font-semibold py-2 sm:py-3 rounded-lg hover:bg-green-700 transition duration-300 text-sm sm:text-base">
-        Contribuer {formatCurrency(amount)}
+      <button 
+        onClick={() => onContribute(option, amount, selectedCountry.currency)}
+        className="w-full bg-green-600 text-white font-semibold py-2 sm:py-3 rounded-lg hover:bg-green-700 transition duration-300 text-sm sm:text-base"
+      >
+        Contribuer {formatCurrency(convertedAmount, selectedCountry.currency, selectedCountry.symbol)}
       </button>
     </div>
   );
@@ -141,8 +196,42 @@ function ProjectVideo() {
   );
 }
 
+// Initialize Stripe
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+if (!stripePublishableKey) {
+  console.error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not defined');
+}
+
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
+
 export default function FinancementParticipatif() {
   const [activeTab, setActiveTab] = useState('projet');
+  const [selectedOption, setSelectedOption] = useState<typeof financingOptions[0] | null>(null);
+  const [selectedAmount, setSelectedAmount] = useState(0);
+  const [selectedCurrency, setSelectedCurrency] = useState('FCFA');
+  const [showInvestmentModal, setShowInvestmentModal] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
+
+  // Détection automatique du pays basée sur la langue/navigateur
+  useEffect(() => {
+    const userLanguage = navigator.language || 'fr-FR';
+    const userCountry = userLanguage.includes('fr') ? 'FR' : 
+                       userLanguage.includes('en') ? 'US' : 'TG';
+    
+    const detectedCountry = COUNTRIES.find(c => c.code === userCountry) || COUNTRIES[0];
+    setSelectedCountry(detectedCountry);
+    setSelectedCurrency(detectedCountry.currency);
+  }, []);
+
+  const handleContribute = (option: typeof financingOptions[0], amount: number, currency: string) => {
+    setSelectedOption(option);
+    setSelectedAmount(amount);
+    setSelectedCurrency(currency);
+    setShowInvestmentModal(true);
+  };
+
+  const formatEUR = (value: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+  const toEUR = (xof: number) => Math.round(xof * EXCHANGE_RATES.EUR);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -221,7 +310,7 @@ export default function FinancementParticipatif() {
                 <li>Acquisition matériel Cordiste certifié, aux normes avec certificat de conformité et de contrôle</li>
                 <li>Acquisition de 6 appareils complémentaires ultra son pour contrôles non destructifs (CND)</li>
                 <li>Équipement complet en matériel de Santé et Sécurité au Travail (SST)</li>
-                <li>Formation d une équipe locale de formateurs pour qu ils deviennent les référents de nos formations</li>
+                <li>Formation d une équipe locale de formateurs pour qu ils deviennent les référents de nos formations</li>
               </ul>
             </div>
 
@@ -278,13 +367,46 @@ export default function FinancementParticipatif() {
 
       {activeTab === 'financement' && (
         <section id="contribuer">
+          {/* Sélection de pays/devise */}
+          <div className="mb-8 bg-gray-50 p-6 rounded-xl">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">🌍 Sélectionnez votre pays</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {COUNTRIES.map((country) => (
+                <button
+                  key={country.code}
+                  onClick={() => {
+                    setSelectedCountry(country);
+                    setSelectedCurrency(country.currency);
+                  }}
+                  className={`p-3 rounded-lg border-2 transition-all duration-200 text-sm font-medium ${
+                    selectedCountry.code === country.code
+                      ? 'border-green-500 bg-green-50 text-green-700'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-bold">{country.code}</div>
+                  <div className="text-xs opacity-75">{country.name}</div>
+                  <div className="text-xs font-semibold">{country.symbol}</div>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-600 mt-3">
+              💡 Les montants sont automatiquement convertis selon votre devise locale
+            </p>
+          </div>
+
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 text-gray-800">
             💰 Formes de Financement Participatif
           </h2>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
             {financingOptions.map((option) => (
-              <Calculator key={option.id} option={option} />
+              <Calculator 
+                key={option.id} 
+                option={option} 
+                onContribute={handleContribute}
+                selectedCountry={selectedCountry}
+              />
             ))}
           </div>
 
@@ -346,15 +468,15 @@ export default function FinancementParticipatif() {
                   </h3>
                   <div className="space-y-3">
                     <div className="border-l-4 border-purple-400 pl-3">
-                      <p className="font-semibold text-purple-700">{formatEUR(toEUR(25000))} - {formatEUR(toEUR(50000))}</p>
+                      <p className="font-semibold text-purple-700">{formatCurrency(25000, selectedCountry.currency, selectedCountry.symbol)} - {formatCurrency(50000, selectedCountry.currency, selectedCountry.symbol)}</p>
                       <p className="text-sm text-purple-600">Mug + Stylos de marque</p>
                     </div>
                     <div className="border-l-4 border-purple-400 pl-3">
-                      <p className="font-semibold text-purple-700">{formatEUR(toEUR(50000))} - {formatEUR(toEUR(100000))}</p>
+                      <p className="font-semibold text-purple-700">{formatCurrency(50000, selectedCountry.currency, selectedCountry.symbol)} - {formatCurrency(100000, selectedCountry.currency, selectedCountry.symbol)}</p>
                       <p className="text-sm text-purple-600">T-shirt + Sac à dos de marque</p>
                     </div>
                     <div className="border-l-4 border-purple-400 pl-3">
-                      <p className="font-semibold text-purple-700">{formatEUR(toEUR(100000))}+</p>
+                      <p className="font-semibold text-purple-700">{formatCurrency(100000, selectedCountry.currency, selectedCountry.symbol)}+</p>
                       <p className="text-sm text-purple-600">Kit complet + Casquette premium</p>
                     </div>
                   </div>
@@ -365,11 +487,11 @@ export default function FinancementParticipatif() {
                 🏗️ Nommage d'Équipements
               </h3>
               <ul className="space-y-2 text-sm sm:text-base text-yellow-700">
-                <li>• Don de 50K FCFA: Votre nom sur un équipement</li>
-                <li>• Don de 500K FCFA: Nommage d'une salle de cours</li>
-                <li>• Don de 1M FCFA: Nommage d'une salle de cours</li>
-                <li>• Don de 2M FCFA: Plaque commémorative permanente</li>
-                <li>• Don de 5M FCFA: Parrain officiel du centre</li>
+                <li>• Don de {formatCurrency(50000, selectedCountry.currency, selectedCountry.symbol)}: Votre nom sur un équipement</li>
+                <li>• Don de {formatCurrency(500000, selectedCountry.currency, selectedCountry.symbol)}: Nommage d'une salle de cours</li>
+                <li>• Don de {formatCurrency(1000000, selectedCountry.currency, selectedCountry.symbol)}: Nommage d'une salle de cours</li>
+                <li>• Don de {formatCurrency(2000000, selectedCountry.currency, selectedCountry.symbol)}: Plaque commémorative permanente</li>
+                <li>• Don de {formatCurrency(5000000, selectedCountry.currency, selectedCountry.symbol)}: Parrain officiel du centre</li>
               </ul>
             </div>
           </div>
@@ -391,6 +513,48 @@ export default function FinancementParticipatif() {
         </section>
       )}
       </main>
+
+      {/* Investment Modal */}
+      {stripePromise && showInvestmentModal ? (
+        <Elements stripe={stripePromise}>
+          <InvestmentModal
+            isOpen={showInvestmentModal}
+            onClose={() => {
+              setShowInvestmentModal(false);
+              setSelectedOption(null);
+            }}
+            option={selectedOption}
+            selectedAmount={selectedAmount}
+            selectedCurrency={selectedCurrency}
+            selectedCountry={selectedCountry}
+          />
+        </Elements>
+      ) : showInvestmentModal && !stripePromise ? (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-red-600 mb-4">Configuration Stripe manquante</h3>
+            <p className="text-gray-700 mb-4">
+              La clé publique Stripe n'est pas configurée. Veuillez ajouter NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY dans votre fichier .env.local
+            </p>
+            <button
+              onClick={() => setShowInvestmentModal(false)}
+              className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition duration-200"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Documents Link */}
+      <div className="fixed bottom-6 right-6">
+        <Link
+          href="/financement-participatif/documents"
+          className="bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 transition duration-300 flex items-center space-x-2"
+        >
+          <span className="text-sm font-medium">📁 Documents</span>
+        </Link>
+      </div>
     </div>
   );
 }

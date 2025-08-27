@@ -63,35 +63,30 @@ export async function GET() {
       })
     ]);
 
-    // Formations les plus demandées - Temporairement désactivé car pas de relation formationId
-    const formationsPopulaires: any[] = [];
-    // const formationsPopulaires = await prisma.demande.groupBy({
-    //   by: ['formationId'],
-    //   _count: {
-    //     formationId: true,
-    //   },
-    //   orderBy: {
-    //     _count: {
-    //       formationId: 'desc',
-    //     },
-    //   },
-    //   take: 5,
-    // });
+    // Formations les plus demandées par session
+    const formationsPopulaires = await prisma.demande.groupBy({
+      by: ['session'],
+      _count: {
+        session: true,
+      },
+      orderBy: {
+        _count: {
+          session: 'desc',
+        },
+      },
+      take: 10,
+    });
 
-    const formationsDetails = formationsPopulaires.length > 0 ? await Promise.all(
+    const formationsDetails = await Promise.all(
       formationsPopulaires.map(async (formation) => {
-        const details = await prisma.formation.findUnique({
-          where: { id: formation.formationId },
-          select: { titre: true, prix: true },
-        });
         return {
-          id: formation.formationId,
-          titre: details?.titre || 'Formation inconnue',
-          prix: details?.prix || 0,
-          count: formation._count.formationId,
+          id: formation.session, // Utiliser la session comme ID
+          titre: `Formation - ${formation.session}`, // Titre basé sur la session
+          session: formation.session,
+          count: formation._count.session,
         };
       })
-    ) : [];
+    );
 
     // Évolution des demandes par mois
     const sixMonthsAgo = new Date();
@@ -120,6 +115,103 @@ export async function GET() {
       count: item._count.createdAt,
     }));
 
+    // Statistiques des formulaires quotidiens
+    const [
+      totalFormulaires,
+      formulairesActifs,
+      totalReponses,
+      reponsesAujourdhui,
+      // Nouvelles statistiques (seulement les modèles qui existent)
+      totalSignaturesInduction,
+      signaturesInductionAujourdhui,
+      totalSatisfactionClient,
+      satisfactionClientAujourdhui,
+      totalInvoices,
+      invoicesPayees,
+      invoicesPartielles,
+      invoicesEnAttente
+    ] = await Promise.all([
+      prisma.formulairesQuotidiens.count(),
+      prisma.formulairesQuotidiens.count({ where: { actif: true } }),
+      prisma.reponseFormulaire.count(),
+      prisma.reponseFormulaire.count({
+        where: {
+          dateReponse: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            lt: new Date(new Date().setHours(23, 59, 59, 999)),
+          },
+        },
+      }),
+      // Signatures d'induction
+      prisma.traineeInductionSignature.count(),
+      prisma.traineeInductionSignature.count({
+        where: {
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            lt: new Date(new Date().setHours(23, 59, 59, 999)),
+          },
+        },
+      }),
+      // Satisfaction client
+      prisma.customerSatisfactionResponse.count(),
+      prisma.customerSatisfactionResponse.count({
+        where: {
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            lt: new Date(new Date().setHours(23, 59, 59, 999)),
+          },
+        },
+      }),
+      // Factures
+      prisma.invoice.count(),
+      prisma.invoice.count({ where: { paymentStatus: 'PAID' } }),
+      prisma.invoice.count({ where: { paymentStatus: 'PARTIAL' } }),
+      prisma.invoice.count({ where: { paymentStatus: 'PENDING' } }),
+    ]);
+
+    // Statistiques temporaires pour les modèles qui n'existent pas encore
+    const totalDeclarationsMedicales = 0;
+    const declarationsMedicalesAujourdhui = 0;
+    const totalAttendanceSignatures = 0;
+    const attendanceSignaturesAujourdhui = 0;
+
+    // Calcul du score moyen et top performers
+    const reponsesAvecScores = await prisma.reponseFormulaire.findMany({
+      where: {
+        score: { not: null },
+        maxScore: { not: null },
+      },
+      select: {
+        score: true,
+        maxScore: true,
+        stagiaire: {
+          select: {
+            nom: true,
+            prenom: true,
+          },
+        },
+      },
+    });
+
+    const moyenneScores = reponsesAvecScores.length > 0
+      ? (reponsesAvecScores.reduce((sum, reponse) => sum + (reponse.score || 0), 0) / 
+         reponsesAvecScores.reduce((sum, reponse) => sum + (reponse.maxScore || 0), 0)) * 100
+      : 0;
+
+    // Top performers (meilleurs scores)
+    const topPerformers = reponsesAvecScores
+      .map(reponse => {
+        const nomComplet = `${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}`.trim() || 'Stagiaire anonyme';
+        return {
+          utilisateurNom: nomComplet,
+          score: reponse.score || 0,
+          maxScore: reponse.maxScore || 1,
+          percentage: ((reponse.score || 0) / (reponse.maxScore || 1)) * 100,
+        };
+      })
+      .sort((a, b) => b.percentage - a.percentage)
+      .slice(0, 5);
+
     return NextResponse.json({
       totalDemandes,
       demandesEnAttente,
@@ -138,6 +230,37 @@ export async function GET() {
       montantTotalContrats: montantTotalContrats.reduce((sum, contrat) => sum + (contrat.devis?.montant || 0), 0),
       formationsPopulaires: formationsDetails,
       demandesParMois: demandesParMoisFormatted,
+      formulairesQuotidiens: {
+        totalFormulaires,
+        formulairesActifs,
+        totalReponses,
+        reponsesAujourdhui,
+        moyenneScores,
+        topPerformers,
+      },
+      // Nouvelles statistiques complètes
+      signaturesInduction: {
+        total: totalSignaturesInduction,
+        aujourdhui: signaturesInductionAujourdhui,
+      },
+      declarationsMedicales: {
+        total: totalDeclarationsMedicales,
+        aujourdhui: declarationsMedicalesAujourdhui,
+      },
+      satisfactionClient: {
+        total: totalSatisfactionClient,
+        aujourdhui: satisfactionClientAujourdhui,
+      },
+      attendanceSignatures: {
+        total: totalAttendanceSignatures,
+        aujourdhui: attendanceSignaturesAujourdhui,
+      },
+      factures: {
+        total: totalInvoices,
+        payees: invoicesPayees,
+        partielles: invoicesPartielles,
+        enAttente: invoicesEnAttente,
+      },
     });
   } catch (error) {
     console.error('Erreur lors de la récupération des statistiques:', error);

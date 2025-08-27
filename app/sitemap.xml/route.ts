@@ -8,47 +8,15 @@ const STATIC_PATHS = [
   '/demande',
   '/demande/success',
   '/contact',
-  '/user/devis/ID/contrat', // dynamic placeholder example
+
   // Auth
   '/login',
   '/register',
   '/forgot-password',
   '/reset-password',
   // User
-  '/dashboard',
-  '/documents',
-  '/mon-contrat',
-  '/mes-devis',
-  '/mes-demandes',
-  '/profile',
-  '/formulaires-quotidiens',
-  '/customer-satisfaction',
-  '/trainee-follow-up',
-  // Admin
-  '/admin',
-  '/admin/dashboard',
-  '/admin/demandes',
-  '/admin/devis',
-  '/admin/devis/nouveau',
-  '/admin/documents',
-  '/admin/documents/view/ID', // placeholder
-  '/admin/inspection-report',
-  '/admin/inspections',
-  '/admin/inspections/new',
-  '/admin/job-planing',
-  '/admin/job-planing/new',
-  '/admin/rapports',
-  '/admin/formations',
-  '/admin/formations/new',
-  '/admin/customer-satisfaction',
-  '/admin/financement-participatif',
-  '/admin/formulaires-quotidiens',
-  '/admin/formulaires-quotidiens/reponses',
-  '/admin/contrats',
-  '/admin/liste-presence',
-  '/admin/suivi-irata',
-  '/admin/parametres',
-  '/admin/utilisateurs',
+  
+  
 ];
 
 function getBaseUrl(req: NextRequest): string {

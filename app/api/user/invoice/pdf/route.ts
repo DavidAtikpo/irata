@@ -1,355 +1,334 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 import puppeteer from 'puppeteer';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
-type InvoiceLineItem = {
-  reference: string;
-  designation: string;
-  quantity: number;
-  unitPrice: number;
-  tva: number;
-  imageUrl?: string;
-};
-
-type InvoiceData = {
-  title: string;
-  codeNumberLabel?: string;
-  codeNumber?: string;
-  revisionLabel?: string;
-  revision?: string | number;
-  creationDateLabel?: string;
-  creationDate?: string;
-  company: {
-    name: string;
-    contactName?: string;
-    addressLines: string[];
-    email?: string;
-    phone?: string;
-    siret?: string;
-    nif?: string;
-    invoiceNumberLabel?: string;
-    invoiceNumber?: string;
-    invoiceDateLabel?: string;
-    invoiceDate?: string;
-  };
-  customer: {
-    name?: string;
-    addressLines: string[];
-    email?: string;
-    phone?: string;
-    siretLabel?: string;
-    siret?: string;
-    convLabel?: string;
-    conv?: string;
-    companyTitle?: string;
-  };
-  recipient: {
-    name: string;
-    addressLines: string[];
-    email?: string;
-    phone?: string;
-  };
-  items: InvoiceLineItem[];
-  footerLeft?: string;
-  footerRight?: string;
-  showQr?: boolean;
-  trainee?: { fullName?: string; email?: string };
-};
-
-function euro(n: number) {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n);
-}
-
-function buildHtml(data: InvoiceData, originalAmount?: number) {
-  const logoUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/logo.png`;
-  const totalHT = data.items.reduce((s, it) => s + it.quantity * it.unitPrice, 0);
-  const totalTVA = data.items.reduce((s, it) => s + (it.quantity * it.unitPrice * it.tva) / 100, 0);
-  const totalTTC = totalHT + totalTVA;
-  const remainingAmount = originalAmount ? originalAmount - totalTTC : 0;
-
-  return `<!DOCTYPE html>
-  <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Facture ${data.company.invoiceNumber ?? ''}</title>
-    <style>
-      body { font-family: Arial, sans-serif; margin: 24px; color: #111827; }
-      .header { display:flex; align-items:flex-start; gap:16px; margin-bottom:16px; }
-      .logo { width:60px; height:60px; object-fit:contain; }
-      table { border-collapse: collapse; width: 100%; }
-      .meta th, .meta td { border: 1px solid #e5e7eb; padding: 6px 8px; font-size: 12px; }
-      .meta th { background: #f9fafb; text-align:left; }
-      .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-      .card { border:1px solid #e5e7eb; border-radius:6px; padding:10px; font-size:12px; }
-      .title { font-weight:600; margin-bottom:6px; font-size:12px; }
-      .items th, .items td { border:1px solid #e5e7eb; padding:6px 8px; font-size:12px; }
-      .items th { background:#f9fafb; text-align:left; }
-      .text-right { text-align:right; }
-      .footer { margin-top:18px; text-align:center; font-size:11px; color:#6b7280; border-top:1px solid #e5e7eb; padding-top:10px; }
-    </style>
-  </head>
-  <body>
-    <div class="header">
-      <img class="logo" src="${logoUrl}" alt="CI.DES Logo" />
-      <table class="meta">
-        <tbody>
-          <tr>
-            <th>Titre</th>
-            <th>${data.codeNumberLabel ?? 'Numéro de code'}</th>
-            <th>${data.revisionLabel ?? 'Révision'}</th>
-            <th>${data.creationDateLabel ?? 'Création date'}</th>
-          </tr>
-          <tr>
-            <td>${data.title}</td>
-            <td>${data.codeNumber ?? ''}</td>
-            <td>${data.revision ?? ''}</td>
-            <td>${data.creationDate ?? ''}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="grid">
-      <div class="card">
-        <div class="title">${data.company.name}</div>
-        <div>${data.company.contactName ?? ''}</div>
-        <div>${data.company.addressLines.join('<br/>')}</div>
-        <div>${data.company.email ?? ''}</div>
-        <div>${data.company.phone ?? ''}</div>
-        <div>SIRET : ${data.company.siret ?? ''}</div>
-        <div>${data.company.invoiceNumberLabel ?? 'FACTURE N°'} ${data.company.invoiceNumber ?? ''}</div>
-        <div>${data.company.invoiceDateLabel ?? 'Le'} ${data.company.invoiceDate ?? ''}</div>
-      </div>
-
-      <div class="card">
-        <div class="title">${data.customer.companyTitle ?? 'Client'}</div>
-        <div>${data.customer.addressLines.join('<br/>')}</div>
-        <div>${data.customer.siretLabel ?? 'N°SIRET :'} ${data.customer.siret ?? ''}</div>
-        <div>${data.customer.convLabel ?? 'N°Convention'} ${data.customer.conv ?? ''}</div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top: 12px;">
-      <div class="title">Destinataire</div>
-      <div>${data.recipient.name}</div>
-      <div>${data.recipient.addressLines.join('<br/>')}</div>
-      <div>${data.recipient.email ?? ''}</div>
-      <div>${data.recipient.phone ?? ''}</div>
-    </div>
-
-    <table class="items" style="margin-top: 12px;">
-      <thead>
-        <tr>
-          <th>Référence</th>
-          <th>Désignation</th>
-          <th>Quantité</th>
-          <th>Prix unitaire</th>
-          <th>TVA %</th>
-          <th>Montant HT</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${data.items.map(it => {
-          const montantHT = it.quantity * it.unitPrice;
-          return `<tr>
-            <td>${it.reference}</td>
-            <td>${(it.designation || '').replace(/\n/g, '<br/>')}</td>
-            <td class="text-right">${it.quantity.toFixed(2)}</td>
-            <td class="text-right">${euro(it.unitPrice)}</td>
-            <td class="text-right">${it.tva.toFixed(2)} %</td>
-            <td class="text-right">${euro(montantHT)}</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-             <tfoot>
-         <tr>
-           <td colspan="5" class="text-right"><strong>Total HT</strong></td>
-           <td class="text-right"><strong>${euro(totalHT)}</strong></td>
-         </tr>
-         <tr>
-           <td colspan="5" class="text-right">Total TVA</td>
-           <td class="text-right">${euro(totalTVA)}</td>
-         </tr>
-         <tr>
-           <td colspan="5" class="text-right"><strong>Total TTC</strong></td>
-           <td class="text-right"><strong>${euro(totalTTC)}</strong></td>
-         </tr>
-         ${remainingAmount > 0 ? `
-         <tr>
-           <td colspan="5" class="text-right" style="color: #dc2626;"><strong>Reste à payer</strong></td>
-           <td class="text-right" style="color: #dc2626;"><strong>${euro(remainingAmount)}</strong></td>
-         </tr>
-         ` : ''}
-       </tfoot>
-    </table>
-
-    <div class="footer">
-      <div><strong>CI.DES sasu</strong> · Capital 2 500 Euros</div>
-      <div>SIRET : 87840789900011 · VAT : FR71878407899</div>
-      <div>${data.footerRight ?? 'Page 1 sur 1'}</div>
-    </div>
-  </body>
-  </html>`;
-}
+const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
+    // Vérifier l'authentification
     const session = await getServerSession(authOptions);
-    
-    if (!session) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-              // Récupérer la facture de l'utilisateur avec les données utilisateur et session
-     const userInvoices = await prisma.$queryRaw`
-       SELECT 
-         i.id,
-         i."userId",
-         i."invoiceNumber",
-         i.amount,
-         i."paidAmount",
-         i."paymentStatus",
-         i."createdAt",
-         u.prenom,
-         u.nom,
-         u.email,
-         c.adresse,
-         d.numero as "devisNumero",
-         d.session
-       FROM "webirata"."Invoice" i
-       JOIN "webirata"."User" u ON i."userId" = u.id
-       JOIN "webirata"."Contrat" c ON i."contratId" = c.id
-       JOIN "webirata"."Devis" d ON c."devisId" = d.id
-       WHERE i."userId" = ${session.user.id}
-       ORDER BY i."createdAt" DESC
-       LIMIT 1
-     `;
+    const { invoiceId } = await request.json();
 
-     const userInvoice = Array.isArray(userInvoices) && userInvoices.length > 0 ? userInvoices[0] : null;
+    if (!invoiceId) {
+      return NextResponse.json({ error: 'ID de facture requis' }, { status: 400 });
+    }
 
-         if (!userInvoice) {
-       return NextResponse.json({ error: 'Aucune facture trouvée' }, { status: 404 });
-     }
+    // Récupérer l'utilisateur
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
 
-     // Générer le numéro de facture côté utilisateur
-     const currentYear = new Date().getFullYear();
-     const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
-     const invoiceNumber = `CI.FF ${currentYear}${currentMonth} ${String(userInvoice.id).slice(-3).padStart(3, '0')}`;
+    if (!user) {
+      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
+    }
 
-     // Préparer les données pour la génération PDF
-     const invoiceData: InvoiceData = {
-      title: 'TRAME BDC DEVIS FACTURE',
-      codeNumberLabel: 'Numéro de code',
-      codeNumber: 'ENR-CIDFA-COMP 002',
-      revisionLabel: 'Révision',
-      revision: '00',
-      creationDateLabel: 'Création date',
-      creationDate: new Date().toLocaleDateString('fr-FR'),
-             company: {
-         name: 'CI.DES',
-         contactName: 'CHEZ CHAGNEAU',
-         addressLines: ['17270 BORESSE-ET-MARTRON', 'admin38@cides.fr'],
-         siret: '87840789900011',
-         invoiceNumberLabel: 'FACTURE N°',
-         invoiceNumber: invoiceNumber,
-         invoiceDateLabel: 'Le',
-         invoiceDate: new Date(userInvoice.createdAt).toLocaleDateString('fr-FR'),
-       },
-      customer: {
-        companyTitle: 'FRANCE TRAVAIL DR BRETAGNE',
-        addressLines: ['Adresses :'],
-        siretLabel: 'N°SIRET :',
-        siret: '13000548108070',
-        convLabel: 'N°Convention (Enregistrement)',
-        conv: '41C27G263296',
-        name: '',
-        email: '',
-        phone: '',
+    // Récupérer la facture avec vérification d'autorisation
+    const invoice = await prisma.invoice.findFirst({
+      where: {
+        id: invoiceId,
+        userId: user.id, // Vérifier que la facture appartient à l'utilisateur
       },
-             recipient: {
-         name: `Monsieur ${userInvoice.prenom || ''} ${userInvoice.nom || ''}`.trim() || 'Utilisateur',
-         addressLines: [userInvoice.adresse || ''],
-         phone: '',
-         email: userInvoice.email || '',
-       },
-             items: [
-         {
-           reference: 'CI.IFF',
-           designation: `Formation Cordiste IRATA\nDevis #${userInvoice.devisNumero}\nSession: ${userInvoice.session}${userInvoice.paymentStatus === 'PARTIAL' ? '\n(Paiement partiel)' : ''}`,
-           quantity: 1,
-           unitPrice: userInvoice.paidAmount || userInvoice.amount,
-           tva: 0,
-         },
-       ],
-      footerRight: 'Page 1 sur 2',
-      showQr: true,
-    };
+      include: {
+        contrat: {
+          include: {
+            devis: true,
+          },
+        },
+      },
+    });
 
-         // Générer le PDF directement
-     const html = buildHtml(invoiceData, userInvoice.amount);
-     
-     // Configuration Puppeteer pour production
-    const isProduction = process.env.NODE_ENV === 'production';
-    
-    const browserConfig = {
+    if (!invoice) {
+      return NextResponse.json({ error: 'Facture non trouvée' }, { status: 404 });
+    }
+
+    // Charger le logo en base64
+    let logoBase64 = '';
+    try {
+      const logoPath = join(process.cwd(), 'public', 'logo.png');
+      const logoBuffer = readFileSync(logoPath);
+      logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    } catch (error) {
+      console.warn('Logo non trouvé, utilisation d\'un placeholder');
+      logoBase64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMjAwIDUwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iNTAiIGZpbGw9IiM2QjcyOEYiLz48dGV4dCB4PSIxMDAiIHk9IjMwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5DSURFUyBMb2dvPC90ZXh0Pjwvc3ZnPg==';
+    }
+
+    // Générer le HTML pour le PDF avec le même format que l'aperçu
+    const totalHT = invoice.amount;
+    const totalTVA = 0; // TVA à 0%
+    const totalTTC = totalHT + totalTVA;
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Facture ${invoice.invoiceNumber}</title>
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 2cm;
+          }
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+          }
+          .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .header {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+          }
+          .logo {
+            width: 60px;
+            height: 60px;
+            margin-right: 16px;
+          }
+          .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+          }
+          .info-table td {
+            border: 1px solid #e5e7eb;
+            padding: 6px 8px;
+          }
+          .info-table th {
+            border: 1px solid #e5e7eb;
+            padding: 6px 8px;
+            background: #f9fafb;
+            font-weight: bold;
+            text-align: left;
+          }
+          .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 24px 0;
+          }
+          .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 11px;
+          }
+          .card-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 12px;
+          }
+          .recipient {
+            text-align: center;
+            margin: 24px 0;
+            font-size: 12px;
+          }
+          .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin: 24px 0;
+          }
+          .items-table th,
+          .items-table td {
+            border: 1px solid #e5e7eb;
+            padding: 6px 8px;
+          }
+          .items-table th {
+            background: #f9fafb;
+            font-weight: bold;
+            text-align: left;
+          }
+          .text-right {
+            text-align: right;
+          }
+          .text-center {
+            text-align: center;
+          }
+          .totals {
+            margin-top: 24px;
+          }
+          .footer {
+            margin-top: 32px;
+            text-align: center;
+            font-size: 10px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 12px;
+          }
+          .whitespace-pre-line {
+            white-space: pre-line;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <!-- Header with Logo and Info Table -->
+          <div class="header">
+            <img src="${logoBase64}" alt="CI.DES Logo" class="logo">
+            <table class="info-table">
+              <tbody>
+                <tr>
+                  <th>Titre</th>
+                  <th>Numéro de code</th>
+                  <th>Révision</th>
+                  <th>Création date</th>
+                </tr>
+                <tr>
+                  <td>TRAME BDC DEVIS FACTURE</td>
+                  <td>ENR-CIDFA-COMP 002</td>
+                  <td>00</td>
+                  <td>${new Date().toLocaleDateString('fr-FR')}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Company / Customer blocks -->
+          <div class="grid">
+            <div class="card">
+              <div class="card-title">CI.DES</div>
+              <div>CHEZ CHAGNEAU</div>
+              <div>17270 BORESSE-ET-MARTRON</div>
+              <div>admin38@cides.fr</div>
+              <div>SIRET: 87840789900011</div>
+              <div style="margin-top: 8px;">
+                <strong>FACTURE N°</strong> ${invoice.invoiceNumber}
+              </div>
+              <div>
+                <strong>Le</strong> ${new Date(invoice.createdAt).toLocaleDateString('fr-FR')}
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">FRANCE TRAVAIL DR BRETAGNE</div>
+              <div>Adresses :</div>
+              <div><strong>N°SIRET:</strong> 13000548108070</div>
+              <div><strong>N°Convention:</strong> 41C27G263296</div>
+              <div style="margin-top: 8px;">
+                <strong>Stagiaire:</strong> ${invoice.contrat.nom} ${invoice.contrat.prenom}
+              </div>
+              <div>
+                <strong>Email:</strong> ${user.email}
+              </div>
+            </div>
+          </div>
+
+          <!-- Recipient -->
+          <div class="recipient">
+            <div style="font-weight: 600;">Monsieur ${invoice.contrat.nom} ${invoice.contrat.prenom}</div>
+            <div>Adresse de l'utilisateur</div>
+            <div>Email: ${user.email}</div>
+          </div>
+
+          <!-- Items Table -->
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Référence</th>
+                <th>Désignation</th>
+                <th class="text-right">Quantité</th>
+                <th class="text-right">Prix unitaire</th>
+                <th class="text-right">TVA</th>
+                <th class="text-right">Montant HT</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>CI.IFF</td>
+                                 <td class="whitespace-pre-line">Formation Cordiste IRATA
+${invoice.contrat?.devis?.numero ? `Devis #${invoice.contrat.devis.numero}` : ''}</td>
+                <td class="text-right">1.00</td>
+                <td class="text-right">${invoice.amount.toFixed(2)} €</td>
+                <td class="text-right">0.00 %</td>
+                <td class="text-right">${invoice.amount.toFixed(2)} €</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="5" class="text-right"><strong>Total HT</strong></td>
+                <td class="text-right"><strong>${totalHT.toFixed(2)} €</strong></td>
+              </tr>
+              <tr>
+                <td colspan="5" class="text-right">Total TVA</td>
+                <td class="text-right">${totalTVA.toFixed(2)} €</td>
+              </tr>
+              <tr style="background-color: #f3f4f6;">
+                <td colspan="5" class="text-right"><strong>Total TTC</strong></td>
+                <td class="text-right"><strong>${totalTTC.toFixed(2)} €</strong></td>
+              </tr>
+              ${invoice.paymentStatus === 'PARTIAL' && invoice.paidAmount ? `
+              <tr style="color: #dc2626;">
+                <td colspan="5" class="text-right"><strong>Reste à payer</strong></td>
+                <td class="text-right"><strong>${(invoice.amount - invoice.paidAmount).toFixed(2)} €</strong></td>
+              </tr>
+              ` : ''}
+            </tfoot>
+          </table>
+
+          <!-- Footer -->
+          <div class="footer">
+            <div><strong>CI.DES sasu</strong> · Capital 2 500 Euros</div>
+            <div>SIRET : 87840789900011 · VAT : FR71878407899</div>
+            <div style="margin-top: 8px;">Page 1 sur 1</div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Générer le PDF avec Puppeteer
+    const browser = await puppeteer.launch({
       headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-software-rasterizer',
-        '--disable-extensions',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-features=TranslateUI,VizDisplayCompositor',
-        '--disable-ipc-flooding-protection',
-        '--memory-pressure-off',
-        '--max_old_space_size=4096',
-        '--no-zygote',
-        '--single-process'
-      ],
-      ...(isProduction && {
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
-      }),
-      timeout: 30000
-    };
-    
-    const browser = await puppeteer.launch(browserConfig);
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+
     const page = await browser.newPage();
-    
-    await page.setViewport({ width: 1200, height: 1600 });
-    await page.setContent(html, { 
-      waitUntil: ['networkidle0', 'domcontentloaded'],
-      timeout: 30000 
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    const pdf = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '2cm',
+        right: '2cm',
+        bottom: '3cm',
+        left: '2cm',
+      },
+      displayHeaderFooter: false,
     });
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const pdf = await page.pdf({ 
-      format: 'A4', 
-      printBackground: true, 
-      margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' } 
-    });
+
     await browser.close();
-    
-    const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
-    
-    return new NextResponse(arrayBuffer, {
+
+    // Retourner le PDF
+    return new NextResponse(Buffer.from(pdf), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="facture_${userInvoice.invoiceNumber}.pdf"`,
+        'Content-Disposition': `attachment; filename="facture_${invoice.invoiceNumber.replace(/\s+/g, '_')}.pdf"`,
       },
     });
-
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
     return NextResponse.json(
       { error: 'Erreur lors de la génération du PDF' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

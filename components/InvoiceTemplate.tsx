@@ -66,6 +66,15 @@ export interface InvoiceData {
   showQr?: boolean;
 }
 
+export interface InvoiceTemplateProps {
+  data: InvoiceData;
+  showPaymentButton?: boolean;
+  onPaymentClick?: () => void;
+  paymentStatus?: 'PENDING' | 'PARTIAL' | 'PAID';
+  paidAmount?: number;
+  hasSelectedInvoice?: boolean;
+}
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
@@ -74,7 +83,14 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
+export default function InvoiceTemplate({ 
+  data, 
+  showPaymentButton = false, 
+  onPaymentClick, 
+  paymentStatus = 'PENDING',
+  paidAmount = 0,
+  hasSelectedInvoice = false
+}: InvoiceTemplateProps) {
   const totalHT = data.items.reduce((sum, it) => sum + it.quantity * it.unitPrice, 0);
   const totalTVA = data.items.reduce((sum, it) => sum + (it.quantity * it.unitPrice * it.tva) / 100, 0);
   const totalTTC = totalHT + totalTVA;
@@ -339,6 +355,68 @@ export default function InvoiceTemplate({ data }: { data: InvoiceData }) {
           </div>
           <div className="sm:ml-4">Page 1 sur 1</div>
         </div>
+
+        {/* Payment Section */}
+        {showPaymentButton && (
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            {/* Payment Status Info */}
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-gray-700">Montant total:</span>
+                  <span className="ml-2 text-gray-900">{formatCurrency(totalTTC)}</span>
+                </div>
+                {paymentStatus === 'PARTIAL' && paidAmount > 0 && (
+                  <div>
+                    <span className="font-medium text-gray-700">Montant payé:</span>
+                    <span className="ml-2 text-green-600">{formatCurrency(paidAmount)}</span>
+                  </div>
+                )}
+                <div>
+                  <span className="font-medium text-gray-700">Reste à payer:</span>
+                  <span className="ml-2 text-red-600 font-semibold">
+                    {paymentStatus === 'PARTIAL' && paidAmount > 0 
+                      ? formatCurrency(totalTTC - paidAmount)
+                      : formatCurrency(totalTTC)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Buttons */}
+            {(paymentStatus === 'PENDING' || paymentStatus === 'PARTIAL') && onPaymentClick && hasSelectedInvoice && (
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={onPaymentClick}
+                  className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  {paymentStatus === 'PARTIAL' 
+                    ? `Payer le reste (${formatCurrency(totalTTC - paidAmount)})`
+                    : `Payer cette facture (${formatCurrency(totalTTC)})`
+                  }
+                </button>
+              </div>
+            )}
+
+
+
+            {/* Success Message for Paid Invoice */}
+            {paymentStatus === 'PAID' && (
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-4">
+                  <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-green-600 mb-2">Facture payée avec succès !</h3>
+                <p className="text-gray-600">Votre facture a été entièrement payée.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

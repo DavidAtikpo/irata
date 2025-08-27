@@ -363,21 +363,22 @@ model TrainingSession {
 }
 
 model Contribution {
-  id                String             @id @default(cuid())
-  donorName         String
-  donorEmail        String
-  donorPhone        String?
-  amount            Int
-  type              ContributionType
-  returnAmount      Int
-  returnDescription String?
-  paymentMethod     PaymentMethod      @default(MOBILE_MONEY)
-  status            ContributionStatus @default(PENDING)
-  notes             String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  userId            String?
-  user              User?              @relation(fields: [userId], references: [id])
+  id                    String             @id @default(cuid())
+  donorName             String
+  donorEmail            String
+  donorPhone            String?
+  amount                Int
+  type                  ContributionType
+  returnAmount          Int
+  returnDescription     String?
+  paymentMethod         PaymentMethod      @default(MOBILE_MONEY)
+  status                ContributionStatus @default(PENDING)
+  stripePaymentIntentId String?            @unique
+  notes                 String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  userId                String?
+  user                  User?              @relation(fields: [userId], references: [id])
 
   @@schema("webirata")
 }

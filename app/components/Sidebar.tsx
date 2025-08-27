@@ -23,7 +23,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const navigation = [
-  { name: 'Tableau de bord', href: '/admin', icon: HomeIcon },
+  { name: 'Tableau de bord', href: '/admin/dashboard', icon: HomeIcon },
   { name: 'Demandes', href: '/admin/demandes', icon: ClipboardDocumentListIcon },
   { name: 'Devis', href: '/admin/devis', icon: DocumentTextIcon },
   { name: 'Contrats', href: '/admin/contrats', icon: DocumentDuplicateIcon },
