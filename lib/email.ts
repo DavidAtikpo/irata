@@ -245,6 +245,70 @@ export async function sendPaymentFailureEmail(
   return sendEmail({ to: contributorEmail, subject, html });
 }
 
+export async function sendWelcomeEmail({
+  email,
+  name,
+  temporaryPassword
+}: {
+  email: string;
+  name: string;
+  temporaryPassword: string;
+}) {
+  const subject = `🎉 Bienvenue sur CI.DES - Votre compte a été créé`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #f9fafb;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #2563eb; margin: 0; font-size: 24px;">🎉 Bienvenue sur CI.DES</h1>
+        <p style="color: #6b7280; margin: 5px 0;">Centre de Multi Formations en Sécurité</p>
+      </div>
+      
+      <div style="background-color: white; padding: 25px; border-radius: 8px; border-left: 4px solid #10b981;">
+        <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 20px;">Bonjour ${name},</h2>
+        
+        <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+          Félicitations ! Votre compte a été créé automatiquement suite à votre contribution au projet de financement participatif.
+        </p>
+        
+        <div style="background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #0c4a6e; margin: 0 0 15px 0; font-size: 18px;">🔐 Vos identifiants de connexion</h3>
+          <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 4px; padding: 15px; margin: 15px 0;">
+            <p style="margin: 8px 0; color: #92400e;"><strong>Email :</strong> ${email}</p>
+            <p style="margin: 8px 0; color: #92400e;"><strong>Mot de passe temporaire :</strong> ${temporaryPassword}</p>
+          </div>
+          <p style="color: #dc2626; font-size: 14px; margin: 10px 0;">
+            ⚠️ <strong>Important :</strong> Notez bien ce mot de passe. Vous pourrez le changer dans votre profil après connexion.
+          </p>
+        </div>
+        
+        <div style="background-color: #ecfdf5; border: 1px solid #10b981; border-radius: 6px; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #065f46; margin: 0 0 15px 0; font-size: 18px;">🚀 Que pouvez-vous faire maintenant ?</h3>
+          <ul style="color: #047857; line-height: 1.8; margin: 0; padding-left: 20px;">
+            <li>Accéder à votre dashboard personnel</li>
+            <li>Suivre l'avancement du projet</li>
+            <li>Consulter vos contributions</li>
+            <li>Recevoir des mises à jour exclusives</li>
+            <li>Modifier votre profil et mot de passe</li>
+          </ul>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/user/dashboard" 
+             style="background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+            Accéder à mon Dashboard
+          </a>
+        </div>
+        
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px; text-align: center;">
+          Merci de votre confiance et de votre contribution à notre projet !<br>
+          L'équipe CI.DES
+        </p>
+      </div>
+    </div>
+  `;
+
+  return sendEmail({ to: email, subject, html });
+}
+
 export async function sendInvoicePaymentConfirmationEmail(
   userEmail: string,
   userName: string,

@@ -11,9 +11,9 @@ import {
 } from '@stripe/react-stripe-js';
 
 // Vérifier que la clé Stripe est définie
-const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_KEY;
 if (!stripePublishableKey) {
-  console.error('STRIPE_PUBLISHABLE_KEY is not defined');
+  // console.error('NEXT_PUBLIC_STRIPE_KEY is not defined');
 }
 
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
@@ -31,12 +31,6 @@ interface InvestmentModalProps {
   } | null;
   selectedAmount: number;
   selectedCurrency: string;
-  selectedCountry: {
-    code: string;
-    name: string;
-    currency: string;
-    symbol: string;
-  };
 }
 
 interface InvestorFormData {
@@ -67,28 +61,50 @@ const convertCurrency = (amount: number, fromCurrency: string, toCurrency: strin
 };
 
 // Fonction de formatage de devise
-const formatCurrency = (amount: number, currency: string, symbol: string): string => {
+const formatCurrency = (amount: number, currency: string, symbol?: string): string => {
   if (currency === 'EUR') {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
   } else if (currency === 'USD') {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  } else if (currency === 'GBP') {
+    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
+  } else if (currency === 'CHF') {
+    return new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(amount);
+  } else if (currency === 'GHS') {
+    return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS' }).format(amount);
+  } else if (currency === 'NGN') {
+    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount);
   } else {
-    return new Intl.NumberFormat('fr-FR').format(amount) + ' ' + symbol;
+    const defaultSymbol = symbol || 'FCFA';
+    return new Intl.NumberFormat('fr-FR').format(amount) + ' ' + defaultSymbol;
   }
+};
+
+// Fonction pour obtenir le symbole de la devise
+const getCurrencySymbol = (currency: string): string => {
+  const symbols: { [key: string]: string } = {
+    'FCFA': 'FCFA',
+    'XOF': 'FCFA',
+    'EUR': '€',
+    'USD': '$',
+    'GBP': '£',
+    'CHF': 'CHF',
+    'GHS': '₵',
+    'NGN': '₦'
+  };
+  return symbols[currency] || 'FCFA';
 };
 
 function PaymentForm({ 
   formData, 
   option, 
   selectedCurrency,
-  selectedCountry,
   onSuccess, 
   onError 
 }: {
   formData: InvestorFormData;
   option: InvestmentModalProps['option'];
   selectedCurrency: string;
-  selectedCountry: InvestmentModalProps['selectedCountry'];
   onSuccess: (result: any) => void;
   onError: (error: string) => void;
 }) {
@@ -211,18 +227,18 @@ function PaymentForm({
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span>Montant de la contribution:</span>
-            <span className="font-semibold">{formatCurrency(formData.amount, selectedCurrency, selectedCountry.symbol)}</span>
+            <span className="font-semibold">{formatCurrency(formData.amount, selectedCurrency, getCurrencySymbol(selectedCurrency))}</span>
           </div>
           <div className="flex justify-between">
             <span>Valeur du retour:</span>
             <span className="font-semibold text-green-600">
-              {formatCurrency(calculateReturn(), selectedCurrency, selectedCountry.symbol)}
+              {formatCurrency(calculateReturn(), selectedCurrency, getCurrencySymbol(selectedCurrency))}
             </span>
           </div>
           <div className="flex justify-between text-blue-600">
             <span>Bénéfice:</span>
             <span className="font-semibold">
-              +{formatCurrency(calculateReturn() - formData.amount, selectedCurrency, selectedCountry.symbol)}
+              +{formatCurrency(calculateReturn() - formData.amount, selectedCurrency, getCurrencySymbol(selectedCurrency))}
             </span>
           </div>
         </div>
@@ -289,7 +305,7 @@ function PaymentForm({
               Traitement...
             </span>
           ) : (
-            `Confirmer ${formatCurrency(formData.amount, selectedCurrency, selectedCountry.symbol)}`
+            `Confirmer ${formatCurrency(formData.amount, selectedCurrency, getCurrencySymbol(selectedCurrency))}`
           )}
         </button>
       </div>
@@ -297,13 +313,12 @@ function PaymentForm({
   );
 }
 
-export default function InvestmentModal({ 
-  isOpen, 
-  onClose, 
-  option, 
-  selectedAmount, 
-  selectedCurrency, 
-  selectedCountry 
+export default function InvestmentModal({
+  isOpen,
+  onClose,
+  option,
+  selectedAmount,
+  selectedCurrency
 }: InvestmentModalProps) {
   const [step, setStep] = useState<'form' | 'payment' | 'success' | 'error'>('form');
   const [formData, setFormData] = useState<InvestorFormData>({
@@ -331,7 +346,7 @@ export default function InvestmentModal({
     const convertedMaxAmount = convertCurrency(option.maxAmount, 'FCFA', selectedCurrency);
 
     if (formData.amount < convertedMinAmount || formData.amount > convertedMaxAmount) {
-      setError(`Le montant doit être entre ${formatCurrency(convertedMinAmount, selectedCurrency, selectedCountry.symbol)} et ${formatCurrency(convertedMaxAmount, selectedCurrency, selectedCountry.symbol)}`);
+      setError(`Le montant doit être entre ${formatCurrency(convertedMinAmount, selectedCurrency, getCurrencySymbol(selectedCurrency))} et ${formatCurrency(convertedMaxAmount, selectedCurrency, getCurrencySymbol(selectedCurrency))}`);
       return;
     }
 
@@ -339,14 +354,86 @@ export default function InvestmentModal({
     setStep('payment');
   };
 
-  const handlePaymentSuccess = (result: any) => {
+  const handlePaymentSuccess = async (result: any) => {
     setSuccessData(result);
+    
+    try {
+      // Créer un compte utilisateur automatiquement
+      const createAccountResponse = await fetch('/api/auth/create-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          password: generateTemporaryPassword(), // Mot de passe temporaire
+          contributionData: {
+            amount: formData.amount,
+            currency: selectedCurrency,
+            optionId: option?.id,
+            paymentIntentId: result.paymentIntentId
+          }
+        }),
+      });
+
+      const accountData = await createAccountResponse.json();
+      
+      if (accountData.success) {
+        // Connecter automatiquement l'utilisateur
+        const loginResponse = await fetch('/api/auth/signin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: accountData.temporaryPassword
+          }),
+        });
+
+        const loginData = await loginResponse.json();
+        
+        if (loginData.success) {
+          // Rediriger vers le dashboard
+          window.location.href = '/user/dashboard';
+        } else {
+          // Si la connexion automatique échoue, afficher les informations de connexion
+          setSuccessData({
+            ...result,
+            accountCreated: true,
+            loginCredentials: {
+              email: formData.email,
+              password: accountData.temporaryPassword
+            }
+          });
+        }
+      } else {
+        // Si la création de compte échoue, afficher quand même le succès du paiement
+        setSuccessData(result);
+      }
+    } catch (error) {
+      console.error('Erreur création compte:', error);
+      setSuccessData(result);
+    }
+    
     setStep('success');
   };
 
   const handlePaymentError = (errorMsg: string) => {
     setError(errorMsg);
     setStep('error');
+  };
+
+  // Fonction pour générer un mot de passe temporaire
+  const generateTemporaryPassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
   };
 
   return (
@@ -419,7 +506,7 @@ export default function InvestmentModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Montant de la contribution ({selectedCountry.symbol}) *
+                  Montant de la contribution ({getCurrencySymbol(selectedCurrency)}) *
                 </label>
                 <input
                   type="number"
@@ -432,8 +519,8 @@ export default function InvestmentModal({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Min: {formatCurrency(convertCurrency(option.minAmount, 'FCFA', selectedCurrency), selectedCurrency, selectedCountry.symbol)} - 
-                  Max: {formatCurrency(convertCurrency(option.maxAmount, 'FCFA', selectedCurrency), selectedCurrency, selectedCountry.symbol)}
+                  Min: {formatCurrency(convertCurrency(option.minAmount, 'FCFA', selectedCurrency), selectedCurrency, getCurrencySymbol(selectedCurrency))} -
+Max: {formatCurrency(convertCurrency(option.maxAmount, 'FCFA', selectedCurrency), selectedCurrency, getCurrencySymbol(selectedCurrency))}
                 </p>
               </div>
 
@@ -492,52 +579,70 @@ export default function InvestmentModal({
           {/* Step 2: Payment */}
           {step === 'payment' && (
             <Elements stripe={stripePromise}>
-              <PaymentForm
-                formData={formData}
-                option={option}
-                selectedCurrency={selectedCurrency}
-                selectedCountry={selectedCountry}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-              />
+                      <PaymentForm
+          formData={formData}
+          option={option}
+          selectedCurrency={selectedCurrency}
+          onSuccess={handlePaymentSuccess}
+          onError={handlePaymentError}
+        />
             </Elements>
           )}
 
-          {/* Step 3: Success */}
-          {step === 'success' && (
-            <div className="text-center py-8">
-              <div className="text-6xl mb-4">🎉</div>
-              <h3 className="text-2xl font-bold text-green-600 mb-4">
-                Contribution Confirmée !
-              </h3>
-              <p className="text-gray-700 mb-6">
-                Merci {formData.name} pour votre contribution de {formatCurrency(formData.amount, selectedCurrency, selectedCountry.symbol)}.
-                Vous recevrez bientôt un email de confirmation avec tous les détails.
-              </p>
-              <div className="bg-green-50 p-4 rounded-lg mb-6">
-                <p className="text-green-800 font-semibold">
-                  Votre retour estimé: {formatCurrency(successData?.returnAmount || 0, selectedCurrency, selectedCountry.symbol)}
-                </p>
-                <p className="text-sm text-green-700 mt-1">
-                  {successData?.returnDescription}
-                </p>
-              </div>
-              <div className="flex space-x-4">
-                <button
-                  onClick={onClose}
-                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition duration-200"
-                >
-                  Fermer
-                </button>
-                <Link
-                  href="/user/investissements/dashboard"
-                  className="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-indigo-700 transition duration-200 text-center"
-                >
-                  Voir mon Dashboard
-                </Link>
-              </div>
-            </div>
-          )}
+                     {/* Step 3: Success */}
+           {step === 'success' && (
+             <div className="text-center py-8">
+               <div className="text-6xl mb-4">🎉</div>
+               <h3 className="text-2xl font-bold text-green-600 mb-4">
+                 Contribution Confirmée !
+               </h3>
+               <p className="text-gray-700 mb-6">
+                 Merci {formData.name} pour votre contribution de {formatCurrency(formData.amount, selectedCurrency, getCurrencySymbol(selectedCurrency))}.
+                 Vous recevrez bientôt un email de confirmation avec tous les détails.
+               </p>
+               
+               {/* Informations de compte créé */}
+               {successData?.accountCreated && successData?.loginCredentials && (
+                 <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                   <h4 className="font-semibold text-blue-800 mb-2">📧 Compte créé automatiquement</h4>
+                   <p className="text-sm text-blue-700 mb-3">
+                     Un compte a été créé pour vous suivre votre contribution. Voici vos identifiants :
+                   </p>
+                   <div className="bg-white p-3 rounded border text-left">
+                     <p className="text-sm"><strong>Email :</strong> {successData.loginCredentials.email}</p>
+                     <p className="text-sm"><strong>Mot de passe temporaire :</strong> {successData.loginCredentials.password}</p>
+                   </div>
+                   <p className="text-xs text-blue-600 mt-2">
+                     ⚠️ Notez bien ce mot de passe. Vous pourrez le changer dans votre profil.
+                   </p>
+                 </div>
+               )}
+               
+               <div className="bg-green-50 p-4 rounded-lg mb-6">
+                 <p className="text-green-800 font-semibold">
+                   Votre retour estimé: {formatCurrency(successData?.returnAmount || 0, selectedCurrency, getCurrencySymbol(selectedCurrency))}
+                 </p>
+                 <p className="text-sm text-green-700 mt-1">
+                   {successData?.returnDescription}
+                 </p>
+               </div>
+               
+               <div className="flex space-x-4">
+                 <button
+                   onClick={onClose}
+                   className="flex-1 bg-gray-200 text-gray-800 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition duration-200"
+                 >
+                   Fermer
+                 </button>
+                 <Link
+                   href="/user/dashboard"
+                   className="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-indigo-700 transition duration-200 text-center"
+                 >
+                   Accéder à mon Dashboard
+                 </Link>
+               </div>
+             </div>
+           )}
 
           {/* Step 4: Error */}
           {step === 'error' && (

@@ -423,6 +423,7 @@ enum Role {
   USER
   ADMIN
   GESTIONNAIRE
+  CONTRIBUTOR
 
   @@schema("webirata")
 }
@@ -587,10 +588,31 @@ model Notification {
   title     String
   message   String
   type      String
+  category  String?
+  metadata  String?
   read      Boolean  @default(false)
   relatedId String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("webirata")
+}
+
+
+
+model TeamMember {
+  id             String   @id @default(cuid())
+  name           String
+  role           String
+  experience     String
+  certifications String?  // JSON string des certifications
+  photo          String?
+  email          String?
+  linkedin       String?
+  isActive       Boolean  @default(true)
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@schema("webirata")
 }
