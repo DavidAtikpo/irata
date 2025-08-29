@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { PrismaClient } from '@prisma/client';
+import { sendInvoicePaymentConfirmationEmail } from '@/lib/email';
 
 const prisma = new PrismaClient();
 
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    const { paymentIntentId, invoiceId } = await request.json();
+    const { paymentIntentId, invoiceId, amount } = await request.json();
 
     if (!paymentIntentId || !invoiceId) {
       return NextResponse.json({ error: 'PaymentIntentId et InvoiceId requis' }, { status: 400 });
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     // Calculer le nouveau montant payé
     const currentPaidAmount = invoice.paidAmount || 0;
-    const paymentAmount = invoice.amount; // Le montant du PaymentIntent
+    const paymentAmount = amount || invoice.amount; // Utiliser le montant fourni ou le montant de la facture
     const newPaidAmount = currentPaidAmount + paymentAmount;
     
     // Déterminer le nouveau statut
@@ -72,6 +73,23 @@ export async function POST(request: NextRequest) {
         relatedId: updatedInvoice.id,
       },
     });
+
+    // Envoyer un email de confirmation à l'utilisateur
+    try {
+      await sendInvoicePaymentConfirmationEmail(
+        user.email,
+        `${user.prenom} ${user.nom}`,
+        updatedInvoice.invoiceNumber,
+        paymentAmount,
+        updatedInvoice.amount,
+        updatedInvoice.paymentStatus,
+        new Date().toISOString()
+      );
+      console.log('Email de confirmation de paiement envoyé à:', user.email);
+    } catch (emailError) {
+      console.error('Erreur lors de l\'envoi de l\'email de confirmation:', emailError);
+      // Ne pas faire échouer le paiement si l'email échoue
+    }
 
     return NextResponse.json({
       message: 'Paiement confirmé avec succès',

@@ -11,9 +11,9 @@ import {
 } from '@stripe/react-stripe-js';
 
 // Vérifier que la clé Stripe est définie
-const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
 if (!stripePublishableKey) {
-  console.error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not defined');
+  console.error('STRIPE_PUBLISHABLE_KEY is not defined');
 }
 
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;

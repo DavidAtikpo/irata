@@ -366,7 +366,7 @@ export default function InvoiceTemplate({
                   <span className="font-medium text-gray-700">Montant total:</span>
                   <span className="ml-2 text-gray-900">{formatCurrency(totalTTC)}</span>
                 </div>
-                {paymentStatus === 'PARTIAL' && paidAmount > 0 && (
+                {(paymentStatus === 'PARTIAL' || paymentStatus === 'PAID') && paidAmount > 0 && (
                   <div>
                     <span className="font-medium text-gray-700">Montant payé:</span>
                     <span className="ml-2 text-green-600">{formatCurrency(paidAmount)}</span>
@@ -375,9 +375,11 @@ export default function InvoiceTemplate({
                 <div>
                   <span className="font-medium text-gray-700">Reste à payer:</span>
                   <span className="ml-2 text-red-600 font-semibold">
-                    {paymentStatus === 'PARTIAL' && paidAmount > 0 
-                      ? formatCurrency(totalTTC - paidAmount)
-                      : formatCurrency(totalTTC)}
+                    {paymentStatus === 'PAID' 
+                      ? formatCurrency(0)
+                      : paymentStatus === 'PARTIAL' && paidAmount > 0 
+                        ? formatCurrency(totalTTC - paidAmount)
+                        : formatCurrency(totalTTC)}
                   </span>
                 </div>
               </div>

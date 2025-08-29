@@ -38,11 +38,13 @@ export default function InvoicePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
-  const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
-  const [showPaymentSignalModal, setShowPaymentSignalModal] = useState<boolean>(false);
-  const [paymentSignalAmount, setPaymentSignalAmount] = useState<number>(0);
-  const [paymentSignalNotes, setPaymentSignalNotes] = useState<string>('');
+     const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
+   const [showPaymentSignalModal, setShowPaymentSignalModal] = useState<boolean>(false);
+   const [paymentSignalAmount, setPaymentSignalAmount] = useState<number>(0);
+   const [paymentSignalNotes, setPaymentSignalNotes] = useState<string>('');
+   const [showPaymentOptionsModal, setShowPaymentOptionsModal] = useState<boolean>(false);
+   const [selectedInvoiceForOptions, setSelectedInvoiceForOptions] = useState<Invoice | null>(null);
   
        // Données pour l'aperçu de facture
   const [invoicePreviewData, setInvoicePreviewData] = useState<InvoiceData>({
@@ -216,10 +218,10 @@ export default function InvoicePage() {
     }
   };
 
-  const handlePayment = (invoice: Invoice) => {
-    setSelectedInvoiceForPayment(invoice);
-    setShowPaymentModal(true);
-  };
+     const handlePayment = (invoice: Invoice) => {
+     setSelectedInvoiceForOptions(invoice);
+     setShowPaymentOptionsModal(true);
+   };
 
   const signalPaymentWithDetails = async () => {
     try {
@@ -251,9 +253,13 @@ export default function InvoicePage() {
 
        const updateInvoicePreview = (invoice: Invoice) => {
     // Calculer le montant restant à payer
-    const remainingAmount = invoice.paymentStatus === 'PARTIAL' && invoice.paidAmount 
-      ? invoice.amount - invoice.paidAmount 
-      : invoice.amount;
+    let remainingAmount = invoice.amount;
+    
+    if (invoice.paymentStatus === 'PARTIAL' && invoice.paidAmount) {
+      remainingAmount = invoice.amount - invoice.paidAmount;
+    } else if (invoice.paymentStatus === 'PAID') {
+      remainingAmount = 0; // Si la facture est payée, le montant restant est 0
+    }
 
     // Mettre à jour les données de l'aperçu de facture
     setInvoicePreviewData({
@@ -323,17 +329,17 @@ export default function InvoicePage() {
     }
   };
 
-  // Composant de paiement Stripe
-  const PaymentForm = ({ invoice }: { invoice: Invoice }) => {
-    const stripe = useStripe();
-    const elements = useElements();
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+     // Composant de paiement Stripe
+   const PaymentForm = ({ invoice, customAmount }: { invoice: Invoice; customAmount?: number }) => {
+     const stripe = useStripe();
+     const elements = useElements();
+     const [loading, setLoading] = useState(false);
+     const [error, setError] = useState<string | null>(null);
 
-    // Calculer le montant à payer (reste ou total)
-    const amountToPay = invoice.paymentStatus === 'PARTIAL' && invoice.paidAmount 
-      ? invoice.amount - invoice.paidAmount 
-      : invoice.amount;
+     // Calculer le montant à payer (reste, total, ou montant personnalisé)
+     const amountToPay = customAmount || (invoice.paymentStatus === 'PARTIAL' && invoice.paidAmount 
+       ? invoice.amount - invoice.paidAmount 
+       : invoice.amount);
 
     const handleSubmit = async (event: React.FormEvent) => {
       event.preventDefault();
@@ -383,6 +389,7 @@ export default function InvoicePage() {
             body: JSON.stringify({
               paymentIntentId,
               invoiceId: invoice.id,
+              amount: amountToPay, // Envoyer le montant réel payé
             }),
           });
 
@@ -488,14 +495,45 @@ export default function InvoicePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* En-tête */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mb-6">
-            <DocumentTextIcon className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Mes Factures</h1>
-          <p className="text-xl text-gray-600">Gérez et consultez vos factures de formation</p>
-        </div>
+                 {/* En-tête */}
+         <div className="text-center mb-12">
+           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mb-6">
+             <DocumentTextIcon className="h-8 w-8 text-white" />
+           </div>
+           <h1 className="text-4xl font-bold text-gray-900 mb-2">Mes Factures</h1>
+           <p className="text-xl text-gray-600">Gérez et consultez vos factures de formation</p>
+           
+           {/* Bouton temporaire pour créer une facture de test */}
+           {invoices.length === 0 && (
+             <div className="mt-6">
+               <button
+                 onClick={async () => {
+                   try {
+                     const response = await fetch('/api/user/invoice/create-test', {
+                       method: 'POST',
+                       headers: {
+                         'Content-Type': 'application/json',
+                       },
+                     });
+                     if (response.ok) {
+                       alert('Facture de test créée ! Rechargez la page pour la voir.');
+                       fetchInvoices();
+                     } else {
+                       alert('Erreur lors de la création de la facture de test');
+                     }
+                   } catch (error) {
+                     console.error('Erreur:', error);
+                     alert('Erreur lors de la création de la facture de test');
+                   }
+                 }}
+                 className="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+               >
+                 <DocumentTextIcon className="h-4 w-4 mr-2" />
+                 Créer une facture de test
+               </button>
+             </div>
+           )}
+         </div>
 
         {/* Statistiques rapides */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -679,7 +717,18 @@ export default function InvoicePage() {
                     <h3 className="font-medium mb-2">Informations de Paiement</h3>
                     <div className="space-y-2 text-sm">
                       {selectedInvoice.paymentStatus === 'PARTIAL' && selectedInvoice.paidAmount && (
-                        <p><strong>Montant payé:</strong> {selectedInvoice.paidAmount}€</p>
+                        <p><strong>Montant payé:</strong> <span className="text-green-600">{selectedInvoice.paidAmount}€</span></p>
+                      )}
+                      {selectedInvoice.paymentStatus === 'PAID' && (
+                        <p><strong>Montant payé:</strong> <span className="text-green-600">{selectedInvoice.amount}€</span></p>
+                      )}
+                      {(selectedInvoice.paymentStatus === 'PENDING' || selectedInvoice.paymentStatus === 'PARTIAL') && (
+                        <p><strong>Reste à payer:</strong> <span className="text-red-600 font-semibold">
+                          {selectedInvoice.paymentStatus === 'PARTIAL' && selectedInvoice.paidAmount 
+                            ? `${selectedInvoice.amount - selectedInvoice.paidAmount}€`
+                            : `${selectedInvoice.amount}€`
+                          }
+                        </span></p>
                       )}
                       {selectedInvoice.paymentMethod && (
                         <p><strong>Méthode de paiement:</strong> {selectedInvoice.paymentMethod}</p>
@@ -700,63 +749,198 @@ export default function InvoicePage() {
                     Télécharger PDF
                   </button>
                   
-                  {selectedInvoice.paymentStatus === 'PENDING' && (
-                    <>
-                      <button
-                        onClick={() => {
-                          handlePayment(selectedInvoice);
-                          setSelectedInvoice(null);
-                        }}
-                        className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        <CreditCardIcon className="h-4 w-4 mr-2" />
-                        Payer
-                      </button>
-                      <button
-                        onClick={() => {
-                          signalPayment(selectedInvoice.id);
-                          setSelectedInvoice(null);
-                        }}
-                        className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-yellow-600 text-white font-medium rounded-lg hover:bg-yellow-700 transition-colors"
-                      >
-                        <CreditCardIcon className="h-4 w-4 mr-2" />
-                        Signaler Paiement
-                      </button>
-                    </>
-                  )}
+                                     {(selectedInvoice.paymentStatus === 'PENDING' || selectedInvoice.paymentStatus === 'PARTIAL') && (
+                     <>
+                       <button
+                         onClick={() => {
+                           handlePayment(selectedInvoice);
+                           setSelectedInvoice(null);
+                         }}
+                         className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                       >
+                         <CreditCardIcon className="h-4 w-4 mr-2" />
+                         Options de paiement
+                       </button>
+                       <button
+                         onClick={() => {
+                           signalPayment(selectedInvoice.id);
+                           setSelectedInvoice(null);
+                         }}
+                         className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-yellow-600 text-white font-medium rounded-lg hover:bg-yellow-700 transition-colors"
+                       >
+                         <CreditCardIcon className="h-4 w-4 mr-2" />
+                         Signaler Paiement
+                       </button>
+                     </>
+                   )}
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Modal de paiement Stripe */}
-        {showPaymentModal && selectedInvoiceForPayment && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-md w-full">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">Payer la facture</h2>
-                    <p className="text-gray-600">Facture {selectedInvoiceForPayment.invoiceNumber} - {selectedInvoiceForPayment.amount}€</p>
-                  </div>
-                  <button
-                    onClick={() => setShowPaymentModal(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
+                 {/* Modal des options de paiement */}
+         {showPaymentOptionsModal && selectedInvoiceForOptions && (
+           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+             <div className="bg-white rounded-xl max-w-md w-full">
+               <div className="p-6 border-b border-gray-200">
+                 <div className="flex justify-between items-start">
+                   <div>
+                     <h2 className="text-xl font-bold text-gray-900">Options de paiement</h2>
+                     <p className="text-gray-600">Facture {selectedInvoiceForOptions.invoiceNumber}</p>
+                   </div>
+                   <button
+                     onClick={() => setShowPaymentOptionsModal(false)}
+                     className="text-gray-500 hover:text-gray-700"
+                   >
+                     ✕
+                   </button>
+                 </div>
+               </div>
 
-              <div className="p-6">
-                <Elements stripe={stripePromise}>
-                  <PaymentForm invoice={selectedInvoiceForPayment} />
-                </Elements>
-              </div>
-            </div>
-          </div>
-        )}
+               <div className="p-6">
+                 <div className="space-y-4">
+                   <div className="text-center mb-6">
+                     <p className="text-lg font-semibold text-gray-900">
+                       Montant total: {selectedInvoiceForOptions.amount}€
+                     </p>
+                     {selectedInvoiceForOptions.paymentStatus === 'PARTIAL' && selectedInvoiceForOptions.paidAmount && (
+                       <p className="text-sm text-gray-600">
+                         Déjà payé: {selectedInvoiceForOptions.paidAmount}€
+                       </p>
+                     )}
+                   </div>
+
+                   {/* Option 1: Payer la totalité */}
+                   <button
+                     onClick={() => {
+                       setSelectedInvoiceForPayment(selectedInvoiceForOptions);
+                       setShowPaymentOptionsModal(false);
+                       setShowPaymentModal(true);
+                     }}
+                     className="w-full p-4 border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-left"
+                   >
+                     <div className="flex items-center justify-between">
+                       <div>
+                         <h3 className="font-semibold text-blue-600">Payer la totalité</h3>
+                         <p className="text-sm text-gray-600">
+                           {selectedInvoiceForOptions.paymentStatus === 'PARTIAL' && selectedInvoiceForOptions.paidAmount 
+                             ? `Reste à payer: ${selectedInvoiceForOptions.amount - selectedInvoiceForOptions.paidAmount}€`
+                             : `Montant: ${selectedInvoiceForOptions.amount}€`
+                           }
+                         </p>
+                       </div>
+                       <div className="text-blue-600">
+                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                         </svg>
+                       </div>
+                     </div>
+                   </button>
+
+                   {/* Option 2: Payer la moitié */}
+                   <button
+                     onClick={() => {
+                       const halfAmount = Math.ceil(selectedInvoiceForOptions.amount / 2);
+                       setSelectedInvoiceForPayment(selectedInvoiceForOptions);
+                       setShowPaymentOptionsModal(false);
+                       setShowPaymentModal(true);
+                       // Passer le montant personnalisé via une variable temporaire
+                       (window as any).customPaymentAmount = halfAmount;
+                     }}
+                     className="w-full p-4 border-2 border-green-600 rounded-lg hover:bg-green-50 transition-colors text-left"
+                   >
+                     <div className="flex items-center justify-between">
+                       <div>
+                         <h3 className="font-semibold text-green-600">Payer la moitié</h3>
+                         <p className="text-sm text-gray-600">
+                           Montant: {Math.ceil(selectedInvoiceForOptions.amount / 2)}€
+                         </p>
+                       </div>
+                       <div className="text-green-600">
+                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                         </svg>
+                       </div>
+                     </div>
+                   </button>
+
+                   {/* Option 3: Montant personnalisé */}
+                   <div className="p-4 border-2 border-gray-300 rounded-lg">
+                     <h3 className="font-semibold text-gray-700 mb-2">Montant personnalisé</h3>
+                     <div className="flex gap-2">
+                       <input
+                         type="number"
+                         id="customAmount"
+                         placeholder="Montant en €"
+                         className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                         min="1"
+                         max={selectedInvoiceForOptions.amount}
+                       />
+                       <button
+                         onClick={() => {
+                           const customAmount = Number((document.getElementById('customAmount') as HTMLInputElement).value);
+                           if (customAmount > 0 && customAmount <= selectedInvoiceForOptions.amount) {
+                             setSelectedInvoiceForPayment(selectedInvoiceForOptions);
+                             setShowPaymentOptionsModal(false);
+                             setShowPaymentModal(true);
+                             (window as any).customPaymentAmount = customAmount;
+                           } else {
+                             alert('Veuillez entrer un montant valide entre 1€ et ' + selectedInvoiceForOptions.amount + '€');
+                           }
+                         }}
+                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                       >
+                         Payer
+                       </button>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+         )}
+
+         {/* Modal de paiement Stripe */}
+         {showPaymentModal && selectedInvoiceForPayment && (
+           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+             <div className="bg-white rounded-xl max-w-md w-full">
+               <div className="p-6 border-b border-gray-200">
+                 <div className="flex justify-between items-start">
+                   <div>
+                     <h2 className="text-xl font-bold text-gray-900">Payer la facture</h2>
+                     <p className="text-gray-600">
+                       Facture {selectedInvoiceForPayment.invoiceNumber} - 
+                       {(window as any).customPaymentAmount || 
+                         (selectedInvoiceForPayment.paymentStatus === 'PARTIAL' && selectedInvoiceForPayment.paidAmount 
+                           ? selectedInvoiceForPayment.amount - selectedInvoiceForPayment.paidAmount 
+                           : selectedInvoiceForPayment.amount)
+                       }€
+                     </p>
+                   </div>
+                   <button
+                     onClick={() => {
+                       setShowPaymentModal(false);
+                       (window as any).customPaymentAmount = undefined;
+                     }}
+                     className="text-gray-500 hover:text-gray-700"
+                   >
+                     ✕
+                   </button>
+                 </div>
+               </div>
+
+               <div className="p-6">
+                 <Elements stripe={stripePromise}>
+                   <PaymentForm 
+                     invoice={selectedInvoiceForPayment} 
+                     customAmount={(window as any).customPaymentAmount}
+                   />
+                 </Elements>
+               </div>
+             </div>
+           </div>
+         )}
 
         {/* Modal pour signaler un paiement */}
         {showPaymentSignalModal && (
@@ -830,17 +1014,23 @@ export default function InvoicePage() {
              {selectedInvoice ? 'Aperçu de la facture sélectionnée' : 'Aperçu de la facture'}
            </h2>
            
+           {!selectedInvoice && invoices.length > 0 && (
+             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+               <p className="text-blue-800 text-sm">
+                 Sélectionnez une facture dans la liste ci-dessus pour voir son aperçu et effectuer un paiement.
+               </p>
+             </div>
+           )}
            
-           
-                       <div className="overflow-auto">
+           <div className="overflow-auto">
               <InvoiceTemplate 
                 data={invoicePreviewData}
-                showPaymentButton={true}
-                onPaymentClick={() => {
-                  if (selectedInvoice) {
-                    handlePayment(selectedInvoice);
-                  }
-                }}
+                showPaymentButton={!!selectedInvoice}
+                                 onPaymentClick={() => {
+                   if (selectedInvoice) {
+                     handlePayment(selectedInvoice);
+                   }
+                 }}
                 paymentStatus={selectedInvoice?.paymentStatus || 'PENDING'}
                 paidAmount={selectedInvoice?.paidAmount || 0}
                 hasSelectedInvoice={!!selectedInvoice}

@@ -243,4 +243,99 @@ export async function sendPaymentFailureEmail(
   `;
 
   return sendEmail({ to: contributorEmail, subject, html });
+}
+
+export async function sendInvoicePaymentConfirmationEmail(
+  userEmail: string,
+  userName: string,
+  invoiceNumber: string,
+  paymentAmount: number,
+  totalAmount: number,
+  paymentStatus: string,
+  paymentDate: string
+) {
+  const subject = 'Confirmation de paiement - Facture CI.DES';
+  
+  const isFullyPaid = paymentStatus === 'PAID';
+  const statusText = isFullyPaid ? 'entièrement payée' : 'partiellement payée';
+  const statusColor = isFullyPaid ? '#10b981' : '#f59e0b';
+  
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px;">✅ Paiement Confirmé</h1>
+        <p style="margin: 10px 0 0 0; font-size: 16px;">CI.DES - Centre de Formation Cordiste IRATA</p>
+      </div>
+      
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #333; margin-bottom: 20px;">Merci pour votre paiement !</h2>
+        
+        <p>Bonjour ${userName},</p>
+        
+        <p>Nous confirmons la réception de votre paiement pour votre facture de formation.</p>
+        
+        <div style="background: white; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid ${statusColor};">
+          <h3 style="color: #333; margin-top: 0; margin-bottom: 20px;">📋 Détails du paiement :</h3>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+              <strong style="color: #6b7280;">Numéro de facture :</strong><br>
+              <span style="color: #333; font-size: 16px;">${invoiceNumber}</span>
+            </div>
+            <div>
+              <strong style="color: #6b7280;">Date de paiement :</strong><br>
+              <span style="color: #333;">${new Date(paymentDate).toLocaleDateString('fr-FR')}</span>
+            </div>
+            <div>
+              <strong style="color: #6b7280;">Montant payé :</strong><br>
+              <span style="color: #10b981; font-size: 18px; font-weight: bold;">${paymentAmount.toLocaleString()}€</span>
+            </div>
+            <div>
+              <strong style="color: #6b7280;">Montant total :</strong><br>
+              <span style="color: #333; font-size: 16px;">${totalAmount.toLocaleString()}€</span>
+            </div>
+          </div>
+          
+          <div style="background: ${isFullyPaid ? '#d1fae5' : '#fef3c7'}; padding: 15px; border-radius: 6px; border-left: 4px solid ${statusColor};">
+            <p style="margin: 0; color: ${isFullyPaid ? '#065f46' : '#92400e'}; font-weight: 500;">
+              ${isFullyPaid ? '✅' : '⚠️'} Votre facture est maintenant <strong>${statusText}</strong>
+              ${!isFullyPaid ? `<br>Reste à payer : <strong>${(totalAmount - paymentAmount).toLocaleString()}€</strong>` : ''}
+            </p>
+          </div>
+        </div>
+        
+        <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #2c5aa0; margin-top: 0;">📋 Prochaines étapes :</h3>
+          <ul style="color: #374151;">
+            <li>Votre facture a été mise à jour dans votre espace personnel</li>
+            <li>Vous pouvez télécharger votre facture depuis votre tableau de bord</li>
+            ${isFullyPaid ? '<li>Votre formation peut maintenant commencer selon le planning prévu</li>' : '<li>Vous pouvez effectuer le solde restant quand vous le souhaitez</li>'}
+            <li>Pour toute question, contactez-nous à <a href="mailto:${process.env.SMTP_FROM_EMAIL}">${process.env.SMTP_FROM_EMAIL}</a></li>
+          </ul>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/invoice" 
+             style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
+            📊 Voir mes factures
+          </a>
+        </div>
+        
+        <p style="color: #6b7280; font-size: 14px; margin-top: 25px;">
+          Cet email fait office de reçu de paiement. Conservez-le précieusement.
+        </p>
+        
+        <p>Cordialement,<br>
+        <strong>L'équipe CI.DES</strong></p>
+      </div>
+      
+      <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
+        <p>CI.DES - Centre de Formation Cordiste IRATA<br>
+        17270 BORESSE-ET-MARTRON<br>
+        Tél: +33 6 24 67 13 65 | Email: ${process.env.SMTP_FROM_EMAIL}</p>
+      </div>
+    </div>
+  `;
+
+  return sendEmail({ to: userEmail, subject, html });
 } 

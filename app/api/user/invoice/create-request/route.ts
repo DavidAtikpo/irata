@@ -65,6 +65,8 @@ export async function POST(request: NextRequest) {
         },
         devis: {
           create: {
+            demandeId: tempDemande.id,
+            userId: user.id,
             numero: `DEV-${Date.now()}`,
             client: user.nom || 'Utilisateur',
             mail: user.email,
@@ -74,17 +76,7 @@ export async function POST(request: NextRequest) {
             montant: amount,
             unite: 'jour',
             tva: 0,
-            statut: 'EN_ATTENTE',
-                         demande: {
-               connect: {
-                 id: tempDemande.id
-               }
-             },
-            user: {
-              connect: {
-                id: user.id
-              }
-            }
+            statut: 'EN_ATTENTE'
           }
         }
       },
