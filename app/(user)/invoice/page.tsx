@@ -1022,7 +1022,7 @@ export default function InvoicePage() {
              </div>
            )}
            
-           <div className="overflow-auto">
+           {/* <div className="overflow-auto">
               <InvoiceTemplate 
                 data={invoicePreviewData}
                 showPaymentButton={!!selectedInvoice}
@@ -1035,7 +1035,7 @@ export default function InvoicePage() {
                 paidAmount={selectedInvoice?.paidAmount || 0}
                 hasSelectedInvoice={!!selectedInvoice}
               />
-            </div>
+            </div> */}
          </div>
       </div>
     </div>
