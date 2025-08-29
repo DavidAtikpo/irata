@@ -10,22 +10,24 @@ import InvestmentModal from './InvestmentModal';
 // Taux de change (à mettre à jour régulièrement)
 const EXCHANGE_RATES = {
   FCFA: 1,
+  XOF: 1, // FCFA = XOF (même devise)
   EUR: 0.00152, // 1 FCFA = 0.00152 EUR
   USD: 0.00167, // 1 FCFA = 0.00167 USD
-  XOF: 1, // FCFA = XOF
+  GHS: 0.023, // 1 FCFA = 0.023 CEDIS (Ghana)
+  NGN: 0.67, // 1 FCFA = 0.67 Naira (Nigeria)
+  GBP: 0.0013, // 1 FCFA = 0.0013 Livre Sterling
+  CHF: 0.0014, // 1 FCFA = 0.0014 Franc Suisse
 };
 
-const COUNTRIES = [
-  { code: 'TG', name: 'Togo', currency: 'FCFA', symbol: 'FCFA' },
-  { code: 'FR', name: 'France', currency: 'EUR', symbol: '€' },
-  { code: 'US', name: 'États-Unis', currency: 'USD', symbol: '$' },
-  { code: 'CI', name: 'Côte d\'Ivoire', currency: 'XOF', symbol: 'FCFA' },
-  { code: 'SN', name: 'Sénégal', currency: 'XOF', symbol: 'FCFA' },
-  { code: 'ML', name: 'Mali', currency: 'XOF', symbol: 'FCFA' },
-  { code: 'BF', name: 'Burkina Faso', currency: 'XOF', symbol: 'FCFA' },
-  { code: 'BJ', name: 'Bénin', currency: 'XOF', symbol: 'FCFA' },
-  { code: 'NE', name: 'Niger', currency: 'XOF', symbol: 'FCFA' },
-  { code: 'GW', name: 'Guinée-Bissau', currency: 'XOF', symbol: 'FCFA' },
+const CURRENCIES = [
+  { code: 'FCFA', name: 'Franc CFA', symbol: 'FCFA', region: 'Afrique de l\'Ouest' },
+  { code: 'XOF', name: 'Franc CFA', symbol: 'FCFA', region: 'Afrique de l\'Ouest' },
+  { code: 'GHS', name: 'Cedis', symbol: '₵', region: 'Ghana' },
+  { code: 'NGN', name: 'Naira', symbol: '₦', region: 'Nigeria' },
+  { code: 'EUR', name: 'Euro', symbol: '€', region: 'Europe' },
+  { code: 'GBP', name: 'Livre Sterling', symbol: '£', region: 'Royaume-Uni' },
+  { code: 'CHF', name: 'Franc Suisse', symbol: 'CHF', region: 'Suisse' },
+  { code: 'USD', name: 'Dollar US', symbol: '$', region: 'Amérique du Nord' },
 ];
 
 const financingOptions = [
@@ -81,6 +83,14 @@ const formatCurrency = (amount: number, currency: string, symbol: string): strin
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
   } else if (currency === 'USD') {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  } else if (currency === 'GBP') {
+    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
+  } else if (currency === 'CHF') {
+    return new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(amount);
+  } else if (currency === 'GHS') {
+    return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS' }).format(amount);
+  } else if (currency === 'NGN') {
+    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount);
   } else {
     return new Intl.NumberFormat('fr-FR').format(amount) + ' ' + symbol;
   }
@@ -89,16 +99,16 @@ const formatCurrency = (amount: number, currency: string, symbol: string): strin
 type CalculatorProps = {
   option: typeof financingOptions[0];
   onContribute: (option: typeof financingOptions[0], amount: number, selectedCurrency: string) => void;
-  selectedCountry: typeof COUNTRIES[0];
+  selectedCurrency: typeof CURRENCIES[0];
 };
 
-function Calculator({ option, onContribute, selectedCountry }: CalculatorProps) {
+function Calculator({ option, onContribute, selectedCurrency }: CalculatorProps) {
   const [amount, setAmount] = useState(option.minAmount);
   
   // Convertir les montants selon la devise sélectionnée
-  const convertedMinAmount = convertCurrency(option.minAmount, 'FCFA', selectedCountry.currency);
-  const convertedMaxAmount = convertCurrency(option.maxAmount, 'FCFA', selectedCountry.currency);
-  const convertedAmount = convertCurrency(amount, 'FCFA', selectedCountry.currency);
+  const convertedMinAmount = convertCurrency(option.minAmount, 'FCFA', selectedCurrency.code);
+  const convertedMaxAmount = convertCurrency(option.maxAmount, 'FCFA', selectedCurrency.code);
+  const convertedAmount = convertCurrency(amount, 'FCFA', selectedCurrency.code);
   
   const calculateReturn = () => {
     if (option.returnType === 'discount') {
@@ -120,26 +130,28 @@ function Calculator({ option, onContribute, selectedCountry }: CalculatorProps) 
       
       <div className="mb-4">
         <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Montant du don ({selectedCountry.symbol})
+          Montant du don ({selectedCurrency.symbol})
         </label>
         <input
           type="number"
           min={convertedMinAmount}
           max={convertedMaxAmount}
-          step={selectedCountry.currency === 'EUR' ? 1 : 1000}
+          step={selectedCurrency.code === 'EUR' || selectedCurrency.code === 'GBP' || selectedCurrency.code === 'CHF' ? 1 : 
+                selectedCurrency.code === 'GHS' ? 0.1 : 
+                selectedCurrency.code === 'NGN' ? 100 : 1000}
           value={convertedAmount}
           onChange={(e) => {
             const newAmount = parseFloat(e.target.value) || convertedMinAmount;
             const clampedAmount = Math.max(convertedMinAmount, Math.min(convertedMaxAmount, newAmount));
             // Convertir vers FCFA pour le stockage
-            const fcfAmount = convertCurrency(clampedAmount, selectedCountry.currency, 'FCFA');
+            const fcfAmount = convertCurrency(clampedAmount, selectedCurrency.code, 'FCFA');
             setAmount(fcfAmount);
           }}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm sm:text-base"
         />
         <p className="text-xs text-gray-500 mt-1">
-          Min: {formatCurrency(convertedMinAmount, selectedCountry.currency, selectedCountry.symbol)} - 
-          Max: {formatCurrency(convertedMaxAmount, selectedCountry.currency, selectedCountry.symbol)}
+          Min: {formatCurrency(convertedMinAmount, selectedCurrency.code, selectedCurrency.symbol)} - 
+          Max: {formatCurrency(convertedMaxAmount, selectedCurrency.code, selectedCurrency.symbol)}
         </p>
       </div>
 
@@ -149,26 +161,26 @@ function Calculator({ option, onContribute, selectedCountry }: CalculatorProps) 
             {option.returnType === 'discount' ? 'Remise obtenue' : 'Montant remboursé'}
           </h4>
           <div className="text-xl sm:text-2xl font-bold text-green-600">
-            {formatCurrency(calculateReturn(), selectedCountry.currency, selectedCountry.symbol)}
+            {formatCurrency(calculateReturn(), selectedCurrency.code, selectedCurrency.symbol)}
           </div>
           {option.returnType === 'discount' && (
             <p className="text-xs sm:text-sm text-green-700 mt-1">
-              Économie: {formatCurrency(calculateReturn() - convertedAmount, selectedCountry.currency, selectedCountry.symbol)}
+              Économie: {formatCurrency(calculateReturn() - convertedAmount, selectedCurrency.code, selectedCurrency.symbol)}
             </p>
           )}
           {option.returnType === 'interest' && (
             <p className="text-xs sm:text-sm text-green-700 mt-1">
-              Gain: {formatCurrency(calculateReturn() - convertedAmount, selectedCountry.currency, selectedCountry.symbol)}
+              Gain: {formatCurrency(calculateReturn() - convertedAmount, selectedCurrency.code, selectedCurrency.symbol)}
             </p>
           )}
         </div>
       )}
 
       <button 
-        onClick={() => onContribute(option, amount, selectedCountry.currency)}
+        onClick={() => onContribute(option, amount, selectedCurrency.code)}
         className="w-full bg-green-600 text-white font-semibold py-2 sm:py-3 rounded-lg hover:bg-green-700 transition duration-300 text-sm sm:text-base"
       >
-        Contribuer {formatCurrency(convertedAmount, selectedCountry.currency, selectedCountry.symbol)}
+        Contribuer {formatCurrency(convertedAmount, selectedCurrency.code, selectedCurrency.symbol)}
       </button>
     </div>
   );
@@ -197,9 +209,9 @@ function ProjectVideo() {
 }
 
 // Initialize Stripe
-const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_KEY;
 if (!stripePublishableKey) {
-  console.error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not defined');
+  console.error('NEXT_PUBLIC_STRIPE_KEY is not defined');
 }
 
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
@@ -210,17 +222,24 @@ export default function FinancementParticipatif() {
   const [selectedAmount, setSelectedAmount] = useState(0);
   const [selectedCurrency, setSelectedCurrency] = useState('FCFA');
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
+  const [selectedCurrencyObj, setSelectedCurrencyObj] = useState(CURRENCIES[0]);
 
-  // Détection automatique du pays basée sur la langue/navigateur
+  // Détection automatique de la devise basée sur la langue/navigateur
   useEffect(() => {
     const userLanguage = navigator.language || 'fr-FR';
-    const userCountry = userLanguage.includes('fr') ? 'FR' : 
-                       userLanguage.includes('en') ? 'US' : 'TG';
+    let defaultCurrency = 'FCFA';
     
-    const detectedCountry = COUNTRIES.find(c => c.code === userCountry) || COUNTRIES[0];
-    setSelectedCountry(detectedCountry);
-    setSelectedCurrency(detectedCountry.currency);
+    if (userLanguage.includes('en')) {
+      defaultCurrency = 'USD';
+    } else if (userLanguage.includes('de')) {
+      defaultCurrency = 'CHF';
+    } else if (userLanguage.includes('gb')) {
+      defaultCurrency = 'GBP';
+    }
+    
+    const detectedCurrency = CURRENCIES.find(c => c.code === defaultCurrency) || CURRENCIES[0];
+    setSelectedCurrencyObj(detectedCurrency);
+    setSelectedCurrency(detectedCurrency.code);
   }, []);
 
   const handleContribute = (option: typeof financingOptions[0], amount: number, currency: string) => {
@@ -367,26 +386,26 @@ export default function FinancementParticipatif() {
 
       {activeTab === 'financement' && (
         <section id="contribuer">
-          {/* Sélection de pays/devise */}
+          {/* Sélection de devise */}
           <div className="mb-8 bg-gray-50 p-6 rounded-xl">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">🌍 Sélectionnez votre pays</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              {COUNTRIES.map((country) => (
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">💱 Sélectionnez votre devise</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {CURRENCIES.map((currency) => (
                 <button
-                  key={country.code}
+                  key={currency.code}
                   onClick={() => {
-                    setSelectedCountry(country);
-                    setSelectedCurrency(country.currency);
+                    setSelectedCurrencyObj(currency);
+                    setSelectedCurrency(currency.code);
                   }}
                   className={`p-3 rounded-lg border-2 transition-all duration-200 text-sm font-medium ${
-                    selectedCountry.code === country.code
+                    selectedCurrencyObj.code === currency.code
                       ? 'border-green-500 bg-green-50 text-green-700'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <div className="font-bold">{country.code}</div>
-                  <div className="text-xs opacity-75">{country.name}</div>
-                  <div className="text-xs font-semibold">{country.symbol}</div>
+                  <div className="font-bold">{currency.symbol}</div>
+                  <div className="text-xs opacity-75">{currency.name}</div>
+                  <div className="text-xs font-semibold">{currency.region}</div>
                 </button>
               ))}
             </div>
@@ -405,7 +424,7 @@ export default function FinancementParticipatif() {
                 key={option.id} 
                 option={option} 
                 onContribute={handleContribute}
-                selectedCountry={selectedCountry}
+                selectedCurrency={selectedCurrencyObj}
               />
             ))}
           </div>
@@ -468,15 +487,15 @@ export default function FinancementParticipatif() {
                   </h3>
                   <div className="space-y-3">
                     <div className="border-l-4 border-purple-400 pl-3">
-                      <p className="font-semibold text-purple-700">{formatCurrency(25000, selectedCountry.currency, selectedCountry.symbol)} - {formatCurrency(50000, selectedCountry.currency, selectedCountry.symbol)}</p>
+                      <p className="font-semibold text-purple-700">{formatCurrency(25000, selectedCurrencyObj.code, selectedCurrencyObj.symbol)} - {formatCurrency(50000, selectedCurrencyObj.code, selectedCurrencyObj.symbol)}</p>
                       <p className="text-sm text-purple-600">Mug + Stylos de marque</p>
                     </div>
                     <div className="border-l-4 border-purple-400 pl-3">
-                      <p className="font-semibold text-purple-700">{formatCurrency(50000, selectedCountry.currency, selectedCountry.symbol)} - {formatCurrency(100000, selectedCountry.currency, selectedCountry.symbol)}</p>
+                      <p className="font-semibold text-purple-700">{formatCurrency(50000, selectedCurrencyObj.code, selectedCurrencyObj.symbol)} - {formatCurrency(100000, selectedCurrencyObj.code, selectedCurrencyObj.symbol)}</p>
                       <p className="text-sm text-purple-600">T-shirt + Sac à dos de marque</p>
                     </div>
                     <div className="border-l-4 border-purple-400 pl-3">
-                      <p className="font-semibold text-purple-700">{formatCurrency(100000, selectedCountry.currency, selectedCountry.symbol)}+</p>
+                      <p className="font-semibold text-purple-700">{formatCurrency(100000, selectedCurrencyObj.code, selectedCurrencyObj.symbol)}+</p>
                       <p className="text-sm text-purple-600">Kit complet + Casquette premium</p>
                     </div>
                   </div>
@@ -487,11 +506,11 @@ export default function FinancementParticipatif() {
                 🏗️ Nommage d'Équipements
               </h3>
               <ul className="space-y-2 text-sm sm:text-base text-yellow-700">
-                <li>• Don de {formatCurrency(50000, selectedCountry.currency, selectedCountry.symbol)}: Votre nom sur un équipement</li>
-                <li>• Don de {formatCurrency(500000, selectedCountry.currency, selectedCountry.symbol)}: Nommage d'une salle de cours</li>
-                <li>• Don de {formatCurrency(1000000, selectedCountry.currency, selectedCountry.symbol)}: Nommage d'une salle de cours</li>
-                <li>• Don de {formatCurrency(2000000, selectedCountry.currency, selectedCountry.symbol)}: Plaque commémorative permanente</li>
-                <li>• Don de {formatCurrency(5000000, selectedCountry.currency, selectedCountry.symbol)}: Parrain officiel du centre</li>
+                <li>• Don de {formatCurrency(50000, selectedCurrencyObj.code, selectedCurrencyObj.symbol)}: Votre nom sur un équipement</li>
+                <li>• Don de {formatCurrency(500000, selectedCurrencyObj.code, selectedCurrencyObj.symbol)}: Nommage d'une salle de cours</li>
+                <li>• Don de {formatCurrency(1000000, selectedCurrencyObj.code, selectedCurrencyObj.symbol)}: Nommage d'une salle de cours</li>
+                <li>• Don de {formatCurrency(2000000, selectedCurrencyObj.code, selectedCurrencyObj.symbol)}: Plaque commémorative permanente</li>
+                <li>• Don de {formatCurrency(5000000, selectedCurrencyObj.code, selectedCurrencyObj.symbol)}: Parrain officiel du centre</li>
               </ul>
             </div>
           </div>
@@ -526,7 +545,6 @@ export default function FinancementParticipatif() {
             option={selectedOption}
             selectedAmount={selectedAmount}
             selectedCurrency={selectedCurrency}
-            selectedCountry={selectedCountry}
           />
         </Elements>
       ) : showInvestmentModal && !stripePromise ? (

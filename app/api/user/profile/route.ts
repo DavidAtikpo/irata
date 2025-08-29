@@ -1,28 +1,69 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
+
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { success: false, error: 'Non autorisé' },
+        { status: 401 }
+      );
     }
 
+    // Récupérer l'utilisateur avec ses contributions
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, email: true, nom: true, prenom: true, niveau: true },
+      where: { email: session.user.email },
+      include: {
+        contributions: {
+          orderBy: { createdAt: 'desc' }
+        }
+      }
     });
 
     if (!user) {
-      return NextResponse.json({ message: 'Utilisateur introuvable' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'Utilisateur non trouvé' },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json(user);
+    // Formater les données pour le frontend
+    const formattedUser = {
+      id: user.id,
+      name: user.nom || user.email,
+      email: user.email,
+      role: user.role
+    };
+
+    const formattedContributions = user.contributions.map(contribution => ({
+      id: contribution.id,
+      amount: contribution.amount,
+      type: contribution.type,
+      returnAmount: contribution.returnAmount,
+      returnDescription: contribution.returnDescription,
+      paymentMethod: contribution.paymentMethod,
+      status: contribution.status,
+      donorName: contribution.donorName,
+      donorEmail: contribution.donorEmail,
+      createdAt: contribution.createdAt
+    }));
+
+    return NextResponse.json({
+      success: true,
+      user: formattedUser,
+      contributions: formattedContributions
+    });
+
   } catch (error) {
-    console.error('Erreur profil utilisateur:', error);
-    return NextResponse.json({ message: 'Erreur serveur' }, { status: 500 });
+    console.error('Erreur récupération profil:', error);
+    return NextResponse.json(
+      { success: false, error: 'Erreur serveur' },
+      { status: 500 }
+    );
   }
 }
 

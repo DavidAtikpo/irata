@@ -29,7 +29,7 @@ export async function createNotification(data: NotificationData) {
       category: data.category,
       metadata: data.metadata ? JSON.stringify(data.metadata) : null,
       userId: admin.id,
-      isRead: false
+      read: false
     }));
 
     if (notifications.length > 0) {
