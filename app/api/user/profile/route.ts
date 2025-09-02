@@ -14,14 +14,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Récupérer l'utilisateur avec ses contributions
+    // Récupérer l'utilisateur (sans contributions)
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: {
-        contributions: {
-          orderBy: { createdAt: 'desc' }
-        }
-      }
+      where: { email: session.user.email }
     });
 
     if (!user) {
@@ -34,28 +29,16 @@ export async function GET(request: NextRequest) {
     // Formater les données pour le frontend
     const formattedUser = {
       id: user.id,
-      name: user.nom || user.email,
+      nom: user.nom,
+      prenom: user.prenom,
+      name: user.nom || user.prenom, // Garder pour compatibilité
       email: user.email,
       role: user.role
     };
 
-    const formattedContributions = user.contributions.map(contribution => ({
-      id: contribution.id,
-      amount: contribution.amount,
-      type: contribution.type,
-      returnAmount: contribution.returnAmount,
-      returnDescription: contribution.returnDescription,
-      paymentMethod: contribution.paymentMethod,
-      status: contribution.status,
-      donorName: contribution.donorName,
-      donorEmail: contribution.donorEmail,
-      createdAt: contribution.createdAt
-    }));
-
     return NextResponse.json({
       success: true,
-      user: formattedUser,
-      contributions: formattedContributions
+      user: formattedUser
     });
 
   } catch (error) {

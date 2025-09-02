@@ -20,24 +20,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    // Vérifier s'il a déjà soumis un disclaimer dans la base de données
-    const existingSubmission = await prisma.irataDisclaimerSubmission.findFirst({
+    // Récupérer la session depuis le modèle Demande
+    const demande = await prisma.demande.findFirst({
       where: { userId: user.id },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      select: {
+        session: true
+      }
     });
 
     console.log('User ID:', user.id);
-    console.log('Existing submission:', existingSubmission);
+    console.log('Demande found:', demande);
+
+    if (!demande || !demande.session) {
+      return NextResponse.json({ 
+        session: null,
+        message: 'Aucune session trouvée pour cet utilisateur'
+      });
+    }
 
     return NextResponse.json({
-      hasSigned: !!existingSubmission,
-      submission: existingSubmission || null,
+      session: demande.session,
+      success: true
     });
 
   } catch (error) {
-    console.error('Erreur lors de la vérification du statut:', error);
+    console.error('Erreur lors de la récupération de la session:', error);
     return NextResponse.json(
-      { error: 'Erreur lors de la vérification du statut' },
+      { error: 'Erreur lors de la récupération de la session' },
       { status: 500 }
     );
   }

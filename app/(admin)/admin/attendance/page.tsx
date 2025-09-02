@@ -33,6 +33,7 @@ export default function AdminAttendancePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDay, setFilterDay] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserAttendanceData | null>(null);
+  const [expandedSessions, setExpandedSessions] = useState<Record<string, boolean>>({});
 
   const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
   const periods = ['matin', 'soir'];
@@ -74,12 +75,65 @@ export default function AdminAttendancePage() {
     return matchesSearch && hasSignatureForDay;
   });
 
+  // Grouper les utilisateurs par session
+  const groupedBySession = filteredData.reduce((groups, user) => {
+    const sessionName = user.sessionName || 'Sans session';
+    if (!groups[sessionName]) {
+      groups[sessionName] = [];
+    }
+    groups[sessionName].push(user);
+    return groups;
+  }, {} as Record<string, UserAttendanceData[]>);
+
+  // Trier les sessions par ordre chronologique (récentes en premier)
+  const sortedSessions = Object.keys(groupedBySession).sort((a, b) => {
+    // Si c'est "Sans session", le mettre en dernier
+    if (a === 'Sans session') return 1;
+    if (b === 'Sans session') return -1;
+    
+    // Fonction pour extraire la date de début d'une session
+    const extractStartDate = (sessionName: string) => {
+      // Format attendu: "2025 septembre 01 au 06" ou "2025 aout 18 au 23"
+      const match = sessionName.match(/(\d{4})\s+(\w+)\s+(\d{1,2})\s+au\s+(\d{1,2})/);
+      if (match) {
+        const [, year, month, startDay] = match;
+        const monthNames = {
+          'janvier': 1, 'février': 2, 'mars': 3, 'avril': 4, 'mai': 5, 'juin': 6,
+          'juillet': 7, 'août': 8, 'aout': 8, 'septembre': 9, 'octobre': 10, 'novembre': 11, 'décembre': 12
+        };
+        const monthNum = monthNames[month.toLowerCase() as keyof typeof monthNames] || 0;
+        return new Date(parseInt(year), monthNum - 1, parseInt(startDay));
+      }
+      return new Date(0); // Date par défaut si le format ne correspond pas
+    };
+    
+    // Trier par date de début (récentes en premier)
+    const dateA = extractStartDate(a);
+    const dateB = extractStartDate(b);
+    
+    if (dateA.getTime() === dateB.getTime()) {
+      // Si même date, trier par ordre alphabétique
+      return a.localeCompare(b);
+    }
+    
+    // Tri décroissant (récentes en premier)
+    return dateB.getTime() - dateA.getTime();
+  });
+
   const getAttendanceStats = (userData: UserAttendanceData) => {
     const totalSlots = daysOfWeek.length * periods.length; // 7 jours × 2 périodes = 14
     const signedSlots = Object.keys(userData.signatures).length;
     const percentage = totalSlots > 0 ? Math.round((signedSlots / totalSlots) * 100) : 0;
     
     return { signedSlots, totalSlots, percentage };
+  };
+
+  // Fonction pour basculer l'expansion d'une session
+  const toggleSession = (sessionName: string) => {
+    setExpandedSessions(prev => ({
+      ...prev,
+      [sessionName]: !prev[sessionName]
+    }));
   };
 
   const exportToCSV = () => {
@@ -227,7 +281,7 @@ export default function AdminAttendancePage() {
             </div>
           </div>
 
-          {/* Liste des utilisateurs */}
+          {/* Liste des utilisateurs groupés par session */}
           <div className="p-6">
             {filteredData.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
@@ -236,61 +290,118 @@ export default function AdminAttendancePage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredData.map((user) => {
-                  const stats = getAttendanceStats(user);
+                {sortedSessions.map((sessionName) => {
+                  const usersInSession = groupedBySession[sessionName];
+                  const sessionStats = usersInSession.reduce((total, user) => {
+                    const userStats = getAttendanceStats(user);
+                    return {
+                      totalUsers: total.totalUsers + 1,
+                      totalSignatures: total.totalSignatures + userStats.signedSlots,
+                      totalSlots: total.totalSlots + userStats.totalSlots
+                    };
+                  }, { totalUsers: 0, totalSignatures: 0, totalSlots: 0 });
+
+                  const sessionPercentage = sessionStats.totalSlots > 0 
+                    ? Math.round((sessionStats.totalSignatures / sessionStats.totalSlots) * 100) 
+                    : 0;
+
+                  const isExpanded = expandedSessions[sessionName];
+
                   return (
-                    <div key={user.userId} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900">{user.userName}</h3>
-                          <p className="text-sm text-gray-600">{user.userEmail}</p>
-                          {user.sessionName && (
-                            <p className="text-sm text-blue-600">Session: {user.sessionName}</p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-blue-600">{stats.percentage}%</div>
-                          <div className="text-sm text-gray-600">{stats.signedSlots}/{stats.totalSlots} présences</div>
-                          <button
-                            onClick={() => setSelectedUser(user)}
-                            className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                          >
-                            Voir détails
-                          </button>
+                    <div key={sessionName} className="border border-gray-300 rounded-lg overflow-hidden">
+                      {/* En-tête de session cliquable */}
+                      <div 
+                        className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 text-white cursor-pointer hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
+                        onClick={() => toggleSession(sessionName)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-3">
+                            <button className="text-white hover:text-blue-100 transition-colors">
+                              {isExpanded ? (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              ) : (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              )}
+                            </button>
+                            <div>
+                              <h2 className="text-xl font-bold">{sessionName}</h2>
+                              <p className="text-blue-100 text-sm">
+                                {sessionStats.totalUsers} stagiaire{sessionStats.totalUsers > 1 ? 's' : ''} • 
+                                {sessionStats.totalSignatures} présences sur {sessionStats.totalSlots} créneaux
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-3xl font-bold">{sessionPercentage}%</div>
+                            <div className="text-blue-100 text-sm">Taux de présence</div>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Grille de présence rapide */}
-                      <div className="grid grid-cols-7 gap-2">
-                        {daysOfWeek.map(day => (
-                          <div key={day} className="text-center">
-                            <div className="text-xs font-medium text-gray-700 mb-1">{day.slice(0, 3)}</div>
-                            <div className="space-y-1">
-                              {periods.map(period => {
-                                const key = `${day}-${period}`;
-                                const hasSignature = user.signatures[key];
-                                const isGenerated = hasSignature?.generatedFromFollowUp;
-                                
-                                return (
-                                  <div
-                                    key={period}
-                                    className={`w-full h-6 rounded text-xs flex items-center justify-center ${
-                                      hasSignature
-                                        ? isGenerated 
-                                          ? 'bg-yellow-200 text-yellow-800' 
-                                          : 'bg-green-200 text-green-800'
-                                        : 'bg-gray-200 text-gray-500'
-                                    }`}
-                                    title={`${day} ${period}${hasSignature ? (isGenerated ? ' (Auto)' : ' (Manuel)') : ' (Absent)'}`}
-                                  >
-                                    {period === 'matin' ? 'M' : 'S'}
+                      {/* Contenu de la session (collapsible) */}
+                      {isExpanded && (
+                        <div className="p-4 space-y-4 bg-gray-50">
+                          {usersInSession.map((user) => {
+                            const stats = getAttendanceStats(user);
+                            return (
+                              <div key={user.userId} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
+                                <div className="flex justify-between items-start mb-4">
+                                  <div className="flex-1">
+                                    <h3 className="text-lg font-semibold text-gray-900">{user.userName}</h3>
+                                    <p className="text-sm text-gray-600">{user.userEmail}</p>
                                   </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                                  <div className="text-right">
+                                    <div className="text-2xl font-bold text-blue-600">{stats.percentage}%</div>
+                                    <div className="text-sm text-gray-600">{stats.signedSlots}/{stats.totalSlots} présences</div>
+                                    <button
+                                      onClick={() => setSelectedUser(user)}
+                                      className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                    >
+                                      Voir détails
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Grille de présence rapide */}
+                                <div className="grid grid-cols-7 gap-2">
+                                  {daysOfWeek.map(day => (
+                                    <div key={day} className="text-center">
+                                      <div className="text-xs font-medium text-gray-700 mb-1">{day.slice(0, 3)}</div>
+                                      <div className="space-y-1">
+                                        {periods.map(period => {
+                                          const key = `${day}-${period}`;
+                                          const hasSignature = user.signatures[key];
+                                          const isGenerated = hasSignature?.generatedFromFollowUp;
+                                          
+                                          return (
+                                            <div
+                                              key={period}
+                                              className={`w-full h-6 rounded text-xs flex items-center justify-center ${
+                                                hasSignature
+                                                  ? isGenerated 
+                                                    ? 'bg-yellow-200 text-yellow-800' 
+                                                    : 'bg-green-200 text-green-800'
+                                                  : 'bg-gray-200 text-gray-500'
+                                              }`}
+                                              title={`${day} ${period}${hasSignature ? (isGenerated ? ' (Auto)' : ' (Manuel)') : ' (Absent)'}`}
+                                            >
+                                              {period === 'matin' ? 'M' : 'S'}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

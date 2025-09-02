@@ -41,10 +41,26 @@ export default function TraineeInductionPage() {
         setSessionName(data.sessionName);
       } else {
         const errorData = await response.json();
-        console.error('Erreur:', errorData);
+        console.error('Erreur API:', errorData);
+        
+        // Gérer les différents types d'erreurs
+        if (response.status === 404) {
+          // Pas de session ou pas d'induction
+          setInductionData(null);
+          if (errorData.sessionName) {
+            setSessionName(errorData.sessionName);
+          }
+        } else if (response.status === 403) {
+          // Induction non publiée
+          setInductionData(null);
+          if (errorData.sessionName) {
+            setSessionName(errorData.sessionName);
+          }
+        }
       }
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
+      setInductionData(null);
     } finally {
       setLoading(false);
     }
@@ -104,14 +120,28 @@ export default function TraineeInductionPage() {
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="text-center py-12">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Aucune induction disponible</h2>
-              <p className="text-gray-600">
-                Aucun document d'induction n'a été publié pour votre session de formation.
+              <p className="text-gray-600 mb-4">
+                {sessionName 
+                  ? `Aucun document d'induction n'a été publié pour votre session de formation.`
+                  : `Vous n'êtes inscrit à aucune session de formation.`
+                }
               </p>
               {sessionName && (
-                <p className="text-sm text-gray-500 mt-2">
-                  Session : {sessionName}
-                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>Session :</strong> {sessionName}
+                  </p>
+                  <p className="text-sm text-blue-700 mt-1">
+                    L'induction sera disponible une fois que l'administrateur l'aura créée et publiée.
+                  </p>
+                </div>
               )}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-yellow-800">
+                  <strong>Note :</strong> Si vous pensez qu'il s'agit d'une erreur, 
+                  contactez l'administrateur de votre formation.
+                </p>
+              </div>
             </div>
           </div>
         </div>

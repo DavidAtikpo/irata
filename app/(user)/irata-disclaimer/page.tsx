@@ -13,43 +13,97 @@ export default function Page() {
   const [hasSigned, setHasSigned] = useState(false);
   const [existingSubmission, setExistingSubmission] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [userSession, setUserSession] = useState<string>('');
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Vérifier le statut de signature IRATA Disclaimer
+        // Vérifier le statut de signature IRATA Disclaimer depuis la base de données
         const statusRes = await fetch('/api/user/irata-disclaimer-status');
         let statusData = null;
         
         if (statusRes.ok) {
           statusData = await statusRes.json();
-          setHasSigned(statusData.hasSigned);
-          setExistingSubmission(statusData.submission);
+          console.log('Status data:', statusData); // Debug
           
-          // Si déjà signé, pré-remplir les données
-          if (statusData.submission) {
+          if (statusData.hasSigned && statusData.submission) {
+            setHasSigned(true);
+            setExistingSubmission(statusData.submission);
+            
+            // Pré-remplir toutes les données avec la soumission existante
             setUserName(statusData.submission.name || '');
             setUserAddress(statusData.submission.address || '');
             setSignature(statusData.submission.signature || '');
+            
+            console.log('User already signed, data filled from submission');
+          } else {
+            setHasSigned(false);
+            setExistingSubmission(null);
+            console.log('User has not signed yet');
           }
+        } else {
+          console.error('Erreur status:', statusRes.status, statusRes.statusText);
         }
 
-        // Si pas encore signé, récupérer les données utilisateur
+        // Récupérer les données utilisateur seulement si pas encore signé
         if (!statusData?.hasSigned) {
           // Récupérer le nom de l'utilisateur
           const profileRes = await fetch('/api/user/profile');
           if (profileRes.ok) {
             const profileData = await profileRes.json();
-            const fullName = `${profileData.prenom || ''} ${profileData.nom || ''}`.trim();
-            setUserName(fullName);
+            console.log('Profile data:', profileData); // Debug
+            console.log('Profile data keys:', Object.keys(profileData)); // Debug des clés
+            
+            // Essayer différentes structures possibles pour le nom
+            let fullName = '';
+            if (profileData.user?.prenom && profileData.user?.nom) {
+              // Structure actuelle de l'API avec prénom + nom
+              fullName = `${profileData.user.prenom} ${profileData.user.nom}`.trim();
+            } else if (profileData.user?.prenom) {
+              // Seulement le prénom si pas de nom
+              fullName = profileData.user.prenom;
+            } else if (profileData.user?.nom) {
+              // Seulement le nom si pas de prénom
+              fullName = profileData.user.nom;
+            } else if (profileData.user?.name) {
+              // Fallback sur name si disponible
+              fullName = profileData.user.name;
+            }
+            
+            console.log('Full name extracted:', fullName); // Debug du nom extrait
+            
+            if (fullName && !userName) { // Seulement si pas déjà défini
+              setUserName(fullName);
+            }
+          } else {
+            console.error('Erreur profile:', profileRes.status, profileRes.statusText);
           }
 
           // Récupérer l'adresse depuis la table contrat
           const addressRes = await fetch('/api/user/address');
           if (addressRes.ok) {
             const addressData = await addressRes.json();
-            setUserAddress(addressData.address || '');
+            console.log('Address data:', addressData); // Debug
+            if (addressData.address && !userAddress) { // Seulement si pas déjà défini
+              setUserAddress(addressData.address);
+            }
+          } else {
+            console.error('Erreur address:', addressRes.status, addressRes.statusText);
           }
+        } else {
+          console.log('User already signed, skipping profile and address fetch');
+        }
+
+        // Récupérer la session de l'utilisateur depuis le modèle Demande
+        const sessionRes = await fetch('/api/user/session');
+        if (sessionRes.ok) {
+          const sessionData = await sessionRes.json();
+          console.log('Session data:', sessionData); // Debug
+          if (sessionData.session) {
+            setUserSession(sessionData.session);
+          }
+        } else {
+          console.error('Erreur session:', sessionRes.status, sessionRes.statusText);
         }
       } catch (error) {
         console.error('Erreur lors de la récupération des données:', error);
@@ -84,6 +138,7 @@ export default function Page() {
           name: userName,
           address: userAddress,
           signature,
+          session: userSession,
           date: new Date().toLocaleDateString('en-GB'),
         }),
       });

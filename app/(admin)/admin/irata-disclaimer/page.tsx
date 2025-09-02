@@ -27,25 +27,13 @@ export default function AdminIrataDisclaimerPage() {
   const [signingLoading, setSigningLoading] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [irataNo, setIrataNo] = useState('');
+  const [selectedSession, setSelectedSession] = useState('');
 
   useEffect(() => {
     fetchSubmissions();
-    fetchGlobalIrataNo();
   }, []);
 
-  const fetchGlobalIrataNo = async () => {
-    try {
-      const res = await fetch('/api/admin/irata-disclaimer/update-global-irata');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.irataNo) {
-          setIrataNo(data.irataNo);
-        }
-      }
-    } catch (error) {
-      console.error('Erreur lors de la récupération du numéro IRATA global:', error);
-    }
-  };
+
 
   const fetchSubmissions = async () => {
     setLoading(true);
@@ -63,9 +51,9 @@ export default function AdminIrataDisclaimerPage() {
     }
   };
 
-  const saveGlobalIrataNo = async () => {
-    if (!irataNo.trim()) {
-      setError('Veuillez saisir le numéro IRATA');
+  const saveSessionIrataNo = async () => {
+    if (!irataNo.trim() || !selectedSession) {
+      setError('Veuillez saisir le numéro IRATA et sélectionner une session');
       return;
     }
 
@@ -73,10 +61,11 @@ export default function AdminIrataDisclaimerPage() {
     setError(null);
 
     try {
-      const res = await fetch('/api/admin/irata-disclaimer/update-global-irata', {
+      const res = await fetch('/api/admin/irata-disclaimer/update-session-irata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          session: selectedSession,
           irataNo: irataNo.trim()
         })
       });
@@ -86,6 +75,8 @@ export default function AdminIrataDisclaimerPage() {
       // Rafraîchir la liste
       await fetchSubmissions();
       setError(null);
+      setIrataNo('');
+      setSelectedSession('');
       
     } catch (err) {
       console.error(err);
@@ -488,12 +479,22 @@ export default function AdminIrataDisclaimerPage() {
         </button>
       </div>
 
-      {/* Section pour enregistrer le numéro IRATA global */}
+      {/* Section pour enregistrer le numéro IRATA par session */}
       <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6 shadow-sm">
-        <h2 className="text-lg font-semibold mb-4">Numéro IRATA Global</h2>
+        <h2 className="text-lg font-semibold mb-4">Numéro IRATA par Session</h2>
         <div className="flex items-end gap-4">
           <div className="flex-1">
-            <label className="block font-medium text-gray-700 mb-2">Numéro IRATA pour tous les documents :</label>
+            <label className="block font-medium text-gray-700 mb-2">Numéro IRATA pour la session :</label>
+            <select
+              value={selectedSession}
+              onChange={(e) => setSelectedSession(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+            >
+              <option value="">Sélectionner une session</option>
+              {Array.from(new Set(submissions.map(s => s.session).filter(Boolean) as string[])).map(session => (
+                <option key={session} value={session}>{session}</option>
+              ))}
+            </select>
             <input
               type="text"
               value={irataNo}
@@ -503,15 +504,15 @@ export default function AdminIrataDisclaimerPage() {
             />
           </div>
           <button
-            onClick={() => saveGlobalIrataNo()}
-            disabled={signingLoading || !irataNo.trim()}
+            onClick={() => saveSessionIrataNo()}
+            disabled={signingLoading || !irataNo.trim() || !selectedSession}
             className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
-            {signingLoading ? 'Saving...' : 'Enregistrer pour tous'}
+            {signingLoading ? 'Saving...' : 'Enregistrer pour la session'}
           </button>
         </div>
         <p className="text-sm text-gray-600 mt-2">
-          Ce numéro sera automatiquement appliqué à tous les documents IRATA Disclaimer.
+          Ce numéro sera appliqué à tous les documents IRATA Disclaimer de la session sélectionnée.
         </p>
       </div>
 
