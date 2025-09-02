@@ -6,14 +6,23 @@ import { prisma } from '../../../../lib/prisma';
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    // Récupérer l'utilisateur par email
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
     // Récupérer la session de l'utilisateur connecté
     const userDemande = await prisma.demande.findFirst({
       where: {
-        userId: session.user.id
+        userId: user.id
       },
       orderBy: {
         createdAt: 'desc'

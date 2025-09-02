@@ -313,11 +313,11 @@ function PaymentForm({
   );
 }
 
-export default function InvestmentModal({
-  isOpen,
-  onClose,
-  option,
-  selectedAmount,
+export default function InvestmentModal({ 
+  isOpen, 
+  onClose, 
+  option, 
+  selectedAmount, 
   selectedCurrency
 }: InvestmentModalProps) {
   const [step, setStep] = useState<'form' | 'payment' | 'success' | 'error'>('form');
@@ -415,7 +415,7 @@ export default function InvestmentModal({
       }
     } catch (error) {
       console.error('Erreur création compte:', error);
-      setSuccessData(result);
+    setSuccessData(result);
     }
     
     setStep('success');
@@ -579,27 +579,27 @@ Max: {formatCurrency(convertCurrency(option.maxAmount, 'FCFA', selectedCurrency)
           {/* Step 2: Payment */}
           {step === 'payment' && (
             <Elements stripe={stripePromise}>
-                      <PaymentForm
-          formData={formData}
-          option={option}
-          selectedCurrency={selectedCurrency}
-          onSuccess={handlePaymentSuccess}
-          onError={handlePaymentError}
-        />
+              <PaymentForm
+                formData={formData}
+                option={option}
+                selectedCurrency={selectedCurrency}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+              />
             </Elements>
           )}
 
-                     {/* Step 3: Success */}
-           {step === 'success' && (
-             <div className="text-center py-8">
-               <div className="text-6xl mb-4">🎉</div>
-               <h3 className="text-2xl font-bold text-green-600 mb-4">
-                 Contribution Confirmée !
-               </h3>
-               <p className="text-gray-700 mb-6">
+          {/* Step 3: Success */}
+          {step === 'success' && (
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">🎉</div>
+              <h3 className="text-2xl font-bold text-green-600 mb-4">
+                Contribution Confirmée !
+              </h3>
+              <p className="text-gray-700 mb-6">
                  Merci {formData.name} pour votre contribution de {formatCurrency(formData.amount, selectedCurrency, getCurrencySymbol(selectedCurrency))}.
-                 Vous recevrez bientôt un email de confirmation avec tous les détails.
-               </p>
+                Vous recevrez bientôt un email de confirmation avec tous les détails.
+              </p>
                
                {/* Informations de compte créé */}
                {successData?.accountCreated && successData?.loginCredentials && (
@@ -618,31 +618,31 @@ Max: {formatCurrency(convertCurrency(option.maxAmount, 'FCFA', selectedCurrency)
                  </div>
                )}
                
-               <div className="bg-green-50 p-4 rounded-lg mb-6">
-                 <p className="text-green-800 font-semibold">
+              <div className="bg-green-50 p-4 rounded-lg mb-6">
+                <p className="text-green-800 font-semibold">
                    Votre retour estimé: {formatCurrency(successData?.returnAmount || 0, selectedCurrency, getCurrencySymbol(selectedCurrency))}
-                 </p>
-                 <p className="text-sm text-green-700 mt-1">
-                   {successData?.returnDescription}
-                 </p>
-               </div>
+                </p>
+                <p className="text-sm text-green-700 mt-1">
+                  {successData?.returnDescription}
+                </p>
+              </div>
                
-               <div className="flex space-x-4">
-                 <button
-                   onClick={onClose}
-                   className="flex-1 bg-gray-200 text-gray-800 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition duration-200"
-                 >
-                   Fermer
-                 </button>
-                 <Link
+              <div className="flex space-x-4">
+                <button
+                  onClick={onClose}
+                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition duration-200"
+                >
+                  Fermer
+                </button>
+                <Link
                    href="/user/dashboard"
-                   className="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-indigo-700 transition duration-200 text-center"
-                 >
+                  className="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-indigo-700 transition duration-200 text-center"
+                >
                    Accéder à mon Dashboard
-                 </Link>
-               </div>
-             </div>
-           )}
+                </Link>
+              </div>
+            </div>
+          )}
 
           {/* Step 4: Error */}
           {step === 'error' && (

@@ -41,9 +41,8 @@ export default function TraineeInductionPage() {
         setSessionName(data.sessionName);
       } else {
         const errorData = await response.json();
-        console.error('Erreur API:', errorData);
         
-        // Gérer les différents types d'erreurs
+        // Gérer les différents types d'erreurs sans afficher d'erreur dans la console
         if (response.status === 404) {
           // Pas de session ou pas d'induction
           setInductionData(null);
@@ -51,11 +50,15 @@ export default function TraineeInductionPage() {
             setSessionName(errorData.sessionName);
           }
         } else if (response.status === 403) {
-          // Induction non publiée
+          // Induction non publiée - c'est normal, pas d'erreur
           setInductionData(null);
           if (errorData.sessionName) {
             setSessionName(errorData.sessionName);
           }
+        } else {
+          // Autre type d'erreur - seulement pour les vraies erreurs
+          console.error('Erreur inattendue:', response.status, errorData);
+          setInductionData(null);
         }
       }
     } catch (error) {
@@ -127,14 +130,14 @@ export default function TraineeInductionPage() {
                 }
               </p>
               {sessionName && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-blue-800">
-                    <strong>Session :</strong> {sessionName}
-                  </p>
-                  <p className="text-sm text-blue-700 mt-1">
-                    L'induction sera disponible une fois que l'administrateur l'aura créée et publiée.
-                  </p>
-                </div>
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Session :</strong> {sessionName}
+                </p>
+                <p className="text-sm text-blue-700 mt-1">
+                  L'induction a été créée par l'administrateur et sera bientôt disponible.
+                </p>
+              </div>
               )}
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <p className="text-sm text-yellow-800">

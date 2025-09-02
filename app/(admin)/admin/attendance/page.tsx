@@ -346,57 +346,57 @@ export default function AdminAttendancePage() {
                       {isExpanded && (
                         <div className="p-4 space-y-4 bg-gray-50">
                           {usersInSession.map((user) => {
-                            const stats = getAttendanceStats(user);
-                            return (
+                  const stats = getAttendanceStats(user);
+                  return (
                               <div key={user.userId} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
-                                <div className="flex justify-between items-start mb-4">
-                                  <div className="flex-1">
-                                    <h3 className="text-lg font-semibold text-gray-900">{user.userName}</h3>
-                                    <p className="text-sm text-gray-600">{user.userEmail}</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-2xl font-bold text-blue-600">{stats.percentage}%</div>
-                                    <div className="text-sm text-gray-600">{stats.signedSlots}/{stats.totalSlots} présences</div>
-                                    <button
-                                      onClick={() => setSelectedUser(user)}
-                                      className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                                    >
-                                      Voir détails
-                                    </button>
-                                  </div>
-                                </div>
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900">{user.userName}</h3>
+                          <p className="text-sm text-gray-600">{user.userEmail}</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-blue-600">{stats.percentage}%</div>
+                          <div className="text-sm text-gray-600">{stats.signedSlots}/{stats.totalSlots} présences</div>
+                          <button
+                            onClick={() => setSelectedUser(user)}
+                            className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                          >
+                            Voir détails
+                          </button>
+                        </div>
+                      </div>
 
-                                {/* Grille de présence rapide */}
-                                <div className="grid grid-cols-7 gap-2">
-                                  {daysOfWeek.map(day => (
-                                    <div key={day} className="text-center">
-                                      <div className="text-xs font-medium text-gray-700 mb-1">{day.slice(0, 3)}</div>
-                                      <div className="space-y-1">
-                                        {periods.map(period => {
-                                          const key = `${day}-${period}`;
-                                          const hasSignature = user.signatures[key];
-                                          const isGenerated = hasSignature?.generatedFromFollowUp;
-                                          
-                                          return (
-                                            <div
-                                              key={period}
-                                              className={`w-full h-6 rounded text-xs flex items-center justify-center ${
-                                                hasSignature
-                                                  ? isGenerated 
-                                                    ? 'bg-yellow-200 text-yellow-800' 
-                                                    : 'bg-green-200 text-green-800'
-                                                  : 'bg-gray-200 text-gray-500'
-                                              }`}
-                                              title={`${day} ${period}${hasSignature ? (isGenerated ? ' (Auto)' : ' (Manuel)') : ' (Absent)'}`}
-                                            >
-                                              {period === 'matin' ? 'M' : 'S'}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
+                      {/* Grille de présence rapide */}
+                      <div className="grid grid-cols-7 gap-2">
+                        {daysOfWeek.map(day => (
+                          <div key={day} className="text-center">
+                            <div className="text-xs font-medium text-gray-700 mb-1">{day.slice(0, 3)}</div>
+                            <div className="space-y-1">
+                              {periods.map(period => {
+                                const key = `${day}-${period}`;
+                                const hasSignature = user.signatures[key];
+                                const isGenerated = hasSignature?.generatedFromFollowUp;
+                                
+                                return (
+                                  <div
+                                    key={period}
+                                    className={`w-full h-6 rounded text-xs flex items-center justify-center ${
+                                      hasSignature
+                                        ? isGenerated 
+                                          ? 'bg-yellow-200 text-yellow-800' 
+                                          : 'bg-green-200 text-green-800'
+                                        : 'bg-gray-200 text-gray-500'
+                                    }`}
+                                    title={`${day} ${period}${hasSignature ? (isGenerated ? ' (Auto)' : ' (Manuel)') : ' (Absent)'}`}
+                                  >
+                                    {period === 'matin' ? 'M' : 'S'}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                               </div>
                             );
                           })}

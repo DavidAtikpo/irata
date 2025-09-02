@@ -259,6 +259,8 @@ export default function TraineeInductionPage() {
                   </button>
                 </div>
               )}
+
+
             </div>
           </div>
 

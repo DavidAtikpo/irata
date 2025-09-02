@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
       prenom: user.prenom,
       name: user.nom || user.prenom, // Garder pour compatibilité
       email: user.email,
-      role: user.role
+      role: user.role,
+      niveau: user.niveau // Ajouter le niveau
     };
 
     return NextResponse.json({
