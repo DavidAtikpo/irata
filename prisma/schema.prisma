@@ -558,6 +558,8 @@ model TraineeInduction {
   diffusion      String   // Diffusion
   copie          String   // Copie
   adminSignature String   // Signature de l'administrateur
+  status         String   @default("draft") // draft, admin_signed, published_to_trainees
+  publishedAt    DateTime? // Date de publication aux stagiaires
   signatures     TraineeInductionSignature[]
   
   createdAt      DateTime @default(now())

@@ -79,7 +79,7 @@ export default function TraineeSignaturesPage() {
 
 
 
-  const uniqueSessions = Array.from(new Set(signatures.map(s => s.sessionName)));
+  const uniqueSessions = Array.from(new Set(signatures.map(s => s.sessionName).filter(Boolean)));
   const filteredSignatures = selectedSession 
     ? signatures.filter(s => s.sessionName === selectedSession)
     : signatures;
@@ -129,8 +129,8 @@ export default function TraineeSignaturesPage() {
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option key="all-sessions" value="">Toutes les sessions</option>
-                {uniqueSessions.map((sessionName) => (
-                  <option key={sessionName} value={sessionName}>
+                {uniqueSessions.map((sessionName, index) => (
+                  <option key={`session-${index}-${sessionName}`} value={sessionName}>
                     {sessionName}
                   </option>
                 ))}
@@ -144,8 +144,8 @@ export default function TraineeSignaturesPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {Object.entries(groupedByDocument).map(([documentId, data]) => (
-                  <div key={documentId} className="border border-gray-200 rounded-lg p-4">
+                {Object.entries(groupedByDocument).map(([documentId, data], index) => (
+                  <div key={`document-${documentId}-${index}`} className="border border-gray-200 rounded-lg p-4">
                                          <div className="flex justify-between items-center mb-4">
                        <div>
                          <h3 className="text-lg font-semibold text-gray-900">
@@ -182,8 +182,8 @@ export default function TraineeSignaturesPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {data.signatures.map((signature) => (
-                            <tr key={signature.id} className="hover:bg-gray-50">
+                          {data.signatures.map((signature, index) => (
+                            <tr key={`signature-${signature.id}-${index}`} className="hover:bg-gray-50">
                               <td className="border border-gray-400 text-xs px-3 py-2 font-medium">
                                 {signature.userName}
                               </td>
