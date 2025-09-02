@@ -11,7 +11,7 @@ interface Document {
   pages: string;
   category: string;
   downloadUrl: string;
-  preview: {
+    preview: {
     sections: string[];
   };
   isPublic: boolean;
@@ -83,7 +83,7 @@ export default function DocumentsFinancement() {
       console.error('Erreur téléchargement:', err);
     }
   };
-
+  
   const filteredDocs = selectedCategory === 'all' 
     ? documents 
     : documents.filter(doc => doc.category === selectedCategory);
@@ -187,70 +187,70 @@ export default function DocumentsFinancement() {
             <p className="text-gray-500">Les documents seront bientôt disponibles dans cette catégorie.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-            {filteredDocs.map((doc) => (
-              <div key={doc.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300">
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                        {doc.title}
-                      </h3>
-                      <p className="text-gray-600 text-sm mb-3">
-                        {doc.description}
-                      </p>
-                      <div className="flex items-center space-x-4 text-xs text-gray-500 mb-4">
-                        <span className="bg-gray-100 px-2 py-1 rounded">{doc.category}</span>
-                        <span>{doc.size}</span>
-                        <span>{doc.pages}</span>
-                      </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+          {filteredDocs.map((doc) => (
+            <div key={doc.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300">
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                      {doc.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-3">
+                      {doc.description}
+                    </p>
+                    <div className="flex items-center space-x-4 text-xs text-gray-500 mb-4">
+                      <span className="bg-gray-100 px-2 py-1 rounded">{doc.category}</span>
+                      <span>{doc.size}</span>
+                      <span>{doc.pages}</span>
                     </div>
                   </div>
+                </div>
 
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium text-gray-800 mb-2">Contenu:</h4>
-                    <ul className="text-sm text-gray-600 space-y-1 mb-4">
-                      {doc.preview.sections.slice(0, 3).map((section, idx) => (
-                        <li key={idx} className="flex items-center">
-                          <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full mr-2"></span>
-                          {section}
-                        </li>
-                      ))}
-                      {doc.preview.sections.length > 3 && (
-                        <li className="text-gray-500 italic">
-                          +{doc.preview.sections.length - 3} autres sections...
-                        </li>
-                      )}
-                    </ul>
-                  </div>
+                <div className="border-t pt-4">
+                  <h4 className="font-medium text-gray-800 mb-2">Contenu:</h4>
+                  <ul className="text-sm text-gray-600 space-y-1 mb-4">
+                    {doc.preview.sections.slice(0, 3).map((section, idx) => (
+                      <li key={idx} className="flex items-center">
+                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full mr-2"></span>
+                        {section}
+                      </li>
+                    ))}
+                    {doc.preview.sections.length > 3 && (
+                      <li className="text-gray-500 italic">
+                        +{doc.preview.sections.length - 3} autres sections...
+                      </li>
+                    )}
+                  </ul>
+                </div>
 
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => setSelectedDoc(doc)}
-                      className="flex-1 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 transition duration-200"
-                    >
-                      👁️ Aperçu
-                    </button>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setSelectedDoc(doc)}
+                    className="flex-1 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 transition duration-200"
+                  >
+                    👁️ Aperçu
+                  </button>
                     <button
                       onClick={() => handleDownload(doc.id, doc.downloadUrl)}
                       className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition duration-200"
-                    >
-                      ⬇️ Télécharger
+                  >
+                    ⬇️ Télécharger
                     </button>
-                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
+        </div>
         )}
 
         {/* Team Section */}
         {teamMembers.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-8 mb-12">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-              👥 Équipe de Direction
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow-md p-8 mb-12">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+            👥 Équipe de Direction
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {teamMembers.map((member) => (
                 <div key={member.id} className="text-center">
                   <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
@@ -261,21 +261,21 @@ export default function DocumentsFinancement() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-2xl font-bold text-gray-600">
-                        {member.name.split(' ').map(n => n[0]).join('')}
-                      </span>
+                  <span className="text-2xl font-bold text-gray-600">
+                    {member.name.split(' ').map(n => n[0]).join('')}
+                  </span>
                     )}
-                  </div>
-                  <h3 className="font-semibold text-gray-800">{member.name}</h3>
-                  <p className="text-indigo-600 font-medium mb-2">{member.role}</p>
-                  <p className="text-sm text-gray-600 mb-2">{member.experience}</p>
+                </div>
+                <h3 className="font-semibold text-gray-800">{member.name}</h3>
+                <p className="text-indigo-600 font-medium mb-2">{member.role}</p>
+                <p className="text-sm text-gray-600 mb-2">{member.experience}</p>
                   <div className="flex flex-wrap justify-center gap-1 mb-3">
-                    {member.certifications.map((cert, certIdx) => (
-                      <span key={certIdx} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                        {cert}
-                      </span>
-                    ))}
-                  </div>
+                  {member.certifications.map((cert, certIdx) => (
+                    <span key={certIdx} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                      {cert}
+                    </span>
+                  ))}
+                </div>
                   {member.email && (
                     <a 
                       href={`mailto:${member.email}`}
@@ -284,10 +284,10 @@ export default function DocumentsFinancement() {
                       {member.email}
                     </a>
                   )}
-                </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
+        </div>
         )}
 
         {/* Contact for Questions */}

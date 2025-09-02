@@ -19,6 +19,8 @@ export default function CustomerSatisfactionPage() {
   const [sharedSignature, setSharedSignature] = useState<string>('');
   const [envData, setEnvData] = useState<any>(null);
   const [equipData, setEquipData] = useState<any>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -26,8 +28,64 @@ export default function CustomerSatisfactionPage() {
     }
   }, [status, router]);
 
+  useEffect(() => {
+    // Vérifier si l'utilisateur a déjà soumis les formulaires
+    const checkSubmissionStatus = async () => {
+      try {
+        const response = await fetch('/api/user/customer-satisfaction/status');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.submitted) {
+            setIsSubmitted(true);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification du statut:', error);
+      }
+    };
+
+    if (status === 'authenticated') {
+      checkSubmissionStatus();
+    }
+  }, [status]);
+
   const today = new Date().toLocaleDateString('fr-FR');
-  const traineeName = `${session?.user?.prenom ?? ''} ${session?.user?.nom ?? ''}`.trim();
+  const [traineeName, setTraineeName] = useState('');
+
+  // Récupérer le nom de l'utilisateur depuis le profil
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch('/api/user/profile');
+        if (response.ok) {
+          const data = await response.json();
+          let fullName = '';
+          if (data?.user?.prenom && data?.user?.nom) {
+            fullName = `${data.user.prenom} ${data.user.nom}`;
+          } else if (data?.user?.name) {
+            fullName = data.user.name;
+          } else if (data?.user?.nom) {
+            fullName = data.user.nom;
+          } else if (data?.user?.prenom) {
+            fullName = data.user.prenom;
+          }
+          
+          if (fullName) {
+            setTraineeName(fullName);
+          } else {
+            setTraineeName(data?.user?.email || 'Utilisateur');
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement du profil:', error);
+        setTraineeName('Utilisateur');
+      }
+    };
+
+    if (status === 'authenticated') {
+      fetchUserProfile();
+    }
+  }, [status]);
 
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -48,58 +106,128 @@ export default function CustomerSatisfactionPage() {
           </div>
         </div>
 
-        {selected === 'ENVIRONMENT_RECEPTION' && (
-          <EnvironmentReceptionForm
-            date={today}
-            traineeName={traineeName}
-            step={step}
-            totalSteps={totalSteps}
-            onNext={() => {
-              setSelected('EQUIPMENT');
-              setStep(2);
-            }}
-            onNextWithData={(data) => setEnvData(data)}
-            onPrev={() => {
-              // at step 1, prev does nothing
-            }}
-          />
-        )}
-        {selected === 'EQUIPMENT' && (
-          <div className="space-y-4">
-            <EquipmentForm
-              date={today}
-              traineeName={traineeName}
-              step={step}
-              totalSteps={totalSteps}
-              onPrev={() => {
-                setSelected('ENVIRONMENT_RECEPTION');
-                setStep(1);
-              }}
-              onNext={() => {
-                setSelected('TRAINING_PEDAGOGY');
-                setStep(3);
-              }}
-              onNextWithData={(data) => setEquipData(data)}
-            />
-            <div className="flex justify-end">
+        {/* Formulaires avec navigation responsive */}
+        <div className="space-y-4 sm:space-y-6">
+          {selected === 'ENVIRONMENT_RECEPTION' && (
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 sm:px-6 py-3 sm:py-4">
+                <h2 className="text-lg sm:text-xl font-semibold text-white">
+                  Étape 1/3 : Environnement et réception
+                </h2>
+              </div>
+              <div className="p-4 sm:p-6">
+                <EnvironmentReceptionForm
+                  date={today}
+                  traineeName={traineeName}
+                  step={step}
+                  totalSteps={totalSteps}
+                  onNext={() => {
+                    setSelected('EQUIPMENT');
+                    setStep(2);
+                  }}
+                  onNextWithData={(data) => setEnvData(data)}
+                  onPrev={() => {
+                    // at step 1, prev does nothing
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {selected === 'EQUIPMENT' && (
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-green-600 to-green-700 px-4 sm:px-6 py-3 sm:py-4">
+                <h2 className="text-lg sm:text-xl font-semibold text-white">
+                  Étape 2/3 : Équipements d'entraînement
+                </h2>
+              </div>
+              <div className="p-4 sm:p-6">
+                <EquipmentForm
+                  date={today}
+                  traineeName={traineeName}
+                  step={step}
+                  totalSteps={totalSteps}
+                  onPrev={() => {
+                    setSelected('ENVIRONMENT_RECEPTION');
+                    setStep(1);
+                  }}
+                  onNext={() => {
+                    setSelected('TRAINING_PEDAGOGY');
+                    setStep(3);
+                  }}
+                  onNextWithData={(data) => setEquipData(data)}
+                />
+              </div>
+            </div>
+          )}
+
+          {selected === 'TRAINING_PEDAGOGY' && (
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-4 sm:px-6 py-3 sm:py-4">
+                <h2 className="text-lg sm:text-xl font-semibold text-white">
+                  Étape 3/3 : Équipe pédagogique et programme
+                </h2>
+              </div>
+              <div className="p-4 sm:p-6">
+                <TrainingPedagogyForm
+                  date={today}
+                  traineeName={traineeName}
+                  aggregated={{ env: envData, equip: equipData }}
+                  onSubmitAll={() => {
+                    // After all three submissions success
+                    setIsSubmitted(true);
+                    setSelected('ENVIRONMENT_RECEPTION');
+                    setStep(1);
+                    setEnvData(null);
+                    setEquipData(null);
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation des étapes responsive */}
+        <div className="bg-white shadow-lg rounded-lg p-4 sm:p-6 mt-4 sm:mt-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm sm:text-base text-gray-600">Étape :</span>
+              <span className="text-sm sm:text-base font-medium text-blue-600">
+                {step} sur {totalSteps}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  if (step > 1) {
+                    setStep(step - 1);
+                    if (step === 2) setSelected('ENVIRONMENT_RECEPTION');
+                    if (step === 3) setSelected('EQUIPMENT');
+                  }
+                }}
+                disabled={step === 1}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              >
+                ← Précédent
+              </button>
               
+              <button
+                onClick={() => {
+                  if (step < totalSteps) {
+                    setStep(step + 1);
+                    if (step === 1) setSelected('EQUIPMENT');
+                    if (step === 2) setSelected('TRAINING_PEDAGOGY');
+                  }
+                }}
+                disabled={step === totalSteps}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              >
+                Suivant →
+              </button>
             </div>
           </div>
-        )}
-        {selected === 'TRAINING_PEDAGOGY' && (
-          <TrainingPedagogyForm
-            date={today}
-            traineeName={traineeName}
-            aggregated={{ env: envData, equip: equipData }}
-            onSubmitAll={() => {
-              // After all three submissions success
-              setSelected('ENVIRONMENT_RECEPTION');
-              setStep(1);
-              setEnvData(null);
-              setEquipData(null);
-            }}
-          />
-        )}
+        </div>
       </div>
     </div>
   );

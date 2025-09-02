@@ -62,22 +62,44 @@ export default function CidesPreJobPage() {
         const profileResponse = await fetch('/api/user/profile');
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
-          const fullName = [profileData.prenom, profileData.nom].filter(Boolean).join(' ').trim();
-          setUserName(fullName || profileData.email);
-          setUserLevel(profileData.niveau || '1');
+          console.log('Profile data pre-job:', profileData); // Debug
+          
+          // Essayer plusieurs façons de récupérer le nom
+          let fullName = '';
+          if (profileData?.user?.prenom && profileData?.user?.nom) {
+            fullName = `${profileData.user.prenom} ${profileData.user.nom}`;
+          } else if (profileData?.user?.name) {
+            fullName = profileData.user.name;
+          } else if (profileData?.user?.nom) {
+            fullName = profileData.user.nom;
+          } else if (profileData?.user?.prenom) {
+            fullName = profileData.user.prenom;
+          }
+          
+          if (fullName) {
+            setUserName(fullName);
+          } else {
+            console.error('Aucun nom trouvé dans les données:', profileData);
+            setUserName(profileData?.user?.email || 'Utilisateur');
+          }
+
+          // Récupérer le niveau directement depuis le profil
+          const userLevel = profileData?.user?.niveau || '1';
+          setUserLevel(userLevel);
           
           // Créer la ligne correspondant au niveau de l'utilisateur
-          const userLevel = profileData.niveau || '1';
           setFormData(prev => ({
             ...prev,
             attendees: [
               { 
                 position: `Niveau ${userLevel}`, 
-                name: fullName || profileData.email, 
+                name: fullName || profileData?.user?.email || 'Utilisateur', 
                 signatures: {} as Record<string, string> 
               }
             ]
           }));
+        } else {
+          console.error('Erreur API profile:', profileResponse.status);
         }
 
         // Récupérer la session de formation
@@ -87,7 +109,11 @@ export default function CidesPreJobPage() {
           if (sessionData && sessionData.name) {
             setSessionName(sessionData.name);
             setFormData(prev => ({ ...prev, session: sessionData.name }));
+          } else {
+            console.error('Aucune session trouvée dans les données:', sessionData);
           }
+        } else {
+          console.error('Erreur API training-session:', sessionResponse.status);
         }
 
         // Récupérer les signatures du Pre-Job Training
@@ -115,7 +141,11 @@ export default function CidesPreJobPage() {
                 return { ...attendee, signatures: updatedSignatures };
               })
             }));
+          } else {
+            console.log('Aucune signature Pre-Job Training trouvée');
           }
+        } else {
+          console.error('Erreur API pre-job-training-signature:', preJobSignaturesResponse.status);
         }
       } catch (error) {
         console.error('Erreur lors de la récupération des données utilisateur:', error);

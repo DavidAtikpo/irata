@@ -35,6 +35,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
   const [sessionName, setSessionName] = useState('');
   const [signatureData, setSignatureData] = useState<string>('');
   const ratingOptions = ['Très satisfaisant', 'Satisfaisant', 'Insatisfaisant', 'Très insatisfaisant'];
+  
   useEffect(() => {
     if (traineeName && traineeName !== name) {
       setName(traineeName);
@@ -64,12 +65,15 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
     fetchSession();
     fetchProfile();
   }, []);
+  
   const setRowRating = (index: number, rating: string) => {
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, rating } : r)));
   };
+  
   const setRowComment = (index: number, comment: string) => {
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, comment } : r)));
   };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (rows.some((r) => !r.rating)) {
@@ -140,10 +144,11 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
       setSubmitting(false);
     }
   };
+  
   const today = new Date().toLocaleDateString('fr-FR');
 
   return (
-    <form className="bg-white shadow rounded-lg p-6" onSubmit={handleSubmit}>
+    <form className="bg-white shadow rounded-lg p-4 sm:p-6" onSubmit={handleSubmit}>
       <HeaderInfoTable
         title="CI.DES FORMULAIRE D'ENQUÊTE DE SATISFACTION CLIENT"
         codeNumberLabel="Numéro de code"
@@ -159,37 +164,82 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
       </p>
       <p className="text-sm text-gray-700">À cette fin, nous souhaitons recueillir votre avis via le questionnaire ci-dessous</p>
 
-      <fieldset className="border p-4 rounded mt-6">
-        <legend className="font-semibold">Equipe pédagogique et le programme</legend>
-        <div className="mb-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <fieldset className="border p-3 sm:p-4 rounded mt-4 sm:mt-6">
+        <legend className="font-semibold text-base sm:text-lg px-2">Équipe pédagogique et programme</legend>
+        
+        {/* Informations utilisateur responsive */}
+        <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-800">Nom du stagiaire :</label>
+            <label className="block text-sm font-medium text-gray-800 mb-1">Nom du stagiaire :</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full border rounded px-3 py-2 text-sm"
+              className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-800">Session :</label>
+            <label className="block text-sm font-medium text-gray-800 mb-1">Session :</label>
             <input
               type="text"
               value={sessionName}
               onChange={(e) => setSessionName(e.target.value)}
-              className="mt-1 w-full border rounded px-3 py-2 text-sm"
+              className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Session inscrite"
             />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Version mobile : Cartes empilées */}
+        <div className="block sm:hidden space-y-4">
+          {rows.map((row, idx) => (
+            <div key={row.label} className="border rounded-lg p-3 bg-gray-50">
+              <h4 className="font-medium text-sm text-gray-800 mb-3 leading-tight">
+                {row.label}
+              </h4>
+              
+              {/* Options de notation */}
+              <div className="space-y-2 mb-3">
+                <label className="text-xs font-medium text-gray-700">Votre évaluation :</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {ratingOptions.map((opt) => (
+                    <label key={opt} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        name={`row-${idx}`}
+                        type="radio"
+                        className="h-4 w-4 text-blue-600"
+                        checked={row.rating === opt}
+                        onChange={() => setRowRating(idx, opt)}
+                      />
+                      <span className="text-xs text-gray-700">{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Commentaire */}
+              <div>
+                <label className="text-xs font-medium text-gray-700 mb-1 block">Commentaire :</label>
+                <input
+                  type="text"
+                  value={row.comment}
+                  onChange={(e) => setRowComment(idx, e.target.value)}
+                  className="w-full border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Votre commentaire (optionnel)"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Version desktop : Tableau */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="min-w-full border text-sm">
             <thead>
               <tr>
                 <th className="border p-2 text-left w-[40%] bg-blue-900 text-white">Comment avez-vous trouvé ... ?</th>
                 {ratingOptions.map((opt) => (
-                  <th key={opt} className="border p-2">{opt}</th>
+                  <th key={opt} className="border p-2 text-center">{opt}</th>
                 ))}
                 <th className="border p-2 w-[25%] bg-blue-900 text-white">Commentaires</th>
               </tr>
@@ -197,7 +247,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
             <tbody>
               {rows.map((row, idx) => (
                 <tr key={row.label}>
-                  <td className="border p-2">{row.label}</td>
+                  <td className="border p-2 text-sm">{row.label}</td>
                   {ratingOptions.map((opt) => (
                     <td key={opt} className="border p-2 text-center align-middle">
                       <input
@@ -214,7 +264,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
                       type="text"
                       value={row.comment}
                       onChange={(e) => setRowComment(idx, e.target.value)}
-                      className="w-full border rounded px-2 py-1"
+                      className="w-full border rounded px-2 py-1 text-sm"
                     />
                   </td>
                 </tr>
@@ -224,21 +274,27 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
         </div>
       </fieldset>
 
-      {/* Signature */}
-      <fieldset className="border p-4 rounded mt-6">
-        <legend className="font-semibold">Signature du stagiaire</legend>
-        <SignaturePad onSave={(sig) => setSignatureData(sig)} width={600} height={150} />
+      {/* Signature responsive */}
+      <fieldset className="border p-3 sm:p-4 rounded mt-4 sm:mt-6">
+        <legend className="font-semibold text-base sm:text-lg px-2">Signature du stagiaire</legend>
+        <div className="w-full overflow-x-auto">
+          <SignaturePad 
+            onSave={(sig) => setSignatureData(sig)} 
+            width={Math.min(600, window.innerWidth - 40)} 
+            height={150} 
+          />
+        </div>
       </fieldset>
 
-      {/* Pied de page - style similaire à devis */}
-      <footer className="mt-6 p-4 bg-white ">
-        <div className="flex justify-between items-center text-xs text-gray-600">
-          <div>
+      {/* Pied de page responsive */}
+      <footer className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white">
+        <div className="flex flex-col sm:flex-row justify-between items-center text-xs text-gray-600 space-y-2 sm:space-y-0">
+          <div className="text-center sm:text-left">
             CI.DES - Satisfaction Client
           </div>
-          <div className="text-center">
-            <div>CI.DES sasu  Capital 2 500 Euros</div>
-            <div>SIRET : 87840789900011  VAT : FR71878407899</div>
+          <div className="text-center text-xs">
+            <div>CI.DES sasu Capital 2 500 Euros</div>
+            <div>SIRET : 87840789900011 VAT : FR71878407899</div>
             <div>Page 1 sur 1</div>
           </div>
           <div>
@@ -246,13 +302,15 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
           </div>
         </div>
       </footer>
-      <div className="mt-6 flex justify-end">
+      
+      {/* Bouton de soumission responsive */}
+      <div className="mt-4 sm:mt-6 flex justify-center sm:justify-end">
         <button
           type="submit"
           disabled={submitting}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium text-sm sm:text-base"
         >
-          {submitting ? 'Envoi...' : 'Soumettre'}
+          {submitting ? 'Envoi...' : 'Soumettre le questionnaire'}
         </button>
       </div>
     </form>

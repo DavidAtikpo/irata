@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    // Récupérer l'utilisateur pour obtenir son ID
+    // Récupérer l'utilisateur par email
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
     });
@@ -20,34 +20,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    // Récupérer la session depuis le modèle Demande
-    const demande = await prisma.demande.findFirst({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        session: true
-      }
-    });
-
-    console.log('User ID:', user.id);
-    console.log('Demande found:', demande);
-
-    if (!demande || !demande.session) {
-      return NextResponse.json({ 
-        session: null,
-        message: 'Aucune session trouvée pour cet utilisateur'
-      });
-    }
+    // Vérifier si l'utilisateur a déjà soumis les formulaires
+    // Vous devrez adapter cette logique selon votre modèle de données
+    const hasSubmitted = false; // À remplacer par votre logique de vérification
 
     return NextResponse.json({
-      session: demande.session,
-      success: true
+      success: true,
+      submitted: hasSubmitted,
+      message: hasSubmitted 
+        ? 'Formulaires déjà soumis' 
+        : 'Formulaires non encore soumis'
     });
 
   } catch (error) {
-    console.error('Erreur lors de la récupération de la session:', error);
+    console.error('Erreur lors de la vérification du statut:', error);
     return NextResponse.json(
-      { error: 'Erreur lors de la récupération de la session' },
+      { 
+        error: 'Erreur lors de la vérification du statut',
+        details: error instanceof Error ? error.message : 'Erreur inconnue'
+      },
       { status: 500 }
     );
   }

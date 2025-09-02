@@ -68,14 +68,17 @@ export async function GET(request: NextRequest) {
     }
 
     const induction = inductionData[0];
+    console.log('Données de l\'induction:', induction);
 
     // Vérifier si l'induction est publiée
-    if (induction.status !== 'published_to_trainees') {
-      console.log('Induction non publiée, statut:', induction.status);
+    // Si le statut n'existe pas encore, considérer comme non publiée
+    if (!induction.status || induction.status !== 'published_to_trainees') {
+      console.log('Induction non publiée, statut:', induction.status || 'non défini');
       return NextResponse.json({ 
         error: 'L\'induction n\'est pas encore disponible',
         sessionName: sessionData.session,
-        message: 'L\'induction est en cours de préparation par l\'administrateur'
+        message: 'L\'induction est en cours de préparation par l\'administrateur',
+        status: induction.status || 'non défini'
       }, { status: 403 });
     }
 

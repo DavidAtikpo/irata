@@ -30,10 +30,27 @@ export default function MedicalDeclarationPage() {
       const response = await fetch('/api/user/profile');
       if (response.ok) {
         const data = await response.json();
-        const fullName = [data?.prenom, data?.nom].filter(Boolean).join(' ').trim();
+        console.log('Profile data:', data); // Debug
+        
+        // Essayer plusieurs façons de récupérer le nom
+        let fullName = '';
+        if (data?.user?.prenom && data?.user?.nom) {
+          fullName = `${data.user.prenom} ${data.user.nom}`;
+        } else if (data?.user?.name) {
+          fullName = data.user.name;
+        } else if (data?.user?.nom) {
+          fullName = data.user.nom;
+        } else if (data?.user?.prenom) {
+          fullName = data.user.prenom;
+        }
+        
         if (fullName) {
           setForm(prev => ({ ...prev, name: fullName }));
+        } else {
+          console.error('Aucun nom trouvé dans les données:', data);
         }
+      } else {
+        console.error('Erreur API profile:', response.status);
       }
     } catch (error) {
       console.error('Erreur lors du chargement du profil:', error);

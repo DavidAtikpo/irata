@@ -42,11 +42,13 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
   const [submitting, setSubmitting] = useState(false);
   const [sessionName, setSessionName] = useState('');
   const ratingOptions = ['Très satisfaisant', 'Satisfaisant', 'Insatisfaisant', 'Très insatisfaisant'];
+  
   useEffect(() => {
     if (traineeName && traineeName !== name) {
       setName(traineeName);
     }
   }, [traineeName]);
+  
   useEffect(() => {
     const fetchSession = async () => {
       try {
@@ -74,9 +76,11 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
   const setRowRating = (index: number, rating: string) => {
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, rating } : r)));
   };
+  
   const setRowComment = (index: number, comment: string) => {
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, comment } : r)));
   };
+  
   const handleNext = async () => {
     if (rows.some((r) => !r.rating)) {
       alert('Veuillez sélectionner une note pour chaque ligne.');
@@ -99,10 +103,11 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
       setSubmitting(false);
     }
   };
+  
   const today = new Date().toLocaleDateString('fr-FR');
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
+    <div className="bg-white shadow rounded-lg p-4 sm:p-6">
       <HeaderInfoTable
         title="CI.DES FORMULAIRE D'ENQUÊTE DE SATISFACTION CLIENT"
         codeNumberLabel="Numéro de code"
@@ -118,31 +123,76 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
       </p>
       <p className="text-sm text-gray-700">À cette fin, nous souhaitons recueillir votre avis via le questionnaire ci-dessous</p>
 
-      <fieldset className="border p-4 rounded mt-6">
-        <legend className="font-semibold">les équipements d entraînement</legend>
-        <div className="mb-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <fieldset className="border p-3 sm:p-4 rounded mt-4 sm:mt-6">
+        <legend className="font-semibold text-base sm:text-lg px-2">Équipements d'entraînement</legend>
+        
+        {/* Informations utilisateur responsive */}
+        <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-800">Nom du stagiaire :</label>
+            <label className="block text-sm font-medium text-gray-800 mb-1">Nom du stagiaire :</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full border rounded px-3 py-2 text-sm"
+              className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-800">Session :</label>
+            <label className="block text-sm font-medium text-gray-800 mb-1">Session :</label>
             <input
               type="text"
               value={sessionName}
               onChange={(e) => setSessionName(e.target.value)}
-              className="mt-1 w-full border rounded px-3 py-2 text-sm"
+              className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Session inscrite"
             />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Version mobile : Cartes empilées */}
+        <div className="block sm:hidden space-y-4">
+          {rows.map((row, idx) => (
+            <div key={row.label} className="border rounded-lg p-3 bg-gray-50">
+              <h4 className="font-medium text-sm text-gray-800 mb-3 leading-tight">
+                {row.label}
+              </h4>
+              
+              {/* Options de notation */}
+              <div className="space-y-2 mb-3">
+                <label className="text-xs font-medium text-gray-700">Votre évaluation :</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {ratingOptions.map((opt) => (
+                    <label key={opt} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        name={`row-${idx}`}
+                        type="radio"
+                        className="h-4 w-4 text-blue-600"
+                        checked={row.rating === opt}
+                        onChange={() => setRowRating(idx, opt)}
+                      />
+                      <span className="text-xs text-gray-700">{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Commentaire */}
+              <div>
+                <label className="text-xs font-medium text-gray-700 mb-1 block">Commentaire :</label>
+                <input
+                  type="text"
+                  value={row.comment}
+                  onChange={(e) => setRowComment(idx, e.target.value)}
+                  className="w-full border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Votre commentaire (optionnel)"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Version desktop : Tableau */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="min-w-full border text-sm">
             <thead>
               <tr>
@@ -150,7 +200,7 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
                   Comment avez-vous jugé l'état, le fonctionnement et le nombre fourni :
                 </th>
                 {ratingOptions.map((opt) => (
-                  <th key={opt} className="border p-2">{opt}</th>
+                  <th key={opt} className="border p-2 text-center">{opt}</th>
                 ))}
                 <th className="border p-2 w-[25%] bg-blue-900 text-white">Commentaires</th>
               </tr>
@@ -158,7 +208,7 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
             <tbody>
               {rows.map((row, idx) => (
                 <tr key={row.label}>
-                  <td className="border p-2">{row.label}</td>
+                  <td className="border p-2 text-sm">{row.label}</td>
                   {ratingOptions.map((opt) => (
                     <td key={opt} className="border p-2 text-center align-middle">
                       <input
@@ -175,7 +225,7 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
                       type="text"
                       value={row.comment}
                       onChange={(e) => setRowComment(idx, e.target.value)}
-                      className="w-full border rounded px-2 py-1"
+                      className="w-full border rounded px-2 py-1 text-sm"
                     />
                   </td>
                 </tr>
@@ -184,29 +234,29 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
           </table>
         </div>
 
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-800">
+        {/* Suggestions responsive */}
+        <div className="mt-4 sm:mt-6">
+          <label className="block text-sm font-medium text-gray-800 mb-2">
             Vos suggestions et remarques pour nous permettre d'améliorer le centre de formation :
           </label>
           <textarea
-            className="mt-1 w-full border rounded px-3 py-2 text-sm min-h-24"
+            className="w-full border rounded px-3 py-2 text-sm min-h-20 sm:min-h-24 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             value={suggestions}
             onChange={(e) => setSuggestions(e.target.value)}
+            placeholder="Vos suggestions..."
           />
         </div>
       </fieldset>
 
-      {/* Pas de signature ici (sur le dernier formulaire uniquement) */}
-
-      {/* Pied de page - style similaire à devis */}
-      <footer className="mt-6 p-4 bg-white ">
-        <div className="flex justify-between items-center text-xs text-gray-600">
-          <div>
+      {/* Pied de page responsive */}
+      <footer className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white">
+        <div className="flex flex-col sm:flex-row justify-between items-center text-xs text-gray-600 space-y-2 sm:space-y-0">
+          <div className="text-center sm:text-left">
             CI.DES - Satisfaction Client
           </div>
-          <div className="text-center">
-            <div>CI.DES sasu  Capital 2 500 Euros</div>
-            <div>SIRET : 87840789900011  VAT : FR71878407899</div>
+          <div className="text-center text-xs">
+            <div>CI.DES sasu Capital 2 500 Euros</div>
+            <div>SIRET : 87840789900011 VAT : FR71878407899</div>
             <div>Page 1 sur 1</div>
           </div>
           <div>
@@ -214,18 +264,20 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
           </div>
         </div>
       </footer>
-      <div className="mt-6 flex items-center justify-between">
-        <div className="text-sm text-gray-600">
+      
+      {/* Navigation responsive */}
+      <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="text-sm text-gray-600 text-center sm:text-left">
           {typeof step === 'number' && typeof totalSteps === 'number' && (
             <span>Formulaire {step} / {totalSteps}</span>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           {typeof step === 'number' && step > 1 && (
             <button
               type="button"
               onClick={onPrev}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+              className="flex-1 sm:flex-none px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors text-sm"
             >
               Précédent
             </button>
@@ -235,7 +287,7 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
               type="button"
               onClick={handleNext}
               disabled={submitting}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              className="flex-1 sm:flex-none px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors text-sm"
             >
               {submitting ? '...' : 'Suivant'}
             </button>
