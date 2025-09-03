@@ -60,6 +60,12 @@ export default function FormulairesQuotidiensPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [formulaires, setFormulaires] = useState<FormulaireQuotidien[]>([]);
+  
+  // Fonction utilitaire pour formater les dates pour les champs input[type="date"]
+  const formatDateForInput = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0]; // Format YYYY-MM-DD
+  };
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingFormulaire, setEditingFormulaire] = useState<FormulaireQuotidien | null>(null);
@@ -126,12 +132,21 @@ export default function FormulairesQuotidiensPage() {
   };
 
   const validateQuestions = () => {
+    // Calculer le total des points
+    const totalPoints = createForm.questions.reduce((sum, q) => sum + (q.points || 0.5), 0);
+    
+    // Vérifier que le total est exactement 20
+    if (Math.abs(totalPoints - 20) > 0.01) { // Tolérance de 0.01 pour les erreurs d'arrondi
+      setError(`Le total des points doit être exactement 20. Actuellement : ${totalPoints.toFixed(1)}/20 points.`);
+      return false;
+    }
+    
     for (let i = 0; i < createForm.questions.length; i++) {
       const question = createForm.questions[i];
       
-      // Vérifier que la question a des points
-      if (!question.points || question.points < 1) {
-        setError(`Question ${i + 1} : Veuillez définir un nombre de points valide (minimum 1).`);
+      // Vérifier que la question a des points (minimum 0.5)
+      if (!question.points || question.points < 0.5) {
+        setError(`Question ${i + 1} : Veuillez définir un nombre de points valide (minimum 0.5).`);
         return false;
       }
       
@@ -152,6 +167,7 @@ export default function FormulairesQuotidiensPage() {
         }
       }
     }
+    
     return true;
   };
 
@@ -227,7 +243,7 @@ export default function FormulairesQuotidiensPage() {
       required: true,
       options: [],
       correctAnswers: [],
-      points: 1
+      points: 0.5
     };
     setCreateForm({
       ...createForm,
@@ -330,17 +346,18 @@ export default function FormulairesQuotidiensPage() {
       description: formulaire.description || '',
       session: formulaire.session,
       niveau: formulaire.niveau || '1',
-      dateDebut: formulaire.dateDebut,
-      dateFin: formulaire.dateFin,
+      dateDebut: formatDateForInput(formulaire.dateDebut),
+      dateFin: formatDateForInput(formulaire.dateFin),
       questions: [...formulaire.questions]
     });
     setShowCreateForm(true);
   };
 
-  const handleUpdateFormulaire = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!editingFormulaire) return;
+  const handleUpdateFormulaire = async () => {
+    if (!editingFormulaire) {
+      setError('Aucun formulaire en cours d\'édition');
+      return;
+    }
     
     if (createForm.questions.length === 0) {
       setError('Veuillez ajouter au moins une question avant de sauvegarder.');
@@ -381,7 +398,7 @@ export default function FormulairesQuotidiensPage() {
         '/admin/formulaires-quotidiens'
       );
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('Erreur lors de la mise à jour:', error);
       setError(error instanceof Error ? error.message : 'Erreur lors de la mise à jour du formulaire');
     } finally {
       setSubmitting(false);
@@ -481,7 +498,7 @@ export default function FormulairesQuotidiensPage() {
         ...q,
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // Nouvel ID unique
         correctAnswers: q.correctAnswers || [], // Assurer que les bonnes réponses sont copiées
-        points: q.points || 1 // Assurer que les points sont copiés
+        points: q.points || 0.5 // Assurer que les points sont copiés
       }))
     };
 
@@ -491,8 +508,8 @@ export default function FormulairesQuotidiensPage() {
       description: duplicatedFormulaire.description || '',
       session: duplicatedFormulaire.session,
       niveau: duplicatedFormulaire.niveau || '1',
-      dateDebut: duplicatedFormulaire.dateDebut,
-      dateFin: duplicatedFormulaire.dateFin,
+      dateDebut: formatDateForInput(duplicatedFormulaire.dateDebut),
+      dateFin: formatDateForInput(duplicatedFormulaire.dateFin),
       questions: [...duplicatedFormulaire.questions]
     });
 
@@ -977,7 +994,7 @@ export default function FormulairesQuotidiensPage() {
                           {formulaire.questions.length} question{formulaire.questions.length !== 1 ? 's' : ''}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          Total: {formulaire.questions.reduce((sum, q) => sum + (q.points || 1), 0)} points
+                          Total: {formulaire.questions.reduce((sum, q) => sum + (q.points || 0.5), 0).toFixed(1)} points
                         </p>
                       </div>
                       
@@ -1126,7 +1143,7 @@ export default function FormulairesQuotidiensPage() {
               {/* Contenu scrollable de la modal */}
               <div className="flex-1 overflow-y-auto p-6">
                 
-                <form onSubmit={editingFormulaire ? handleUpdateFormulaire : handleCreateFormulaire} className="space-y-8">
+                <form id="formulaireForm" className="space-y-8">
                   {/* Informations générales */}
                   <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-lg border border-indigo-200">
                     <div className="flex items-center space-x-2 mb-4">
@@ -1237,14 +1254,36 @@ export default function FormulairesQuotidiensPage() {
                           Questions du formulaire ({createForm.questions.length})
                         </h4>
                       </div>
-                      <button
-                        type="button"
-                        onClick={addQuestion}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                      >
-                        <PlusIcon className="h-4 w-4 mr-2" />
-                        Ajouter une question
-                      </button>
+                      <div className="flex items-center space-x-4">
+                        {/* Indicateur du total des points */}
+                        <div className={`px-4 py-2 rounded-lg border-2 font-semibold text-sm ${
+                          createForm.questions.length > 0 
+                            ? (() => {
+                                const total = createForm.questions.reduce((sum, q) => sum + (q.points || 0.5), 0);
+                                if (Math.abs(total - 20) < 0.01) {
+                                  return 'bg-green-100 border-green-500 text-green-800';
+                                } else if (total > 20) {
+                                  return 'bg-red-100 border-red-500 text-red-800';
+                                } else {
+                                  return 'bg-yellow-100 border-yellow-500 text-yellow-800';
+                                }
+                              })()
+                            : 'bg-gray-100 border-gray-300 text-gray-600'
+                        }`}>
+                          Total: {createForm.questions.length > 0 
+                            ? createForm.questions.reduce((sum, q) => sum + (q.points || 0.5), 0).toFixed(1)
+                            : '0.0'
+                          }/20 points
+                        </div>
+                        <button
+                          type="button"
+                          onClick={addQuestion}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                        >
+                          <PlusIcon className="h-4 w-4 mr-2" />
+                          Ajouter une question
+                        </button>
+                      </div>
                     </div>
 
                     {createForm.questions.length === 0 ? (
@@ -1274,19 +1313,43 @@ export default function FormulairesQuotidiensPage() {
                                 </div>
                                 <div>
                                   <h5 className="font-medium text-gray-900">Question {index + 1}</h5>
-                                  <div className="flex items-center space-x-2 mt-1">
-                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                                      {question.points || 1} point{question.points !== 1 ? 's' : ''}
-                                    </span>
-                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                      {question.type === 'text' ? '📝 Texte' : 
-                                       question.type === 'textarea' ? '📄 Texte long' :
-                                       question.type === 'select' ? '📋 Choix unique' :
-                                       question.type === 'radio' ? '⚪ Choix unique' :
-                                       question.type === 'checkbox' ? '☑️ Choix multiple' :
-                                       '🔢 Nombre'}
-                                    </span>
-                                  </div>
+                                                                <div className="flex items-center space-x-2 mt-1">
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                  {question.points || 0.5} point{(question.points || 0.5) !== 1 ? 's' : ''}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  {question.type === 'text' ? '📝 Texte' : 
+                                   question.type === 'textarea' ? '📄 Texte long' :
+                                   question.type === 'select' ? '📋 Choix unique' :
+                                   question.type === 'radio' ? '⚪ Choix unique' :
+                                   question.type === 'checkbox' ? '☑️ Choix multiple' :
+                                   '🔢 Nombre'}
+                                </span>
+                                {/* Indicateur des points restants */}
+                                {(() => {
+                                  const currentTotal = createForm.questions.reduce((sum, q) => sum + (q.points || 0.5), 0);
+                                  const remaining = 20 - currentTotal;
+                                  if (Math.abs(remaining) < 0.01) {
+                                    return (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        ✓ 20/20
+                                      </span>
+                                    );
+                                  } else if (remaining > 0) {
+                                    return (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        ⚠️ +{remaining.toFixed(1)}
+                                      </span>
+                                    );
+                                  } else {
+                                    return (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        ✗ -{Math.abs(remaining).toFixed(1)}
+                                      </span>
+                                    );
+                                  }
+                                })()}
+                              </div>
                                 </div>
                               </div>
                               <button
@@ -1431,18 +1494,22 @@ export default function FormulairesQuotidiensPage() {
                               {/* Champ points pour TOUTES les questions */}
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Points pour cette question *
+                                  Points pour cette question * (minimum 0.5)
                                 </label>
                                 <input
                                   type="number"
                                   required
-                                  min="1"
+                                  min="0.5"
                                   max="100"
+                                  step="0.5"
                                   value={question.points}
-                                  onChange={(e) => updateQuestion(index, 'points', parseInt(e.target.value) || 1)}
+                                  onChange={(e) => updateQuestion(index, 'points', parseFloat(e.target.value) || 0.5)}
                                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                  placeholder="1"
+                                  placeholder="0.5"
                                 />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Vous pouvez attribuer 0.5, 1, 1.5, 2, etc. points par question
+                                </p>
                               </div>
 
                               {/* Options pour type Nombre */}
@@ -1515,15 +1582,43 @@ export default function FormulairesQuotidiensPage() {
                         Ajoutez au moins une question pour continuer
                       </span>
                     ) : (
-                      <span className="flex items-center text-green-600">
-                        <CheckCircleIcon className="h-4 w-4 mr-1" />
-                        {createForm.questions.length} question{createForm.questions.length !== 1 ? 's' : ''} configurée{createForm.questions.length !== 1 ? 's' : ''}
-                        {createForm.titre.includes('(Copie)') && (
-                          <span className="ml-2 text-purple-600">
-                            • Formulaire dupliqué
-                          </span>
-                        )}
-                      </span>
+                      <div className="space-y-1">
+                        <span className="flex items-center text-green-600">
+                          <CheckCircleIcon className="h-4 w-4 mr-1" />
+                          {createForm.questions.length} question{createForm.questions.length !== 1 ? 's' : ''} configurée{createForm.questions.length !== 1 ? 's' : ''}
+                          {createForm.titre.includes('(Copie)') && (
+                            <span className="ml-2 text-purple-600">
+                              • Formulaire dupliqué
+                            </span>
+                          )}
+                        </span>
+                        {/* Statut des points */}
+                        {(() => {
+                          const total = createForm.questions.reduce((sum, q) => sum + (q.points || 0.5), 0);
+                          if (Math.abs(total - 20) < 0.01) {
+                            return (
+                              <span className="flex items-center text-green-600">
+                                <CheckCircleIcon className="h-4 w-4 mr-1" />
+                                Total des points : {total.toFixed(1)}/20 ✓
+                              </span>
+                            );
+                          } else if (total > 20) {
+                            return (
+                              <span className="flex items-center text-red-600">
+                                <ExclamationTriangleIcon className="h-4 w-4 mr-1" />
+                                Total des points : {total.toFixed(1)}/20 ✗ (trop de points)
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <span className="flex items-center text-yellow-600">
+                                <ExclamationTriangleIcon className="h-4 w-4 mr-1" />
+                                Total des points : {total.toFixed(1)}/20 ⚠️ (points manquants)
+                              </span>
+                            );
+                          }
+                        })()}
+                      </div>
                     )}
                   </div>
                 <div className="flex space-x-3">
@@ -1539,7 +1634,7 @@ export default function FormulairesQuotidiensPage() {
                     Annuler
                   </button>
                   <button
-                    type="submit"
+                    type="button"
                     disabled={createForm.questions.length === 0 || submitting}
                     onClick={editingFormulaire ? handleUpdateFormulaire : handleCreateFormulaire}
                     className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
