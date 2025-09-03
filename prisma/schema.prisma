@@ -40,6 +40,7 @@ model User {
   trainingSessions              TrainingSession[]              @relation("TrainingSessionTrainees")
   traineeInductionSignatures    TraineeInductionSignature[]
   notifications                 Notification[]
+  documentActions               DocumentAction[]
 
   @@schema("webirata")
 }
@@ -169,6 +170,30 @@ model Document {
   certificationId String?
   devis           Devis?   @relation(fields: [devisId], references: [id])
   user            User?    @relation(fields: [userId], references: [id])
+  actions         DocumentAction[]
+
+  @@schema("webirata")
+}
+
+model DocumentAction {
+  id         String           @id @default(cuid())
+  documentId String
+  userId     String
+  action     DocumentActionType
+  timestamp  DateTime         @default(now())
+  ipAddress  String?
+  userAgent  String?
+  document   Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId, action])
+  @@schema("webirata")
+}
+
+enum DocumentActionType {
+  RECEIVED    // Document reçu (accusé de réception)
+  OPENED      // Document ouvert
+  DOWNLOADED  // Document téléchargé
 
   @@schema("webirata")
 }

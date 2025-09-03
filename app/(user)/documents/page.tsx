@@ -189,6 +189,11 @@ export default function UserDocumentsPage() {
       const data = await response.json();
       setDocuments(data);
       setFilteredDocuments(data);
+      
+      // Enregistrer automatiquement l'action "RECEIVED" pour tous les documents
+      data.forEach(async (doc: Document) => {
+        await recordAction(doc.id, 'RECEIVED');
+      });
     } catch (error) {
       setError('Erreur lors de la récupération des documents');
       console.error('Erreur:', error);
@@ -222,7 +227,32 @@ export default function UserDocumentsPage() {
     applyFilters();
   }, [documents, searchTerm, typeFilter]);
 
-  const handleDownload = (documentId: string, nom: string) => {
+  const recordAction = async (documentId: string, action: 'RECEIVED' | 'OPENED' | 'DOWNLOADED') => {
+    try {
+      console.log(`🔍 Enregistrement de l'action: ${action} pour le document ${documentId}`);
+      const response = await fetch(`/api/documents/${documentId}/action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`✅ Action ${action} enregistrée avec succès:`, result);
+      } else {
+        console.error(`❌ Erreur lors de l'enregistrement de l'action ${action}:`, response.status);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'enregistrement de l\'action:', error);
+    }
+  };
+
+  const handleDownload = async (documentId: string, nom: string) => {
+    // Enregistrer l'action de téléchargement
+    await recordAction(documentId, 'DOWNLOADED');
+    
     const link = document.createElement('a');
     link.href = `/api/documents/${documentId}/local`; // Utiliser stockage local en priorité
     link.download = nom;
@@ -230,6 +260,14 @@ export default function UserDocumentsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleView = async (documentId: string) => {
+    // Enregistrer l'action d'ouverture
+    await recordAction(documentId, 'OPENED');
+    
+    // Ouvrir le document dans un nouvel onglet
+    window.open(`/api/documents/${documentId}/local`, '_blank');
   };
 
   const getDocumentIcon = (type: string) => {
@@ -530,7 +568,7 @@ export default function UserDocumentsPage() {
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
                             <button
-                              onClick={() => window.open(`/api/documents/${doc.id}/local`, '_blank')}
+                              onClick={() => handleView(doc.id)}
                               className="text-indigo-600 hover:text-indigo-900 p-1 rounded"
                               title="Ouvrir"
                             >
@@ -759,7 +797,7 @@ export default function UserDocumentsPage() {
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
                             <button
-                              onClick={() => window.open(`/api/documents/${doc.id}/local`, '_blank')}
+                              onClick={() => handleView(doc.id)}
                               className="text-indigo-600 hover:text-indigo-900 p-1 rounded"
                               title="Ouvrir"
                             >

@@ -15,7 +15,11 @@ import {
   AdjustmentsHorizontalIcon,
   EyeIcon,
   PencilIcon,
-  XMarkIcon
+  XMarkIcon,
+  ChartBarIcon,
+  CheckCircleIcon,
+  EyeSlashIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import { Button } from '@/app/components/ui/button';
 import Link from 'next/link';
@@ -32,6 +36,57 @@ interface Document {
   devis?: { numero: string };
   userId?: string;
   devisId?: string;
+  totalActions?: number;
+  actions?: DocumentAction[];
+}
+
+interface DocumentAction {
+  id: string;
+  action: 'RECEIVED' | 'OPENED' | 'DOWNLOADED';
+  timestamp: string;
+  user: {
+    nom: string;
+    prenom: string;
+    email: string;
+  };
+}
+
+interface DocumentStatistics {
+  global: {
+    totalDocuments: number;
+    totalUsers: number;
+    totalActions: number;
+  };
+  byAction: {
+    RECEIVED?: number;
+    OPENED?: number;
+    DOWNLOADED?: number;
+  };
+  byDocument: Array<{
+    id: string;
+    nom: string;
+    type: string;
+    public: boolean;
+    createdAt: string;
+    totalActions: number;
+    actions: DocumentAction[];
+  }>;
+  byUser: Array<{
+    id: string;
+    nom: string;
+    prenom: string;
+    email: string;
+    totalActions: number;
+    actions: Array<{
+      id: string;
+      action: string;
+      timestamp: string;
+      document: {
+        nom: string;
+        type: string;
+      };
+    }>;
+  }>;
 }
 
 export default function AdminDocumentsPage() {
@@ -47,6 +102,8 @@ export default function AdminDocumentsPage() {
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
   const [users, setUsers] = useState<Array<{id: string, nom: string, prenom: string, email: string}>>([]);
   const [devis, setDevis] = useState<Array<{id: string, numero: string}>>([]);
+  const [statistics, setStatistics] = useState<DocumentStatistics | null>(null);
+  const [showStatistics, setShowStatistics] = useState(false);
 
   // États pour les filtres
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,6 +138,7 @@ export default function AdminDocumentsPage() {
       fetchDocuments();
       fetchUsers();
       fetchDevis();
+      fetchStatistics();
     }
   }, [status, session, router]);
 
@@ -98,6 +156,18 @@ export default function AdminDocumentsPage() {
       console.error('Erreur:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStatistics = async () => {
+    try {
+      const response = await fetch('/api/admin/documents/statistics');
+      if (response.ok) {
+        const data = await response.json();
+        setStatistics(data);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des statistiques:', error);
     }
   };
 
@@ -478,7 +548,7 @@ export default function AdminDocumentsPage() {
         {/* Statistiques */}
         <div className="mb-6">
           <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
               <div className="mb-2 sm:mb-0">
                 <span className="text-sm text-gray-600">
                   {filteredDocuments.length} document{filteredDocuments.length > 1 ? 's' : ''} trouvé{filteredDocuments.length > 1 ? 's' : ''}
@@ -488,8 +558,109 @@ export default function AdminDocumentsPage() {
                 <span>Total: {documents.length}</span>
                 <span>•</span>
                 <span>Publics: {documents.filter(d => d.public).length}</span>
+                <button
+                  onClick={() => setShowStatistics(!showStatistics)}
+                  className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors duration-200"
+                >
+                  <ChartBarIcon className="h-4 w-4 mr-1" />
+                  Statistiques détaillées
+                </button>
               </div>
             </div>
+
+            {/* Statistiques détaillées */}
+            {showStatistics && statistics && (
+              <div className="border-t border-gray-200 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{statistics.global.totalDocuments}</div>
+                    <div className="text-sm text-blue-800">Documents</div>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">{statistics.global.totalUsers}</div>
+                    <div className="text-sm text-green-800">Utilisateurs</div>
+                  </div>
+                  <div className="bg-purple-50 p-3 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">{statistics.byAction.RECEIVED || 0}</div>
+                    <div className="text-sm text-purple-800">Accusés de réception</div>
+                  </div>
+                  <div className="bg-orange-50 p-3 rounded-lg">
+                    <div className="text-2xl font-bold text-orange-600">{statistics.byAction.OPENED || 0}</div>
+                    <div className="text-sm text-orange-800">Documents ouverts</div>
+                  </div>
+                </div>
+
+                {/* Tableau de suivi des actions */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Suivi des actions par document</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-white">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Document
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Type
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions totales
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Détails des actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {statistics.byDocument.map((doc) => (
+                          <tr key={doc.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3">
+                              <div className="text-sm font-medium text-gray-900">{doc.nom}</div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                doc.type === 'formation' ? 'bg-blue-100 text-blue-800' :
+                                doc.type === 'contrat' ? 'bg-green-100 text-green-800' :
+                                doc.type === 'procedure' ? 'bg-purple-100 text-purple-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {getTypeLabel(doc.type)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="text-sm text-gray-900">{doc.totalActions}</div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="space-y-1">
+                                {doc.actions.map((action) => (
+                                  <div key={action.id} className="flex items-center space-x-2 text-xs">
+                                    {action.action === 'RECEIVED' && (
+                                      <CheckCircleIcon className="h-3 w-3 text-green-500" />
+                                    )}
+                                    {action.action === 'OPENED' && (
+                                      <EyeIcon className="h-3 w-3 text-blue-500" />
+                                    )}
+                                    {action.action === 'DOWNLOADED' && (
+                                      <ArrowDownTrayIcon className="h-3 w-3 text-purple-500" />
+                                    )}
+                                    <span className="text-gray-600">
+                                      {action.user.prenom} {action.user.nom}
+                                    </span>
+                                    <span className="text-gray-400">
+                                      {new Date(action.timestamp).toLocaleDateString('fr-FR')}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
