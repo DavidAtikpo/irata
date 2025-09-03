@@ -3,30 +3,29 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { SESSIONS } from '../../../../../lib/sessions';
+import { useNotifications } from '../../../../../hooks/useNotifications';
 import {
-  ArrowLeftIcon,
-  DocumentArrowDownIcon,
-  EyeIcon,
-  CalendarIcon,
-  UserIcon,
   DocumentTextIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  CheckCircleIcon
+  UsersIcon,
+  ChartBarIcon,
+  EyeIcon,
+  ArrowDownTrayIcon as DownloadIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ExclamationTriangleIcon,
+  TrophyIcon,
+  StarIcon
 } from '@heroicons/react/24/outline';
 
 interface Question {
   id: string;
   type: 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'number';
   question: string;
-  options?: string[];
   required: boolean;
-  // Propriétés de scoring
-  correctAnswers?: string[];
-  points?: number;
-  scoringEnabled?: boolean;
-  numberCorrect?: number;
+  options?: string[];
+  correctAnswers: string[];
+  points: number;
 }
 
 interface FormulaireQuotidien {
@@ -34,6 +33,7 @@ interface FormulaireQuotidien {
   titre: string;
   description?: string;
   session: string;
+  niveau: string;
   dateCreation: string;
   dateDebut: string;
   dateFin: string;
@@ -43,95 +43,46 @@ interface FormulaireQuotidien {
   nombreReponses: number;
 }
 
-interface ReponseFormulaire {
+interface Reponse {
   id: string;
+  userId: string;
+  user: {
+    nom: string;
+    prenom: string;
+    email: string;
+  };
   formulaireId: string;
-  utilisateurId: string;
-  utilisateurNom: string;
-  utilisateurEmail: string;
   dateReponse: string;
   reponses: {
     questionId: string;
-    question: string;
-    reponse: any;
+    reponse: string;
+    pointsObtenus: number;
+    correcte: boolean;
   }[];
-  commentaires?: string;
-  soumis: boolean;
-  score?: number;
-  maxScore?: number;
+  totalPoints: number;
+  pointsMax: number;
+  moyenne: number;
+  note: string;
 }
 
-// Fonction de correction automatique
-const correctResponse = (question: Question, userResponse: any) => {
-  const result = {
-    isCorrect: false,
-    points: 0,
-    maxPoints: question.points || 1,
-    explanation: '',
-    correctAnswer: '',
-    userAnswer: userResponse
-  };
-
-  // Si le scoring n'est pas activé, pas de correction
-  if (!question.scoringEnabled) {
-    return result;
-  }
-
-  // Correction pour les questions à choix multiples (radio, select, checkbox)
-  if (question.correctAnswers && question.correctAnswers.length > 0) {
-    if (question.type === 'radio' || question.type === 'select') {
-      result.correctAnswer = question.correctAnswers[0];
-      result.isCorrect = question.correctAnswers.includes(userResponse);
-      result.explanation = result.isCorrect 
-        ? '✅ Réponse correcte' 
-        : `❌ Réponse incorrecte. La bonne réponse était : ${result.correctAnswer}`;
-    } else if (question.type === 'checkbox') {
-      const userAnswersArray = Array.isArray(userResponse) ? userResponse : [userResponse];
-      const correctAnswersSet = new Set(question.correctAnswers);
-      const userAnswersSet = new Set(userAnswersArray);
-      
-      result.correctAnswer = question.correctAnswers.join(', ');
-      result.isCorrect = correctAnswersSet.size === userAnswersSet.size &&
-        [...correctAnswersSet].every(answer => userAnswersSet.has(answer));
-      
-      result.explanation = result.isCorrect 
-        ? '✅ Toutes les bonnes réponses sélectionnées' 
-        : `❌ Réponse incorrecte. Les bonnes réponses étaient : ${result.correctAnswer}`;
-    }
-  }
-
-  // Correction pour les questions numériques
-  if (question.type === 'number' && typeof question.numberCorrect === 'number') {
-    const numericAnswer = typeof userResponse === 'number' ? userResponse : Number(userResponse);
-    result.correctAnswer = question.numberCorrect.toString();
-    result.isCorrect = !Number.isNaN(numericAnswer) && numericAnswer === question.numberCorrect;
-    result.explanation = result.isCorrect 
-      ? '✅ Réponse correcte' 
-      : `❌ Réponse incorrecte. La bonne réponse était : ${result.correctAnswer}`;
-  }
-
-  // Attribution des points
-  if (result.isCorrect) {
-    result.points = result.maxPoints;
-  }
-
-  return result;
-};
-
-export default function ReponsesFormulairesPage() {
+export default function ReponsesFormulairesQuotidiensPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [formulaires, setFormulaires] = useState<FormulaireQuotidien[]>([]);
-  const [selectedFormulaire, setSelectedFormulaire] = useState<FormulaireQuotidien | null>(null);
-  const [reponses, setReponses] = useState<ReponseFormulaire[]>([]);
-  const [selectedReponse, setSelectedReponse] = useState<ReponseFormulaire | null>(null);
-  const [adminDecision, setAdminDecision] = useState<'ACCEPTE' | 'REFUSE' | 'A_REVOIR' | ''>('');
-  const [adminComment, setAdminComment] = useState('');
-  const [adminScore, setAdminScore] = useState<string>('');
+  const [reponses, setReponses] = useState<Reponse[]>([]);
+  const [selectedFormulaire, setSelectedFormulaire] = useState<string>('all');
   const [loading, setLoading] = useState(true);
-  const [loadingReponses, setLoadingReponses] = useState(false);
-  const [filterSession, setFilterSession] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [selectedReponse, setSelectedReponse] = useState<Reponse | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [stats, setStats] = useState({
+    totalReponses: 0,
+    moyenneGenerale: 0,
+    meilleurScore: 0,
+    tauxReussite: 0
+  });
+
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -140,6 +91,7 @@ export default function ReponsesFormulairesPage() {
       router.push('/');
     } else if (status === 'authenticated') {
       fetchFormulaires();
+      fetchReponses();
     }
   }, [status, session, router]);
 
@@ -150,150 +102,119 @@ export default function ReponsesFormulairesPage() {
         throw new Error('Erreur lors de la récupération des formulaires');
       }
       const data = await response.json();
-      setFormulaires(data.filter((f: FormulaireQuotidien) => f.valide && f.nombreReponses > 0));
+      setFormulaires(data);
     } catch (error) {
       console.error('Erreur:', error);
-    } finally {
-      setLoading(false);
+      setError('Impossible de charger les formulaires');
     }
   };
 
-  const fetchReponses = async (formulaireId: string) => {
-    setLoadingReponses(true);
+  const fetchReponses = async () => {
     try {
-      const response = await fetch(`/api/admin/formulaires-quotidiens/${formulaireId}/reponses`);
+      setError(null);
+      const response = await fetch('/api/admin/formulaires-quotidiens/reponses');
       if (!response.ok) {
         throw new Error('Erreur lors de la récupération des réponses');
       }
       const data = await response.json();
       setReponses(data);
+      
+      // Calculer les statistiques
+      if (data.length > 0) {
+        const totalReponses = data.length;
+        const moyenneGenerale = data.reduce((sum: number, r: Reponse) => sum + r.moyenne, 0) / totalReponses;
+        const meilleurScore = Math.max(...data.map((r: Reponse) => r.moyenne));
+        const tauxReussite = (data.filter((r: Reponse) => r.moyenne >= 10).length / totalReponses) * 100;
+        
+        setStats({
+          totalReponses,
+          moyenneGenerale: Math.round(moyenneGenerale * 100) / 100,
+          meilleurScore: Math.round(meilleurScore * 100) / 100,
+          tauxReussite: Math.round(tauxReussite * 100) / 100
+        });
+      }
     } catch (error) {
       console.error('Erreur:', error);
-      alert('Erreur lors de la récupération des réponses');
+      setError('Impossible de charger les réponses');
     } finally {
-      setLoadingReponses(false);
+      setLoading(false);
     }
   };
 
-  const handleSelectFormulaire = (formulaire: FormulaireQuotidien) => {
-    setSelectedFormulaire(formulaire);
-    fetchReponses(formulaire.id);
+  const getNote = (moyenne: number): string => {
+    if (moyenne >= 16) return 'Excellent';
+    if (moyenne >= 14) return 'Très bien';
+    if (moyenne >= 12) return 'Bien';
+    if (moyenne >= 10) return 'Assez bien';
+    if (moyenne >= 8) return 'Passable';
+    if (moyenne >= 6) return 'Insuffisant';
+    return 'Très insuffisant';
   };
 
-  const handleDownloadPDF = async (reponseId?: string) => {
-    if (!selectedFormulaire) return;
+  const getNoteColor = (moyenne: number): string => {
+    if (moyenne >= 16) return 'text-emerald-600 bg-emerald-100';
+    if (moyenne >= 14) return 'text-blue-600 bg-blue-100';
+    if (moyenne >= 12) return 'text-green-600 bg-green-100';
+    if (moyenne >= 10) return 'text-yellow-600 bg-yellow-100';
+    if (moyenne >= 8) return 'text-orange-600 bg-orange-100';
+    if (moyenne >= 6) return 'text-red-600 bg-red-100';
+    return 'text-red-800 bg-red-200';
+  };
 
+  const handleViewDetails = (reponse: Reponse) => {
+    setSelectedReponse(reponse);
+    setShowDetailsModal(true);
+  };
+
+  const handleDownloadReponse = async (reponse: Reponse) => {
     try {
-      const endpoint = reponseId 
-        ? `/api/admin/formulaires-quotidiens/${selectedFormulaire.id}/reponses/${reponseId}/pdf`
-        : `/api/admin/formulaires-quotidiens/${selectedFormulaire.id}/reponses/pdf`;
+      const formulaire = formulaires.find(f => f.id === reponse.formulaireId);
+      if (!formulaire) return;
+
+      // Utiliser la route PDF existante
+      const response = await fetch(`/api/admin/formulaires-quotidiens/${formulaire.id}/reponses/${reponse.id}/pdf`);
       
-      const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error('Erreur lors de la génération du PDF');
       }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+      // Récupérer le blob PDF
+      const pdfBlob = await response.blob();
       
-      // Améliorer le nom du fichier
-      const dateStr = new Date().toISOString().split('T')[0];
-      const sessionLabel = SESSIONS.find(s => s.value === selectedFormulaire.session)?.label || selectedFormulaire.session;
+      // Créer et télécharger le fichier PDF
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `reponse-${reponse.user.prenom}-${reponse.user.nom}-${formulaire.titre}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
-      if (reponseId) {
-        // Pour une réponse individuelle, trouver le nom de l'utilisateur
-        const reponse = reponses.find(r => r.id === reponseId);
-        const nomUtilisateur = reponse ? reponse.utilisateurNom.replace(/[^a-zA-Z0-9]/g, '-') : 'utilisateur';
-        a.download = `reponse-${sessionLabel}-${nomUtilisateur}-${dateStr}.pdf`;
-      } else {
-        // Pour toutes les réponses
-        a.download = `reponses-${sessionLabel}-${selectedFormulaire.titre.replace(/[^a-zA-Z0-9]/g, '-')}-${dateStr}.pdf`;
-      }
-      
-      document.body.appendChild(a);
-      a.click();
+      // Libérer l'URL
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors du téléchargement du PDF');
-    }
-  };
 
-  // Nouvelle fonction pour télécharger tous les PDF individuels
-  const handleDownloadAllIndividualPDFs = async () => {
-    if (!selectedFormulaire || reponses.length === 0) return;
-
-    try {
-      // Afficher un message de confirmation
-      const confirmed = window.confirm(
-        `Voulez-vous télécharger ${reponses.length} PDF individuels ? Cela peut prendre quelques instants.`
+      addNotification(
+        'NEW_REPONSE',
+        `PDF de la réponse de ${reponse.user.prenom} ${reponse.user.nom} téléchargé avec succès`,
+        '/admin/formulaires-quotidiens/reponses'
       );
-      
-      if (!confirmed) return;
-
-      // Télécharger chaque PDF individuellement
-      for (let i = 0; i < reponses.length; i++) {
-        const reponse = reponses[i];
-        
-        try {
-          const response = await fetch(`/api/admin/formulaires-quotidiens/${selectedFormulaire.id}/reponses/${reponse.id}/pdf`);
-          if (!response.ok) {
-            console.error(`Erreur pour ${reponse.utilisateurNom}:`, response.statusText);
-            continue;
-          }
-
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          
-          const dateStr = new Date().toISOString().split('T')[0];
-          const sessionLabel = SESSIONS.find(s => s.value === selectedFormulaire.session)?.label || selectedFormulaire.session;
-          const nomUtilisateur = reponse.utilisateurNom.replace(/[^a-zA-Z0-9]/g, '-');
-          
-          a.download = `reponse-${sessionLabel}-${nomUtilisateur}-${dateStr}.pdf`;
-          
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-          
-          // Petite pause entre les téléchargements pour éviter de surcharger le navigateur
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-        } catch (error) {
-          console.error(`Erreur lors du téléchargement pour ${reponse.utilisateurNom}:`, error);
-        }
-      }
-      
-      alert('Téléchargement des PDF individuels terminé !');
     } catch (error) {
-      console.error('Erreur lors du téléchargement en lot:', error);
-      alert('Erreur lors du téléchargement en lot des PDF');
+      console.error('Erreur lors du téléchargement PDF:', error);
+      setError('Erreur lors de la génération du PDF');
     }
   };
 
-  const filteredFormulaires = formulaires.filter(form => 
-    (filterSession === 'all' || form.session === filterSession) &&
-    (searchTerm === '' || form.titre.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  const filteredReponses = reponses.filter(reponse =>
-    searchTerm === '' || 
-    reponse.utilisateurNom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    reponse.utilisateurEmail.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredReponses = selectedFormulaire === 'all' 
+    ? reponses 
+    : reponses.filter(r => r.formulaireId === selectedFormulaire);
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-100 py-4 px-2 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-            <h2 className="mt-4 text-xl font-semibold text-gray-900">Chargement...</h2>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+            <h2 className="mt-4 text-xl font-semibold text-gray-900">Chargement des réponses...</h2>
           </div>
         </div>
       </div>
@@ -301,636 +222,399 @@ export default function ReponsesFormulairesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* En-tête */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-            <div className="mb-6 lg:mb-0">
-              <button
-                onClick={() => router.push('/admin/formulaires-quotidiens')}
-                className="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800 mb-4 font-medium transition-colors duration-200"
-              >
-                <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Retour aux formulaires
-              </button>
-              <div className="flex items-center space-x-4">
-                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-3 rounded-xl shadow-lg">
-                  <EyeIcon className="h-8 w-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Réponses aux Formulaires</h1>
-                  <p className="mt-2 text-lg text-gray-600">
-                    Analysez et évaluez les réponses de vos stagiaires
-                  </p>
-                </div>
+        <div className="mb-8">
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200 mb-4"
+          >
+            ← Retour aux formulaires
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900">Réponses aux Formulaires Quotidiens</h1>
+          <p className="mt-2 text-gray-600">
+            Consultez les réponses des stagiaires et leurs performances
+          </p>
+        </div>
+
+        {/* Message d'erreur */}
+        {error && (
+          <div className="mb-6 rounded-md bg-red-50 p-4 border border-red-200">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <XCircleIcon className="h-5 w-5 text-red-400" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Erreur</h3>
+                <div className="mt-1 text-sm text-red-700">{error}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Statistiques générales */}
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <UsersIcon className="h-8 w-8 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <dt className="text-sm font-medium text-gray-500">Total Réponses</dt>
+                <dd className="text-2xl font-bold text-gray-900">{stats.totalReponses}</dd>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <ChartBarIcon className="h-8 w-8 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <dt className="text-sm font-medium text-gray-500">Moyenne Générale</dt>
+                <dd className="text-2xl font-bold text-gray-900">{stats.moyenneGenerale}/20</dd>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <TrophyIcon className="h-8 w-8 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <dt className="text-sm font-medium text-gray-500">Meilleur Score</dt>
+                <dd className="text-2xl font-bold text-gray-900">{stats.meilleurScore}/20</dd>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <StarIcon className="h-8 w-8 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <dt className="text-sm font-medium text-gray-500">Taux de Réussite</dt>
+                <dd className="text-2xl font-bold text-gray-900">{stats.tauxReussite}%</dd>
               </div>
             </div>
           </div>
         </div>
 
-        {!selectedFormulaire ? (
-          <>
-            {/* Filtres */}
-            <div className="mb-8">
-              <div className="bg-white border border-gray-200/60 rounded-xl shadow-sm">
-                <div className="bg-gradient-to-r from-gray-50 to-slate-50 px-6 py-5 border-b border-gray-200/60 rounded-t-xl">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-indigo-500 p-2 rounded-lg">
-                      <FunnelIcon className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Filtres de Recherche</h3>
-                      <p className="text-sm text-gray-600 mt-0.5">Trouvez rapidement les formulaires qui vous intéressent</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Session de formation
-                      </label>
-                      <select
-                        value={filterSession}
-                        onChange={(e) => setFilterSession(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                      >
-                        <option value="all">Toutes les sessions</option>
-                        {SESSIONS.map((session) => (
-                          <option key={session.value} value={session.value}>
-                            {session.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Recherche par mot-clé
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                          <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                          type="text"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          placeholder="Titre du formulaire..."
-                          className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Liste des formulaires */}
-            <div className="bg-white border border-gray-200/60 rounded-xl shadow-sm">
-              <div className="bg-gradient-to-r from-gray-50 to-slate-50 px-6 py-5 border-b border-gray-200/60 rounded-t-xl">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-emerald-500 p-2 rounded-lg">
-                    <DocumentTextIcon className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Formulaires avec Réponses
-                    </h2>
-                    <p className="text-sm text-gray-600 mt-0.5">
-                      {filteredFormulaires.length} formulaire{filteredFormulaires.length !== 1 ? 's' : ''} disponible{filteredFormulaires.length !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              {loading ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                </div>
-              ) : filteredFormulaires.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="bg-gradient-to-br from-gray-50 to-slate-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-                    <DocumentTextIcon className="h-12 w-12 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Aucun formulaire avec réponses</h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    Les formulaires validés ayant reçu des réponses de stagiaires apparaîtront dans cette section.
-                  </p>
-                </div>
-              ) : (
-                <div className="p-6 space-y-4">
-                  {filteredFormulaires.map((formulaire) => (
-                    <div key={formulaire.id} className="bg-gradient-to-r from-white to-gray-50/50 border border-gray-200/60 rounded-xl p-6 hover:shadow-md hover:border-gray-300/60 transition-all duration-200">
-                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-4 mb-4">
-                            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-3 rounded-xl shadow-sm">
-                              <DocumentTextIcon className="h-6 w-6 text-white" />
-                            </div>
-                            <div>
-                              <div className="flex items-center space-x-3 mb-2">
-                                <h3 className="text-xl font-semibold text-gray-900">
-                                  {formulaire.titre}
-                                </h3>
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 shadow-sm">
-                                  <CheckCircleIcon className="h-3 w-3 mr-1.5" />
-                                  Validé
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="mb-4">
-                            <p className="text-gray-600 mb-3">{formulaire.description || 'Aucune description disponible'}</p>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                              <div className="bg-white/60 rounded-lg p-3 border border-gray-200/60">
-                                <div className="flex items-center space-x-2">
-                                  <CalendarIcon className="h-4 w-4 text-indigo-600" />
-                                  <span className="text-sm font-medium text-gray-700">Session</span>
-                                </div>
-                                <p className="text-sm text-gray-900 mt-1 font-semibold">
-                                  {SESSIONS.find(s => s.value === formulaire.session)?.label || formulaire.session}
-                                </p>
-                              </div>
-                              <div className="bg-white/60 rounded-lg p-3 border border-gray-200/60">
-                                <div className="flex items-center space-x-2">
-                                  <DocumentTextIcon className="h-4 w-4 text-emerald-600" />
-                                  <span className="text-sm font-medium text-gray-700">Questions</span>
-                                </div>
-                                <p className="text-sm text-gray-900 mt-1 font-semibold">
-                                  {formulaire.questions.length} question{formulaire.questions.length !== 1 ? 's' : ''}
-                                </p>
-                              </div>
-                              <div className="bg-white/60 rounded-lg p-3 border border-gray-200/60">
-                                <div className="flex items-center space-x-2">
-                                  <UserIcon className="h-4 w-4 text-purple-600" />
-                                  <span className="text-sm font-medium text-gray-700">Réponses</span>
-                                </div>
-                                <p className="text-lg text-indigo-600 mt-1 font-bold">
-                                  {formulaire.nombreReponses}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col sm:flex-row gap-3 lg:flex-col lg:w-48">
-                          <button
-                            onClick={() => handleSelectFormulaire(formulaire)}
-                            className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                          >
-                            <EyeIcon className="h-5 w-5 mr-2" />
-                            Consulter les Réponses
-                          </button>
-                          <button
-                            onClick={() => handleDownloadPDF()}
-                            className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-700 font-semibold rounded-lg border border-gray-300 shadow-sm hover:bg-gray-50 hover:shadow-md transition-all duration-200 transform hover:scale-105"
-                          >
-                            <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                            Télécharger PDF
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            {/* En-tête du formulaire sélectionné */}
-            <div className="mb-8">
-              <div className="bg-white border border-gray-200/60 rounded-xl shadow-sm">
-                <div className="bg-gradient-to-r from-gray-50 to-slate-50 px-6 py-5 border-b border-gray-200/60 rounded-t-xl">
-                  <button
-                    onClick={() => {
-                      setSelectedFormulaire(null);
-                      setReponses([]);
-                      setSelectedReponse(null);
-                    }}
-                    className="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800 mb-4 font-medium transition-colors duration-200"
-                  >
-                    <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                    Retour à la liste des formulaires
-                  </button>
-                  
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div className="mb-6 lg:mb-0">
-                      <div className="flex items-center space-x-4 mb-4">
-                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-3 rounded-xl shadow-lg">
-                          <DocumentTextIcon className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-gray-900">
-                            {selectedFormulaire.titre}
-                          </h2>
-                          <p className="mt-2 text-gray-600">
-                            {selectedFormulaire.description || 'Aucune description disponible'}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-6">
-                        <div className="flex items-center space-x-2 px-3 py-2 bg-white/60 rounded-lg border border-gray-200/60">
-                          <CalendarIcon className="h-4 w-4 text-indigo-600" />
-                          <span className="text-sm font-medium text-gray-700">
-                            {SESSIONS.find(s => s.value === selectedFormulaire.session)?.label || selectedFormulaire.session}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2 px-3 py-2 bg-white/60 rounded-lg border border-gray-200/60">
-                          <UserIcon className="h-4 w-4 text-emerald-600" />
-                          <span className="text-sm font-medium text-gray-700">
-                            {reponses.length} réponse{reponses.length !== 1 ? 's' : ''} reçue{reponses.length !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200/60">
-                          <DocumentArrowDownIcon className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-700">
-                            PDF disponibles
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="lg:w-64 space-y-3">
-                      <button
-                        onClick={() => handleDownloadPDF()}
-                        className="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                      >
-                        <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                        PDF Complet
-                      </button>
-                      <button
-                        onClick={handleDownloadAllIndividualPDFs}
-                        className="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                      >
-                        <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                        PDF Individuels
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section d'aide PDF */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/60 rounded-xl shadow-sm mb-6">
-              <div className="px-6 py-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="bg-blue-500 p-2 rounded-lg">
-                    <DocumentArrowDownIcon className="h-5 w-5 text-white" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-blue-900">Options de Téléchargement PDF</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="bg-white/60 rounded-lg p-3 border border-blue-200/60">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-3 h-3 bg-indigo-600 rounded-full"></div>
-                      <span className="font-semibold text-gray-900">PDF Complet</span>
-                    </div>
-                    <p className="text-gray-700">Télécharge un seul fichier PDF contenant toutes les réponses de tous les stagiaires.</p>
-                  </div>
-                  <div className="bg-white/60 rounded-lg p-3 border border-blue-200/60">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-3 h-3 bg-emerald-600 rounded-full"></div>
-                      <span className="font-semibold text-gray-900">PDF Individuels</span>
-                    </div>
-                    <p className="text-gray-700">Télécharge un PDF séparé pour chaque stagiaire (un fichier par utilisateur).</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Liste des réponses */}
-            <div className="bg-white border border-gray-200/60 rounded-xl shadow-sm">
-              <div className="bg-gradient-to-r from-gray-50 to-slate-50 px-6 py-5 border-b border-gray-200/60 rounded-t-xl">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-blue-500 p-2 rounded-lg">
-                    <UserIcon className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Réponses Individuelles
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-0.5">
-                      Détail des soumissions par stagiaire
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              {loadingReponses ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                </div>
-              ) : reponses.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="bg-gradient-to-br from-gray-50 to-slate-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-                    <UserIcon className="h-12 w-12 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Aucune réponse reçue</h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    Les réponses des stagiaires apparaîtront ici dès qu'ils auront soumis le formulaire.
-                  </p>
-                </div>
-              ) : (
-                <div className="p-6 space-y-4">
-                  {reponses.map((reponse) => (
-                    <div key={reponse.id} className="bg-gradient-to-r from-white to-gray-50/50 border border-gray-200/60 rounded-xl p-6 hover:shadow-md hover:border-gray-300/60 transition-all duration-200">
-                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-4 mb-4">
-                            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl shadow-sm">
-                              <UserIcon className="h-6 w-6 text-white" />
-                            </div>
-                            <div>
-                              <div className="flex items-center space-x-3 mb-2">
-                                <h4 className="text-xl font-semibold text-gray-900">
-                                  {reponse.utilisateurNom}
-                                </h4>
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${
-                                  reponse.soumis 
-                                    ? 'bg-emerald-100 text-emerald-800' 
-                                    : 'bg-amber-100 text-amber-800'
-                                }`}>
-                                  {reponse.soumis ? (
-                                    <>
-                                      <div className="w-2 h-2 bg-emerald-500 rounded-full mr-1.5"></div>
-                                      Soumis
-                                    </>
-                                  ) : (
-                                    <>
-                                      <div className="w-2 h-2 bg-amber-500 rounded-full mr-1.5 animate-pulse"></div>
-                                      Brouillon
-                                    </>
-                                  )}
-                                </span>
-                                {reponse.score !== undefined && reponse.maxScore !== undefined && (
-                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${
-                                    (reponse.score / reponse.maxScore) >= 0.8 
-                                      ? 'bg-emerald-100 text-emerald-800' 
-                                      : (reponse.score / reponse.maxScore) >= 0.6 
-                                      ? 'bg-orange-100 text-orange-800' 
-                                      : 'bg-red-100 text-red-800'
-                                  }`}>
-                                    🎯 {reponse.score}/{reponse.maxScore} ({Math.round((reponse.score / reponse.maxScore) * 100)}%)
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="bg-white/60 rounded-lg p-3 border border-gray-200/60">
-                              <div className="flex items-center space-x-2 mb-1">
-                                <span className="text-sm font-medium text-gray-700">Email</span>
-                              </div>
-                              <p className="text-sm text-gray-900 font-medium">{reponse.utilisateurEmail}</p>
-                            </div>
-                            <div className="bg-white/60 rounded-lg p-3 border border-gray-200/60">
-                              <div className="flex items-center space-x-2 mb-1">
-                                <CalendarIcon className="h-4 w-4 text-indigo-600" />
-                                <span className="text-sm font-medium text-gray-700">Date de réponse</span>
-                              </div>
-                              <p className="text-sm text-gray-900 font-medium">
-                                {new Date(reponse.dateReponse).toLocaleDateString('fr-FR')} à {new Date(reponse.dateReponse).toLocaleTimeString('fr-FR')}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col gap-3 lg:w-48">
-                          <button
-                            onClick={() => setSelectedReponse(reponse)}
-                            className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                          >
-                            <EyeIcon className="h-5 w-5 mr-2" />
-                            Voir Détails
-                          </button>
-                          <button
-                            onClick={() => handleDownloadPDF(reponse.id)}
-                            className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                          >
-                            <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                            PDF Utilisateur
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Page de détail d'une réponse */}
-        {selectedReponse && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            {/* En-tête de la page */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-t-xl px-6 py-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => setSelectedReponse(null)}
-                    className="inline-flex items-center text-white hover:text-blue-100 transition-colors duration-200 font-medium"
-                  >
-                    <ArrowLeftIcon className="h-5 w-5 mr-2" />
-                    ← Retour aux réponses
-                  </button>
-                  <div className="h-6 w-px bg-white/30"></div>
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-white/20 p-2 rounded-lg">
-                      <EyeIcon className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-white">
-                        Détail de la Réponse
-                      </h3>
-                      <p className="text-blue-100 text-sm mt-0.5">
-                        {selectedReponse.utilisateurNom} • {selectedFormulaire?.titre}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => handleDownloadPDF(selectedReponse.id)}
-                    className="inline-flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-lg transition-all duration-200"
-                  >
-                    <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
-                    📄 PDF de {selectedReponse.utilisateurNom}
-                  </button>
-                </div>
-              </div>
+                {/* Filtres */}
+        <div className="mb-6 bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <label className="text-sm font-medium text-gray-700">Filtrer par formulaire:</label>
+              <select
+                value={selectedFormulaire}
+                onChange={(e) => setSelectedFormulaire(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="all">Tous les formulaires</option>
+                {formulaires.map((form) => (
+                  <option key={form.id} value={form.id}>
+                    {form.titre} - {form.session}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={fetchReponses}
+                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
+              >
+                Actualiser
+              </button>
             </div>
             
-            <div className="p-6 space-y-8">
-              {/* Informations générales */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="bg-blue-500 p-2 rounded-lg">
-                    <UserIcon className="h-5 w-5 text-white" />
+            {/* Bouton pour télécharger toutes les réponses du formulaire sélectionné */}
+            {selectedFormulaire !== 'all' && (
+              <button
+                onClick={async () => {
+                  try {
+                    const formulaire = formulaires.find(f => f.id === selectedFormulaire);
+                    if (!formulaire) return;
+                    
+                    // Utiliser la route PDF pour toutes les réponses
+                    const response = await fetch(`/api/admin/formulaires-quotidiens/${formulaire.id}/reponses/pdf`);
+                    
+                    if (!response.ok) {
+                      throw new Error('Erreur lors de la génération du PDF');
+                    }
+                    
+                    const pdfBlob = await response.blob();
+                    const url = window.URL.createObjectURL(pdfBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `toutes-reponses-${formulaire.titre}-${new Date().toISOString().split('T')[0]}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    
+                    addNotification(
+                      'NEW_REPONSE',
+                      `PDF de toutes les réponses au formulaire "${formulaire.titre}" téléchargé avec succès`,
+                      '/admin/formulaires-quotidiens/reponses'
+                    );
+                  } catch (error) {
+                    console.error('Erreur lors du téléchargement PDF:', error);
+                    setError('Erreur lors de la génération du PDF de toutes les réponses');
+                  }
+                }}
+                className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
+              >
+                <DownloadIcon className="h-4 w-4" />
+                <span>Télécharger toutes les réponses (PDF)</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Liste des réponses */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">
+              Réponses des stagiaires ({filteredReponses.length})
+            </h3>
+          </div>
+          
+          {filteredReponses.length === 0 ? (
+            <div className="text-center py-12">
+              <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune réponse</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {selectedFormulaire === 'all' 
+                  ? 'Aucun stagiaire n\'a encore répondu aux formulaires'
+                  : 'Aucun stagiaire n\'a encore répondu à ce formulaire'
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Stagiaire
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Formulaire
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Score
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Moyenne
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Note
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredReponses.map((reponse) => (
+                    <tr key={reponse.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                              <span className="text-sm font-medium text-indigo-600">
+                                {reponse.user.prenom.charAt(0)}{reponse.user.nom.charAt(0)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {reponse.user.prenom} {reponse.user.nom}
+                            </div>
+                            <div className="text-sm text-gray-500">{reponse.user.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {formulaires.find(f => f.id === reponse.formulaireId)?.titre || 'Formulaire inconnu'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {formulaires.find(f => f.id === reponse.formulaireId)?.session || ''}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(reponse.dateReponse).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {reponse.totalPoints}/{reponse.pointsMax} points
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {Math.round((reponse.totalPoints / reponse.pointsMax) * 100)}%
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-lg font-bold text-gray-900">
+                          {reponse.moyenne}/20
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getNoteColor(reponse.moyenne)}`}>
+                          {getNote(reponse.moyenne)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => handleViewDetails(reponse)}
+                          className="text-indigo-600 hover:text-indigo-900 p-1 rounded"
+                          title="Voir les détails"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDownloadReponse(reponse)}
+                          className="text-green-600 hover:text-green-900 p-1 rounded ml-2"
+                          title="Télécharger PDF"
+                        >
+                          <DownloadIcon className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Modal des détails de la réponse */}
+        {showDetailsModal && selectedReponse && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
+              {/* Header de la modal */}
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <EyeIcon className="h-6 w-6 text-indigo-600" />
                   </div>
-                  <h4 className="text-lg font-semibold text-gray-900">Informations Générales</h4>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-white/60 rounded-lg p-4 border border-blue-200/60">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <UserIcon className="h-4 w-4 text-indigo-600" />
-                      <span className="text-sm font-semibold text-gray-700">Stagiaire</span>
-                    </div>
-                    <p className="text-gray-900 font-medium">{selectedReponse.utilisateurNom}</p>
-                  </div>
-                  
-                  <div className="bg-white/60 rounded-lg p-4 border border-blue-200/60">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-sm font-semibold text-gray-700">Email</span>
-                    </div>
-                    <p className="text-gray-900 font-medium break-all">{selectedReponse.utilisateurEmail}</p>
-                  </div>
-                  
-                  <div className="bg-white/60 rounded-lg p-4 border border-blue-200/60">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <CalendarIcon className="h-4 w-4 text-indigo-600" />
-                      <span className="text-sm font-semibold text-gray-700">Date de réponse</span>
-                    </div>
-                    <p className="text-gray-900 font-medium">
-                      {new Date(selectedReponse.dateReponse).toLocaleDateString('fr-FR')} à {new Date(selectedReponse.dateReponse).toLocaleTimeString('fr-FR')}
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Détails de la réponse
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {selectedReponse.user.prenom} {selectedReponse.user.nom} - {formulaires.find(f => f.id === selectedReponse.formulaireId)?.titre}
                     </p>
                   </div>
-                  
-                  <div className="bg-white/60 rounded-lg p-4 border border-blue-200/60">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-sm font-semibold text-gray-700">Statut</span>
-                    </div>
-                    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm ${
-                      selectedReponse.soumis 
-                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
-                        : 'bg-amber-100 text-amber-800 border border-amber-200'
-                    }`}>
-                      <div className={`w-2 h-2 rounded-full mr-2 ${
-                        selectedReponse.soumis ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
-                      }`}></div>
-                      {selectedReponse.soumis ? 'Soumis' : 'Brouillon'}
-                    </span>
-                    
-                    {selectedReponse.score !== undefined && selectedReponse.maxScore !== undefined && (
-                      <div className="mt-3">
-                        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm ${
-                          (selectedReponse.score / selectedReponse.maxScore) >= 0.8 
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
-                            : (selectedReponse.score / selectedReponse.maxScore) >= 0.6 
-                            ? 'bg-orange-100 text-orange-800 border border-orange-200' 
-                            : 'bg-red-100 text-red-800 border border-red-200'
-                        }`}>
-                          🎯 {selectedReponse.score}/{selectedReponse.maxScore} ({Math.round((selectedReponse.score / selectedReponse.maxScore) * 100)}%)
-                        </span>
-                      </div>
-                    )}
-                  </div>
                 </div>
+                <button
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    setSelectedReponse(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  <span className="sr-only">Fermer</span>
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
 
-              {/* Réponses aux questions */}
-              <div>
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="bg-emerald-500 p-2 rounded-lg">
-                    <DocumentTextIcon className="h-5 w-5 text-white" />
+              {/* Contenu de la modal */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {/* Informations générales */}
+                <div className="bg-blue-50 rounded-lg p-4 mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Stagiaire</dt>
+                      <dd className="text-sm font-semibold text-gray-900">
+                        {selectedReponse.user.prenom} {selectedReponse.user.nom}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Email</dt>
+                      <dd className="text-sm text-gray-900">{selectedReponse.user.email}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Date</dt>
+                      <dd className="text-sm text-gray-900">
+                        {new Date(selectedReponse.dateReponse).toLocaleDateString('fr-FR')}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Score</dt>
+                      <dd className="text-sm font-semibold text-gray-900">
+                        {selectedReponse.totalPoints}/{selectedReponse.pointsMax} ({selectedReponse.moyenne}/20)
+                      </dd>
+                    </div>
                   </div>
-                  <h4 className="text-lg font-semibold text-gray-900">Réponses aux Questions</h4>
                 </div>
-                
-                <div className="space-y-6">
-                  {selectedReponse.reponses.map((reponse, index) => {
-                    // Trouver la question correspondante pour la correction
-                    const question = selectedFormulaire?.questions.find(q => q.id === reponse.questionId);
-                    const correction = question ? correctResponse(question, reponse.reponse) : null;
+
+                {/* Détail des questions et réponses */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Questions et réponses</h4>
+                  
+                  {selectedReponse.reponses.map((reponseQuestion, index) => {
+                    const formulaire = formulaires.find(f => f.id === selectedReponse.formulaireId);
+                    const question = formulaire?.questions.find(q => q.id === reponseQuestion.questionId);
+                    
+                    if (!question) return null;
                     
                     return (
-                      <div key={index} className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
-                        <div className="flex items-start space-x-4 mb-4">
-                          <div className={`rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-sm ${
-                            correction && question?.scoringEnabled
-                              ? correction.isCorrect
-                                ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white'
-                                : 'bg-gradient-to-br from-red-500 to-red-600 text-white'
-                              : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
-                          }`}>
-                            {index + 1}
-                          </div>
-                          <div className="flex-1">
-                            <h5 className="font-semibold text-gray-900 text-lg leading-relaxed">
-                              {reponse.question}
-                            </h5>
-                            {correction && question?.scoringEnabled && (
-                              <div className="mt-2">
-                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                                  correction.isCorrect
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {correction.isCorrect ? '✅' : '❌'} {correction.points}/{correction.maxPoints} points
+                      <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-medium text-indigo-600">{index + 1}</span>
+                            </div>
+                            <div>
+                              <h5 className="font-medium text-gray-900">{question.question}</h5>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  {question.type}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                  {question.points} point{question.points !== 1 ? 's' : ''}
                                 </span>
                               </div>
-                            )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              reponseQuestion.correcte 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {reponseQuestion.correcte ? '✅ Correct' : '❌ Incorrect'}
+                            </span>
+                            <div className="text-sm text-gray-500 mt-1">
+                              {reponseQuestion.pointsObtenus}/{question.points} pts
+                            </div>
                           </div>
                         </div>
                         
-                        <div className="ml-12 space-y-3">
-                          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-4">
-                            <div className="text-gray-800 font-medium flex items-center">
-                              {correction && question?.scoringEnabled && (
-                                <span className="mr-2 text-lg">
-                                  {correction.isCorrect ? '✅' : '❌'}
-                                </span>
-                              )}
-                              {Array.isArray(reponse.reponse) 
-                                ? reponse.reponse.join(', ')
-                                : reponse.reponse || (
-                                  <span className="text-gray-500 italic">Pas de réponse fournie</span>
-                                )
-                              }
-                            </div>
+                        <div className="ml-11 space-y-3">
+                          <div className="bg-gray-50 rounded-lg p-3">
+                            <dt className="text-sm font-medium text-gray-500 mb-1">Réponse donnée</dt>
+                            <dd className="text-sm text-gray-900">
+                              {Array.isArray(reponseQuestion.reponse) 
+                                ? reponseQuestion.reponse.join(', ') 
+                                : reponseQuestion.reponse}
+                            </dd>
                           </div>
                           
-                          {/* Affichage de la correction automatique */}
-                          {correction && question?.scoringEnabled && (
-                            <div className={`rounded-lg p-4 border ${
-                              correction.isCorrect
-                                ? 'bg-emerald-50 border-emerald-200'
-                                : 'bg-red-50 border-red-200'
-                            }`}>
-                              <div className="flex items-start space-x-3">
-                                <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
-                                  correction.isCorrect
-                                    ? 'bg-emerald-500 text-white'
-                                    : 'bg-red-500 text-white'
-                                }`}>
-                                  {correction.isCorrect ? '✓' : '✗'}
-                                </div>
-                                <div className="flex-1">
-                                  <div className="text-sm font-medium text-gray-900 mb-1">
-                                    Correction automatique
-                                  </div>
-                                  <div className="text-sm text-gray-700 mb-2">
-                                    {correction.explanation}
-                                  </div>
-                                  {!correction.isCorrect && correction.correctAnswer && (
-                                    <div className="text-sm">
-                                      <span className="font-medium text-gray-900">Bonne réponse :</span>
-                                      <span className="ml-2 text-emerald-700 font-medium">{correction.correctAnswer}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
+                          <div className="bg-blue-50 rounded-lg p-3">
+                            <dt className="text-sm font-medium text-blue-700 mb-1">Bonne(s) réponse(s)</dt>
+                            <dd className="text-sm text-blue-900">
+                              {question.correctAnswers.join(', ')}
+                            </dd>
+                          </div>
                         </div>
                       </div>
                     );
@@ -938,95 +622,28 @@ export default function ReponsesFormulairesPage() {
                 </div>
               </div>
 
-              {/* Commentaires */}
-              {selectedReponse.commentaires && (
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Commentaires</h4>
-                  <div className="text-sm text-gray-700 bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    {selectedReponse.commentaires}
-                  </div>
+              {/* Footer de la modal */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  Score total: {selectedReponse.totalPoints}/{selectedReponse.pointsMax} points 
+                  ({Math.round((selectedReponse.totalPoints / selectedReponse.pointsMax) * 100)}%)
                 </div>
-              )}
-
-              {/* Décision/feedback admin */}
-              <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl p-6">
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="bg-indigo-500 p-2 rounded-lg">
-                    <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <h4 className="text-lg font-semibold text-indigo-900">
-                    Feedback et Évaluation
-                  </h4>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Décision</label>
-                    <select
-                      value={adminDecision}
-                      onChange={(e) => setAdminDecision(e.target.value as any)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      <option value="">— Sélectionner —</option>
-                      <option value="ACCEPTE">Accepté</option>
-                      <option value="REFUSE">Refusé</option>
-                      <option value="A_REVOIR">À revoir</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Score (optionnel)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={adminScore}
-                      onChange={(e) => setAdminScore(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      placeholder="ex: 8"
-                    />
-                  </div>
-                  <div className="md:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Commentaire</label>
-                    <textarea
-                      value={adminComment}
-                      onChange={(e) => setAdminComment(e.target.value)}
-                      rows={3}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      placeholder="Retour pour le stagiaire..."
-                    />
-                  </div>
-                </div>
-                <div className="mt-6 flex justify-end">
+                <div className="flex space-x-3">
                   <button
-                    onClick={async () => {
-                      if (!selectedFormulaire || !selectedReponse) return;
-                      try {
-                        const resp = await fetch(`/api/admin/formulaires-quotidiens/${selectedFormulaire.id}/reponses`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            reponseId: selectedReponse.id,
-                            decision: adminDecision || undefined,
-                            commentaire: adminComment || undefined,
-                            score: adminScore !== '' ? Number(adminScore) : undefined,
-                          })
-                        });
-                        if (!resp.ok) throw new Error('Erreur lors de l\'envoi');
-                        alert('Décision envoyée au stagiaire.');
-                        setAdminDecision('');
-                        setAdminComment('');
-                        setAdminScore('');
-                      } catch (err) {
-                        console.error(err);
-                        alert('Erreur lors de l\'envoi de la décision');
-                      }
-                    }}
-                    className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    onClick={() => handleDownloadReponse(selectedReponse)}
+                    className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
                   >
-                    <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                    Envoyer au Stagiaire
+                    <DownloadIcon className="h-4 w-4 mr-2 inline" />
+                    Télécharger PDF
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      setSelectedReponse(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  >
+                    Fermer
                   </button>
                 </div>
               </div>

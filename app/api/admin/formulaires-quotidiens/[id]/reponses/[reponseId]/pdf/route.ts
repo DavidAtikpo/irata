@@ -65,8 +65,69 @@ export async function GET(
       );
     }
 
-    // Générer le HTML pour le PDF
-    const html = generateSingleResponsePDFHTML(formulaire, reponse);
+    // Calculer les scores et corriger les réponses
+    const questions = Array.isArray(formulaire.questions) ? formulaire.questions : [];
+    const reponses = Array.isArray(reponse.reponses) ? reponse.reponses : [];
+    
+    const reponsesCorrigees = reponses.map((reponseQuestion: any) => {
+      const question = questions.find((q: any) => q.id === reponseQuestion.questionId);
+      if (!question) return reponseQuestion;
+
+      const pointsMaxQuestion = (question as any).points || 1;
+      let pointsObtenus = 0;
+      let correcte = false;
+
+      if ((question as any).type === 'number') {
+        const reponseNum = parseFloat(reponseQuestion.reponse);
+        const bonneReponseNum = parseFloat((question as any).correctAnswers?.[0] || '');
+        if (!isNaN(reponseNum) && !isNaN(bonneReponseNum)) {
+          correcte = Math.abs(reponseNum - bonneReponseNum) < 0.01;
+          pointsObtenus = correcte ? pointsMaxQuestion : 0;
+        }
+      } else if ((question as any).type === 'text' || (question as any).type === 'textarea') {
+        const reponseNormalisee = reponseQuestion.reponse.toLowerCase().trim();
+        const bonneReponseNormalisee = ((question as any).correctAnswers?.[0] || '').toLowerCase().trim();
+        correcte = reponseNormalisee === bonneReponseNormalisee;
+        pointsObtenus = correcte ? pointsMaxQuestion : 0;
+      } else if ((question as any).type === 'radio' || (question as any).type === 'select') {
+        const reponseNormalisee = reponseQuestion.reponse.toLowerCase().trim();
+        const bonneReponseNormalisee = ((question as any).correctAnswers?.[0] || '').toLowerCase().trim();
+        correcte = reponseNormalisee === bonneReponseNormalisee;
+        pointsObtenus = correcte ? pointsMaxQuestion : 0;
+      } else if ((question as any).type === 'checkbox') {
+        const reponsesUtilisateur = Array.isArray(reponseQuestion.reponse) 
+          ? reponseQuestion.reponse 
+          : [reponseQuestion.reponse];
+        
+        const reponsesUtilisateurNormalisees = reponsesUtilisateur.map((r: any) => r.toLowerCase().trim());
+        const bonnesReponsesNormalisees = ((question as any).correctAnswers || []).map((r: any) => r.toLowerCase().trim());
+        
+        const toutesBonnesReponsesSelectionnees = bonnesReponsesNormalisees.every((r: any) => 
+          reponsesUtilisateurNormalisees.includes(r)
+        );
+        const aucuneMauvaiseReponse = reponsesUtilisateurNormalisees.every((r: any) => 
+          bonnesReponsesNormalisees.includes(r)
+        );
+        
+        correcte = toutesBonnesReponsesSelectionnees && aucuneMauvaiseReponse;
+        pointsObtenus = correcte ? pointsMaxQuestion : 0;
+      }
+
+      return {
+        ...reponseQuestion,
+        pointsObtenus,
+        correcte,
+        question
+      };
+    });
+
+    // Calculer les totaux
+    const totalPoints = reponsesCorrigees.reduce((sum, r) => sum + r.pointsObtenus, 0);
+    const pointsMax = reponsesCorrigees.reduce((sum, r) => sum + (r.question?.points || 1), 0);
+    const moyenne = pointsMax > 0 ? (totalPoints / pointsMax) * 20 : 0;
+
+    // Générer le HTML pour le PDF avec les scores
+    const html = generateSingleResponsePDFHTML(formulaire, reponse, reponsesCorrigees, totalPoints, pointsMax, moyenne);
 
     // Générer le PDF avec Puppeteer
     const browser = await puppeteer.launch({ headless: true });
@@ -158,7 +219,7 @@ export async function GET(
   }
 }
 
-function generateSingleResponsePDFHTML(formulaire: any, reponse: any) {
+function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCorrigees: any[], totalPoints: number, pointsMax: number, moyenne: number) {
   const questions = Array.isArray(formulaire.questions) ? formulaire.questions : [];
   const stagiaireNom = `${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}`.trim();
   
@@ -254,27 +315,6 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any) {
         .questions-container {
           margin-bottom: 20px;
         }
-        .question {
-          /* border: 1px solid #e5e7eb; */
-          /* border-radius: 6px; */
-          padding: 5px;
-          background-color: #fafafa;
-          margin-bottom: 5px;
-        }
-        .question h3 {
-          margin: 0 0 6px 0;
-          color: #374151;
-          font-size: 12px;
-          font-weight: bold;
-        }
-        .reponse-text {
-          background-color: #ffffff;
-          padding: 6px;
-        
-          border-left: 2px solid #2563eb;
-          font-size: 10px;
-          min-height: 20px;
-        }
         
         /* Commentaires */
         .commentaires {
@@ -355,6 +395,117 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any) {
           }
         }
         
+        /* Résumé des scores */
+        .score-summary {
+          background-color: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          padding: 12px;
+          margin-bottom: 15px;
+        }
+        .score-summary h2 {
+          margin: 0 0 8px 0;
+          color: #1e293b;
+          font-size: 14px;
+          font-weight: bold;
+        }
+        .score-grid {
+          display: flex;
+          justify-content: space-between;
+          gap: 15px;
+        }
+        .score-item {
+          text-align: center;
+          flex: 1;
+        }
+        .score-label {
+          display: block;
+          font-size: 9px;
+          color: #64748b;
+          margin-bottom: 2px;
+        }
+        .score-value {
+          display: block;
+          font-size: 12px;
+          font-weight: bold;
+          color: #2563eb;
+        }
+        
+        /* Questions avec statuts */
+        .question {
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          padding: 8px;
+          background-color: #fafafa;
+          margin-bottom: 8px;
+        }
+        .question.correct {
+          border-left: 4px solid #10b981;
+          background-color: #f0fdf4;
+        }
+        .question.incorrect {
+          border-left: 4px solid #ef4444;
+          background-color: #fef2f2;
+        }
+        .question-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 6px;
+        }
+        .question-header h3 {
+          margin: 0;
+          color: #374151;
+          font-size: 11px;
+          font-weight: bold;
+          flex: 1;
+        }
+        .question-status {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 2px;
+        }
+        .status-badge {
+          padding: 2px 6px;
+          border-radius: 12px;
+          font-size: 8px;
+          font-weight: bold;
+          text-transform: uppercase;
+        }
+        .status-badge.correct {
+          background-color: #d1fae5;
+          color: #065f46;
+        }
+        .status-badge.incorrect {
+          background-color: #fee2e2;
+          color: #991b1b;
+        }
+        .points-badge {
+          background-color: #dbeafe;
+          color: #1e40af;
+          padding: 1px 4px;
+          border-radius: 8px;
+          font-size: 8px;
+          font-weight: bold;
+        }
+        .reponse-text {
+          background-color: #ffffff;
+          padding: 4px 6px;
+          border-radius: 4px;
+          margin-bottom: 4px;
+          font-size: 9px;
+          min-height: 16px;
+        }
+        .bonne-reponse {
+          background-color: #f0f9ff;
+          padding: 4px 6px;
+          border-radius: 4px;
+          border-left: 2px solid #0ea5e9;
+          font-size: 9px;
+          color: #0369a1;
+        }
+        
         /* Informations de diffusion */
         .info-section {
           margin: 10px 0;
@@ -403,6 +554,25 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any) {
         <p><strong>Période:</strong> ${new Date(formulaire.dateDebut).toLocaleDateString('fr-FR')} au ${new Date(formulaire.dateFin).toLocaleDateString('fr-FR')}</p>
       </div>
 
+      <!-- Résumé des scores -->
+      <div class="score-summary">
+        <h2>📊 Résumé des scores</h2>
+        <div class="score-grid">
+          <div class="score-item">
+            <span class="score-label">Score obtenu:</span>
+            <span class="score-value">${totalPoints}/${pointsMax} points</span>
+          </div>
+          <div class="score-item">
+            <span class="score-label">Moyenne:</span>
+            <span class="score-value">${moyenne.toFixed(2)}/20</span>
+          </div>
+          <div class="score-item">
+            <span class="score-label">Pourcentage:</span>
+            <span class="score-value">${pointsMax > 0 ? Math.round((totalPoints / pointsMax) * 100) : 0}%</span>
+          </div>
+        </div>
+      </div>
+
       <!-- En-tête de réponse -->
   <!--    <div class="reponse-header">
         <h2>👤 Réponse de ${stagiaireNom}</h2>
@@ -413,20 +583,40 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any) {
 
       <!-- Questions -->
       <div class="questions-container">
-        ${Array.isArray(reponse.reponses) ? reponse.reponses.map((reponseQuestion: any, qIndex: number) => {
-          const question = questions.find((q: any) => q.id === reponseQuestion.questionId);
+        ${reponsesCorrigees.map((reponseQuestion: any, qIndex: number) => {
+          const question = reponseQuestion.question;
+          if (!question) return '';
+          
           const reponseText = Array.isArray(reponseQuestion.reponse) 
             ? reponseQuestion.reponse.join(', ')
             : reponseQuestion.reponse || 'Pas de réponse';
+          
+          const bonneReponse = question.type === 'checkbox' 
+            ? question.correctAnswers.join(', ')
+            : question.correctAnswers[0] || '';
+          
           return `
-            <div class="question">
-              <h3>Q${qIndex + 1}: ${question ? question.question : 'Question non trouvée'}</h3>
+            <div class="question ${reponseQuestion.correcte ? 'correct' : 'incorrect'}">
+              <div class="question-header">
+                <h3>Q${qIndex + 1}: ${question.question}</h3>
+                <div class="question-status">
+                  <span class="status-badge ${reponseQuestion.correcte ? 'correct' : 'incorrect'}">
+                    ${reponseQuestion.correcte ? '✅ Correct' : '❌ Incorrect'}
+                  </span>
+                  <span class="points-badge">
+                    ${reponseQuestion.pointsObtenus}/${question.points} pts
+                  </span>
+                </div>
+              </div>
               <div class="reponse-text">
-                ${reponseText}
+                <strong>Réponse donnée:</strong> ${reponseText}
+              </div>
+              <div class="bonne-reponse">
+                <strong>Bonne réponse:</strong> ${bonneReponse}
               </div>
             </div>
           `;
-        }).join('') : '<p>Aucune réponse aux questions</p>'}
+        }).join('')}
       </div>
 
       <!-- Commentaires -->
