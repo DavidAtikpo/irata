@@ -41,6 +41,11 @@ model User {
   traineeInductionSignatures    TraineeInductionSignature[]
   notifications                 Notification[]
   documentActions               DocumentAction[]
+  nonConformitesDetectees       NonConformite[]             @relation("NonConformiteDetecteur")
+  nonConformitesResponsable     NonConformite[]             @relation("NonConformiteResponsable")
+  actionsCorrectivesResponsable ActionCorrective[]          @relation("ActionCorrectiveResponsable")
+  nonConformiteCommentaires     NonConformiteCommentaire[]  @relation("NonConformiteCommentaireUser")
+  actionCorrectiveCommentaires  ActionCorrectiveCommentaire[] @relation("ActionCorrectiveCommentaireUser")
 
   @@schema("webirata")
 }
@@ -540,6 +545,72 @@ enum IrataDisclaimerStatus {
   @@schema("webirata")
 }
 
+enum NonConformiteType {
+  SECURITE
+  QUALITE
+  PROCEDURE
+  EQUIPEMENT
+  FORMATION
+  DOCUMENTATION
+  ENVIRONNEMENT
+  AUTRE
+
+  @@schema("webirata")
+}
+
+enum NonConformiteGravite {
+  MINEURE
+  MAJEURE
+  CRITIQUE
+
+  @@schema("webirata")
+}
+
+enum NonConformiteStatut {
+  OUVERTE
+  EN_COURS
+  FERMEE
+  ANNULEE
+
+  @@schema("webirata")
+}
+
+enum ActionCorrectiveType {
+  CORRECTION_IMMEDIATE
+  ACTION_CORRECTIVE
+  ACTION_PREVENTIVE
+  AMELIORATION_CONTINUE
+
+  @@schema("webirata")
+}
+
+enum ActionCorrectiveStatut {
+  EN_COURS
+  TERMINEE
+  EN_ATTENTE
+  ANNULEE
+
+  @@schema("webirata")
+}
+
+enum ActionCorrectivePriorite {
+  BASSE
+  MOYENNE
+  HAUTE
+  CRITIQUE
+
+  @@schema("webirata")
+}
+
+enum ActionCorrectiveEfficacite {
+  TRES_EFFICACE
+  EFFICACE
+  PARTIELLEMENT_EFFICACE
+  INEFFICACE
+
+  @@schema("webirata")
+}
+
 model PreJobTrainingSignature {
   id            String   @id @default(cuid())
   day           String   // Jour de la semaine (Lundi, Mardi, etc.)
@@ -621,6 +692,107 @@ model Notification {
   relatedId String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("webirata")
+}
+
+model NonConformite {
+  id                String                    @id @default(cuid())
+  numero            String                    @unique // Numéro unique de non-conformité
+  titre             String
+  description       String
+  type              NonConformiteType
+  gravite           NonConformiteGravite
+  statut            NonConformiteStatut       @default(OUVERTE)
+  dateDetection     DateTime                  @default(now())
+  dateEcheance      DateTime?
+  lieu              String?
+  detecteurId       String                    // Qui a détecté la non-conformité
+  responsableId     String?                   // Qui est responsable de la correction
+  sessionId         String?                   // Session de formation concernée
+  formulaireId      String?                   // Formulaire lié si applicable
+  inspectionId      String?                   // Inspection liée si applicable
+  documents         NonConformiteDocument[]
+  actionsCorrectives ActionCorrective[]
+  commentaires      NonConformiteCommentaire[]
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  detecteur         User                      @relation("NonConformiteDetecteur", fields: [detecteurId], references: [id])
+  responsable       User?                     @relation("NonConformiteResponsable", fields: [responsableId], references: [id])
+
+  @@schema("webirata")
+}
+
+model ActionCorrective {
+  id                String                    @id @default(cuid())
+  nonConformiteId   String?
+  titre             String
+  description       String
+  type              ActionCorrectiveType
+  statut            ActionCorrectiveStatut    @default(EN_COURS)
+  priorite          ActionCorrectivePriorite  @default(MOYENNE)
+  dateDebut         DateTime                  @default(now())
+  dateEcheance      DateTime?
+  dateRealisation   DateTime?
+  responsableId     String
+  resultats         String?
+  efficacite        ActionCorrectiveEfficacite?
+  documents         ActionCorrectiveDocument[]
+  commentaires      ActionCorrectiveCommentaire[]
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  nonConformite     NonConformite?            @relation(fields: [nonConformiteId], references: [id], onDelete: Cascade)
+  responsable       User                      @relation("ActionCorrectiveResponsable", fields: [responsableId], references: [id])
+
+  @@schema("webirata")
+}
+
+model NonConformiteDocument {
+  id              String        @id @default(cuid())
+  nonConformiteId String
+  nom             String
+  description     String?
+  url             String
+  type            String
+  createdAt       DateTime      @default(now())
+  nonConformite   NonConformite @relation(fields: [nonConformiteId], references: [id], onDelete: Cascade)
+
+  @@schema("webirata")
+}
+
+model ActionCorrectiveDocument {
+  id                String           @id @default(cuid())
+  actionCorrectiveId String
+  nom               String
+  description       String?
+  url               String
+  type              String
+  createdAt         DateTime         @default(now())
+  actionCorrective  ActionCorrective @relation(fields: [actionCorrectiveId], references: [id], onDelete: Cascade)
+
+  @@schema("webirata")
+}
+
+model NonConformiteCommentaire {
+  id              String        @id @default(cuid())
+  nonConformiteId String
+  userId          String
+  commentaire     String
+  createdAt       DateTime      @default(now())
+  nonConformite   NonConformite @relation(fields: [nonConformiteId], references: [id], onDelete: Cascade)
+  user            User          @relation("NonConformiteCommentaireUser", fields: [userId], references: [id])
+
+  @@schema("webirata")
+}
+
+model ActionCorrectiveCommentaire {
+  id                String           @id @default(cuid())
+  actionCorrectiveId String
+  userId            String
+  commentaire       String
+  createdAt         DateTime         @default(now())
+  actionCorrective  ActionCorrective @relation(fields: [actionCorrectiveId], references: [id], onDelete: Cascade)
+  user              User             @relation("ActionCorrectiveCommentaireUser", fields: [userId], references: [id])
 
   @@schema("webirata")
 }
