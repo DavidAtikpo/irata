@@ -46,6 +46,7 @@ model User {
   actionsCorrectivesResponsable ActionCorrective[]          @relation("ActionCorrectiveResponsable")
   nonConformiteCommentaires     NonConformiteCommentaire[]  @relation("NonConformiteCommentaireUser")
   actionCorrectiveCommentaires  ActionCorrectiveCommentaire[] @relation("ActionCorrectiveCommentaireUser")
+  attendanceSignatures          AttendanceSignature[]      @relation("AttendanceSignatures")
 
   @@schema("webirata")
 }
@@ -798,6 +799,20 @@ model ActionCorrectiveCommentaire {
 }
 
 
+
+model AttendanceSignature {
+  id            String   @id @default(cuid())
+  userId        String
+  signatureKey  String   // format: "Lundi-matin", "Mardi-soir", etc.
+  signatureData String   // base64 image data
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  user          User     @relation("AttendanceSignatures", fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, signatureKey])
+  @@schema("webirata")
+}
 
 model TeamMember {
   id             String   @id @default(cuid())
