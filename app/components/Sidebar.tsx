@@ -19,7 +19,9 @@ import {
   ClipboardDocumentIcon,
   UserIcon,
   ReceiptPercentIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  ExclamationCircleIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -32,14 +34,16 @@ const navigation = [
   { name: 'Trainee Follow Up', href: '/admin/trainee-folow-up', icon: UserIcon },
   { name: 'Questionnaires', href: '/admin/formulaires-quotidiens', icon: ClipboardDocumentIcon },
   { name: 'Questionnaire de satisfaction', href: '/admin/customer-satisfaction', icon: ClipboardDocumentIcon },
-  { name: 'Formation pré-job', href: '/admin/pre-job-training', icon: ClipboardDocumentIcon },
+  { name: 'Pré-job training', href: '/admin/pre-job-training', icon: ClipboardDocumentIcon },
+  { name: 'Job Planing', href: '/admin/job-planing', icon: ClipboardDocumentCheckIcon },
   { name: 'Inspections', href: '/admin/inspections', icon: ClipboardDocumentCheckIcon },
-  // { name: 'Job Planing', href: '/admin/job-planing', icon: ClipboardDocumentCheckIcon },
   { name:  'Irata-disclaimer', href: '/admin/irata-disclaimer', icon: ClipboardDocumentCheckIcon },
   { name: 'Attendance', href: '/admin/attendance', icon: ClipboardDocumentCheckIcon },
-      { name: 'Induction Stagiaires', href: '/admin/trainee-induction', icon: ClipboardDocumentCheckIcon },
-    { name: 'Signatures induction', href: '/admin/trainee-signatures', icon: ClipboardDocumentCheckIcon },
-    { name: 'Déclaration Médicale', href: '/admin/medical-declaration', icon: ClipboardDocumentCheckIcon },
+  { name: 'Induction Stagiaires', href: '/admin/trainee-induction', icon: ClipboardDocumentCheckIcon },
+  { name: 'Signatures induction', href: '/admin/trainee-signatures', icon: ClipboardDocumentCheckIcon },
+  { name: 'Déclaration Médicale', href: '/admin/medical-declaration', icon: ClipboardDocumentCheckIcon },
+  { name: 'Non-conformités', href: '/admin/non-conformites', icon: ExclamationCircleIcon },
+  { name: 'Actions correctives', href: '/admin/actions-correctives', icon: CheckCircleIcon },
 
   { name: 'Formations', href: '/admin/formations', icon: AcademicCapIcon },
   { name: 'Stagiaires', href: '/admin/utilisateurs', icon: UserGroupIcon },

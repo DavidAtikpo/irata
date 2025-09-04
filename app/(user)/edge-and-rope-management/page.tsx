@@ -1,233 +1,529 @@
-// app/on-screen-questions/page.tsx
+"use client";
+
+// app/edge-and-rope-management/page.tsx
 import React from "react";
+import Image from "next/image";
+import { useSession } from "next-auth/react";
 
-export default function OnScreenQuestions() {
+export default function EdgeAndRopeManagement() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'ADMIN';
+  const images = [
+    {
+      id: 1,
+      src: "/EdgeAndRope/Edge and Rope Management 1.png",
+      alt: "Edge and Rope Management - Page 1"
+    },
+    {
+      id: 2,
+      src: "/EdgeAndRope/Edge and Rope Management 2.png",
+      alt: "Edge and Rope Management - Page 2"
+    },
+    {
+      id: 3,
+      src: "/EdgeAndRope/Edge and Rope Management 3.png",
+      alt: "Edge and Rope Management - Page 3"
+    },
+    {
+      id: 4,
+      src: "/EdgeAndRope/Edge and Rope Management 4.png",
+      alt: "Edge and Rope Management - Page 4"
+    },
+    {
+      id: 5,
+      src: "/EdgeAndRope/Edge and Rope Management 5.png",
+      alt: "Edge and Rope Management - Page 5"
+    },
+    {
+      id: 6,
+      src: "/EdgeAndRope/Edge and Rope Management 6.png",
+      alt: "Edge and Rope Management - Page 6"
+    },
+    {
+      id: 7,
+      src: "/EdgeAndRope/Edge and Rope Management 7.png",
+      alt: "Edge and Rope Management - Page 7"
+    },
+    {
+      id: 8,
+      src: "/EdgeAndRope/Edge and Rope Management 8.png",
+      alt: "Edge and Rope Management - Page 8"
+    },
+    {
+      id: 9,
+      src: "/EdgeAndRope/Edge and Rope Management 9.png",
+      alt: "Edge and Rope Management - Page 9"
+    },
+    {
+      id: 10,
+      src: "/EdgeAndRope/Edge and Rope Management 10.png",
+      alt: "Edge and Rope Management - Page 10"
+    },
+    {
+      id: 11,
+      src: "/EdgeAndRope/Edge and Rope Management 11.png",
+      alt: "Edge and Rope Management - Page 11"
+    },
+    {
+      id: 12,
+      src: "/EdgeAndRope/Edge and Rope Management 12.png",
+      alt: "Edge and Rope Management - Page 12"
+    },
+    {
+      id: 13,
+      src: "/EdgeAndRope/Edge and Rope Management 13.png",
+      alt: "Edge and Rope Management - Page 13"
+    },
+    {
+      id: 14,
+      src: "/EdgeAndRope/Edge and Rope Management 14.png",
+      alt: "Edge and Rope Management - Page 14"
+    },
+    {
+      id: 15,
+      src: "/EdgeAndRope/Edge and Rope Management 15.png",
+      alt: "Edge and Rope Management - Page 15"
+    }
+  ];
+
   return (
-    <main className="p-8 max-w-6xl mx-auto text-gray-800">
-      <h1 className="text-2xl font-bold mb-6">
-        4. ON-SCREEN QUESTIONS AND DISCUSSION POINTS
+    <main className="p-8 max-w-7xl mx-auto">
+      <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">
+        Edge and Rope Management - Document Complet
       </h1>
-      <p className="mb-6">
-        Below are all the questions as seen on-screen, together with discussion
-        points for the presenter to cover with the audience.
-      </p>
+      
+      <div className="space-y-8">
+        {/* Paire 1: Page 1 + Page 2 */}
+        <div className="space-y-0">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[0].src}
+                  alt={images[0].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                  priority={true}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[1].src}
+                  alt={images[1].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                  priority={true}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Helper for table */}
-      {/*
-        J'utilise des tableaux identiques pour toutes les sections.
-      */}
-      {/*** Question 1 ***/}
-      <Section
-        title="Question 1. Use of a mobile telephone whilst driving"
-        rows={[
-          {
-            q: "1.1",
-            text: "What is wrong in this scene?",
-            discuss:
-              "Technician driving whilst on the phone appears to be distracted with other issues. The technician is flustered as he is aware that he is arriving late.",
-          },
-          {
-            q: "1.2",
-            text: "Is the technician displaying appropriate safety behaviour?",
-            discuss:
-              "No. In many countries using a phone whilst driving is illegal.",
-          },
-        ]}
-      />
+        {/* Paire 2: Page 3 + Page 4 */}
+        <div className="space-y-0">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[2].src}
+                  alt={images[2].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                  priority={true}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[3].src}
+                  alt={images[3].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/*** Question 2 ***/}
-      <Section
-        title="Question 2. Colleague arriving late"
-        rows={[
-          {
-            q: "2.1",
-            text: "How should the supervisor behave if a technician arrives late?",
-            discuss:
-              "Knowing the technician is late and looking flustered, the supervisor should assess whether it is appropriate to start work immediately, or to take a short break.",
-          },
-        ]}
-      />
+        {/* Paire 3: Page 5 + Page 6 */}
+        <div className="space-y-0">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[4].src}
+                  alt={images[4].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[5].src}
+                  alt={images[5].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/*** Question 3 ***/}
-      <Section
-        title="Question 3. Pre-job planning"
-        rows={[
-          {
-            q: "3.1",
-            text: "Is the risk assessment, method statement and rescue plan being taken seriously?",
-            discuss:
-              "No. Insufficient time has been made to read and understand it. No questions have been asked and both parties are going into the bare minimum to get on with the job.",
-          },
-          {
-            q: "3.2",
-            text: "Does the technician feel able to challenge the supervisor if needed?",
-            discuss:
-              "It is quite clear that the supervisor just wants to get the job done his way and leave. This attitude does not encourage the technician to engage with the pre-job planning process. Note that arriving late will not encourage the technician to question the supervisor.",
-          },
-          {
-            q: "3.3",
-            text: "Are the technicians working together as a team?",
-            discuss:
-              "No, the technician is following instruction from the supervisor and shows no inclination to challenge or question him. They are therefore not looking after each other's best interests.",
-          },
-        ]}
-      />
+        {/* Paire 4: Page 7 + Page 8 */}
+        <div className="space-y-0">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[6].src}
+                  alt={images[6].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[7].src}
+                  alt={images[7].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/*** Question 4 ***/}
-      <Section
-        title="Question 4. Edge management"
-        rows={[
-          {
-            q: "4.1",
-            text: "Have all edges been risk assessed and adequately managed?",
-            discuss:
-              "No. There needs to be a full understanding of the hazard in order for appropriate control measures to be put in place. This information should be in the risk assessment, and should have been pre-planned (at the office). The team are not accounting for edges within their workplace, not thinking of how to rig their ropes to avoid them, and are not giving all hazards enough thought or respect.",
-          },
-          {
-            q: "4.2",
-            text: "Has the team chosen the correct rope protection?",
-            discuss:
-              "No. Evaluation of more substantial rope protection should be considered.",
-          },
-          {
-            q: "4.3",
-            text: "Has the risk of the grinder cutting the rope been considered?",
-            discuss:
-              "No. It has not been mentioned by either team member.",
-          },
-          {
-            q: "4.4",
-            text: "What other work methods would be suitable?",
-            discuss: `For example:
-- Removing the sharp edge by moving the cable tray
-- Working from steel strops to avoid the need for ropes
-- Rigging the ropes away from the sharp edge
-- Using a protective sleeve to protect against grinder`,
-          },
-        ]}
-      />
+        {/* Paire 5: Page 9 + Page 10 */}
+        <div className="space-y-0">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[8].src}
+                  alt={images[8].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[9].src}
+                  alt={images[9].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/*** Question 5 ***/}
-      <Section
-        title="Question 5. Mobile phones on the worksite"
-        rows={[
-          {
-            q: "5.1",
-            text: "Is the technician concentrating on the job or is his attention elsewhere?",
-            discuss:
-              "No. He is thinking about his wife ringing. Phones have their uses at work for emergencies, or team communications. A mobile phone could also be a potential dropped object.",
-          },
-        ]}
-      />
+        {/* Paire 6: Page 11 + Page 12 */}
+        <div className="space-y-0">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
 
-      {/*** Question 6 ***/}
-      <Section
-        title="Question 6. Sharp edges"
-        rows={[
-          {
-            q: "6.1",
-            text: "Are the ropes rigged appropriately?",
-            discuss:
-              "Now that a sharp edge has been found that was not recognised in the pre-job planning, the team should stop and reconsider their rigging, and edge management systems.",
-          },
-          {
-            q: "6.2",
-            text: "Do canvas rope protectors protect against sharp edges?",
-            discuss:
-              "No. They are not designed to protect against sharp edges. A far more substantial device would be needed to protect ropes from a sharp metal edge. Discuss what you could do with your audience.",
-          },
-          {
-            q: "6.3",
-            text: "Should the team have stopped and reconsidered the sharp edge?",
-            discuss:
-              "Yes. A sharp edge should be a clear 'stop the job' trigger. The team should re-assess whether the risk assessment and method statements are still appropriate.",
-          },
-          {
-            q: "6.4",
-            text: "Can you think of an example where you have not correctly managed and protected your ropes?",
-            discuss:
-              "Request the audience provides examples which could be used as a learning aid for others.",
-          },
-        ]}
-      />
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[10].src}
+                  alt={images[10].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
 
-      {/*** Question 7 ***/}
-      <Section
-        title="Question 7. Testing the grinder"
-        rows={[
-          {
-            q: "7.1",
-            text: "What is wrong in this scene?",
-            discuss:
-              "The technician tested the grinder by his ropes and could easily have cut through them.",
-          },
-          {
-            q: "7.2",
-            text: "When should the technician have tested the grinder safety mechanism?",
-            discuss:
-              "A technician should familiarise themselves with tools and equipment before starting the job.",
-          },
-        ]}
-      />
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[11].src}
+                  alt={images[11].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/*** Question 8 ***/}
-      <Section
-        title="Question 8. Use of goggles"
-        rows={[
-          {
-            q: "8.1",
-            text: "Are the goggles fit for purpose?",
-            discuss:
-              "No. Discuss the use of goggles in these circumstances as in wet conditions most eye protection will steam up. Would a face shield or visor be more appropriate?",
-          },
-        ]}
-      />
+        {/* Paire 7: Page 13 + Page 14 */}
+        <div className="space-y-0">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
 
-      {/*** Question 9 ***/}
-      <Section
-        title="Question 9. Supervision"
-        rows={[
-          {
-            q: "9.1",
-            text: "Should the supervisor be paying more attention to the work in progress?",
-            discuss:
-              "Yes, but poor planning, rushing, lack of discussion between the team, and poor supervision have been issues throughout. These should all have been identified earlier and perhaps the supervisor is unsuitable to safety on the job.",
-          },
-        ]}
-      />
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[12].src}
+                  alt={images[12].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+
+            <div className="p-4">
+              <div className="flex justify-center">
+                <Image
+                  src={images[13].src}
+                  alt={images[13].alt}
+                  width={1000}
+                  height={700}
+                  className="max-w-full h-auto "
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Page 15: Formulaire interactif TOOLBOX TALK */}
+        <div className="space-y-0">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold text-center mb-6 text-blue-800">
+                TOOLBOX TALK - RECORD FORM
+              </h2>
+              
+              {/* Section Administrative */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Site:</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date:</label>
+                  <input type="date" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Topic(s) for discussion:</label>
+                  <input type="text" value="Toolbox Talk: Edge Management" readOnly className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Reason for talk:</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Start time:</label>
+                    <input type="time" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Finish time:</label>
+                    <input type="time" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section Attendees */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-center mb-2">Attended by</h3>
+                <p className="text-sm text-center text-gray-600 mb-4">Please sign to verify understanding of talk</p>
+                
+                {/* Section pour afficher les participants existants - VISIBLE UNIQUEMENT AUX ADMINS */}
+                {isAdmin && (
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <h4 className="font-medium text-blue-800 mb-2">👥 Participants ayant déjà signé ce toolbox talk :</h4>
+                    <div className="text-sm text-blue-700 mb-3">
+                      <p>Voici la liste des utilisateurs qui ont déjà participé et signé cette session :</p>
+                    </div>
+                    
+                    {/* Liste des participants (exemple) */}
+                    <div className="border border-blue-200 rounded-md overflow-hidden">
+                      <div className="bg-blue-100 grid grid-cols-3 p-2 font-medium text-xs text-blue-800">
+                        <div>Nom</div>
+                        <div>Date de signature</div>
+                        <div>Statut</div>
+                      </div>
+                      <div className="bg-white">
+                        <div className="grid grid-cols-3 p-2 border-t border-blue-200 text-xs">
+                          <div>Jean Dupont</div>
+                          <div>15/12/2024</div>
+                          <div className="text-blue-600">✅ Signé</div>
+                        </div>
+                        <div className="grid grid-cols-3 p-2 border-t border-blue-200 text-xs">
+                          <div>Marie Martin</div>
+                          <div>15/12/2024</div>
+                          <div className="text-blue-600">✅ Signé</div>
+                        </div>
+                        <div className="grid grid-cols-3 p-2 border-t border-blue-200 text-xs">
+                          <div>Pierre Durand</div>
+                          <div>15/12/2024</div>
+                          <div className="text-blue-600">✅ Signé</div>
+                        </div>
+                        <div className="grid grid-cols-3 p-2 border-t border-blue-200 text-xs">
+                          <div>Sophie Bernard</div>
+                          <div>15/12/2024</div>
+                          <div className="text-blue-600">✅ Signé</div>
+                        </div>
+                        <div className="grid grid-cols-3 p-2 border-t border-blue-200 text-xs">
+                          <div>Lucas Moreau</div>
+                          <div>15/12/2024</div>
+                          <div className="text-blue-600">✅ Signé</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3 text-xs text-blue-600">
+                      <p>Total : 5 participants ont signé</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Section d'information pour les utilisateurs normaux */}
+                {!isAdmin && (
+                  <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-md">
+                    <h4 className="font-medium text-gray-700 mb-2">ℹ️ Information</h4>
+                    <div className="text-sm text-gray-600">
+                      <p>Vous pouvez signer ce toolbox talk pour confirmer votre participation.</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Section pour la signature de l'utilisateur actuel */}
+                <div className="border border-gray-300 rounded-md overflow-hidden">
+                  <div className="bg-gray-100 grid grid-cols-2 p-3 font-medium text-sm">
+                    <div>Votre nom</div>
+                    <div>Votre signature</div>
+                  </div>
+                  <div className="grid grid-cols-2 border-t border-gray-300">
+                    <div className="p-3 border-r border-gray-300">
+                      <input type="text" placeholder="Entrez votre nom complet" className="w-full border-none outline-none text-sm" />
+                    </div>
+                    <div className="p-3">
+                      <div className="w-24 h-8 border border-gray-300 rounded bg-white flex items-center justify-center text-xs text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors">
+                        Cliquez pour signer
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-3 text-center">
+                  <button className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                    Valider ma signature
+                  </button>
+                </div>
+              </div>
+
+              {/* Section Matters Raised */}
+              <div className="mb-6">
+                <p className="text-sm text-center text-gray-600 mb-3">Continue overleaf (where necessary)</p>
+                <div className="border border-gray-300 rounded-md overflow-hidden">
+                  <div className="bg-gray-100 grid grid-cols-2 p-3 font-medium text-sm">
+                    <div>Matters raised by employees</div>
+                    <div>Action taken as a result</div>
+                  </div>
+                  {[...Array(3)].map((_, index) => (
+                    <div key={index} className="grid grid-cols-2 border-t border-gray-300">
+                      <div className="p-3 border-r border-gray-300">
+                        <textarea placeholder="Enter matter raised" className="w-full border-none outline-none text-sm resize-none" rows={2}></textarea>
+                      </div>
+                      <div className="p-3">
+                        <textarea placeholder="Enter action taken" className="w-full border-none outline-none text-sm resize-none" rows={2}></textarea>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Section Talk Leader */}
+              <div className="mb-6">
+                <p className="text-sm text-center text-gray-600 mb-3">Continue overleaf (where necessary)</p>
+                <h3 className="text-lg font-semibold text-center mb-2">Talk leader</h3>
+                <p className="text-sm text-center text-gray-600 mb-4">I confirm I have delivered this session and have questioned those attending on the topic discussed</p>
+                
+                <div className="border border-gray-300 rounded-md overflow-hidden">
+                  <div className="bg-gray-100 grid grid-cols-3 p-3 font-medium text-sm">
+                    <div>Print name</div>
+                    <div>Signature</div>
+                    <div>Date</div>
+                  </div>
+                  <div className="grid grid-cols-3 border-t border-gray-300">
+                    <div className="p-3 border-r border-gray-300">
+                      <input type="text" placeholder="Leader name" className="w-full border-none outline-none text-sm" />
+                    </div>
+                    <div className="p-3 border-r border-gray-300">
+                      <div className="w-24 h-8 border border-gray-300 rounded bg-white flex items-center justify-center text-xs text-gray-500">
+                        Sign here
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <input type="date" className="w-full border-none outline-none text-sm" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section Comments */}
+              <div className="mb-6">
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="col-span-1">
+                    <label className="block text-sm font-medium text-gray-700">Comments:</label>
+                  </div>
+                  <div className="col-span-3">
+                    <textarea 
+                      placeholder="Enter any additional comments here..." 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                      rows={4}
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="text-center text-sm text-gray-500 mt-8">
+                UNCONTROLLED WHEN PRINTED
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="mt-12 text-center text-gray-600">
+        <p className="text-sm">
+          Document complet : Edge and Rope Management - IRATA International
+        </p>
+      </div>
     </main>
-  );
-}
-
-// Composant réutilisable pour chaque section
-function Section({
-  title,
-  rows,
-}: {
-  title: string;
-  rows: { q: string; text: string; discuss: string }[];
-}) {
-  return (
-    <section className="mb-10">
-      <h2 className="text-xl font-semibold mb-4">{title}</h2>
-      <table className="w-full border border-gray-400 text-sm">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border border-gray-400 p-2">Question</th>
-            <th className="border border-gray-400 p-2">On-screen text</th>
-            <th className="border border-gray-400 p-2">Discuss</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={i} className="align-top">
-              <td className="border p-2">{row.q}</td>
-              <td className="border p-2 whitespace-pre-line">{row.text}</td>
-              <td className="border p-2 whitespace-pre-line">{row.discuss}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
   );
 }
