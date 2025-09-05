@@ -8,15 +8,47 @@ const STATIC_PATHS = [
   '/demande',
   '/demande/success',
   '/contact',
+  '/documents/irata-disclaimer',
 
   // Auth
   '/login',
   '/register',
   '/forgot-password',
   '/reset-password',
-  // User
   
+  // User pages (pour que Weglot les découvre)
+  '/user/dashboard',
+  '/user/profile',
+  '/user/mes-demandes',
+  '/user/mes-devis',
+  '/user/mon-contrat',
+  '/user/invoice',
+  '/user/documents',
+  '/user/inspections',
+  '/user/attendance',
+  '/user/actions-correctives',
+  '/user/non-conformites',
+  '/user/formulaires-quotidiens',
+  '/user/edge-and-rope-management',
+  '/user/customer-satisfaction',
+  '/user/medical-declaration',
+  '/user/trainee-follow-up',
+  '/user/trainee-induction',
+  '/user/pre-job-training',
+  '/user/convocation-cides',
+  '/user/investissements',
+  '/user/irata-disclaimer',
   
+  // Admin pages
+  '/admin/dashboard',
+  '/admin/users',
+  '/admin/formations',
+  '/admin/documents',
+  '/admin/attendance',
+  '/admin/cloudinary-info',
+  
+  // Gestionnaire
+  '/gestionnaire/dashboard',
 ];
 
 function getBaseUrl(req: NextRequest): string {

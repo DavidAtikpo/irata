@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 const formationsData = {
   France: {
@@ -219,9 +219,8 @@ export default function FormationsPage() {
                   const isOpen = openIdx === idx;
                   const isDisabled = session.dates.toLowerCase().includes('non programmé');
                   return (
-                    <>
+                    <React.Fragment key={idx}>
                       <tr
-                        key={idx}
                         className={
                           (idx % 2 === 0 ? 'bg-white' : 'bg-gray-100') +
                           (!isDisabled ? ' cursor-pointer hover:bg-blue-100 transition-colors' : ' opacity-60')
@@ -246,7 +245,7 @@ export default function FormationsPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   );
                 })}
               </tbody>
