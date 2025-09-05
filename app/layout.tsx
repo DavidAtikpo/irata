@@ -77,6 +77,28 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Initialisation Weglot directe
+              (function() {
+                var script = document.createElement('script');
+                script.src = 'https://cdn.weglot.com/weglot.min.js';
+                script.onload = function() {
+                  if (typeof Weglot !== 'undefined') {
+                    Weglot.initialize({
+                      api_key: 'wg_e97ec5714272b275569ce52f31c49ce26'
+                    });
+                    console.log('Weglot initialized from head');
+                  }
+                };
+                document.head.appendChild(script);
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className} suppressHydrationWarning>
         <WeglotScript />
         <AuthProvider>

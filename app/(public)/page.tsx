@@ -5,6 +5,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import React from 'react';
 import Image from 'next/image';
+import LanguageSelector from '../components/LanguageSelector';
 
 const sessions = [
   { annee: '2025', mois: 'janvier', dates: 'Non programmé' },
@@ -269,6 +270,9 @@ function HomeContent() {
 
   return (
     <main className="bg-white px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-7xl mx-auto text-gray-800">
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSelector />
+      </div>
       {/* Financement Participatif Banner (Investisseurs) */}
       <section className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-400 text-white rounded-2xl sm:rounded-3xl shadow-2xl px-4 sm:px-6 py-6 sm:py-8 text-center mb-6 sm:mb-8 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
