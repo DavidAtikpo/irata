@@ -574,16 +574,6 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCo
       </style>
     </head>
     <body>
-      <!-- Instructions d'impression -->
-      <div class="print-instructions">
-        <h3>🖨️ Instructions d'impression</h3>
-        <p><strong>Pour imprimer ce document :</strong></p>
-        <p>1. Appuyez sur Ctrl+P (Windows) ou Cmd+P (Mac)</p>
-        <p>2. Sélectionnez "Plus de paramètres" → "Options" → "Arrière-plans"</p>
-        <p>3. Choisissez "Format A4" et "Portrait"</p>
-        <p>4. Cliquez sur "Imprimer"</p>
-      </div>
-      
       <!-- En-tête professionnel -->
               <div class="header">
           <div class="logo">
