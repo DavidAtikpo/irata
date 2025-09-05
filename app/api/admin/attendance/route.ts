@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { promises as fs } from 'fs';
-import { join } from 'path';
-
-const DATA_PATH = join(process.cwd(), 'data');
-const ATTENDANCE_SIGNATURES_FILE = join(DATA_PATH, 'attendance-signatures.json');
 
 interface AttendanceSignature {
   userId: string;
@@ -93,16 +88,24 @@ async function getUserSessions(): Promise<TrainingSession[]> {
   }
 }
 
-async function ensureDataFile() {
+async function getAttendanceSignatures(): Promise<AttendanceSignature[]> {
   try {
-    await fs.mkdir(DATA_PATH, { recursive: true });
-    try {
-      await fs.access(ATTENDANCE_SIGNATURES_FILE);
-    } catch {
-      await fs.writeFile(ATTENDANCE_SIGNATURES_FILE, JSON.stringify([]), 'utf8');
-    }
-  } catch (err) {
-    console.error('Error ensuring data file:', err);
+    const signatures = await (prisma as any).attendanceSignature.findMany({
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    return signatures.map((sig: any) => ({
+      userId: sig.userId,
+      signatureKey: sig.signatureKey,
+      signatureData: sig.signatureData,
+      timestamp: sig.createdAt.toISOString(),
+      generatedFromFollowUp: false // Les signatures de la base sont manuelles
+    }));
+  } catch (error) {
+    console.error('Erreur lors de la récupération des signatures:', error);
+    return [];
   }
 }
 
@@ -115,11 +118,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    await ensureDataFile();
-
-    // Récupérer toutes les signatures d'attendance
-    const raw = await fs.readFile(ATTENDANCE_SIGNATURES_FILE, 'utf8');
-    const signatures: AttendanceSignature[] = JSON.parse(raw || '[]');
+    // Récupérer toutes les signatures d'attendance depuis la base de données
+    const signatures = await getAttendanceSignatures();
 
     // Récupérer les profils utilisateurs et sessions
     const userProfiles = await getUserProfiles();
@@ -213,20 +213,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
     }
 
-    await ensureDataFile();
-    const raw = await fs.readFile(ATTENDANCE_SIGNATURES_FILE, 'utf8');
-    const signatures: AttendanceSignature[] = JSON.parse(raw || '[]');
-
-    // Supprimer la signature spécifique
-    const filteredSignatures = signatures.filter(sig => 
-      !(sig.userId === userId && sig.signatureKey === signatureKey)
-    );
-
-    await fs.writeFile(ATTENDANCE_SIGNATURES_FILE, JSON.stringify(filteredSignatures, null, 2), 'utf8');
+    // Supprimer la signature depuis la base de données
+    const deletedSignature = await (prisma as any).attendanceSignature.deleteMany({
+      where: {
+        userId: userId,
+        signatureKey: signatureKey
+      }
+    });
 
     return NextResponse.json({ 
       message: 'Signature supprimée avec succès',
-      deletedCount: signatures.length - filteredSignatures.length
+      deletedCount: deletedSignature.count
     });
 
   } catch (error) {

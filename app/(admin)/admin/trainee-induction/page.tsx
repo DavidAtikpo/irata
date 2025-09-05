@@ -5,13 +5,9 @@ import SignaturePad from '@/components/SignaturePad';
 
 interface Session {
   id: string;
-  session: string;
-  statut: string;
-  message?: string;
-  commentaire?: string;
-  createdAt: string;
-  updatedAt: string;
-  inscrits?: number;
+  name: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export default function TraineeInductionPage() {
@@ -38,10 +34,22 @@ export default function TraineeInductionPage() {
       const response = await fetch('/api/admin/sessions');
       if (response.ok) {
         const data = await response.json();
-        setSessions(data);
+        // L'API retourne { sessions: [...], trainingSessions: [...] }
+        // On utilise sessions qui contient les noms des sessions
+        if (data.sessions && Array.isArray(data.sessions)) {
+          // Convertir les noms de sessions en objets avec id et name
+          const sessionsWithIds = data.sessions.map((sessionName: string, index: number) => ({
+            id: `session-${index}`,
+            name: sessionName
+          }));
+          setSessions(sessionsWithIds);
+        } else {
+          setSessions([]);
+        }
       }
     } catch (error) {
       console.error('Erreur lors du chargement des sessions:', error);
+      setSessions([]);
     }
   };
 
@@ -120,21 +128,33 @@ export default function TraineeInductionPage() {
   // Fonction pour mettre à jour la date du cours quand une session est sélectionnée
   const handleSessionChange = (sessionId: string) => {
     const session = sessions.find(s => s.id === sessionId);
-    if (session && session.createdAt) {
-      // Extraire la date de la session (format: "2025 avril 21 au 11/08/2025")
-      const sessionText = session.session;
-      const dateMatch = sessionText.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (session) {
+      // Extraire les dates du nom de la session (ex: "2025 septembre 01 au 06")
+      const sessionName = session.name;
+      
+      // Pattern pour matcher "2025 septembre 01 au 06" ou "2025 septembre 01 au 05"
+      const dateMatch = sessionName.match(/(\d{4})\s+(\w+)\s+(\d{1,2})\s+au\s+(\d{1,2})/);
       
       if (dateMatch) {
-        const [, day, month, year] = dateMatch;
-        // Formater en YYYY-MM-DD pour l'input date
-        const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-        setForm({ ...form, sessionId, courseDate: formattedDate });
+        const [, year, monthName, startDay, endDay] = dateMatch;
+        
+        // Convertir le nom du mois en numéro
+        const monthMap: { [key: string]: string } = {
+          'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04',
+          'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08',
+          'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'
+        };
+        
+        const monthNumber = monthMap[monthName.toLowerCase()];
+        if (monthNumber) {
+          // Utiliser le jour de début pour la date du cours au format français DD/MM/YYYY
+          const formattedDate = `${startDay.padStart(2, '0')}/${monthNumber}/${year}`;
+          setForm({ ...form, sessionId, courseDate: formattedDate });
+        } else {
+          setForm({ ...form, sessionId });
+        }
       } else {
-        // Fallback: utiliser la date de création
-        const sessionDate = new Date(session.createdAt);
-        const formattedDate = sessionDate.toISOString().split('T')[0];
-        setForm({ ...form, sessionId, courseDate: formattedDate });
+        setForm({ ...form, sessionId });
       }
     } else {
       setForm({ ...form, sessionId });
@@ -164,7 +184,7 @@ export default function TraineeInductionPage() {
                   <option value="">Sélectionner une session</option>
                                      {sessions.map((session) => (
                      <option key={session.id} value={session.id}>
-                       {session.session} ({session.inscrits || 0} inscrits)
+                       {session.name}
                      </option>
                    ))}
                 </select>
@@ -173,9 +193,10 @@ export default function TraineeInductionPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date du cours *</label>
                 <input
-                  type="date"
+                  type="text"
                   value={form.courseDate}
                   onChange={(e) => setForm({ ...form, courseDate: e.target.value })}
+                  placeholder="DD/MM/YYYY"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={signed}
                 />
@@ -392,8 +413,7 @@ export default function TraineeInductionPage() {
               
                              <div className="mt-6 p-4 border border-gray-300 bg-gray-50">
                                    <p className="text-sm text-gray-600 font-medium">
-                    📋 Note pour l'administrateur : Ce document sera envoyé aux stagiaires de la session "{selectedSession?.session || 'Non sélectionnée'}" 
-                    {selectedSession?.createdAt && ` (créée le ${new Date(selectedSession.createdAt).toLocaleDateString('fr-FR')})`} 
+                    📋 Note pour l'administrateur : Ce document sera envoyé aux stagiaires de la session "{selectedSession?.name || 'Non sélectionnée'}" 
                     après votre signature. Les stagiaires pourront ensuite signer électroniquement.
                   </p>
                </div>
