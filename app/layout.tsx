@@ -2,12 +2,19 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "./components/AuthProvider";
+import WeglotScript from "./components/WeglotScript";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "CI.DES",
   description: "Formation et certification en accès cordé et travaux en hauteur",
+  alternates: {
+    languages: {
+      'fr': '/',
+      'en': '/en',
+    },
+  },
   keywords: [
     "CI.DES",
     "formation",
@@ -69,6 +76,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
+        <WeglotScript />
         <AuthProvider>
           <div className="min-h-screen flex flex-col">
             <main className="flex-grow">
