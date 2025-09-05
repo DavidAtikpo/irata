@@ -132,9 +132,3 @@ export default function Header() {
   );
 }
 
-// Déclaration des types pour TypeScript
-declare global {
-  interface Window {
-    Weglot: any;
-  }
-}

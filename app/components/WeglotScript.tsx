@@ -18,14 +18,21 @@ export default function WeglotScript() {
         strategy={WEGLOT_CONFIG.strategy}
         dangerouslySetInnerHTML={{
           __html: `
-            if (typeof Weglot !== 'undefined') {
-              Weglot.initialize({
-                api_key: '${WEGLOT_CONFIG.apiKey}'
-              });
-              console.log('Weglot initialized successfully');
-            } else {
-              console.error('Weglot not available');
-            }
+            // Attendre que React soit complètement hydraté avant d'initialiser Weglot
+            window.addEventListener('load', function() {
+              setTimeout(function() {
+                if (typeof Weglot !== 'undefined') {
+                  Weglot.initialize({
+                    api_key: '${WEGLOT_CONFIG.apiKey}',
+                    auto_switch: false,
+                    excluded_elements: ['.no-translate', '[data-wg-notranslate]', 'nav', 'header']
+                  });
+                  console.log('Weglot initialized successfully');
+                } else {
+                  console.error('Weglot not available');
+                }
+              }, 1000);
+            });
           `,
         }}
       />
