@@ -37,9 +37,9 @@ export default function TraineeInductionPage() {
         // L'API retourne { sessions: [...], trainingSessions: [...] }
         // On utilise sessions qui contient les noms des sessions
         if (data.sessions && Array.isArray(data.sessions)) {
-          // Convertir les noms de sessions en objets avec id et name
-          const sessionsWithIds = data.sessions.map((sessionName: string, index: number) => ({
-            id: `session-${index}`,
+          // Utiliser directement le nom de la session comme ID
+          const sessionsWithIds = data.sessions.map((sessionName: string) => ({
+            id: sessionName, // Utiliser le nom de la session comme ID
             name: sessionName
           }));
           setSessions(sessionsWithIds);
@@ -149,12 +149,12 @@ export default function TraineeInductionPage() {
         if (monthNumber) {
           // Utiliser le jour de début pour la date du cours au format français DD/MM/YYYY
           const formattedDate = `${startDay.padStart(2, '0')}/${monthNumber}/${year}`;
-          setForm({ ...form, sessionId, courseDate: formattedDate });
+          setForm({ ...form, sessionId: sessionName, courseDate: formattedDate }); // Utiliser sessionName au lieu de sessionId
         } else {
-          setForm({ ...form, sessionId });
+          setForm({ ...form, sessionId: sessionName }); // Utiliser sessionName au lieu de sessionId
         }
       } else {
-        setForm({ ...form, sessionId });
+        setForm({ ...form, sessionId: sessionName }); // Utiliser sessionName au lieu de sessionId
       }
     } else {
       setForm({ ...form, sessionId });

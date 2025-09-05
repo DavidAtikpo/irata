@@ -229,7 +229,7 @@ function euro(n: number) {
 }
 
 function buildHtml(data: any, originalAmount?: number) {
-  const logoUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/logo.png`;
+  const logoUrl = `${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png`;
   const totalHT = data.items.reduce((s: number, it: any) => s + it.quantity * it.unitPrice, 0);
   const totalTVA = data.items.reduce((s: number, it: any) => s + (it.quantity * it.unitPrice * it.tva) / 100, 0);
   const totalTTC = totalHT + totalTVA;

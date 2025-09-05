@@ -18,7 +18,7 @@ export default function WeglotTestButton() {
           setTestResult('✅ Retour en français');
         }, 3000);
       } catch (error) {
-        setTestResult('❌ Erreur: ' + error.message);
+        setTestResult('❌ Erreur: ' + (error instanceof Error ? error.message : 'Erreur inconnue'));
       }
     } else {
       setTestResult('❌ Weglot n\'est pas disponible');
@@ -31,7 +31,7 @@ export default function WeglotTestButton() {
         window.Weglot.switchTo('pt');
         setTestResult('✅ Traduction en portugais activée');
       } catch (error) {
-        setTestResult('❌ Erreur: ' + error.message);
+        setTestResult('❌ Erreur: ' + (error instanceof Error ? error.message : 'Erreur inconnue'));
       }
     } else {
       setTestResult('❌ Weglot n\'est pas disponible');
@@ -44,7 +44,7 @@ export default function WeglotTestButton() {
         window.Weglot.switchTo('de');
         setTestResult('✅ Traduction en allemand activée');
       } catch (error) {
-        setTestResult('❌ Erreur: ' + error.message);
+        setTestResult('❌ Erreur: ' + (error instanceof Error ? error.message : 'Erreur inconnue'));
       }
     } else {
       setTestResult('❌ Weglot n\'est pas disponible');
@@ -94,9 +94,5 @@ export default function WeglotTestButton() {
   );
 }
 
-declare global {
-  interface Window {
-    Weglot: any;
-  }
-}
+// Types Weglot déclarés ailleurs dans le projet
 

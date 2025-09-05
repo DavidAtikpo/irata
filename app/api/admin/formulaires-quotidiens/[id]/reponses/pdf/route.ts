@@ -416,7 +416,7 @@ function generatePDFHTML(formulaire: any) {
       <!-- En-tête professionnel -->
               <div class="header">
           <div class="logo">
-            <img src="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/logo.png" alt="CI.DES Logo" style="max-width: 100%; max-height: 100%;">
+            <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="max-width: 100%; max-height: 100%;">
           </div>
         <table class="header-table">
           <tr>
@@ -525,7 +525,7 @@ function generatePDFHTML(formulaire: any) {
             <div>Page <span class="page"></span> sur <span class="topage"></span></div>
           </div>
           <div class="footer-right">
-            <img src="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/logo.png" alt="CI.DES" class="footer-logo">
+            <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES" class="footer-logo">
           </div>
         </div>
       </div>

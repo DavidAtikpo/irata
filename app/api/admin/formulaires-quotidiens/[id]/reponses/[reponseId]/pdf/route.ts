@@ -520,7 +520,7 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCo
       <!-- En-tête professionnel -->
               <div class="header">
           <div class="logo">
-            <img src="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/logo.png" alt="CI.DES Logo" style="max-width: 100%; max-height: 100%;">
+            <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="max-width: 100%; max-height: 100%;">
           </div>
         <table class="header-table">
           <tr>
