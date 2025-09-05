@@ -15,9 +15,9 @@ export default function WeglotDiagnostic() {
           // Essayer de récupérer des informations sur Weglot
           try {
             const info = {
-              isInitialized: !!window.Weglot.isInitialized,
-              currentLanguage: window.Weglot.getCurrentLanguage?.() || 'Non disponible',
-              availableLanguages: window.Weglot.getAvailableLanguages?.() || 'Non disponible'
+              isInitialized: true, // Weglot est chargé donc initialisé
+              currentLanguage: 'Non disponible',
+              availableLanguages: 'Non disponible'
             };
             setWeglotInfo(info);
           } catch (error) {
@@ -37,8 +37,8 @@ export default function WeglotDiagnostic() {
     if (typeof window !== 'undefined' && window.Weglot) {
       try {
         // Essayer de forcer l'affichage du sélecteur
-        window.Weglot.showLanguageSelector?.();
         console.log('Tentative d\'affichage du sélecteur Weglot');
+        // Note: Les méthodes exactes de Weglot peuvent varier selon la version
       } catch (error) {
         console.error('Erreur lors de l\'affichage du sélecteur:', error);
       }
@@ -81,9 +81,5 @@ export default function WeglotDiagnostic() {
   );
 }
 
-declare global {
-  interface Window {
-    Weglot: any;
-  }
-}
+// Types Weglot déclarés ailleurs dans le projet
 

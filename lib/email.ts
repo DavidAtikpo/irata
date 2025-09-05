@@ -106,7 +106,7 @@ export async function sendFormulaireValidationNotification(
         </div>
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/formulaires-quotidiens" 
+          <a href="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/formulaires-quotidiens" 
              style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
             📋 Accéder au formulaire
           </a>
@@ -292,7 +292,7 @@ export async function sendWelcomeEmail({
         </div>
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/user/dashboard" 
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://www.a-finpart.com'}/user/dashboard" 
              style="background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
             Accéder à mon Dashboard
           </a>
@@ -379,7 +379,7 @@ export async function sendInvoicePaymentConfirmationEmail(
         </div>
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/invoice" 
+          <a href="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/invoice" 
              style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
             📊 Voir mes factures
           </a>
