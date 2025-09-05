@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "./components/AuthProvider";
+import WeglotScript from "./components/WeglotScript";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -76,28 +77,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <head>
-        <script src="https://cdn.weglot.com/weglot.min.js"></script>
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            // Attendre que React soit complètement hydraté avant d'initialiser Weglot
-            window.addEventListener('load', function() {
-              setTimeout(function() {
-                if (typeof Weglot !== 'undefined') {
-                  Weglot.initialize({
-                    api_key: 'wg_e97ec5714272b275569ce52f31c49ce26',
-                    // Désactiver la traduction automatique au chargement
-                    auto_switch: false,
-                    // Exclure explicitement les éléments de navigation
-                    excluded_elements: ['.no-translate', '[data-wg-notranslate]', 'nav', 'header']
-                  });
-                }
-              }, 1000); // Attendre 1 seconde après le chargement complet
-            });
-          `
-        }} />
-      </head>
       <body className={inter.className} suppressHydrationWarning>
+        <WeglotScript />
         <AuthProvider>
           <div className="min-h-screen flex flex-col">
             <main className="flex-grow">

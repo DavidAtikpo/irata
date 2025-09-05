@@ -89,9 +89,3 @@ export default function LanguageSelector({ className = '' }: LanguageSelectorPro
   );
 }
 
-// Déclaration des types pour TypeScript
-declare global {
-  interface Window {
-    Weglot: any;
-  }
-}
