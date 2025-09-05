@@ -128,71 +128,105 @@ export async function GET(
     // Générer le HTML pour le PDF avec les scores
     const html = generateSingleResponsePDFHTML(formulaire, reponse, reponsesCorrigees, totalPoints, pointsMax, moyenne);
 
-    // Générer le PDF avec Puppeteer
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
-    await page.setContent(html);
+    // Vérifier si Puppeteer est disponible (production vs développement)
+    let pdf: Buffer | Uint8Array;
     
-    // Attendre que le contenu soit chargé
-    await page.waitForSelector('.question', { timeout: 5000 }).catch(() => {});
-    
-    // Utiliser l'URL du logo directement pour éviter les problèmes d'import en production
-    const logoUrl = `${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png`;
-    
-    // Calculer le nombre de pages approximatif
-    const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
-    const pageHeight = 1123; // Hauteur A4 en pixels (297mm)
-    const totalPages = Math.ceil(bodyHeight / pageHeight);
-    
-    // Utiliser les options de numérotation de Puppeteer
-    const pdf = await page.pdf({
-      format: 'A4',
-      landscape: false, // Changement en portrait
-      margin: {
-        top: '15mm',
-        right: '15mm',
-        bottom: '25mm', // Augmenté pour le footer
-        left: '15mm'
-      },
-      printBackground: true,
-      displayHeaderFooter: true, // Activer le header/footer de Puppeteer
-      headerTemplate: '<div></div>', // Header vide
-      footerTemplate: `
-        <div style="font-size: 10px; color: #6b7280; text-align: center; width: 90%; padding: 10px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-weight: 500; margin-left: 70px;">CI.DES - Reponse stagiaire</div>
-            <div style="text-align: center;">
-              <div>CI.DES sasu · Capital 2 500 Euros</div>
-              <div>SIRET : 87840789900011 · VAT : FR71878407899</div>
-              <div>Page <span class="pageNumber"></span> sur <span class="totalPages"></span></div>
+    try {
+      // Générer le PDF avec Puppeteer
+      const browser = await puppeteer.launch({ 
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'] // Arguments pour la production
+      });
+      const page = await browser.newPage();
+      await page.setContent(html);
+      
+      // Attendre que le contenu soit chargé
+      await page.waitForSelector('.question', { timeout: 5000 }).catch(() => {});
+      
+      // Utiliser l'URL du logo directement pour éviter les problèmes d'import en production
+      const logoUrl = `${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png`;
+      
+      // Calculer le nombre de pages approximatif
+      const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
+      const pageHeight = 1123; // Hauteur A4 en pixels (297mm)
+      const totalPages = Math.ceil(bodyHeight / pageHeight);
+      
+      // Utiliser les options de numérotation de Puppeteer
+      pdf = await page.pdf({
+        format: 'A4',
+        landscape: false, // Changement en portrait
+        margin: {
+          top: '15mm',
+          right: '15mm',
+          bottom: '25mm', // Augmenté pour le footer
+          left: '15mm'
+        },
+        printBackground: true,
+        displayHeaderFooter: true, // Activer le header/footer de Puppeteer
+        headerTemplate: '<div></div>', // Header vide
+        footerTemplate: `
+          <div style="font-size: 10px; color: #6b7280; text-align: center; width: 90%; padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-weight: 500; margin-left: 70px;">CI.DES - Reponse stagiaire</div>
+              <div style="text-align: center;">
+                <div>CI.DES sasu · Capital 2 500 Euros</div>
+                <div>SIRET : 87840789900011 · VAT : FR71878407899</div>
+                <div>Page <span class="pageNumber"></span> sur <span class="totalPages"></span></div>
+              </div>
+              <img src="${logoUrl}" style="width: 44px; height: 44px; object-fit: contain;" alt="CI.DES">
             </div>
-            <img src="${logoUrl}" style="width: 44px; height: 44px; object-fit: contain;" alt="CI.DES">
           </div>
-        </div>
-      `
-    }).catch(async (error) => {
-      console.error('Erreur lors de la génération du PDF avec footer:', error);
-      try {
-        // Essayer sans le footer si il y a un problème
-        return await page.pdf({
-          format: 'A4',
-          landscape: false,
-          margin: {
-            top: '15mm',
-            right: '15mm',
-            bottom: '15mm',
-            left: '15mm'
-          },
-          printBackground: true,
-          displayHeaderFooter: false
-        });
-      } catch (fallbackError) {
-        console.error('Erreur lors de la génération du PDF sans footer:', fallbackError);
-        throw new Error(`Erreur de génération PDF: ${fallbackError instanceof Error ? fallbackError.message : 'Erreur inconnue'}`);
-      }
-    });
+        `
+      }).catch(async (error) => {
+        console.error('Erreur lors de la génération du PDF avec footer:', error);
+        try {
+          // Essayer sans le footer si il y a un problème
+          return await page.pdf({
+            format: 'A4',
+            landscape: false,
+            margin: {
+              top: '15mm',
+              right: '15mm',
+              bottom: '15mm',
+              left: '15mm'
+            },
+            printBackground: true,
+            displayHeaderFooter: false
+          });
+        } catch (fallbackError) {
+          console.error('Erreur lors de la génération du PDF sans footer:', fallbackError);
+          throw new Error(`Erreur de génération PDF: ${fallbackError instanceof Error ? fallbackError.message : 'Erreur inconnue'}`);
+        }
+      });
 
-    await browser.close();
+      await browser.close();
+    } catch (puppeteerError) {
+      console.error('Puppeteer non disponible, génération HTML alternative:', puppeteerError);
+      
+      // Fallback: retourner le HTML pour impression côté client
+      const stagiaireNom = `${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}`.trim();
+      const sessionLabel = getSessionLabel(formulaire.session).replace(/[^a-zA-Z0-9]/g, '-');
+      
+      // Ajouter un message d'information au début du HTML
+      const htmlWithInfo = html.replace(
+        '<!-- Instructions d\'impression -->',
+        `<!-- Instructions d\'impression -->
+        <div style="background-color: #fee2e2; border: 2px solid #dc2626; border-radius: 8px; padding: 16px; margin-bottom: 20px; text-align: center;">
+          <h2 style="color: #dc2626; margin: 0 0 8px 0;">⚠️ Mode Impression</h2>
+          <p style="color: #991b1b; margin: 0; font-size: 14px;">
+            Le PDF automatique n'est pas disponible sur ce serveur. 
+            <strong>Utilisez Ctrl+P pour imprimer ce document en PDF.</strong>
+          </p>
+        </div>`
+      );
+      
+      return new NextResponse(htmlWithInfo, {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Content-Disposition': `attachment; filename="session-${sessionLabel}-reponse-${stagiaireNom}-${new Date().toISOString().split('T')[0]}.html"`
+        }
+      });
+    }
 
     // Retourner le PDF
     const stagiaireNom = `${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}`.trim();
@@ -393,6 +427,29 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCo
             page-break-inside: avoid;
             break-inside: avoid;
           }
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        }
+        
+        /* Instructions d'impression */
+        .print-instructions {
+          background-color: #fef3c7;
+          border: 1px solid #f59e0b;
+          border-radius: 6px;
+          padding: 12px;
+          margin-bottom: 20px;
+          font-size: 12px;
+        }
+        .print-instructions h3 {
+          margin: 0 0 8px 0;
+          color: #92400e;
+          font-size: 14px;
+        }
+        .print-instructions p {
+          margin: 4px 0;
+          color: #92400e;
         }
         
         /* Résumé des scores */
@@ -517,6 +574,16 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCo
       </style>
     </head>
     <body>
+      <!-- Instructions d'impression -->
+      <div class="print-instructions">
+        <h3>🖨️ Instructions d'impression</h3>
+        <p><strong>Pour imprimer ce document :</strong></p>
+        <p>1. Appuyez sur Ctrl+P (Windows) ou Cmd+P (Mac)</p>
+        <p>2. Sélectionnez "Plus de paramètres" → "Options" → "Arrière-plans"</p>
+        <p>3. Choisissez "Format A4" et "Portrait"</p>
+        <p>4. Cliquez sur "Imprimer"</p>
+      </div>
+      
       <!-- En-tête professionnel -->
               <div class="header">
           <div class="logo">
