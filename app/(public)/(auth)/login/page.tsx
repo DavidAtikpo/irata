@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, Suspense } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -12,6 +12,9 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Récupérer l'URL de callback si elle existe
+  const callbackUrl = searchParams.get('callbackUrl');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,25 +30,78 @@ function LoginForm() {
 
       if (result?.error) {
         setError(result.error);
-      } else {
-        // Récupérer la session pour obtenir le rôle
-        const response = await fetch('/api/auth/session');
-        const session = await response.json();
+      } else if (result?.ok) {
+        console.log('✅ Connexion réussie, redirection en cours...');
+        console.log('🔍 URL de callback brute:', callbackUrl);
+        console.log('🔍 Type de callbackUrl:', typeof callbackUrl);
+        console.log('🔍 CallbackUrl est null/undefined:', callbackUrl === null || callbackUrl === undefined);
         
-        // Rediriger en fonction du rôle
-        if (session?.user?.role === 'ADMIN') {
-          router.push('/admin/dashboard');
-        } else if (session?.user?.role === 'USER') {
-          router.push('/dashboard');
-        } else if (session?.user?.role === 'GESTIONNAIRE') {
-          router.push('/gestionnaire/dashboard');
+        // Utiliser une approche plus simple : rediriger directement et laisser le middleware gérer
+        if (callbackUrl && callbackUrl !== 'null' && callbackUrl !== 'undefined') {
+          const decodedCallbackUrl = decodeURIComponent(callbackUrl);
+          console.log('URL de callback décodée:', decodedCallbackUrl);
+          
+          let pathname = '';
+          
+          // Gérer les URLs complètes et les chemins relatifs
+          if (decodedCallbackUrl.startsWith('http')) {
+            try {
+              const url = new URL(decodedCallbackUrl);
+              pathname = url.pathname;
+              console.log('Chemin extrait de l\'URL complète:', pathname);
+            } catch (error) {
+              console.warn('URL de callback invalide:', decodedCallbackUrl);
+              pathname = decodedCallbackUrl;
+            }
+          } else {
+            // C'est déjà un chemin relatif
+            pathname = decodedCallbackUrl;
+            console.log('Chemin relatif détecté:', pathname);
+          }
+          
+          console.log('🚀 Redirection vers l\'URL de callback:', pathname);
+          router.push(pathname);
         } else {
-          router.push('/');
+          // Pas d'URL de callback, récupérer la session et rediriger selon le rôle
+          console.log('🚀 Pas d\'URL de callback valide, récupération de la session...');
+          
+          // Attendre un peu pour que la session soit mise à jour
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          try {
+            const response = await fetch('/api/auth/session');
+            const session = await response.json();
+            
+            console.log('Session récupérée pour redirection:', session);
+            
+            if (session?.user?.role) {
+              let redirectUrl = '/';
+              
+              if (session.user.role === 'ADMIN') {
+                redirectUrl = '/admin/dashboard';
+              } else if (session.user.role === 'USER') {
+                redirectUrl = '/user/dashboard';
+              } else if (session.user.role === 'GESTIONNAIRE') {
+                redirectUrl = '/gestionnaire/dashboard';
+              }
+              
+              console.log('🚀 Redirection selon le rôle vers:', redirectUrl);
+              window.location.href = redirectUrl;
+            } else {
+              console.log('🚀 Rôle non trouvé, redirection vers la page d\'accueil');
+              window.location.href = '/';
+            }
+          } catch (error) {
+            console.error('Erreur lors de la récupération de la session:', error);
+            window.location.href = '/';
+          }
         }
-        router.refresh();
+      } else {
+        setError('Erreur de connexion inattendue');
       }
     } catch (error) {
-      setError('Une erreur est survenue lors de la connexion');
+      console.error('Erreur lors de la connexion:', error);
+      setError('Une erreur est survenue lors de la connexion. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }

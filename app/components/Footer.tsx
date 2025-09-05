@@ -61,10 +61,10 @@ const Footer = () => {
           
           {/* Copyright centré */}
           <div className="text-center lg:flex-1">
-            <span className="text-gray-300 text-xs sm:text-sm">
-              © 2020 CI.DES - Formation Cordiste IRATA
+            <span className="text-gray-300 text-xs sm:text-sm" data-wg-notranslate>
+              © 2025 CI.DES - Formation Cordiste IRATA
             </span>
-            <p className="text-gray-400 text-xs mt-1">
+            <p className="text-gray-400 text-xs mt-1" data-wg-notranslate>
               Nouvelle-Aquitaine, France
             </p>
           </div>

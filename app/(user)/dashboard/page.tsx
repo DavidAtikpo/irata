@@ -63,10 +63,14 @@ export default function UserDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    } else if (status === 'authenticated' && session?.user?.role === 'USER') {
       fetchStats();
+    } else if (status === 'authenticated' && session?.user?.role !== 'USER') {
+      router.push('/');
     }
-  }, [status]);
+  }, [status, session, router]);
 
   const fetchStats = async () => {
     try {

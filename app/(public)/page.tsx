@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import React from 'react';
 import Image from 'next/image';
 import LanguageSelector from '../components/LanguageSelector';
+import { useSession } from 'next-auth/react';
 
 const sessions = [
   { annee: '2025', mois: 'janvier', dates: 'Non programmé' },
@@ -186,6 +187,8 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
 
 function HomeContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const sessionParam = searchParams.get('session');
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const rotatingMessages = [
@@ -231,6 +234,8 @@ function HomeContent() {
       description: 'France Nouvelle-Aquitaine'
     }
   ];
+
+  // Note: La redirection des utilisateurs connectés est maintenant gérée dans la page de connexion
 
   useEffect(() => {
     if (sessionParam) {
