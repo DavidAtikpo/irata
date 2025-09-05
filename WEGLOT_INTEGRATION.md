@@ -34,7 +34,7 @@ apiKey: 'wg_e97ec5714272b275569ce52f31c49ce26'
 
 ### Langues supportées
 - **Langue originale** : Français (fr)
-- **Langues de destination** : Anglais (en)
+- **Langues de destination** : Anglais (en), Portugais (pt), Allemand (de)
 
 ### Options configurées
 - Détection automatique de la langue : Activée
@@ -90,7 +90,7 @@ Pour tester l'intégration :
 Éditez `lib/weglot.ts` :
 
 ```typescript
-destinationLanguages: ['en', 'es', 'de'], // Ajouter d'autres langues
+destinationLanguages: ['en', 'pt', 'de', 'es', 'it'], // Ajouter d'autres langues
 ```
 
 ### Changer la position du sélecteur

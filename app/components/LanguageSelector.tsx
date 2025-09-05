@@ -15,8 +15,12 @@ export default function LanguageSelector({ className = '' }: LanguageSelectorPro
     const checkWeglot = () => {
       if (typeof window !== 'undefined' && window.Weglot) {
         setIsWeglotLoaded(true);
-        // Détecter la langue actuelle via l'URL ou le localStorage
-        const currentLang = window.location.pathname.startsWith('/en') ? 'en' : 'fr';
+        // Détecter la langue actuelle via l'URL
+        const path = window.location.pathname;
+        let currentLang = 'fr';
+        if (path.startsWith('/en')) currentLang = 'en';
+        else if (path.startsWith('/pt')) currentLang = 'pt';
+        else if (path.startsWith('/de')) currentLang = 'de';
         setCurrentLanguage(currentLang);
       } else {
         setTimeout(checkWeglot, 100);
@@ -39,10 +43,10 @@ export default function LanguageSelector({ className = '' }: LanguageSelectorPro
 
   return (
     <div className={`language-selector ${className}`}>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-1">
         <button
           onClick={() => switchLanguage('fr')}
-          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
             currentLanguage === 'fr'
               ? 'bg-blue-600 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -52,13 +56,33 @@ export default function LanguageSelector({ className = '' }: LanguageSelectorPro
         </button>
         <button
           onClick={() => switchLanguage('en')}
-          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
             currentLanguage === 'en'
               ? 'bg-blue-600 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
           🇬🇧 EN
+        </button>
+        <button
+          onClick={() => switchLanguage('pt')}
+          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+            currentLanguage === 'pt'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          🇵🇹 PT
+        </button>
+        <button
+          onClick={() => switchLanguage('de')}
+          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+            currentLanguage === 'de'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          🇩🇪 DE
         </button>
       </div>
     </div>
@@ -68,9 +92,6 @@ export default function LanguageSelector({ className = '' }: LanguageSelectorPro
 // Déclaration des types pour TypeScript
 declare global {
   interface Window {
-    Weglot: {
-      initialize: (config: any) => void;
-      switchTo: (language: string) => void;
-    };
+    Weglot: any;
   }
 }
