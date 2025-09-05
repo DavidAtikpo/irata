@@ -80,7 +80,7 @@ function LoginForm() {
               if (session.user.role === 'ADMIN') {
                 redirectUrl = '/admin/dashboard';
               } else if (session.user.role === 'USER') {
-                redirectUrl = '/user/dashboard';
+                redirectUrl = '/dashboard';
               } else if (session.user.role === 'GESTIONNAIRE') {
                 redirectUrl = '/gestionnaire/dashboard';
               }
