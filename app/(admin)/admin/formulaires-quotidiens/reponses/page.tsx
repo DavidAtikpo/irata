@@ -182,19 +182,23 @@ export default function ReponsesFormulairesQuotidiensPage() {
       const contentType = response.headers.get('content-type');
       
       if (contentType?.includes('text/html')) {
-        // Si c'est du HTML, l'ouvrir dans un nouvel onglet
+        // Si c'est du HTML, le télécharger comme fichier
         const htmlContent = await response.text();
-        const newWindow = window.open('', '_blank');
-        if (newWindow) {
-          newWindow.document.write(htmlContent);
-          newWindow.document.close();
-          
-          addNotification(
-            'NEW_REPONSE',
-            `Document HTML de la réponse de ${reponse.user.prenom} ${reponse.user.nom} ouvert dans un nouvel onglet. Utilisez Ctrl+P pour l'imprimer en PDF.`,
-            '/admin/formulaires-quotidiens/reponses'
-          );
-        }
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `reponse-${reponse.user.prenom}-${reponse.user.nom}-${formulaire.titre}.html`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        addNotification(
+          'NEW_REPONSE',
+          `Document HTML de la réponse de ${reponse.user.prenom} ${reponse.user.nom} téléchargé. Ouvrez le fichier et utilisez Ctrl+P pour l'imprimer en PDF.`,
+          '/admin/formulaires-quotidiens/reponses'
+        );
       } else {
         // Si c'est un PDF, le télécharger normalement
         const pdfBlob = await response.blob();
