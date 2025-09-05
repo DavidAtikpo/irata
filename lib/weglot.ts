@@ -2,7 +2,7 @@
 export const WEGLOT_CONFIG = {
   apiKey: 'wg_e97ec5714272b275569ce52f31c49ce26',
   originalLanguage: 'fr',
-  destinationLanguages: ['en'],
+  destinationLanguages: ['en', 'pt', 'de'],
   // Configuration pour Next.js
   strategy: 'afterInteractive' as const,
   // Options avancées Weglot

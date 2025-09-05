@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function SearchIcon() {
   return (
@@ -24,6 +24,19 @@ const navLinks = [
 export default function Header() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isWeglotReady, setIsWeglotReady] = useState(false);
+
+  useEffect(() => {
+    // Attendre que Weglot soit prêt pour éviter les erreurs d'hydratation
+    const checkWeglot = () => {
+      if (typeof window !== 'undefined' && window.Weglot) {
+        setIsWeglotReady(true);
+      } else {
+        setTimeout(checkWeglot, 100);
+      }
+    };
+    checkWeglot();
+  }, []);
 
   return (
     <header className="bg-white shadow sticky top-0 z-50">
@@ -49,7 +62,8 @@ export default function Header() {
               <div key={link.href} className="relative">
                 <Link
                   href={link.href}
-                  className="uppercase font-semibold text-black tracking-wide px-2 text-sm lg:text-[15px] hover:text-blue-600 transition-colors duration-200"
+                  className="uppercase font-semibold text-black tracking-wide px-2 text-sm lg:text-[15px] hover:text-blue-600 transition-colors duration-200 no-translate"
+                  data-wg-notranslate="true"
                 >
                   {link.label}
                 </Link>
@@ -89,19 +103,21 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`block px-3 py-2 rounded-md text-base font-medium uppercase tracking-wide transition-colors duration-200 ${
+                  className={`block px-3 py-2 rounded-md text-base font-medium uppercase tracking-wide transition-colors duration-200 no-translate ${
                     pathname === link.href
                       ? 'text-blue-600 bg-blue-50'
                       : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
+                  data-wg-notranslate="true"
                 >
                   {link.label}
                 </Link>
               ))}
               <button 
                 aria-label="Recherche" 
-                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200"
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200 no-translate"
+                data-wg-notranslate="true"
               >
                 <div className="flex items-center">
                   <SearchIcon />
@@ -114,4 +130,11 @@ export default function Header() {
       </nav>
     </header>
   );
+}
+
+// Déclaration des types pour TypeScript
+declare global {
+  interface Window {
+    Weglot: any;
+  }
 }
