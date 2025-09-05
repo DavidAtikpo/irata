@@ -223,7 +223,7 @@ export async function GET(
       return new NextResponse(htmlWithInfo, {
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
-          'Content-Disposition': `attachment; filename="session-${sessionLabel}-reponse-${stagiaireNom}-${new Date().toISOString().split('T')[0]}.html"`
+          'Content-Disposition': `inline; filename="session-${sessionLabel}-reponse-${stagiaireNom}-${new Date().toISOString().split('T')[0]}.html"`
         }
       });
     }
