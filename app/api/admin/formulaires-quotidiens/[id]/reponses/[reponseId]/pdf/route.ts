@@ -395,8 +395,8 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCo
           line-height: 1.4;
           color: #333;
           margin: 0;
-          padding: 15px;
-          font-size: 11px;
+          padding: 8px;
+          font-size: 12px;
         }
         
         /* En-tête professionnel */
