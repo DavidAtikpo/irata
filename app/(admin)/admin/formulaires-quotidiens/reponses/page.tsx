@@ -81,6 +81,8 @@ export default function ReponsesFormulairesQuotidiensPage() {
     meilleurScore: 0,
     tauxReussite: 0
   });
+  const [downloadingReponses, setDownloadingReponses] = useState<Set<string>>(new Set());
+  const [downloadingAll, setDownloadingAll] = useState(false);
 
   const { addNotification } = useNotifications();
 
@@ -171,6 +173,9 @@ export default function ReponsesFormulairesQuotidiensPage() {
       const formulaire = formulaires.find(f => f.id === reponse.formulaireId);
       if (!formulaire) return;
 
+      // Ajouter l'ID de la réponse à l'état de chargement
+      setDownloadingReponses(prev => new Set(prev).add(reponse.id));
+
       // Utiliser la route PDF existante
       const response = await fetch(`/api/admin/formulaires-quotidiens/${formulaire.id}/reponses/${reponse.id}/pdf`);
       
@@ -254,6 +259,13 @@ export default function ReponsesFormulairesQuotidiensPage() {
         `❌ Échec du téléchargement pour ${reponse.user.prenom} ${reponse.user.nom}: ${errorMessage}`,
         '/admin/formulaires-quotidiens/reponses'
       );
+    } finally {
+      // Retirer l'ID de la réponse de l'état de chargement
+      setDownloadingReponses(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(reponse.id);
+        return newSet;
+      });
     }
   };
 
@@ -390,6 +402,8 @@ export default function ReponsesFormulairesQuotidiensPage() {
                     const formulaire = formulaires.find(f => f.id === selectedFormulaire);
                     if (!formulaire) return;
                     
+                    setDownloadingAll(true);
+                    
                     // Utiliser la route PDF pour toutes les réponses
                     const response = await fetch(`/api/admin/formulaires-quotidiens/${formulaire.id}/reponses/pdf`);
                     
@@ -415,12 +429,28 @@ export default function ReponsesFormulairesQuotidiensPage() {
                   } catch (error) {
                     console.error('Erreur lors du téléchargement PDF:', error);
                     setError('Erreur lors de la génération du PDF de toutes les réponses');
+                  } finally {
+                    setDownloadingAll(false);
                   }
                 }}
-                className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
+                disabled={downloadingAll}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center space-x-2 ${
+                  downloadingAll
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
               >
-                <DownloadIcon className="h-4 w-4" />
-                <span>Télécharger toutes les réponses (PDF)</span>
+                {downloadingAll ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    <span>Génération...</span>
+                  </>
+                ) : (
+                  <>
+                    <DownloadIcon className="h-4 w-4" />
+                    <span>Télécharger toutes les réponses (PDF)</span>
+                  </>
+                )}
               </button>
             )}
           </div>
@@ -532,10 +562,19 @@ export default function ReponsesFormulairesQuotidiensPage() {
                         </button>
                         <button
                           onClick={() => handleDownloadReponse(reponse)}
-                          className="text-green-600 hover:text-green-900 p-1 rounded ml-2"
-                          title="Télécharger PDF"
+                          disabled={downloadingReponses.has(reponse.id)}
+                          className={`p-1 rounded ml-2 transition-colors ${
+                            downloadingReponses.has(reponse.id)
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-green-600 hover:text-green-900'
+                          }`}
+                          title={downloadingReponses.has(reponse.id) ? "Génération en cours..." : "Télécharger PDF"}
                         >
-                          <DownloadIcon className="h-4 w-4" />
+                          {downloadingReponses.has(reponse.id) ? (
+                            <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-green-600 rounded-full"></div>
+                          ) : (
+                            <DownloadIcon className="h-4 w-4" />
+                          )}
                         </button>
                       </td>
                     </tr>
@@ -684,10 +723,24 @@ export default function ReponsesFormulairesQuotidiensPage() {
                 <div className="flex space-x-3">
                   <button
                     onClick={() => handleDownloadReponse(selectedReponse)}
-                    className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                    disabled={downloadingReponses.has(selectedReponse.id)}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center ${
+                      downloadingReponses.has(selectedReponse.id)
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
                   >
-                    <DownloadIcon className="h-4 w-4 mr-2 inline" />
-                    Télécharger PDF
+                    {downloadingReponses.has(selectedReponse.id) ? (
+                      <>
+                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                        Génération...
+                      </>
+                    ) : (
+                      <>
+                        <DownloadIcon className="h-4 w-4 mr-2" />
+                        Télécharger PDF
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={() => {
