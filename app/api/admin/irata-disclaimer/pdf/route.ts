@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import { readFileSync, existsSync } from 'fs';
 
 const DATA_PATH = join(process.cwd(), 'data');

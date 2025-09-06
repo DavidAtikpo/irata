@@ -4,7 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 const DATA_PATH = join(process.cwd(), 'data');
 const TRAINEE_INDUCTION_FORMS_FILE = 'trainee-induction-forms.json';
