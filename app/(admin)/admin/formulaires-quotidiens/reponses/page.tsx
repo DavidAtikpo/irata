@@ -174,17 +174,31 @@ export default function ReponsesFormulairesQuotidiensPage() {
       // Utiliser la route PDF existante
       const response = await fetch(`/api/admin/formulaires-quotidiens/${formulaire.id}/reponses/${reponse.id}/pdf`);
       
+      // Gestion des erreurs serveur spécifiques
       if (!response.ok) {
-        throw new Error('Erreur lors de la génération du PDF');
+        if (response.status === 503) {
+          // Service indisponible (probablement Puppeteer)
+          const errorData = await response.json();
+          setError(`Service PDF indisponible: ${errorData.error || 'Erreur serveur'}`);
+          addNotification(
+            'NEW_REPONSE',
+            `❌ ${errorData.message || 'Service PDF temporairement indisponible'}. ${errorData.suggestion || 'Contactez l\'administrateur.'}`,
+            '/admin/formulaires-quotidiens/reponses'
+          );
+          return;
+        } else {
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+        }
       }
 
       // Vérifier le type de contenu
       const contentType = response.headers.get('content-type');
+      const isFallback = response.headers.get('X-PDF-Fallback') === 'true';
       
-      if (contentType?.includes('text/html')) {
-        // Si c'est du HTML, le télécharger comme fichier
+      if (contentType?.includes('text/html') || isFallback) {
+        // Si c'est du HTML (mode fallback), le télécharger comme fichier
         const htmlContent = await response.text();
-        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const blob = new Blob([htmlContent], { type: 'text/html; charset=utf-8' });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -196,12 +210,17 @@ export default function ReponsesFormulairesQuotidiensPage() {
         
         addNotification(
           'NEW_REPONSE',
-          `Document HTML de la réponse de ${reponse.user.prenom} ${reponse.user.nom} téléchargé. Ouvrez le fichier et utilisez Ctrl+P pour l'imprimer en PDF.`,
+          `⚠️ PDF automatique indisponible. Document HTML téléchargé pour ${reponse.user.prenom} ${reponse.user.nom}. Ouvrez le fichier et utilisez Ctrl+P pour l'imprimer en PDF.`,
           '/admin/formulaires-quotidiens/reponses'
         );
-      } else {
+      } else if (contentType?.includes('application/pdf')) {
         // Si c'est un PDF, le télécharger normalement
         const pdfBlob = await response.blob();
+        
+        // Vérifier que le PDF n'est pas vide
+        if (pdfBlob.size === 0) {
+          throw new Error('Le fichier PDF généré est vide');
+        }
         
         // Créer et télécharger le fichier PDF
         const url = window.URL.createObjectURL(pdfBlob);
@@ -217,13 +236,24 @@ export default function ReponsesFormulairesQuotidiensPage() {
 
         addNotification(
           'NEW_REPONSE',
-          `PDF de la réponse de ${reponse.user.prenom} ${reponse.user.nom} téléchargé avec succès`,
+          `✅ PDF de la réponse de ${reponse.user.prenom} ${reponse.user.nom} téléchargé avec succès`,
           '/admin/formulaires-quotidiens/reponses'
         );
+      } else {
+        // Type de contenu inattendu
+        console.warn('Type de contenu inattendu:', contentType);
+        throw new Error(`Type de fichier inattendu: ${contentType}`);
       }
     } catch (error) {
       console.error('Erreur lors du téléchargement PDF:', error);
-      setError('Erreur lors de la génération du PDF');
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      setError(`Erreur lors de la génération du PDF: ${errorMessage}`);
+      
+      addNotification(
+        'NEW_REPONSE',
+        `❌ Échec du téléchargement pour ${reponse.user.prenom} ${reponse.user.nom}: ${errorMessage}`,
+        '/admin/formulaires-quotidiens/reponses'
+      );
     }
   };
 

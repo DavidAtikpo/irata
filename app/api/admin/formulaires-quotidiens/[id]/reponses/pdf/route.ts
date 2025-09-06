@@ -86,11 +86,30 @@ export async function GET(
       margin: {
         top: '15mm',
         right: '15mm',
-        bottom: '25mm', // Augmenté pour le footer
+        bottom: '30mm', // Augmenté pour le footer
         left: '15mm'
       },
       printBackground: true,
-      displayHeaderFooter: false // On gère nous-mêmes le header/footer
+      displayHeaderFooter: true,
+      headerTemplate: '<div></div>', // Header vide
+      footerTemplate: `
+        <div style="font-size: 9px; color: #6b7280; text-align: center; width: 100%; padding: 5px 15mm; background-color: white; border-top: 1px solid #e5e7eb;">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 180mm; margin: 0 auto;">
+            <div style="flex: 1; font-weight: 500;">
+              CI.DES - Réponses Formulaires
+            </div>
+            <div style="flex: 2; text-align: center;">
+              <div style="margin: 1px 0;">CI.DES sasu · Capital 2 500 Euros</div>
+              <div style="margin: 1px 0;">SIRET : 87840789900011 · VAT : FR71878407899</div>
+              <div style="margin: 1px 0;">Page <span class="pageNumber"></span> sur <span class="totalPages"></span></div>
+            </div>
+            <div style="flex: 1; text-align: right; display: flex; align-items: center; justify-content: flex-end;">
+              <span>© 2025 CI.DES</span>
+              <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" style="width: 20px; height: 20px; object-fit: contain; margin-left: 8px;" onerror="this.style.display='none';">
+            </div>
+          </div>
+        </div>
+      `
     });
 
     await browser.close();
@@ -310,12 +329,6 @@ function generatePDFHTML(formulaire: any) {
           border: 1px solid #e5e7eb;
         }
         
-        /* Règles de pagination */
-        @page {
-          margin: 15mm 15mm 25mm 15mm;
-          size: A4;
-        }
-        
         /* Éviter les coupures dans les éléments importants */
         h1, h2, h3, h4 {
           page-break-after: avoid;
@@ -371,44 +384,113 @@ function generatePDFHTML(formulaire: any) {
           font-size: 10px;
         }
         
-        /* Pied de page */
+        /* Pied de page avec @page pour répétition sur chaque page */
+        @page {
+          margin: 15mm 15mm 25mm 15mm;
+          size: A4 portrait;
+          
+          @bottom-center {
+            content: "Page " counter(page) " sur " counter(pages);
+            font-size: 10px;
+            color: #6b7280;
+          }
+          
+          @bottom-left {
+            content: "CI.DES - Réponses Formulaires";
+            font-size: 9px;
+            font-weight: 500;
+            color: #6b7280;
+          }
+          
+          @bottom-right {
+            content: "© 2025 CI.DES";
+            font-size: 9px;
+            color: #6b7280;
+          }
+        }
+        
+        /* Pied de page fixe pour les navigateurs qui supportent position: fixed */
         .footer {
           position: fixed;
           bottom: 0;
           left: 0;
           right: 0;
           background-color: white;
-          padding: 10px 15px;
+          padding: 8px 15mm;
           border-top: 1px solid #e5e7eb;
           font-size: 9px;
           color: #6b7280;
+          z-index: 1000;
         }
+        
         .footer-content {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          max-width: 180mm;
+          margin: 0 auto;
         }
+        
         .footer-left {
           font-weight: 500;
+          flex: 1;
         }
+        
         .footer-center {
           text-align: center;
+          flex: 2;
         }
+        
         .footer-center div {
           margin: 1px 0;
+          line-height: 1.2;
         }
+        
         .footer-right {
           display: flex;
           align-items: center;
+          justify-content: flex-end;
+          flex: 1;
         }
+        
         .footer-logo {
           width: 24px;
           height: 24px;
           object-fit: contain;
+          margin-left: 8px;
         }
+        
         /* Espace pour le footer fixe */
         body {
-          padding-bottom: 80px;
+          padding-bottom: 60px;
+          counter-reset: page;
+        }
+        
+        /* Styles pour l'impression */
+        @media print {
+          .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white !important;
+            padding: 8px 15mm;
+            border-top: 1px solid #e5e7eb;
+            font-size: 9px;
+            color: #6b7280 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          
+          body {
+            padding-bottom: 60px !important;
+          }
+          
+          /* Forcer l'affichage des couleurs */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       </style>
     </head>

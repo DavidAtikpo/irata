@@ -13,6 +13,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string; reponseId: string }> }
 ) {
   try {
+    console.log('=== Début génération PDF ===');
+    console.log('Environnement:', process.env.NODE_ENV);
+    console.log('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
+    console.log('NEXT_PUBLIC_BASE_URL:', process.env.NEXT_PUBLIC_BASE_URL);
+    
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== 'ADMIN') {
@@ -131,79 +136,184 @@ export async function GET(
     // Vérifier si Puppeteer est disponible (production vs développement)
     let pdf: Buffer | Uint8Array;
     
+    // Test rapide de disponibilité de Puppeteer
+    console.log('Test de disponibilité de Puppeteer...');
     try {
-      // Générer le PDF avec Puppeteer
-      const browser = await puppeteer.launch({ 
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'] // Arguments pour la production
+      // Vérifier que le module Puppeteer est bien chargé
+      if (!puppeteer || typeof puppeteer.launch !== 'function') {
+        throw new Error('Module Puppeteer non disponible');
+      }
+    } catch (moduleError) {
+      console.error('❌ Module Puppeteer non disponible:', moduleError);
+      // Passer directement au mode HTML
+      const stagiaireNom = `${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}`.trim();
+      const sessionLabel = getSessionLabel(formulaire.session).replace(/[^a-zA-Z0-9]/g, '-');
+      
+      return new NextResponse(html, {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Content-Disposition': `attachment; filename="session-${sessionLabel}-reponse-${stagiaireNom}-${new Date().toISOString().split('T')[0]}.html"`,
+          'X-PDF-Fallback': 'true',
+          'X-Fallback-Reason': 'Puppeteer module unavailable'
+        }
       });
+    }
+    
+    try {
+      console.log('Début génération PDF avec Puppeteer');
+      console.log('Plateforme:', process.platform);
+      console.log('Architecture:', process.arch);
+      
+      // Vérifier si nous sommes en mode de développement ou production
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      
+      // Configuration Puppeteer adaptée à l'environnement
+      const puppeteerConfig = {
+        headless: true,
+        args: isDevelopment ? [
+          '--no-sandbox'
+        ] : [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-features=VizDisplayCompositor',
+          '--no-zygote',
+          '--single-process',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding'
+        ],
+        timeout: 30000,
+        // Spécifier le chemin vers Chrome/Chromium si disponible
+        ...(process.env.PUPPETEER_EXECUTABLE_PATH && {
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH
+        })
+      };
+
+      console.log('Configuration Puppeteer:', puppeteerConfig);
+
+      // Tenter le lancement avec gestion d'erreur détaillée
+      let browser;
+      try {
+        browser = await puppeteer.launch(puppeteerConfig);
+        console.log('✅ Puppeteer browser lancé avec succès');
+      } catch (launchError) {
+        console.error('❌ Erreur de lancement Puppeteer:', launchError);
+        throw launchError;
+      }
       const page = await browser.newPage();
-      await page.setContent(html);
       
-      // Attendre que le contenu soit chargé
-      await page.waitForSelector('.question', { timeout: 5000 }).catch(() => {});
+      // Définir une User-Agent valide
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
       
-      // Utiliser l'URL du logo directement pour éviter les problèmes d'import en production
-      const logoUrl = `${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png`;
+      // Définir le contenu avec un timeout plus long
+      await page.setContent(html, { 
+        waitUntil: ['networkidle0', 'domcontentloaded'],
+        timeout: 30000 
+      });
       
-      // Calculer le nombre de pages approximatif
-      const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
-      const pageHeight = 1123; // Hauteur A4 en pixels (297mm)
-      const totalPages = Math.ceil(bodyHeight / pageHeight);
+      // Attendre que le contenu soit chargé avec un timeout plus court
+      await page.waitForSelector('body', { timeout: 5000 }).catch(() => {
+        console.log('Timeout sur waitForSelector, continuation...');
+      });
       
-      // Utiliser les options de numérotation de Puppeteer
+      // URL du logo adaptée à l'environnement
+      const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://www.a-finpart.com';
+      const logoUrl = `${baseUrl}/logo.png`;
+      
+      // Configuration PDF avec pied de page
+      console.log('Génération du PDF...');
       pdf = await page.pdf({
         format: 'A4',
-        landscape: false, // Changement en portrait
+        landscape: false,
         margin: {
           top: '15mm',
           right: '15mm',
-          bottom: '25mm', // Augmenté pour le footer
+          bottom: '30mm', // Plus d'espace pour le footer
           left: '15mm'
         },
         printBackground: true,
-        displayHeaderFooter: true, // Activer le header/footer de Puppeteer
+        displayHeaderFooter: true,
         headerTemplate: '<div></div>', // Header vide
         footerTemplate: `
-          <div style="font-size: 10px; color: #6b7280; text-align: center; width: 90%; padding: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="font-weight: 500; margin-left: 70px;">CI.DES - Reponse stagiaire</div>
-              <div style="text-align: center;">
-                <div>CI.DES sasu · Capital 2 500 Euros</div>
-                <div>SIRET : 87840789900011 · VAT : FR71878407899</div>
-                <div>Page <span class="pageNumber"></span> sur <span class="totalPages"></span></div>
+          <div style="font-size: 9px; color: #6b7280; text-align: center; width: 100%; padding: 5px 15mm; background-color: white; border-top: 1px solid #e5e7eb;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 180mm; margin: 0 auto;">
+              <div style="flex: 1; font-weight: 500;">
+                CI.DES - Réponse stagiaire
               </div>
-              <img src="${logoUrl}" style="width: 44px; height: 44px; object-fit: contain;" alt="CI.DES">
+              <div style="flex: 2; text-align: center;">
+                <div style="margin: 1px 0;">CI.DES sasu · Capital 2 500 Euros</div>
+                <div style="margin: 1px 0;">SIRET : 87840789900011 · VAT : FR71878407899</div>
+                <div style="margin: 1px 0;">Page <span class="pageNumber"></span> sur <span class="totalPages"></span></div>
+              </div>
+              <div style="flex: 1; text-align: right; display: flex; align-items: center; justify-content: flex-end;">
+                <span>© 2025 CI.DES</span>
+                <img src="${baseUrl}/logo.png" style="width: 18px; height: 18px; object-fit: contain; margin-left: 6px;" onerror="this.style.display='none';">
+              </div>
             </div>
           </div>
-        `
-      }).catch(async (error) => {
-        console.error('Erreur lors de la génération du PDF avec footer:', error);
-        try {
-          // Essayer sans le footer si il y a un problème
-          return await page.pdf({
-            format: 'A4',
-            landscape: false,
-            margin: {
-              top: '15mm',
-              right: '15mm',
-              bottom: '15mm',
-              left: '15mm'
-            },
-            printBackground: true,
-            displayHeaderFooter: false
-          });
-        } catch (fallbackError) {
-          console.error('Erreur lors de la génération du PDF sans footer:', fallbackError);
-          throw new Error(`Erreur de génération PDF: ${fallbackError instanceof Error ? fallbackError.message : 'Erreur inconnue'}`);
-        }
+        `,
+        preferCSSPageSize: true
       });
+      console.log('PDF généré, taille:', pdf.length, 'bytes');
 
       await browser.close();
+      console.log('Browser fermé');
     } catch (puppeteerError) {
-      console.error('Puppeteer non disponible, génération HTML alternative:', puppeteerError);
+      console.error('=== ERREUR PUPPETEER ===');
+      console.error('Type d\'erreur:', puppeteerError instanceof Error ? puppeteerError.name : typeof puppeteerError);
+      console.error('Message:', puppeteerError instanceof Error ? puppeteerError.message : puppeteerError);
+      console.error('Stack:', puppeteerError instanceof Error ? puppeteerError.stack : 'Pas de stack trace');
       
-      // Fallback: retourner le HTML pour impression côté client
+      // Vérifier si c'est une erreur de lancement de Puppeteer en production
+      const isLaunchError = puppeteerError instanceof Error && (
+        puppeteerError.message.includes('Failed to launch') ||
+        puppeteerError.message.includes('spawn') ||
+        puppeteerError.message.includes('ENOENT') ||
+        puppeteerError.message.includes('chrome') ||
+        puppeteerError.message.includes('chromium')
+      );
+
+      if (isLaunchError) {
+        console.log('Détection d\'une erreur de lancement Chrome/Chromium en production');
+        
+        // Au lieu de retourner une erreur 503, retourner le HTML avec instructions
+        console.log('Fallback vers HTML avec instructions pour impression');
+        const stagiaireNom = `${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}`.trim();
+        const sessionLabel = getSessionLabel(formulaire.session).replace(/[^a-zA-Z0-9]/g, '-');
+        
+        // Ajouter un message d'information au début du HTML
+        const htmlWithInstructions = html.replace(
+          '<div class="document-container">',
+          `<div class="document-container">
+          <div style="background-color: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px; margin-bottom: 20px; text-align: center; page-break-inside: avoid;">
+            <h2 style="color: #92400e; margin: 0 0 8px 0;">📄 Mode Impression Manuelle</h2>
+            <p style="color: #92400e; margin: 0; font-size: 14px;">
+              <strong>Pour obtenir un PDF :</strong><br>
+              1. Utilisez <kbd>Ctrl+P</kbd> (Windows/Linux) ou <kbd>Cmd+P</kbd> (Mac)<br>
+              2. Sélectionnez "Enregistrer au format PDF"<br>
+              3. Ajustez les marges si nécessaire
+            </p>
+            <details style="margin-top: 10px; font-size: 12px;">
+              <summary style="cursor: pointer; color: #92400e;">Détails techniques</summary>
+              <p style="color: #6b7280; margin: 5px 0;">Chrome/Chromium non disponible sur ce serveur</p>
+            </details>
+          </div>`
+        );
+        
+        return new NextResponse(htmlWithInstructions, {
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Content-Disposition': `attachment; filename="session-${sessionLabel}-reponse-${stagiaireNom}-${new Date().toISOString().split('T')[0]}.html"`,
+            'X-PDF-Fallback': 'true',
+            'X-Fallback-Reason': 'Chrome not available'
+          }
+        });
+      }
+      
+      // Pour les autres erreurs, fallback vers HTML
+      console.log('Fallback vers génération HTML pour impression manuelle');
       const stagiaireNom = `${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}`.trim();
       const sessionLabel = getSessionLabel(formulaire.session).replace(/[^a-zA-Z0-9]/g, '-');
       
@@ -212,10 +322,11 @@ export async function GET(
         '<!-- Instructions d\'impression -->',
         `<!-- Instructions d\'impression -->
         <div style="background-color: #fee2e2; border: 2px solid #dc2626; border-radius: 8px; padding: 16px; margin-bottom: 20px; text-align: center;">
-          <h2 style="color: #dc2626; margin: 0 0 8px 0;">⚠️ Mode Impression</h2>
+          <h2 style="color: #dc2626; margin: 0 0 8px 0;">⚠️ Mode Impression Manuel</h2>
           <p style="color: #991b1b; margin: 0; font-size: 14px;">
             Le PDF automatique n'est pas disponible sur ce serveur. 
-            <strong>Utilisez Ctrl+P pour imprimer ce document en PDF.</strong>
+            <strong>Utilisez Ctrl+P pour imprimer ce document en PDF.</strong><br>
+            <small>Erreur technique: ${puppeteerError instanceof Error ? puppeteerError.message : 'Erreur inconnue'}</small>
           </p>
         </div>`
       );
@@ -223,7 +334,8 @@ export async function GET(
       return new NextResponse(htmlWithInfo, {
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
-          'Content-Disposition': `attachment; filename="session-${sessionLabel}-reponse-${stagiaireNom}-${new Date().toISOString().split('T')[0]}.html"`
+          'Content-Disposition': `attachment; filename="session-${sessionLabel}-reponse-${stagiaireNom}-${new Date().toISOString().split('T')[0]}.html"`,
+          'X-PDF-Fallback': 'true'
         }
       });
     }
@@ -231,12 +343,23 @@ export async function GET(
     // Retourner le PDF
     const stagiaireNom = `${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}`.trim();
     const sessionLabel = getSessionLabel(formulaire.session).replace(/[^a-zA-Z0-9]/g, '-');
-    // Ensure BodyInit type: pass ArrayBuffer
-    const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
-    return new NextResponse(arrayBuffer, {
+    
+    // Gestion appropriée du Buffer pour NextResponse
+    let responseData: ArrayBuffer;
+    if (pdf instanceof Buffer) {
+      responseData = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength);
+    } else {
+      // Si c'est déjà un Uint8Array, le convertir en ArrayBuffer
+      responseData = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
+    }
+    
+    return new NextResponse(responseData, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="session-${sessionLabel}-reponse-${stagiaireNom}-${new Date().toISOString().split('T')[0]}.pdf"`
+        'Content-Disposition': `attachment; filename="session-${sessionLabel}-reponse-${stagiaireNom}-${new Date().toISOString().split('T')[0]}.pdf"`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       }
     });
   } catch (error) {
@@ -256,6 +379,7 @@ export async function GET(
 function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCorrigees: any[], totalPoints: number, pointsMax: number, moyenne: number) {
   const questions = Array.isArray(formulaire.questions) ? formulaire.questions : [];
   const stagiaireNom = `${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}`.trim();
+  const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://www.a-finpart.com';
   
   return `
     <!DOCTYPE html>
@@ -292,6 +416,7 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCo
           max-width: 100%;
           max-height: 100%;
           object-fit: contain;
+          fallback: none;
         }
         .header-table {
           border-collapse: collapse;
@@ -371,10 +496,38 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCo
         
 
         
-        /* Règles de pagination */
+        /* Règles de pagination avec pied de page */
         @page {
-          margin: 15mm 15mm 25mm 15mm;
-          size: A4;
+          margin: 15mm 15mm 30mm 15mm;
+          size: A4 portrait;
+          
+          @bottom-center {
+            content: "Page " counter(page) " sur " counter(pages);
+            font-size: 10px;
+            color: #6b7280;
+          }
+          
+          @bottom-left {
+            content: "CI.DES - Réponse stagiaire";
+            font-size: 9px;
+            font-weight: 500;
+            color: #6b7280;
+          }
+          
+          @bottom-right {
+            content: "© 2025 CI.DES";
+            font-size: 9px;
+            color: #6b7280;
+          }
+        }
+        
+        /* Forcer le format A4 pour l'affichage */
+        body {
+          width: 210mm;
+          min-height: 297mm;
+          margin: 0 auto;
+          padding: 15mm;
+          box-sizing: border-box;
         }
         
         /* Éviter les coupures dans les éléments importants */
@@ -430,6 +583,27 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCo
           body {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            width: 210mm !important;
+            min-height: 297mm !important;
+            margin: 0 !important;
+            padding: 15mm !important;
+          }
+        }
+        
+        /* Styles pour l'affichage à l'écran */
+        @media screen {
+          body {
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+          }
+          .document-container {
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm;
+            box-sizing: border-box;
           }
         }
         
@@ -571,13 +745,70 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCo
           margin: 3px 0;
           font-size: 10px;
         }
+        
+        /* Pied de page fixe pour HTML */
+        .footer {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background-color: white;
+          padding: 8px 15mm;
+          border-top: 1px solid #e5e7eb;
+          font-size: 9px;
+          color: #6b7280;
+          z-index: 1000;
+        }
+        
+        .footer-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          max-width: 180mm;
+          margin: 0 auto;
+        }
+        
+        .footer-left {
+          font-weight: 500;
+          flex: 1;
+        }
+        
+        .footer-center {
+          text-align: center;
+          flex: 2;
+        }
+        
+        .footer-center div {
+          margin: 1px 0;
+          line-height: 1.2;
+        }
+        
+        .footer-right {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          flex: 1;
+        }
+        
+        .footer-logo {
+          width: 20px;
+          height: 20px;
+          object-fit: contain;
+          margin-left: 8px;
+        }
+        
+        /* Espace pour le footer fixe */
+        body {
+          padding-bottom: 70px;
+        }
       </style>
     </head>
     <body>
-      <!-- En-tête professionnel -->
+      <div class="document-container">
+        <!-- En-tête professionnel -->
               <div class="header">
           <div class="logo">
-            <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="max-width: 100%; max-height: 100%;">
+            <img src="${baseUrl}/logo.png" alt="CI.DES Logo" style="max-width: 100%; max-height: 100%;" onerror="this.style.display='none';">
           </div>
         <table class="header-table">
           <tr>
@@ -684,7 +915,9 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCo
         </div>
       ` : ''}
 
-
+      </div>
+      
+      <!-- Pied de page fixe qui apparaît sur chaque page -->
     </body>
     </html>
   `;
