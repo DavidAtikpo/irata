@@ -729,9 +729,6 @@ export default function FactureTramePage() {
         <h2 className="text-lg font-semibold mb-4">
           {selectedInvoice ? 'Aperçu de la facture sélectionnée' : 'Aperçu de la facture'}
         </h2>
-        <div className="overflow-auto">
-          <InvoiceTemplate data={data} />
-        </div>
       </div>
     </div>
   );
