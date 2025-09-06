@@ -548,7 +548,7 @@ export default function FormulairesQuotidiensPage() {
           <div className="relative sm:flex sm:items-center sm:justify-between">
             <div className="flex items-center space-x-6">
               <div className="bg-white/20 backdrop-blur-sm p-4 rounded-2xl shadow-xl border border-white/30">
-                <DocumentTextIcon className="h-10 w-10 text-white" />
+                <DocumentTextIcon className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h1 className="text-4xl font-bold text-white mb-2">
@@ -572,7 +572,7 @@ export default function FormulairesQuotidiensPage() {
             <div className="mt-8 sm:mt-0 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
               <button
                 onClick={() => router.push('/admin/formulaires-quotidiens/reponses')}
-                className="group relative inline-flex items-center justify-center px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border border-white/30 shadow-xl hover:bg-white/20 hover:border-white/50 transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent"
+                className="group relative inline-flex items-center justify-center px-2 py-1 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border border-white/30 shadow-xl hover:bg-white/20 hover:border-white/50 transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <EyeIcon className="w-5 h-5 mr-3 relative z-10" />
@@ -580,7 +580,7 @@ export default function FormulairesQuotidiensPage() {
               </button>
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-xl shadow-2xl hover:shadow-emerald-500/25 transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-transparent"
+                className="group relative inline-flex items-center justify-center px-2 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-xl shadow-2xl hover:shadow-emerald-500/25 transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-transparent"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <PlusIcon className="w-6 h-6 mr-3 relative z-10" />
