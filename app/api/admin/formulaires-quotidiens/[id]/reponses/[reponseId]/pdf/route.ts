@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getSessionLabel } from '@/lib/sessions';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import fs from 'fs';
 import path from 'path';
 
@@ -173,6 +174,7 @@ export async function GET(
         args: isDevelopment ? [
           '--no-sandbox'
         ] : [
+          ...chromium.args,
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
@@ -185,10 +187,10 @@ export async function GET(
           '--disable-renderer-backgrounding'
         ],
         timeout: 30000,
-        // Spécifier le chemin vers Chrome/Chromium si disponible
-        ...(process.env.PUPPETEER_EXECUTABLE_PATH && {
-          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH
-        })
+        // Utiliser Chromium optimisé pour les services serverless
+        executablePath: isDevelopment 
+          ? process.env.PUPPETEER_EXECUTABLE_PATH 
+          : await chromium.executablePath()
       };
 
       console.log('Configuration Puppeteer:', puppeteerConfig);
