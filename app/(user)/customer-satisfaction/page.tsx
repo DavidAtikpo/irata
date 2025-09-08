@@ -188,7 +188,7 @@ export default function CustomerSatisfactionPage() {
         </div>
 
         {/* Navigation des étapes responsive */}
-        <div className="bg-white shadow-lg rounded-lg p-4 sm:p-6 mt-4 sm:mt-6">
+        {/* <div className="bg-white shadow-lg rounded-lg p-4 sm:p-6 mt-4 sm:mt-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <span className="text-sm sm:text-base text-gray-600">Étape :</span>
@@ -227,7 +227,7 @@ export default function CustomerSatisfactionPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -41,6 +41,7 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
   const [suggestions, setSuggestions] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sessionName, setSessionName] = useState('');
+  const [isLoaded, setIsLoaded] = useState(false);
   const ratingOptions = ['Très satisfaisant', 'Satisfaisant', 'Insatisfaisant', 'Très insatisfaisant'];
   
   useEffect(() => {
@@ -50,27 +51,64 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
   }, [traineeName]);
   
   useEffect(() => {
-    const fetchSession = async () => {
+    const fetchData = async () => {
       try {
-        const r = await fetch('/api/user/training-session');
-        if (r.ok) {
-          const data = await r.json();
-          if (data?.name) setSessionName(data.name);
+        // Récupérer les réponses existantes
+        const responsesRes = await fetch('/api/user/customer-satisfaction/responses');
+        if (responsesRes.ok) {
+          const responsesData = await responsesRes.json();
+          const existingResponse = responsesData.responses?.find((r: any) => r.type === 'EQUIPMENT');
+          
+          if (existingResponse && existingResponse.items) {
+            // Charger les données existantes
+            const existingItems = Array.isArray(existingResponse.items) ? existingResponse.items : [];
+            setRows(items.map((label) => {
+              const existingItem = existingItems.find((item: any) => item.label === label);
+              return {
+                label,
+                rating: existingItem?.rating || null,
+                comment: existingItem?.comment || ''
+              };
+            }));
+            
+            if (existingResponse.traineeName) {
+              setName(existingResponse.traineeName);
+            }
+            if (existingResponse.session) {
+              setSessionName(existingResponse.session);
+            }
+            if (existingResponse.suggestions) {
+              setSuggestions(existingResponse.suggestions);
+            }
+          }
         }
-      } catch {}
-    };
-    const fetchProfile = async () => {
-      try {
-        const r = await fetch('/api/user/profile');
-        if (r.ok) {
-          const data = await r.json();
-          const fullName = [data?.prenom, data?.nom].filter(Boolean).join(' ').trim();
-          if (fullName) setName(fullName);
+        
+        // Récupérer la session de formation
+        const sessionRes = await fetch('/api/user/training-session');
+        if (sessionRes.ok) {
+          const sessionData = await sessionRes.json();
+          if (sessionData?.name && !sessionName) {
+            setSessionName(sessionData.name);
+          }
         }
-      } catch {}
+        
+        // Récupérer le profil utilisateur
+        const profileRes = await fetch('/api/user/profile');
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          const fullName = [profileData?.prenom, profileData?.nom].filter(Boolean).join(' ').trim();
+          if (fullName && !name) {
+            setName(fullName);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+      } finally {
+        setIsLoaded(true);
+      }
     };
-    fetchSession();
-    fetchProfile();
+    
+    fetchData();
   }, []);
 
   const setRowRating = (index: number, rating: string) => {
@@ -124,7 +162,14 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
       <p className="text-sm text-gray-700">À cette fin, nous souhaitons recueillir votre avis via le questionnaire ci-dessous</p>
 
       <fieldset className="border p-3 sm:p-4 rounded mt-4 sm:mt-6">
-        <legend className="font-semibold text-base sm:text-lg px-2">Équipements d'entraînement</legend>
+        <legend className="font-semibold text-base sm:text-lg px-2">
+          Équipements d'entraînement
+          {isLoaded && rows.some(r => r.rating) && (
+            <span className="ml-2 text-sm text-green-600 font-normal">
+              ✓ Réponses sauvegardées
+            </span>
+          )}
+        </legend>
         
         {/* Informations utilisateur responsive */}
         <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">

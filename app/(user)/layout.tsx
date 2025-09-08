@@ -15,14 +15,22 @@ export default function UserLayout({
   const router = useRouter();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Marquer le composant comme monté pour éviter les erreurs d'hydratation
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Charger l'état de la sidebar depuis localStorage
   useEffect(() => {
-    const savedState = localStorage.getItem('user-sidebar-collapsed');
-    if (savedState !== null) {
-      setIsSidebarCollapsed(JSON.parse(savedState));
+    if (isMounted) {
+      const savedState = localStorage.getItem('user-sidebar-collapsed');
+      if (savedState !== null) {
+        setIsSidebarCollapsed(JSON.parse(savedState));
+      }
     }
-  }, []);
+  }, [isMounted]);
 
   // Raccourci clavier pour toggler la sidebar (Ctrl/Cmd + B)
   useEffect(() => {
@@ -53,12 +61,14 @@ export default function UserLayout({
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
   };
 
-  if (status === 'loading') {
+  // Éviter les erreurs d'hydratation en attendant que le composant soit monté
+  if (!isMounted || status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-100">
         <div className="flex justify-center items-center h-screen">
           <div className="text-center">
-            <h2 className="text-2xl font-semibold text-gray-900">Chargement...</h2>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <h2 className="text-2xl font-semibold text-gray-900 mt-4">Chargement...</h2>
           </div>
         </div>
       </div>

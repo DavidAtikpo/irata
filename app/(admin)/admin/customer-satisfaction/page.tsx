@@ -129,6 +129,7 @@ export default function AdminCustomerSatisfactionPage() {
                 <th className="text-left p-3 border">Nom du stagiaire</th>
                 <th className="text-left p-3 border">Utilisateur</th>
                 <th className="text-left p-3 border">Éléments</th>
+                <th className="text-left p-3 border">Signature</th>
                 <th className="text-left p-3 border">Actions</th>
               </tr>
             </thead>
@@ -146,6 +147,17 @@ export default function AdminCustomerSatisfactionPage() {
                     )}
                   </td>
                   <td className="p-3 border">{r.items?.length || 0}</td>
+                  <td className="p-3 border">
+                    {r.signature ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        ✓ Signé
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                        ⚠ Non signé
+                      </span>
+                    )}
+                  </td>
                   <td className="p-3 border">
                     <button
                       className="text-blue-600 hover:underline"
@@ -213,10 +225,21 @@ export default function AdminCustomerSatisfactionPage() {
                 )}
 
                 {/* Signature du stagiaire */}
-                {r.signature && (
+                {r.signature ? (
                   <div className="mt-3">
                     <h4 className="font-medium mb-2">Signature du stagiaire</h4>
-                    <img src={r.signature} alt="Signature" className=" max-w-50 h-auto" />
+                    <div className="border border-gray-300 p-2 bg-gray-50 rounded">
+                      <img src={r.signature} alt="Signature du stagiaire" className="max-w-xs h-auto" />
+                    </div>
+                    <p className="text-sm text-green-600 mt-1">✓ Formulaire signé</p>
+                  </div>
+                ) : (
+                  <div className="mt-3">
+                    <h4 className="font-medium mb-2">Signature du stagiaire</h4>
+                    <div className="border border-gray-300 p-4 bg-gray-50 rounded text-center">
+                      <p className="text-gray-500 text-sm">Aucune signature</p>
+                    </div>
+                    <p className="text-sm text-orange-600 mt-1">⚠ Formulaire non signé</p>
                   </div>
                 )}
 

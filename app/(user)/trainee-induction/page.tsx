@@ -16,19 +16,33 @@ interface InductionData {
   updatedAt: string;
 }
 
+interface UserSignature {
+  id: string;
+  userSignature: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function TraineeInductionPage() {
   const { data: session } = useSession();
   const [inductionData, setInductionData] = useState<InductionData | null>(null);
   const [sessionName, setSessionName] = useState('');
   const [loading, setLoading] = useState(true);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
-  const [userSignature, setUserSignature] = useState('');
+  const [userSignature, setUserSignature] = useState<UserSignature | null>(null);
   const [signing, setSigning] = useState(false);
   const [signed, setSigned] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    fetchInductionData();
-  }, [session]);
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      fetchInductionData();
+    }
+  }, [session, isMounted]);
 
   const fetchInductionData = async () => {
     try {
@@ -39,6 +53,16 @@ export default function TraineeInductionPage() {
         const data = await response.json();
         setInductionData(data.induction);
         setSessionName(data.sessionName);
+        
+        // Gérer la signature existante
+        if (data.userSignature) {
+          setUserSignature(data.userSignature);
+          setSigned(true);
+          console.log('Signature existante trouvée:', data.userSignature);
+        } else {
+          setUserSignature(null);
+          setSigned(false);
+        }
       } else {
         const errorData = await response.json();
         
@@ -76,34 +100,63 @@ export default function TraineeInductionPage() {
   const handleSignatureSave = async (signature: string) => {
     setSigning(true);
     try {
+      console.log('Tentative de signature:', {
+        inductionId: inductionData?.id,
+        hasSignature: !!signature,
+        signatureLength: signature?.length
+      });
+
+      if (!inductionData?.id) {
+        throw new Error('ID d\'induction manquant');
+      }
+
+      if (!signature) {
+        throw new Error('Signature manquante');
+      }
+
       const response = await fetch('/api/user/trainee-induction/sign', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inductionId: inductionData?.id,
+          inductionId: inductionData.id,
           userSignature: signature,
         }),
       });
 
+      console.log('Réponse de l\'API:', {
+        status: response.status,
+        ok: response.ok
+      });
+
       if (response.ok) {
-        setUserSignature(signature);
+        const result = await response.json();
+        console.log('Signature réussie:', result);
+        setUserSignature(result.signature as UserSignature);
         setSigned(true);
         setShowSignatureModal(false);
-        alert('Induction signée avec succès !');
+        
+        if (result.alreadySigned) {
+          alert('Vous avez déjà signé cette induction !');
+        } else {
+          alert('Induction signée avec succès !');
+        }
       } else {
-        throw new Error('Erreur lors de la signature');
+        const errorData = await response.json();
+        console.error('Erreur de l\'API:', errorData);
+        throw new Error(errorData.error || 'Erreur lors de la signature');
       }
     } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors de la signature');
+      console.error('Erreur lors de la signature:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la signature';
+      alert(`Erreur: ${errorMessage}`);
     } finally {
       setSigning(false);
     }
   };
 
-  if (loading) {
+  if (!isMounted || loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-7xl mx-auto">
@@ -159,7 +212,7 @@ export default function TraineeInductionPage() {
           <div className="px-6 py-4 border-b border-gray-200">
             <h1 className="text-2xl font-bold text-gray-900">Document d'Induction des Stagiaires</h1>
             <p className="text-gray-600 mt-1">
-              Session : {sessionName} • Date du cours : {new Date(inductionData.courseDate).toLocaleDateString('fr-FR')}
+              Session : {sessionName} • Date du cours : {isMounted ? new Date(inductionData.courseDate).toLocaleDateString('fr-FR') : inductionData.courseDate}
             </p>
           </div>
 
@@ -292,7 +345,7 @@ export default function TraineeInductionPage() {
                        <h2 className="mt-6 font-bold">DÉCLARATION D'INDUCTION</h2>
                        <div className="mt-2 text-sm">
                          <p>
-                <strong>DATE DU COURS:</strong> {new Date(inductionData.courseDate).toLocaleDateString('fr-FR')} 
+                <strong>DATE DU COURS:</strong> {isMounted ? new Date(inductionData.courseDate).toLocaleDateString('fr-FR') : inductionData.courseDate} 
                            &nbsp;&nbsp;&nbsp;&nbsp;
                 <strong>LIEU DU COURS:</strong> {inductionData.courseLocation}
                          </p>
@@ -317,7 +370,12 @@ export default function TraineeInductionPage() {
                 
                 <div className="border-b border-gray-400 pb-2 h-16 flex items-center">
                   {userSignature ? (
-                    <img src={userSignature} alt="Signature utilisateur" className="h-12 w-auto" />
+                    <div className="flex items-center gap-2">
+                      <img src={userSignature.userSignature as string} alt="Signature utilisateur" className="h-12 w-auto" />
+                      <span className="text-sm text-gray-600">
+                        Signé le {isMounted ? new Date(userSignature.createdAt).toLocaleDateString('fr-FR') : userSignature.createdAt}
+                      </span>
+                    </div>
                   ) : signed ? (
                     <span className="text-green-600 font-medium">✓ Induction signée</span>
                   ) : (
