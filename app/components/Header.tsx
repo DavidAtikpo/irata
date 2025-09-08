@@ -15,42 +15,32 @@ function SearchIcon() {
 }
 
 const navLinks = [
-  { href: '/', label: 'ACCUEIL' },
-  { href: '/formations', label: 'FORMATIONS' },
-  { href: '/contact', label: 'CONTACTS' },
-  { href: '/histoire', label: 'HISTOIRE' },
+  { href: '/', label: 'Accueil' },
+  { href: '/formations', label: 'Formations' },
+  { href: '/contact', label: 'Contacts' },
+  { href: '/historique', label: 'Historique' },
 ];
 
 export default function Header() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isWeglotReady, setIsWeglotReady] = useState(false);
+  // const [isWeglotReady, setIsWeglotReady] = useState(false);
 
-  useEffect(() => {
-    // Attendre que Weglot soit prêt pour éviter les erreurs d'hydratation
-    const checkWeglot = () => {
-      if (typeof window !== 'undefined' && window.Weglot) {
-        setIsWeglotReady(true);
-      } else {
-        setTimeout(checkWeglot, 100);
-      }
-    };
-    checkWeglot();
-  }, []);
+
 
   return (
-    <header className="bg-white shadow sticky top-0 z-50">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 lg:h-24">
+    <header className="bg-white shadow sticky top-0 z-50 border-b border-orange-300">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4">
+        <div className="flex items-center justify-between h-10 sm:h-14 lg:h-16 ">
           {/* Logo à gauche */}
           <div className="flex items-center">
             <Link href="/">
               <Image
                 src="/logo.png"
                 alt="CI.DES Logo"
-                width={260}
-                height={70}
-                className="object-contain w-20 sm:w-20 lg:w-20"
+                width={100}
+                height={100}
+                className="object-contain w-10 sm:w-10 lg:w-10"
                 priority
               />
             </Link>
@@ -58,11 +48,18 @@ export default function Header() {
 
           {/* Menu desktop + loupe à droite */}
           <div className="hidden md:flex items-center space-x-4 ml-auto">
+            <Link
+              href="/login"
+              className="ml-2 inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              data-wg-notranslate="true"
+            >
+              Accéder à mon espace
+            </Link>
             {navLinks.map((link) => (
               <div key={link.href} className="relative">
                 <Link
                   href={link.href}
-                  className="uppercase font-semibold text-black tracking-wide px-2 text-sm lg:text-[15px] hover:text-blue-600 transition-colors duration-200 no-translate"
+                  className="uppercase font-semibold text-black tracking-wide px-2 text-xs lg:text-sm hover:text-blue-600 transition-colors duration-200 no-translate"
                   data-wg-notranslate="true"
                 >
                   {link.label}
@@ -72,9 +69,6 @@ export default function Header() {
                 )}
               </div>
             ))}
-            <button aria-label="Recherche" className="focus:outline-none hover:text-blue-600 transition-colors duration-200">
-              <SearchIcon />
-            </button>
           </div>
 
           {/* Bouton menu mobile */}
@@ -99,6 +93,14 @@ export default function Header() {
         {isMobileMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+              <Link
+                href="/dashboard"
+                className="block w-full text-center px-3 py-2 rounded-md text-base font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
+                onClick={() => setIsMobileMenuOpen(false)}
+                data-wg-notranslate="true"
+              >
+                Accéder à mon espace
+              </Link>
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -114,16 +116,6 @@ export default function Header() {
                   {link.label}
                 </Link>
               ))}
-              <button 
-                aria-label="Recherche" 
-                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200 no-translate"
-                data-wg-notranslate="true"
-              >
-                <div className="flex items-center">
-                  <SearchIcon />
-                  <span className="ml-2">Recherche</span>
-                </div>
-              </button>
             </div>
           </div>
         )}

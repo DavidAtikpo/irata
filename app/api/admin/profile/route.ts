@@ -13,45 +13,36 @@ export async function GET(request: NextRequest) {
 
     // Récupérer l'utilisateur par email
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: { email: session.user.email },
+      select: {
+        id: true,
+        email: true,
+        nom: true,
+        prenom: true,
+        role: true
+      }
     });
 
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    // Vérifier si l'utilisateur a déjà soumis les formulaires
-    // Vous devrez adapter cette logique selon votre modèle de données
-    const hasSubmitted = false; // À remplacer par votre logique de vérification
-
     return NextResponse.json({
       success: true,
-      submitted: hasSubmitted,
-      message: hasSubmitted 
-        ? 'Formulaires déjà soumis' 
-        : 'Formulaires non encore soumis'
+      user
     });
 
   } catch (error) {
-    console.error('Erreur lors de la vérification du statut:', error);
+    console.error('Erreur lors de la récupération du profil admin:', error);
     return NextResponse.json(
       { 
-        error: 'Erreur lors de la vérification du statut',
+        error: 'Erreur lors de la récupération du profil',
         details: error instanceof Error ? error.message : 'Erreur inconnue'
       },
       { status: 500 }
     );
   }
 }
-
-
-
-
-
-
-
-
-
 
 
 

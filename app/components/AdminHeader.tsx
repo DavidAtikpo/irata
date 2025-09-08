@@ -58,6 +58,12 @@ const navigationTabs = [
     href: '/admin/parametres',
     icon: CogIcon,
     description: 'Configuration du système'
+  },
+  {
+    name: 'Historique',
+    href: '/admin/historique-management',
+    icon: CalendarIcon,
+    description: 'Historique des modifications'
   }
 ];
 
@@ -140,7 +146,7 @@ export default function AdminHeader({ onToggleSidebar, onMobileToggle, isSticky 
   };
 
   return (
-    <header className={`bg-white border-b border-gray-200 shadow-sm ${isSticky ? 'fixed top-0 left-0 right-0 w-full z-[60]' : 'relative'}`}>
+    <header className={`bg-white border-b border-orange-300 shadow-sm ${isSticky ? 'fixed top-0 left-0 right-0 w-full z-[60]' : 'relative'}`}>
       {/* Barre principale */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
