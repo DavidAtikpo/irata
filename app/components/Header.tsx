@@ -5,14 +5,6 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
-function SearchIcon() {
-  return (
-    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" className="text-gray-700">
-      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-      <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 const navLinks = [
   { href: '/', label: 'Accueil' },
@@ -59,7 +51,7 @@ export default function Header() {
               <div key={link.href} className="relative">
                 <Link
                   href={link.href}
-                  className="uppercase font-semibold text-black tracking-wide px-2 text-xs lg:text-sm hover:text-blue-600 transition-colors duration-200 no-translate"
+                  className=" text-black tracking-wide px-2 text-xs lg:text-sm hover:text-blue-600 transition-colors duration-200 no-translate"
                   data-wg-notranslate="true"
                 >
                   {link.label}
@@ -94,7 +86,7 @@ export default function Header() {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
               <Link
-                href="/dashboard"
+                href="/login"
                 className="block w-full text-center px-3 py-2 rounded-md text-base font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
                 onClick={() => setIsMobileMenuOpen(false)}
                 data-wg-notranslate="true"

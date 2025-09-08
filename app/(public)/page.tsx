@@ -5,7 +5,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import React from 'react';
 import Image from 'next/image';
-import LanguageSelector from '../components/LanguageSelector';
+// import LanguageSelector from '../components/LanguageSelector';
 import { useSession } from 'next-auth/react';
 
 const sessions = [
@@ -19,7 +19,7 @@ const sessions = [
   { annee: '2025', mois: 'juillet', dates: '21 au 26' },
   { annee: '2025', mois: 'aout', dates: '18 au 23' },
   { annee: '2025', mois: 'septembre', dates: '01 au 06' },
-  { annee: '2025', mois: 'septembre', dates: '10 au 15' },
+  { annee: '2025', mois: 'septembre', dates: '08 au 13' },
   { annee: '2025', mois: 'octobre', dates: '06 au 11' },
   { annee: '2025', mois: 'novembre', dates: '03 au 08' },
   // { annee: '2025', mois: 'décembre', dates: '15 au 20' },
@@ -276,9 +276,9 @@ function HomeContent() {
 
   return (
     <main className="bg-white px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-7xl mx-auto text-gray-800">
-      <div className="fixed top-4 right-4 z-50">
+      {/* <div className="fixed top-4 right-4 z-50">
         <LanguageSelector />
-      </div>
+      </div> */}
       {/* Financement Participatif Banner (Investisseurs) */}
       <section className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-400 text-white rounded-2xl sm:rounded-3xl shadow-2xl px-4 sm:px-6 py-6 sm:py-8 text-center mb-6 sm:mb-8 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
