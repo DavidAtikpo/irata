@@ -34,6 +34,13 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
   const [submitting, setSubmitting] = useState(false);
   const [sessionName, setSessionName] = useState('');
   const [signatureData, setSignatureData] = useState<string>('');
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false);
+  
+  // Log pour déboguer la signature
+  useEffect(() => {
+    console.log('Signature data changée:', signatureData ? 'Signature présente' : 'Aucune signature');
+  }, [signatureData]);
   const ratingOptions = ['Très satisfaisant', 'Satisfaisant', 'Insatisfaisant', 'Très insatisfaisant'];
   
   useEffect(() => {
@@ -43,27 +50,70 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
   }, [traineeName]);
 
   useEffect(() => {
-    const fetchSession = async () => {
+    const fetchData = async () => {
       try {
-        const r = await fetch('/api/user/training-session');
-        if (r.ok) {
-          const data = await r.json();
-          if (data?.name) setSessionName(data.name);
+        // Récupérer les réponses existantes
+        const responsesRes = await fetch('/api/user/customer-satisfaction/responses');
+        if (responsesRes.ok) {
+          const responsesData = await responsesRes.json();
+          console.log('Toutes les réponses récupérées:', responsesData.responses);
+          const existingResponse = responsesData.responses?.find((r: any) => r.type === 'TRAINING_PEDAGOGY');
+          console.log('Réponse TRAINING_PEDAGOGY trouvée:', existingResponse);
+          
+          if (existingResponse && existingResponse.items) {
+            // Charger les données existantes
+            const existingItems = Array.isArray(existingResponse.items) ? existingResponse.items : [];
+            setRows(items.map((label) => {
+              const existingItem = existingItems.find((item: any) => item.label === label);
+              return {
+                label,
+                rating: existingItem?.rating || null,
+                comment: existingItem?.comment || ''
+              };
+            }));
+            
+            if (existingResponse.traineeName) {
+              setName(existingResponse.traineeName);
+            }
+            if (existingResponse.session) {
+              setSessionName(existingResponse.session);
+            }
+            if (existingResponse.signature) {
+              console.log('Signature trouvée:', existingResponse.signature);
+              setSignatureData(existingResponse.signature);
+              setIsAlreadySubmitted(true); // Formulaire déjà soumis et signé
+            } else {
+              console.log('Aucune signature trouvée pour TRAINING_PEDAGOGY');
+            }
+          }
         }
-      } catch {}
-    };
-    const fetchProfile = async () => {
-      try {
-        const r = await fetch('/api/user/profile');
-        if (r.ok) {
-          const data = await r.json();
-          const fullName = [data?.prenom, data?.nom].filter(Boolean).join(' ').trim();
-          if (fullName) setName(fullName);
+        
+        // Récupérer la session de formation
+        const sessionRes = await fetch('/api/user/training-session');
+        if (sessionRes.ok) {
+          const sessionData = await sessionRes.json();
+          if (sessionData?.name && !sessionName) {
+            setSessionName(sessionData.name);
+          }
         }
-      } catch {}
+        
+        // Récupérer le profil utilisateur
+        const profileRes = await fetch('/api/user/profile');
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          const fullName = [profileData?.prenom, profileData?.nom].filter(Boolean).join(' ').trim();
+          if (fullName && !name) {
+            setName(fullName);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+      } finally {
+        setIsLoaded(true);
+      }
     };
-    fetchSession();
-    fetchProfile();
+    
+    fetchData();
   }, []);
   
   const setRowRating = (index: number, rating: string) => {
@@ -87,25 +137,8 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
     setSubmitting(true);
     try {
       const payloads: any[] = [];
-      if (aggregated?.env) {
-        payloads.push({
-          type: 'ENVIRONMENT_RECEPTION' as const,
-          traineeName: aggregated.env.traineeName || name || undefined,
-          items: aggregated.env.items,
-          session: aggregated.env.session || sessionName || undefined,
-          signature: signatureData,
-        });
-      }
-      if (aggregated?.equip) {
-        payloads.push({
-          type: 'EQUIPMENT' as const,
-          traineeName: aggregated.equip.traineeName || name || undefined,
-          items: aggregated.equip.items,
-          suggestions: aggregated.equip.suggestions,
-          session: aggregated.equip.session || sessionName || undefined,
-          signature: signatureData,
-        });
-      }
+      
+      // Ne soumettre que le formulaire TRAINING_PEDAGOGY avec sa signature
       payloads.push({
         type: 'TRAINING_PEDAGOGY' as const,
         traineeName: name || undefined,
@@ -117,6 +150,8 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
         session: sessionName || undefined,
         signature: signatureData,
       });
+      
+      console.log('Soumission TRAINING_PEDAGOGY avec signature:', signatureData ? 'Oui' : 'Non');
 
       // Submit all in parallel
       await Promise.all(
@@ -165,7 +200,14 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
       <p className="text-sm text-gray-700">À cette fin, nous souhaitons recueillir votre avis via le questionnaire ci-dessous</p>
 
       <fieldset className="border p-3 sm:p-4 rounded mt-4 sm:mt-6">
-        <legend className="font-semibold text-base sm:text-lg px-2">Équipe pédagogique et programme</legend>
+        <legend className="font-semibold text-base sm:text-lg px-2">
+          Équipe pédagogique et programme
+          {isLoaded && rows.some(r => r.rating) && (
+            <span className="ml-2 text-sm text-green-600 font-normal">
+              ✓ Réponses sauvegardées
+            </span>
+          )}
+        </legend>
         
         {/* Informations utilisateur responsive */}
         <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -176,6 +218,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={isAlreadySubmitted}
             />
           </div>
           <div>
@@ -186,6 +229,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
               onChange={(e) => setSessionName(e.target.value)}
               className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Session inscrite"
+              disabled={isAlreadySubmitted}
             />
           </div>
         </div>
@@ -210,6 +254,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
                         className="h-4 w-4 text-blue-600"
                         checked={row.rating === opt}
                         onChange={() => setRowRating(idx, opt)}
+                        disabled={isAlreadySubmitted}
                       />
                       <span className="text-xs text-gray-700">{opt}</span>
                     </label>
@@ -226,6 +271,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
                   onChange={(e) => setRowComment(idx, e.target.value)}
                   className="w-full border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Votre commentaire (optionnel)"
+                  disabled={isAlreadySubmitted}
                 />
               </div>
             </div>
@@ -256,6 +302,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
                         className="h-4 w-4"
                         checked={row.rating === opt}
                         onChange={() => setRowRating(idx, opt)}
+                        disabled={isAlreadySubmitted}
                       />
                     </td>
                   ))}
@@ -265,6 +312,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
                       value={row.comment}
                       onChange={(e) => setRowComment(idx, e.target.value)}
                       className="w-full border rounded px-2 py-1 text-sm"
+                      disabled={isAlreadySubmitted}
                     />
                   </td>
                 </tr>
@@ -276,13 +324,31 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
 
       {/* Signature responsive */}
       <fieldset className="border p-3 sm:p-4 rounded mt-4 sm:mt-6">
-        <legend className="font-semibold text-base sm:text-lg px-2">Signature du stagiaire</legend>
+        <legend className="font-semibold text-base sm:text-lg px-2">
+          Signature du stagiaire
+          {isLoaded && signatureData && (
+            <span className="ml-2 text-sm text-green-600 font-normal">
+              ✓ Signature sauvegardée
+            </span>
+          )}
+        </legend>
         <div className="w-full overflow-x-auto">
-          <SignaturePad 
-            onSave={(sig) => setSignatureData(sig)} 
-            width={Math.min(600, window.innerWidth - 40)} 
-            height={150} 
-          />
+          {isAlreadySubmitted ? (
+            <div className="border border-gray-300 p-4 bg-gray-50 rounded">
+              <div className="text-center mb-2">
+                <p className="text-sm text-gray-600 mb-2">Signature existante :</p>
+                <img src={signatureData} alt="Signature du stagiaire" className="max-w-xs h-auto mx-auto" />
+              </div>
+              <p className="text-center text-sm text-green-600 font-medium">✓ Formulaire déjà soumis et signé</p>
+            </div>
+          ) : (
+            <SignaturePad 
+              onSave={(sig) => setSignatureData(sig)} 
+              initialValue={signatureData}
+              width={Math.min(600, window.innerWidth - 40)} 
+              height={150} 
+            />
+          )}
         </div>
       </fieldset>
 
@@ -304,15 +370,27 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
       </footer>
       
       {/* Bouton de soumission responsive */}
-      <div className="mt-4 sm:mt-6 flex justify-center sm:justify-end">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium text-sm sm:text-base"
-        >
-          {submitting ? 'Envoi...' : 'Soumettre le questionnaire'}
-        </button>
-      </div>
+      {!isAlreadySubmitted && (
+        <div className="mt-4 sm:mt-6 flex justify-center sm:justify-end">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium text-sm sm:text-base"
+          >
+            {submitting ? 'Envoi...' : 'Soumettre le questionnaire'}
+          </button>
+        </div>
+      )}
+      
+      {/* Message si déjà soumis */}
+      {isAlreadySubmitted && (
+        <div className="mt-4 sm:mt-6 flex justify-center">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+            <p className="text-green-800 font-medium">✓ Formulaire déjà soumis</p>
+            <p className="text-green-600 text-sm mt-1">Ce formulaire a été soumis et signé avec succès</p>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

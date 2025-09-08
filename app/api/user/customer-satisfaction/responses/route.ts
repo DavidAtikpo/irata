@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    // Récupérer l'utilisateur pour obtenir son ID
+    // Récupérer l'utilisateur par email
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
     });
@@ -20,44 +20,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    // Récupérer la session depuis le modèle Demande
-    const demande = await prisma.demande.findFirst({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        session: true
-      }
-    });
+    // Récupérer toutes les réponses de satisfaction de l'utilisateur
+    const responses = await prisma.$queryRaw`
+      SELECT * FROM "webirata"."CustomerSatisfactionResponse" 
+      WHERE "userId" = ${user.id}
+      ORDER BY "createdAt" DESC
+    `;
 
-    console.log('User ID:', user.id);
-    console.log('Demande found:', demande);
-
-    if (!demande || !demande.session) {
-      return NextResponse.json({ 
-        session: null,
-        message: 'Aucune session trouvée pour cet utilisateur'
-      });
-    }
+    console.log('Réponses trouvées:', responses);
 
     return NextResponse.json({
-      session: demande.session,
-      success: true
+      success: true,
+      responses: Array.isArray(responses) ? responses : []
     });
 
   } catch (error) {
-    console.error('Erreur lors de la récupération de la session:', error);
+    console.error('Erreur lors de la récupération des réponses:', error);
     return NextResponse.json(
-      { error: 'Erreur lors de la récupération de la session' },
+      { 
+        error: 'Erreur lors de la récupération des réponses',
+        details: error instanceof Error ? error.message : 'Erreur inconnue'
+      },
       { status: 500 }
     );
   }
 }
-
-
-
-
-
-
-
-
-

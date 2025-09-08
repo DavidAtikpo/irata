@@ -82,6 +82,18 @@ export async function GET(request: NextRequest) {
       }, { status: 403 });
     }
 
+    // Récupérer la signature existante de l'utilisateur pour cette induction
+    const existingSignature = await prisma.$queryRaw`
+      SELECT * FROM "webirata"."TraineeInductionSignature" 
+      WHERE "inductionId" = ${induction.id} AND "userId" = ${user.id}
+    `;
+
+    console.log('Signature existante trouvée:', existingSignature);
+
+    const userSignature = Array.isArray(existingSignature) && existingSignature.length > 0 
+      ? existingSignature[0] 
+      : null;
+
     return NextResponse.json({
       success: true,
       induction: {
@@ -97,7 +109,13 @@ export async function GET(request: NextRequest) {
         createdAt: induction.createdAt,
         updatedAt: induction.updatedAt
       },
-      sessionName: sessionData.session
+      sessionName: sessionData.session,
+      userSignature: userSignature ? {
+        id: userSignature.id,
+        userSignature: userSignature.userSignature,
+        createdAt: userSignature.createdAt,
+        updatedAt: userSignature.updatedAt
+      } : null
     });
 
   } catch (error) {
