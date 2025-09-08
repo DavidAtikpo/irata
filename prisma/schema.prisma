@@ -177,6 +177,7 @@ model Document {
   devis           Devis?   @relation(fields: [devisId], references: [id])
   user            User?    @relation(fields: [userId], references: [id])
   actions         DocumentAction[]
+  historiqueItems HistoriqueItem[]
 
   @@schema("webirata")
 }
@@ -827,6 +828,28 @@ model TeamMember {
   order          Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@schema("webirata")
+}
+
+model EdgeAndRopeManagementValidation {
+  id             String   @id @default(cuid())
+  adminName      String
+  adminSignature String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@schema("webirata")
+}
+
+model HistoriqueItem {
+  id          String   @id @default(cuid())
+  annee       String
+  session     String
+  commentaire String?
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
 
   @@schema("webirata")
 }

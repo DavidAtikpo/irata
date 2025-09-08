@@ -31,7 +31,9 @@ const navigation = [
   { name: 'Contrats', href: '/admin/contrats', icon: DocumentDuplicateIcon },
   { name: 'Trame facture', href: '/admin/facture-trame', icon: ReceiptPercentIcon },
   { name: 'Envoyer documents', href: '/admin/documents', icon: FolderIcon },
-  { name: 'Fiche de présence', href: '/admin/attendance', icon: ClipboardDocumentCheckIcon },
+  { name: 'Convocation', href: '/admin/convocation', icon: ClipboardDocumentCheckIcon },
+  { name: 'fiche de présence', href: '/admin/presence', icon: ClipboardDocumentCheckIcon },
+  { name: 'Gestion présence', href: '/admin/attendance', icon: ClipboardDocumentCheckIcon },
   { name: 'Pré-job training', href: '/admin/pre-job-training', icon: ClipboardDocumentIcon },
   { name: 'Job Planing', href: '/admin/job-planing', icon: ClipboardDocumentCheckIcon },
   { name: 'Satisfaction stagiaire', href: '/admin/customer-satisfaction', icon: ClipboardDocumentIcon },
@@ -44,6 +46,7 @@ const navigation = [
   { name: 'Déclaration Médicale', href: '/admin/medical-declaration', icon: ClipboardDocumentCheckIcon },
   { name: 'Non-conformités', href: '/admin/non-conformites', icon: ExclamationCircleIcon },
   { name: 'Actions correctives', href: '/admin/actions-correctives', icon: CheckCircleIcon },
+  { name: 'Edge and Rope Management', href: '/admin/edge-and-rope-management', icon: ClipboardDocumentCheckIcon },
 
   { name: 'Formations', href: '/admin/formations', icon: AcademicCapIcon },
   { name: 'Stagiaires', href: '/admin/utilisateurs', icon: UserGroupIcon },
