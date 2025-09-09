@@ -15,18 +15,16 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Récupérer toutes les sessions uniques depuis les demandes avec leurs dates
+    // Récupérer toutes les sessions uniques depuis les demandes
     const sessionsFromDemandes = await prisma.demande.findMany({
       select: {
-        session: true,
-        createdAt: true
+        session: true
       },
       distinct: ['session'],
       orderBy: {
-        createdAt: 'desc' // Plus récent en premier
+        session: 'asc'
       }
     });
-    console.log('🔍 Sessions depuis Demande:', sessionsFromDemandes);
 
     // Récupérer toutes les sessions depuis les formulaires
     const sessionsFromFormulaires = await prisma.formulairesQuotidiens.findMany({
@@ -38,7 +36,6 @@ export async function GET(req: NextRequest) {
         session: 'asc'
       }
     });
-    console.log('🔍 Sessions depuis Formulaires:', sessionsFromFormulaires);
 
     // Récupérer toutes les sessions depuis les réponses de satisfaction
     const sessionsFromSatisfaction = await prisma.customerSatisfactionResponse.findMany({
@@ -55,7 +52,6 @@ export async function GET(req: NextRequest) {
         session: 'asc'
       }
     });
-    console.log('🔍 Sessions depuis Satisfaction:', sessionsFromSatisfaction);
 
     // Récupérer toutes les sessions depuis les TrainingSession
     const trainingSessions = await prisma.trainingSession.findMany({
@@ -69,104 +65,28 @@ export async function GET(req: NextRequest) {
         startDate: 'desc'
       }
     });
-    console.log('🔍 TrainingSessions:', trainingSessions);
-
-    // Récupérer aussi les sessions depuis d'autres modèles potentiels
-    let sessionsFromTraineeProgress: any[] = [];
-    let sessionsFromAttendanceSignatures: any[] = [];
-    
-    try {
-      sessionsFromTraineeProgress = await prisma.traineeProgress.findMany({
-        select: {
-          session: true
-        },
-        distinct: ['session'],
-        where: {
-          session: {
-            not: null
-          }
-        }
-      });
-      console.log('🔍 Sessions depuis TraineeProgress:', sessionsFromTraineeProgress);
-
-      sessionsFromAttendanceSignatures = await prisma.attendanceSignature.findMany({
-        select: {
-          session: true
-        },
-        distinct: ['session'],
-        where: {
-          session: {
-            not: null
-          }
-        }
-      });
-      console.log('🔍 Sessions depuis AttendanceSignatures:', sessionsFromAttendanceSignatures);
-    } catch (error) {
-      console.log('⚠️ Erreur lors de la récupération des sessions supplémentaires:', error);
-    }
 
     // Combiner toutes les sessions uniques
     const allSessions = new Set<string>();
     
     sessionsFromDemandes.forEach(item => {
-      if (item.session) {
-        allSessions.add(item.session);
-        console.log('✅ Ajouté depuis Demande:', item.session);
-      }
+      if (item.session) allSessions.add(item.session);
     });
     
     sessionsFromFormulaires.forEach(item => {
-      if (item.session) {
-        allSessions.add(item.session);
-        console.log('✅ Ajouté depuis Formulaires:', item.session);
-      }
+      if (item.session) allSessions.add(item.session);
     });
     
     sessionsFromSatisfaction.forEach(item => {
-      if (item.session) {
-        allSessions.add(item.session);
-        console.log('✅ Ajouté depuis Satisfaction:', item.session);
-      }
+      if (item.session) allSessions.add(item.session);
     });
 
-    // Ajouter aussi les sessions des TrainingSessions
-    trainingSessions.forEach(item => {
-      if (item.name) {
-        allSessions.add(item.name);
-        console.log('✅ Ajouté depuis TrainingSession:', item.name);
-      }
-    });
-
-    // Ajouter les sessions depuis TraineeProgress
-    sessionsFromTraineeProgress.forEach(item => {
-      if (item.session) {
-        allSessions.add(item.session);
-        console.log('✅ Ajouté depuis TraineeProgress:', item.session);
-      }
-    });
-
-    // Ajouter les sessions depuis AttendanceSignatures
-    sessionsFromAttendanceSignatures.forEach(item => {
-      if (item.session) {
-        allSessions.add(item.session);
-        console.log('✅ Ajouté depuis AttendanceSignatures:', item.session);
-      }
-    });
-
-    // Convertir en tableau et trier par ordre de création (plus récent en premier)
+    // Convertir en tableau et trier
     const sessionsList = Array.from(allSessions).sort();
-    console.log('🔍 Sessions finales combinées:', sessionsList);
-
-    // Créer un objet avec les sessions et leurs dates de création
-    const sessionsWithDates = sessionsFromDemandes.map(demande => ({
-      name: demande.session,
-      createdAt: demande.createdAt
-    }));
 
     return NextResponse.json({
       sessions: sessionsList,
-      trainingSessions: trainingSessions,
-      sessionsFromDemandes: sessionsWithDates // Ajouter les sessions avec dates
+      trainingSessions: trainingSessions
     });
 
   } catch (error) {
