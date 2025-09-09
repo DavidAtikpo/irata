@@ -815,6 +815,18 @@ model AttendanceSignature {
   @@schema("webirata")
 }
 
+model AttendanceUnlock {
+  id          String   @id @default(cuid())
+  sessionName String   // e.g., "2025 septembre 01 au 06"
+  day         String   // Lundi, Mardi, ...
+  period      String   // matin, soir
+  createdBy   String   // admin user id
+  createdAt   DateTime @default(now())
+
+  @@unique([sessionName, day, period])
+  @@schema("webirata")
+}
+
 model TeamMember {
   id             String   @id @default(cuid())
   name           String

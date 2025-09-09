@@ -32,7 +32,7 @@ const navigation = [
   { name: 'Trame facture', href: '/admin/facture-trame', icon: ReceiptPercentIcon },
   { name: 'Envoyer documents', href: '/admin/documents', icon: FolderIcon },
   { name: 'Convocation', href: '/admin/convocation', icon: ClipboardDocumentCheckIcon },
-  { name: 'fiche de présence', href: '/admin/presence', icon: ClipboardDocumentCheckIcon },
+  { name: 'fiche de présence', href: '/admin/liste-presence', icon: ClipboardDocumentCheckIcon },
   { name: 'Gestion présence', href: '/admin/attendance', icon: ClipboardDocumentCheckIcon },
   { name: 'Pré-job training', href: '/admin/pre-job-training', icon: ClipboardDocumentIcon },
   { name: 'Job Planing', href: '/admin/job-planing', icon: ClipboardDocumentCheckIcon },

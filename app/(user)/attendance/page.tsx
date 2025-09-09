@@ -11,6 +11,7 @@ export default function AttendanceForm() {
   const [signatures, setSignatures] = useState<Record<string, string>>({});
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [currentSignatureKey, setCurrentSignatureKey] = useState('');
+  const [unlocks, setUnlocks] = useState<Record<string, boolean>>({});
   
   const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
   
@@ -87,10 +88,74 @@ export default function AttendanceForm() {
     fetchExistingSignatures();
   }, []);
 
+  // Charger les déblocages dès que la session est connue
+  useEffect(() => {
+    const loadUnlocks = async () => {
+      if (!sessionName) return;
+      try {
+        console.log('Chargement unlocks pour session:', sessionName); // Debug
+        const r = await fetch(`/api/user/attendance-unlocks?session=${encodeURIComponent(sessionName)}`);
+        if (r.ok) {
+          const data = await r.json();
+          console.log('Unlocks reçus:', data); // Debug
+          setUnlocks(data.unlocks || {});
+        } else {
+          console.error('Erreur API unlocks:', r.status, r.statusText);
+        }
+      } catch (e) {
+        console.error('Erreur lors du chargement des déblocages:', e);
+      }
+    };
+    loadUnlocks();
+  }, [sessionName]);
+
   const handleSignatureClick = (day: string, period: string) => {
     const key = `${day}-${period}`;
+    console.log('Clic signature:', key, 'Unlocks actuels:', unlocks); // Debug
+    if (!unlocks[key]) {
+      alert('Signature non débloquée par l\'administrateur');
+      return;
+    }
     setCurrentSignatureKey(key);
     setShowSignatureModal(true);
+  };
+
+  const getButtonStyle = (day: string, period: string, isSigned: boolean) => {
+    const key = `${day}-${period}`;
+    const isUnlocked = unlocks[key];
+    
+    if (isSigned) {
+      return {
+        backgroundColor: "#10b981",
+        color: "white",
+        border: "1px solid #059669"
+      };
+    } else if (isUnlocked) {
+      return {
+        backgroundColor: "#3b82f6",
+        color: "white",
+        border: "1px solid #2563eb"
+      };
+    } else {
+      return {
+        backgroundColor: "#ef4444",
+        color: "white",
+        border: "1px solid #dc2626"
+      };
+    }
+  };
+
+  const getButtonText = (day: string, period: string, isSigned: boolean) => {
+    const key = `${day}-${period}`;
+    const isUnlocked = unlocks[key];
+    
+    if (isSigned) {
+      return "✓ Signé";
+    } else if (isUnlocked) {
+      return "Signer";
+    } else {
+      return "🔒 Bloqué";
+    }
   };
 
   const handleSignatureSave = async (signatureData: string) => {
@@ -154,11 +219,10 @@ export default function AttendanceForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          syllabusItem: 'attendance', // Item par défaut pour l'attendance
           traineeId: session?.user?.id,
           day: mappedDay,
-          period: period, // 'matin' ou 'soir'
-          signed: true,
-          signatureData: signatures[signatureKey]
+          completed: true // Marquer comme complété quand signé
         }),
       });
       
@@ -337,6 +401,43 @@ export default function AttendanceForm() {
               <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>
                 Révision: 01 | Code: ENR-CIFRA-LOG 002
               </p>
+              {sessionName && (
+                <button
+                  onClick={() => {
+                    const loadUnlocks = async () => {
+                      try {
+                        console.log('Rafraîchissement unlocks pour session:', sessionName);
+                        const r = await fetch(`/api/user/attendance-unlocks?session=${encodeURIComponent(sessionName)}`);
+                        if (r.ok) {
+                          const data = await r.json();
+                          console.log('Unlocks rafraîchis:', data);
+                          setUnlocks(data.unlocks || {});
+                          alert('Déblocages mis à jour !');
+                        } else {
+                          console.error('Erreur API unlocks:', r.status);
+                          alert('Erreur lors du rafraîchissement');
+                        }
+                      } catch (e) {
+                        console.error('Erreur rafraîchissement:', e);
+                        alert('Erreur lors du rafraîchissement');
+                      }
+                    };
+                    loadUnlocks();
+                  }}
+                  style={{
+                    marginTop: "8px",
+                    padding: "4px 8px",
+                    fontSize: "12px",
+                    backgroundColor: "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  🔄 Rafraîchir les déblocages
+                </button>
+              )}
             </div>
             
             {/* Informations de formation mobile */}
@@ -411,8 +512,10 @@ export default function AttendanceForm() {
                     <button
                       onClick={() => handleSignatureClick(day, 'matin')}
                       className="mobile-signature-btn"
+                      style={getButtonStyle(day, 'matin', false)}
+                      disabled={!unlocks[`${day}-matin`]}
                     >
-                      ✍️ Signer la présence
+                      {getButtonText(day, 'matin', false)}
                     </button>
                   )}
                 </div>
@@ -443,8 +546,10 @@ export default function AttendanceForm() {
                     <button
                       onClick={() => handleSignatureClick(day, 'soir')}
                       className="mobile-signature-btn"
+                      style={getButtonStyle(day, 'soir', false)}
+                      disabled={!unlocks[`${day}-soir`]}
                     >
-                      ✍️ Signer la présence
+                      {getButtonText(day, 'soir', false)}
                     </button>
                   )}
                 </div>
@@ -488,6 +593,31 @@ export default function AttendanceForm() {
             </button>
           </div>
 
+          {/* Légende des couleurs */}
+          <div style={{ 
+            marginTop: "20px", 
+            padding: "16px", 
+            backgroundColor: "#f8f9fa", 
+            border: "1px solid #dee2e6", 
+            borderRadius: "8px" 
+          }}>
+            <h3 style={{ margin: "0 0 12px 0", color: "#495057", fontSize: "16px" }}>Légende des boutons :</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ width: "20px", height: "20px", backgroundColor: "#10b981", borderRadius: "4px" }}></div>
+                <span><strong>Vert :</strong> Déjà signé</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ width: "20px", height: "20px", backgroundColor: "#3b82f6", borderRadius: "4px" }}></div>
+                <span><strong>Bleu :</strong> Débloqué - Vous pouvez signer</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ width: "20px", height: "20px", backgroundColor: "#ef4444", borderRadius: "4px" }}></div>
+                <span><strong>Rouge :</strong> Bloqué - Attendez que l'admin débloque</span>
+              </div>
+            </div>
+          </div>
+
           {/* Instructions mobile */}
           <div style={{ 
             marginTop: "20px", 
@@ -502,7 +632,7 @@ export default function AttendanceForm() {
               <li style={{ marginBottom: "8px" }}><strong>Signatures manuelles :</strong> Vous pouvez aussi signer directement dans chaque case (matin et après-midi)</li>
               <li style={{ marginBottom: "8px" }}><strong>Pre-Job Training automatique :</strong> Quand vous signez l'attendance du matin, le Pre-Job Training est automatiquement signé pour le même jour</li>
               <li style={{ marginBottom: "8px" }}><strong>Modification :</strong> Cliquez sur une signature existante pour la modifier</li>
-              <li style={{ marginBottom: "8px" }}><strong>Indicateurs :</strong> Les cases vertes (✓) indiquent une présence confirmée</li>
+              <li style={{ marginBottom: "8px" }}><strong>Déblocage :</strong> L'administrateur doit débloquer les créneaux avant que vous puissiez signer</li>
               <li><strong>Synchronisation :</strong> Utilisez le bouton "Actualiser" pour voir les signatures générées depuis le suivi stagiaire</li>
             </ul>
           </div>
@@ -532,6 +662,46 @@ export default function AttendanceForm() {
             </tr>
           </tbody>
         </table>
+
+        {/* Bouton de rafraîchissement pour desktop */}
+        {sessionName && (
+          <div style={{ textAlign: "center", margin: "10px 0" }}>
+            <button
+              onClick={() => {
+                const loadUnlocks = async () => {
+                  try {
+                    console.log('Rafraîchissement unlocks pour session:', sessionName);
+                    const r = await fetch(`/api/user/attendance-unlocks?session=${encodeURIComponent(sessionName)}`);
+                    if (r.ok) {
+                      const data = await r.json();
+                      console.log('Unlocks rafraîchis:', data);
+                      setUnlocks(data.unlocks || {});
+                      alert('Déblocages mis à jour !');
+                    } else {
+                      console.error('Erreur API unlocks:', r.status);
+                      alert('Erreur lors du rafraîchissement');
+                    }
+                  } catch (e) {
+                    console.error('Erreur rafraîchissement:', e);
+                    alert('Erreur lors du rafraîchissement');
+                  }
+                };
+                loadUnlocks();
+              }}
+              style={{
+                padding: "6px 12px",
+                fontSize: "14px",
+                backgroundColor: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer"
+              }}
+            >
+              🔄 Rafraîchir les déblocages
+            </button>
+          </div>
+        )}
 
         {/* Training info */}
         <table style={{ width: "100%", marginTop: "10px" }}>
@@ -595,9 +765,11 @@ export default function AttendanceForm() {
                     ) : (
                       <button
                         onClick={() => handleSignatureClick(day, 'matin')}
-                        className="w-full h-8 border border-dashed border-gray-400 text-xs text-gray-500 hover:bg-gray-100"
+                        className="w-full h-8 text-xs"
+                        style={getButtonStyle(day, 'matin', false)}
+                        disabled={!unlocks[`${day}-matin`]}
                       >
-                        Signer
+                        {getButtonText(day, 'matin', false)}
                       </button>
                     )}
                   </td>
@@ -626,9 +798,11 @@ export default function AttendanceForm() {
                     ) : (
                       <button
                         onClick={() => handleSignatureClick(day, 'soir')}
-                        className="w-full h-8 border border-dashed border-gray-400 text-xs text-gray-500 hover:bg-gray-100"
+                        className="w-full h-8 text-xs"
+                        style={getButtonStyle(day, 'soir', false)}
+                        disabled={!unlocks[`${day}-soir`]}
                       >
-                        Signer
+                        {getButtonText(day, 'soir', false)}
                       </button>
                     )}
                   </td>
@@ -665,6 +839,25 @@ export default function AttendanceForm() {
           </button>
         </div>
 
+        {/* Légende des couleurs */}
+        <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f8f9fa", border: "1px solid #dee2e6", borderRadius: "8px" }}>
+          <h3 style={{ margin: "0 0 10px 0", color: "#495057" }}>Légende des boutons :</h3>
+          <div style={{ display: "flex", gap: "20px", fontSize: "14px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: "20px", height: "20px", backgroundColor: "#10b981", borderRadius: "4px" }}></div>
+              <span><strong>Vert :</strong> Déjà signé</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: "20px", height: "20px", backgroundColor: "#3b82f6", borderRadius: "4px" }}></div>
+              <span><strong>Bleu :</strong> Débloqué - Vous pouvez signer</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: "20px", height: "20px", backgroundColor: "#ef4444", borderRadius: "4px" }}></div>
+              <span><strong>Rouge :</strong> Bloqué - Attendez que l'admin débloque</span>
+            </div>
+          </div>
+        </div>
+
         {/* Informations */}
         <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f0f8ff", border: "1px solid #b0d4f1", borderRadius: "8px" }}>
           <h3 style={{ margin: "0 0 10px 0", color: "#1e40af" }}>Instructions :</h3>
@@ -673,7 +866,7 @@ export default function AttendanceForm() {
             <li><strong>Signatures manuelles :</strong> Vous pouvez aussi signer directement dans chaque case (matin et après-midi)</li>
             <li><strong>Pre-Job Training automatique :</strong> Quand vous signez l'attendance du matin, le Pre-Job Training est automatiquement signé pour le même jour</li>
             <li><strong>Modification :</strong> Cliquez sur une signature existante pour la modifier</li>
-            <li><strong>Indicateurs :</strong> Les cases vertes (✓) indiquent une présence confirmée</li>
+            <li><strong>Déblocage :</strong> L'administrateur doit débloquer les créneaux avant que vous puissiez signer</li>
             <li><strong>Synchronisation :</strong> Utilisez le bouton "Actualiser" pour voir les signatures générées depuis le suivi stagiaire</li>
           </ul>
         </div>

@@ -1,478 +1,854 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+"use client";
+import React, { useState, useEffect } from "react";
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-// Le layout est maintenant géré automatiquement par le layout.tsx parent
-import {
-  UserGroupIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ClockIcon,
-  ExclamationTriangleIcon,
-  DocumentArrowDownIcon,
-  PrinterIcon
-} from '@heroicons/react/24/outline';
+import SignaturePad from '@/components/SignaturePad';
 
-interface Presence {
-  id: string;
-  stagiaire: {
-    nom: string;
-    prenom: string;
-    email: string;
-  };
-  session: string;
-  date: string;
-  statut: 'PRESENT' | 'ABSENT' | 'RETARD' | 'EXCUSE';
-  heureArrivee?: string;
-  heureDepart?: string;
-  commentaire?: string;
-}
-
-interface Session {
-  id: string;
-  nom: string;
-  dateDebut: string;
-  dateFin: string;
-  stagiaires: number;
-}
-
-export default function ListePresencePage() {
-  const { data: session, status } = useSession();
+export default function AttendanceForm() {
+  const { data: session } = useSession();
   const router = useRouter();
-  const [presences, setPresences] = useState<Presence[]>([]);
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedSession, setSelectedSession] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [showBulkActions, setShowBulkActions] = useState(false);
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    } else if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
-      router.push('/');
-    } else if (status === 'authenticated') {
-      // Simuler des données pour l'instant
-      setSessions([
-        {
-          id: '1',
-          nom: '2025 février 03 au 08',
-          dateDebut: '2025-02-03',
-          dateFin: '2025-02-08',
-          stagiaires: 12
-        },
-        {
-          id: '2',
-          nom: '2025 avril 31 mars au 05 avril',
-          dateDebut: '2025-03-31',
-          dateFin: '2025-04-05',
-          stagiaires: 8
-        }
-      ]);
-
-      setPresences([
-        {
-          id: '1',
-          stagiaire: { nom: 'Dupont', prenom: 'Jean', email: 'jean.dupont@email.com' },
-          session: '2025 février 03 au 08',
-          date: '2025-02-03',
-          statut: 'PRESENT',
-          heureArrivee: '08:00',
-          heureDepart: '17:00'
-        },
-        {
-          id: '2',
-          stagiaire: { nom: 'Martin', prenom: 'Marie', email: 'marie.martin@email.com' },
-          session: '2025 février 03 au 08',
-          date: '2025-02-03',
-          statut: 'RETARD',
-          heureArrivee: '08:30',
-          heureDepart: '17:00',
-          commentaire: 'Transport en retard'
-        },
-        {
-          id: '3',
-          stagiaire: { nom: 'Bernard', prenom: 'Pierre', email: 'pierre.bernard@email.com' },
-          session: '2025 février 03 au 08',
-          date: '2025-02-03',
-          statut: 'ABSENT',
-          commentaire: 'Maladie'
-        },
-        {
-          id: '4',
-          stagiaire: { nom: 'Dubois', prenom: 'Sophie', email: 'sophie.dubois@email.com' },
-          session: '2025 février 03 au 08',
-          date: '2025-02-03',
-          statut: 'PRESENT',
-          heureArrivee: '07:55',
-          heureDepart: '17:05'
-        }
-      ]);
-      
-      setSelectedSession('1');
-      setSelectedDate('2025-02-03');
-      setLoading(false);
-    }
-  }, [status, session, router]);
-
-  const getStatutColor = (statut: string) => {
-    switch (statut) {
-      case 'PRESENT': return 'bg-green-100 text-green-800';
-      case 'ABSENT': return 'bg-red-100 text-red-800';
-      case 'RETARD': return 'bg-yellow-100 text-yellow-800';
-      case 'EXCUSE': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatutIcon = (statut: string) => {
-    switch (statut) {
-      case 'PRESENT': return CheckCircleIcon;
-      case 'ABSENT': return XCircleIcon;
-      case 'RETARD': return ClockIcon;
-      case 'EXCUSE': return ExclamationTriangleIcon;
-      default: return UserGroupIcon;
-    }
-  };
-
-  const filteredPresences = presences.filter(presence => {
-    const sessionMatch = !selectedSession || presence.session === sessions.find(s => s.id === selectedSession)?.nom;
-    const dateMatch = !selectedDate || presence.date === selectedDate;
-    return sessionMatch && dateMatch;
+  const [userName, setUserName] = useState('');
+  const [userLevel, setUserLevel] = useState('');
+  const [sessionName, setSessionName] = useState('');
+  const [signatures, setSignatures] = useState<Record<string, string>>({});
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [currentSignatureKey, setCurrentSignatureKey] = useState('');
+  const [availableSessions, setAvailableSessions] = useState<string[]>([]);
+  const [selectedSessionForUnlock, setSelectedSessionForUnlock] = useState<string>('');
+  const [trainingSessions, setTrainingSessions] = useState<any[]>([]);
+  const [sessionsFromDemandes, setSessionsFromDemandes] = useState<any[]>([]);
+  
+  const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+  
+  const trainees = Array(12).fill({
+    qrCode: "NA",
+    level: "",
+    name: "",
   });
 
-  const getSessionDates = () => {
-    if (!selectedSession) return [];
-    const session = sessions.find(s => s.id === selectedSession);
-    if (!session) return [];
+  useEffect(() => {
+    if (session?.user?.role !== 'ADMIN') {
+      router.push('/');
+      return;
+    }
+
+    const fetchUserProfile = async () => {
+      try {
+        const r = await fetch('/api/user/profile');
+        if (r.ok) {
+          const data = await r.json();
+          console.log('Profile data attendance:', data); // Debug
+          
+          // Essayer plusieurs façons de récupérer le nom
+          let fullName = '';
+          if (data?.user?.prenom && data?.user?.nom) {
+            fullName = `${data.user.prenom} ${data.user.nom}`;
+          } else if (data?.user?.name) {
+            fullName = data.user.name;
+          } else if (data?.user?.nom) {
+            fullName = data.user.nom;
+          } else if (data?.user?.prenom) {
+            fullName = data.user.prenom;
+          }
+          
+          if (fullName) {
+            setUserName(fullName);
+          } else {
+            console.error('Aucun nom trouvé dans les données:', data);
+          }
+
+          // Récupérer le niveau directement depuis le profil
+          if (data?.user?.niveau) {
+            setUserLevel(data.user.niveau);
+          }
+        } else {
+          console.error('Erreur API profile:', r.status);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement du profil:', error);
+      }
+    };
     
-    const dates = [];
-    const start = new Date(session.dateDebut);
-    const end = new Date(session.dateFin);
+    const fetchSession = async () => {
+      try {
+        const r = await fetch('/api/user/training-session');
+        if (r.ok) {
+          const data = await r.json();
+          if (data?.name) setSessionName(data.name);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement de la session:', error);
+      }
+    };
+
+    const fetchAvailableSessions = async () => {
+      try {
+        const r = await fetch('/api/admin/sessions');
+        if (r.ok) {
+          const data = await r.json();
+          console.log('Sessions disponibles:', data); // Debug
+          setAvailableSessions(data.sessions || []);
+          setTrainingSessions(data.trainingSessions || []);
+          setSessionsFromDemandes(data.sessionsFromDemandes || []);
+          
+          // Sélectionner la session la plus récente par défaut depuis le modèle Demande
+          if (data.sessionsFromDemandes && data.sessionsFromDemandes.length > 0) {
+            // Les sessionsFromDemandes sont déjà triées par createdAt desc (plus récent en premier)
+            const mostRecentSession = data.sessionsFromDemandes[0];
+            setSelectedSessionForUnlock(mostRecentSession.name);
+            console.log('Session la plus récente sélectionnée (depuis Demande):', mostRecentSession.name); // Debug
+          } else if (data.sessions && data.sessions.length > 0) {
+            // Fallback sur la première session de la liste si pas de sessionsFromDemandes
+            setSelectedSessionForUnlock(data.sessions[0]);
+          }
+        } else {
+          console.error('Erreur lors de la récupération des sessions:', r.status);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des sessions:', error);
+      }
+    };
+
+    const fetchExistingSignatures = async () => {
+      try {
+        const response = await fetch('/api/user/attendance-signatures');
+        if (response.ok) {
+          const data = await response.json();
+          setSignatures(data.signatures || {});
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des signatures:', error);
+      }
+    };
     
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      dates.push(new Date(d).toISOString().split('T')[0]);
+    fetchUserProfile();
+    fetchSession();
+    fetchAvailableSessions();
+    fetchExistingSignatures();
+  }, [session, router]);
+
+  const handleSignatureClick = (day: string, period: string) => {
+    const key = `${day}-${period}`;
+    setCurrentSignatureKey(key);
+    setShowSignatureModal(true);
+  };
+
+  const handleSignatureSave = async (signatureData: string) => {
+    if (!currentSignatureKey) return;
+    
+    setSignatures(prev => ({
+      ...prev,
+      [currentSignatureKey]: signatureData
+    }));
+    
+    setShowSignatureModal(false);
+    
+    // Sauvegarder la signature d'attendance
+    try {
+      const response = await fetch('/api/user/attendance-signatures', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          signatureKey: currentSignatureKey,
+          signatureData: signatureData,
+          userId: session?.user?.id
+        }),
+      });
+      
+      if (response.ok) {
+        console.log('Signature d\'attendance sauvegardée');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde de la signature d\'attendance:', error);
     }
     
-    return dates;
+    // Mettre à jour automatiquement le système de suivi des stagiaires
+    await updateTraineeProgress(currentSignatureKey);
+    
+    // Si c'est une signature du matin, signer automatiquement le Pre-Job Training
+    const [day, period] = currentSignatureKey.split('-');
+    if (period === 'matin') {
+      await signPreJobTraining(day, signatureData);
+    }
+
+    // NOUVELLE LOGIQUE ADMIN : Débloquer les créneaux pour les utilisateurs
+    if (selectedSessionForUnlock) {
+      await unlockSlotForUsers(selectedSessionForUnlock, day, period);
+      
+      // Si c'est le matin, débloquer aussi le soir
+      if (period === 'matin') {
+        await unlockSlotForUsers(selectedSessionForUnlock, day, 'soir');
+      }
+      
+      alert('Signature enregistrée et créneaux débloqués pour les utilisateurs !');
+    }
   };
 
-  const updatePresence = (id: string, updates: Partial<Presence>) => {
-    setPresences(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  const unlockSlotForUsers = async (sessionName: string, day: string, period: string) => {
+    try {
+      const response = await fetch('/api/admin/attendance/unlock', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ sessionName, day, period }) 
+      });
+      return response.ok;
+    } catch (e) {
+      console.error('Erreur unlock slot pour users:', e);
+      return false;
+    }
   };
 
-  const exportToCSV = () => {
-    const headers = ['Nom', 'Prénom', 'Email', 'Date', 'Statut', 'Heure arrivée', 'Heure départ', 'Commentaire'];
-    const csvContent = [
-      headers.join(','),
-      ...filteredPresences.map(p => [
-        p.stagiaire.nom,
-        p.stagiaire.prenom,
-        p.stagiaire.email,
-        p.date,
-        p.statut,
-        p.heureArrivee || '',
-        p.heureDepart || '',
-        p.commentaire || ''
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `presence_${selectedDate || 'all'}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const updateTraineeProgress = async (signatureKey: string) => {
+    try {
+      const [day, period] = signatureKey.split('-');
+      const dayMapping: Record<string, string> = {
+        'Lundi': 'J1',
+        'Mardi': 'J2', 
+        'Mercredi': 'J3',
+        'Jeudi': 'J4',
+        'Vendredi': 'J5'
+      };
+      
+      const mappedDay = dayMapping[day];
+      if (!mappedDay) return; // Seulement J1-J5 pour le suivi
+      
+      const response = await fetch('/api/user/trainee-progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          traineeId: session?.user?.id,
+          day: mappedDay,
+          period: period, // 'matin' ou 'soir'
+          signed: true,
+          signatureData: signatures[signatureKey]
+        }),
+      });
+      
+      if (response.ok) {
+        console.log(`Progression mise à jour pour ${day} ${period}`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la progression:', error);
+    }
   };
 
-  if (status === 'loading' || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <h2 className="mt-4 text-xl font-semibold text-gray-900">Chargement...</h2>
-        </div>
-      </div>
-    );
-  }
+  const signPreJobTraining = async (day: string, signatureData: string) => {
+    try {
+      const response = await fetch('/api/user/pre-job-training-signature', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          day: day,
+          signatureData: signatureData,
+          userId: session?.user?.id,
+          userName: userName
+        }),
+      });
+      
+      if (response.ok) {
+        console.log(`Pre-Job Training signé automatiquement pour ${day}`);
+      } else {
+        console.error('Erreur lors de la signature automatique du Pre-Job Training');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la signature automatique du Pre-Job Training:', error);
+    }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {/* En-tête */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Liste de présence</h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Gérez les présences des stagiaires pour chaque session de formation
-        </p>
-      </div>
-
-        {/* Statistiques rapides */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <CheckCircleIcon className="h-6 w-6 text-green-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Présents</dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {filteredPresences.filter(p => p.statut === 'PRESENT').length}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
+    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
+      {/* Zone Admin - Sélecteur de session */}
+      {availableSessions.length > 0 && (
+        <div style={{ 
+          backgroundColor: "#e3f2fd", 
+          border: "2px solid #2196f3", 
+          borderRadius: "8px", 
+          padding: "16px", 
+          marginBottom: "20px" 
+        }}>
+          <h3 style={{ color: "#1976d2", marginBottom: "10px" }}>
+            🔧 Mode Administrateur - Gestion des Déblocages
+          </h3>
+          <div style={{ marginBottom: "10px" }}>
+            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", color: "#1976d2" }}>
+              Session à gérer pour le déblocage:
+            </label>
+            <select
+              value={selectedSessionForUnlock}
+              onChange={(e) => setSelectedSessionForUnlock(e.target.value)}
+              style={{
+                padding: "8px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+                minWidth: "300px"
+              }}
+            >
+              {availableSessions.map(session => {
+                const demandeSession = sessionsFromDemandes.find(ds => ds.name === session);
+                const dateInfo = demandeSession && demandeSession.createdAt ? 
+                  ` (${new Date(demandeSession.createdAt).toLocaleDateString('fr-FR')})` : '';
+                return (
+                  <option key={session} value={session}>
+                    {session}{dateInfo}
+                  </option>
+                );
+              })}
+            </select>
           </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <XCircleIcon className="h-6 w-6 text-red-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Absents</dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {filteredPresences.filter(p => p.statut === 'ABSENT').length}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ClockIcon className="h-6 w-6 text-yellow-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Retards</dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {filteredPresences.filter(p => p.statut === 'RETARD').length}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <UserGroupIcon className="h-6 w-6 text-blue-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Taux présence</dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {filteredPresences.length > 0 
-                        ? Math.round((filteredPresences.filter(p => p.statut === 'PRESENT' || p.statut === 'RETARD').length / filteredPresences.length) * 100)
-                        : 0}%
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filtres et actions */}
-        <div className="bg-white p-4 rounded-lg shadow mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Session</label>
-                <select
-                  value={selectedSession}
-                  onChange={(e) => {
-                    setSelectedSession(e.target.value);
-                    setSelectedDate('');
-                  }}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-                >
-                  <option value="">Toutes les sessions</option>
-                  {sessions.map(session => (
-                    <option key={session.id} value={session.id}>{session.nom}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <select
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  disabled={!selectedSession}
-                >
-                  <option value="">Toutes les dates</option>
-                  {getSessionDates().map(date => (
-                    <option key={date} value={date}>
-                      {new Date(date).toLocaleDateString('fr-FR', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={exportToCSV}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-              >
-                <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
-                Exporter CSV
-              </button>
-              
-              <button
-                onClick={() => window.print()}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-              >
-                <PrinterIcon className="h-4 w-4 mr-2" />
-                Imprimer
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Liste de présence */}
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Présences ({filteredPresences.length})
-            </h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">
-              {selectedDate 
-                ? `Liste de présence pour le ${new Date(selectedDate).toLocaleDateString('fr-FR')}`
-                : 'Vue d\'ensemble des présences'
-              }
-            </p>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stagiaire
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Statut
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Horaires
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Commentaire
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredPresences.map((presence) => {
-                  const StatusIcon = getStatutIcon(presence.statut);
-                  
-                  return (
-                    <tr key={presence.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-8 w-8">
-                            <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
-                              <span className="text-xs font-medium text-white">
-                                {presence.stagiaire.prenom.charAt(0)}{presence.stagiaire.nom.charAt(0)}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900">
-                              {presence.stagiaire.prenom} {presence.stagiaire.nom}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {presence.stagiaire.email}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(presence.date).toLocaleDateString('fr-FR')}
-                      </td>
-                      
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <StatusIcon className="h-4 w-4 mr-2" />
-                          <span className={`px-2 py-1 text-xs rounded-full ${getStatutColor(presence.statut)}`}>
-                            {presence.statut}
-                          </span>
-                        </div>
-                      </td>
-                      
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>
-                          {presence.heureArrivee && (
-                            <div>Arrivée: {presence.heureArrivee}</div>
-                          )}
-                          {presence.heureDepart && (
-                            <div>Départ: {presence.heureDepart}</div>
-                          )}
-                        </div>
-                      </td>
-                      
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <div className="max-w-xs truncate" title={presence.commentaire}>
-                          {presence.commentaire || '-'}
-                        </div>
-                      </td>
-                      
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <select
-                          value={presence.statut}
-                          onChange={(e) => updatePresence(presence.id, { statut: e.target.value as any })}
-                          className="text-xs border border-gray-300 rounded px-2 py-1"
-                        >
-                          <option value="PRESENT">Présent</option>
-                          <option value="ABSENT">Absent</option>
-                          <option value="RETARD">Retard</option>
-                          <option value="EXCUSE">Excusé</option>
-                        </select>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredPresences.length === 0 && (
-            <div className="text-center py-12">
-              <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune présence</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Aucune donnée de présence pour les filtres sélectionnés.
+          {selectedSessionForUnlock && (
+            <div style={{ color: "#1976d2", fontSize: "14px" }}>
+              <p style={{ margin: "5px 0" }}>
+                <strong>⚠️ Important:</strong> Vos signatures débloquent automatiquement les créneaux pour tous les utilisateurs de la session "{selectedSessionForUnlock}".
               </p>
+              {sessionsFromDemandes.find(ds => ds.name === selectedSessionForUnlock) && (
+                <p style={{ margin: "5px 0", fontSize: "12px", color: "#1565c0" }}>
+                  <strong>📅 Session sélectionnée:</strong> Créée le {sessionsFromDemandes.find(ds => ds.name === selectedSessionForUnlock).createdAt ? 
+                    new Date(sessionsFromDemandes.find(ds => ds.name === selectedSessionForUnlock).createdAt).toLocaleDateString('fr-FR') : 
+                    'Date non disponible'}
+                </p>
+              )}
             </div>
           )}
         </div>
+      )}
+
+      <style jsx>{`
+        table {
+          border-collapse: collapse;
+          border: 1px solid #000;
+        }
+        td, th {
+          border: 1px solid #000;
+          padding: 5px;
+          text-align: center;
+        }
+        .text-left {
+          text-align: left;
+        }
+        .bg-gray {
+          background-color: #f0f0f0;
+        }
+        .font-bold {
+          font-weight: bold;
+        }
+        
+        /* Styles pour mobile */
+        @media (max-width: 768px) {
+          .desktop-only {
+            display: none;
+          }
+          .mobile-only {
+            display: block;
+          }
+        }
+        
+        @media (min-width: 769px) {
+          .desktop-only {
+            display: block;
+          }
+          .mobile-only {
+            display: none;
+          }
+        }
+        
+        .mobile-card {
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          margin-bottom: 16px;
+          padding: 16px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-header {
+          background: #f8f9fa;
+          border-radius: 6px;
+          padding: 12px;
+          margin-bottom: 16px;
+        }
+        
+        .mobile-day-title {
+          font-size: 18px;
+          font-weight: bold;
+          text-align: center;
+          margin-bottom: 16px;
+          color: #333;
+        }
+        
+        .mobile-period {
+          background: #f0f0f0;
+          border-radius: 6px;
+          padding: 12px;
+          margin-bottom: 12px;
+        }
+        
+        .mobile-period-title {
+          font-weight: bold;
+          margin-bottom: 8px;
+          color: #555;
+        }
+        
+        .mobile-signature-btn {
+          width: 100%;
+          padding: 12px;
+          border: 2px dashed #3b82f6;
+          background: transparent;
+          color: #3b82f6;
+          border-radius: 6px;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        
+        .mobile-signature-btn:hover {
+          background: #eff6ff;
+          border-color: #2563eb;
+        }
+        
+        .mobile-signature-img {
+          height: 60px;
+          width: auto;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+        
+        .mobile-info-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+        
+        .mobile-info-item {
+          background: #f8f9fa;
+          padding: 8px 12px;
+          border-radius: 4px;
+          border: 1px solid #e9ecef;
+        }
+        
+        .mobile-info-label {
+          font-weight: bold;
+          color: #495057;
+          font-size: 12px;
+        }
+        
+        .mobile-info-value {
+          color: #212529;
+          font-size: 14px;
+          margin-top: 4px;
+        }
+      `}</style>
+
+      {/* Version mobile responsive */}
+      <div className="mobile-only">
+        <div style={{ padding: "16px" }}>
+          {/* Header mobile */}
+          <div className="mobile-header">
+            <div style={{ textAlign: "center", marginBottom: "16px" }}>
+              <h2 style={{ margin: "0", fontSize: "20px", fontWeight: "bold" }}>
+                FORMULAIRE DE PRÉSENCE CI.DES
+              </h2>
+              <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>
+                Révision: 01 | Code: ENR-CIFRA-LOG 002
+              </p>
+            </div>
+            
+            {/* Informations de formation mobile */}
+            <div className="mobile-info-grid">
+              <div className="mobile-info-item">
+                <div className="mobile-info-label">Formation</div>
+                <div className="mobile-info-value">{sessionName || 'Chargement...'}</div>
+              </div>
+              <div className="mobile-info-item">
+                <div className="mobile-info-label">Site</div>
+                <div className="mobile-info-value">Centre CI.DES</div>
+              </div>
+              <div className="mobile-info-item">
+                <div className="mobile-info-label">Période</div>
+                <div className="mobile-info-value">
+                  {new Date().toLocaleDateString('fr-FR', { month: 'long' })} {new Date().getFullYear()}
+                </div>
+              </div>
+            </div>
+            
+            {/* Informations stagiaire mobile */}
+            <div style={{ 
+              background: "#e3f2fd", 
+              padding: "12px", 
+              borderRadius: "6px",
+              border: "1px solid #90caf9"
+            }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <div>
+                  <div style={{ fontSize: "12px", color: "#1976d2", fontWeight: "bold" }}>QR Code</div>
+                  <div style={{ fontSize: "14px", color: "#1565c0" }}>QR</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "12px", color: "#1976d2", fontWeight: "bold" }}>Niveau</div>
+                  <div style={{ fontSize: "14px", color: "#1565c0" }}>{userLevel || 'Formation'}</div>
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <div style={{ fontSize: "12px", color: "#1976d2", fontWeight: "bold" }}>Nom du Stagiaire</div>
+                  <div style={{ fontSize: "14px", color: "#1565c0" }}>{userName || 'Utilisateur'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Jours de la semaine mobile */}
+          {daysOfWeek.map((day) => (
+            <div key={day} className="mobile-card">
+              <div className="mobile-day-title">{day}</div>
+              
+              {/* Matin */}
+              <div className="mobile-period">
+                <div className="mobile-period-title">Matin: 4h</div>
+                <div style={{ textAlign: "center" }}>
+                  {signatures[`${day}-matin`] ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <img 
+                        src={signatures[`${day}-matin`]} 
+                        alt="Signature matin" 
+                        className="mobile-signature-img"
+                        onClick={() => handleSignatureClick(day, 'matin')}
+                      />
+                      <div style={{ 
+                        fontSize: "12px", 
+                        color: "#10b981", 
+                        marginTop: "4px",
+                        fontWeight: "bold"
+                      }}>
+                        ✓ Présent
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleSignatureClick(day, 'matin')}
+                      className="mobile-signature-btn"
+                    >
+                      ✍️ Signer la présence
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {/* Après-midi */}
+              <div className="mobile-period">
+                <div className="mobile-period-title">Après-midi: 4h</div>
+                <div style={{ textAlign: "center" }}>
+                  {signatures[`${day}-soir`] ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <img 
+                        src={signatures[`${day}-soir`]} 
+                        alt="Signature après-midi" 
+                        className="mobile-signature-img"
+                        onClick={() => handleSignatureClick(day, 'soir')}
+                      />
+                      <div style={{ 
+                        fontSize: "12px", 
+                        color: "#10b981", 
+                        marginTop: "4px",
+                        fontWeight: "bold"
+                      }}>
+                        ✓ Présent
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleSignatureClick(day, 'soir')}
+                      className="mobile-signature-btn"
+                    >
+                      ✍️ Signer la présence
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Footer mobile */}
+          <div style={{ 
+            textAlign: "center", 
+            fontSize: "12px", 
+            color: "#666",
+            marginTop: "20px",
+            padding: "16px",
+            background: "#f8f9fa",
+            borderRadius: "6px"
+          }}>
+            <div style={{ fontWeight: "bold" }}>CI.DES sasu – Capital 2 500 Euros</div>
+            <div>SIRET: 87840789900011 – VAT: FR71878407899</div>
+          </div>
+
+          {/* Bouton d'actualisation mobile */}
+          <div style={{ textAlign: "center", marginTop: "20px" }}>
+            <button
+              onClick={() => {
+                window.location.reload();
+              }}
+              style={{
+                width: "100%",
+                padding: "14px 20px",
+                backgroundColor: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "16px",
+                cursor: "pointer",
+                fontWeight: "500"
+              }}
+            >
+              🔄 Actualiser les signatures
+            </button>
+          </div>
+
+          {/* Instructions mobile */}
+          <div style={{ 
+            marginTop: "20px", 
+            padding: "16px", 
+            backgroundColor: "#eff6ff", 
+            border: "1px solid #bfdbfe", 
+            borderRadius: "8px" 
+          }}>
+            <h3 style={{ margin: "0 0 12px 0", color: "#1e40af", fontSize: "16px" }}>Instructions :</h3>
+            <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "13px", lineHeight: "1.5" }}>
+              <li style={{ marginBottom: "8px" }}><strong>Signatures automatiques :</strong> Quand vous cochez un jour dans "Suivi Stagiaire", les signatures d'attendance sont créées automatiquement</li>
+              <li style={{ marginBottom: "8px" }}><strong>Signatures manuelles :</strong> Vous pouvez aussi signer directement dans chaque case (matin et après-midi)</li>
+              <li style={{ marginBottom: "8px" }}><strong>Pre-Job Training automatique :</strong> Quand vous signez l'attendance du matin, le Pre-Job Training est automatiquement signé pour le même jour</li>
+              <li style={{ marginBottom: "8px" }}><strong>Modification :</strong> Cliquez sur une signature existante pour la modifier</li>
+              <li style={{ marginBottom: "8px" }}><strong>Indicateurs :</strong> Les cases vertes (✓) indiquent une présence confirmée</li>
+              <li><strong>Synchronisation :</strong> Utilisez le bouton "Actualiser" pour voir les signatures générées depuis le suivi stagiaire</li>
+            </ul>
+          </div>
+        </div>
       </div>
+
+      {/* Version desktop originale */}
+      <div className="desktop-only">
+        {/* Header */}
+        <table style={{ width: "100%" }}>
+          <tbody>
+            <tr>
+                             <td colSpan={2} className="text-left">
+                 <div className="font-bold">Titre</div> <br /> FORMULAIRE DE PRÉSENCE CI.DES
+               </td>
+               <td colSpan={3} className="text-left">
+                 <div className="font-bold">Révision</div> <br /> 01
+               </td>
+            </tr>
+            <tr>
+                             <td colSpan={2} className="text-left">
+                 <div className="font-bold">Numéro de Code</div> <br /> ENR-CIFRA-LOG 002
+               </td>
+               <td colSpan={3} className="text-left">
+                 <div className="font-bold">Date de Création</div> <br /> 09/10/2023
+               </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Training info */}
+        <table style={{ width: "100%", marginTop: "10px" }}>
+          <thead>
+            <tr>
+              <th>Formation:</th>
+              <th colSpan={2}>{sessionName}</th>
+              <th>Site:</th>
+              <th colSpan={2}>Centre CI.DES</th>
+              <th>Mois:</th>
+              <th>{new Date().toLocaleDateString('fr-FR', { month: 'long' })}</th>
+              <th>Année:</th>
+              <th>{new Date().getFullYear()}</th>
+            </tr>
+            <tr>
+              <th>QR Code</th>
+              <th>Niveau</th>
+              <th>Nom du Stagiaire</th>
+              <th>Libellé</th>
+              <th colSpan={7}>Jours de Formation</th>
+              <th>Total Jour</th>
+              <th>Visa Stagiaire</th>
+              <th>Visa Formateur</th>
+              <th>Visa Formateur</th>
+            </tr>
+            <tr>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              {daysOfWeek.map((day) => (
+                <th key={day}>{day}</th>
+              ))}
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <React.Fragment>
+              <tr>
+                <td rowSpan={2}>QR</td>
+                <td rowSpan={2}>{userLevel || 'Formation'}</td>
+                <td rowSpan={2}>{userName || 'Utilisateur'}</td>
+                                 <td className="bg-gray">
+                   <div className="font-bold">Matin: 4 h</div>
+                 </td>
+                {daysOfWeek.map((day) => (
+                  <td key={`${day}-matin`} className="text-center">
+                    {signatures[`${day}-matin`] ? (
+                      <div className="flex flex-col items-center">
+                        <img 
+                          src={signatures[`${day}-matin`]} 
+                          alt="Signature" 
+                          className="h-6 w-auto cursor-pointer"
+                          onClick={() => handleSignatureClick(day, 'matin')}
+                        />
+                        <span className="text-xs text-green-600">✓</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleSignatureClick(day, 'matin')}
+                        className="w-full h-8 border border-dashed border-gray-400 text-xs text-gray-500 hover:bg-gray-100"
+                      >
+                        Signer
+                      </button>
+                    )}
+                  </td>
+                ))}
+                <td rowSpan={2}></td>
+                <td rowSpan={2}></td>
+                <td rowSpan={2}></td>
+                <td rowSpan={2}></td>
+              </tr>
+              <tr>
+                <td className="bg-gray">
+                  <span className="font-bold">Après-midi: 4 h</span>
+                </td>
+                {daysOfWeek.map((day) => (
+                  <td key={`${day}-soir`} className="text-center">
+                    {signatures[`${day}-soir`] ? (
+                      <div className="flex flex-col items-center">
+                        <img 
+                          src={signatures[`${day}-soir`]} 
+                          alt="Signature" 
+                          className="h-6 w-auto cursor-pointer"
+                          onClick={() => handleSignatureClick(day, 'soir')}
+                        />
+                        <span className="text-xs text-green-600">✓</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleSignatureClick(day, 'soir')}
+                        className="w-full h-8 border border-dashed border-gray-400 text-xs text-gray-500 hover:bg-gray-100"
+                      >
+                        Signer
+                      </button>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            </React.Fragment>
+          </tbody>
+        </table>
+
+        {/* Footer */}
+        <div style={{ marginTop: "10px", fontSize: "12px" }}>
+          CI.DES sasu – Capital 2 500 Euros <br />
+          SIRET: 87840789900011 – VAT: FR71878407899
+        </div>
+
+        {/* Bouton de rafraîchissement */}
+        <div style={{ marginTop: "20px", textAlign: "center" }}>
+          <button
+            onClick={() => {
+              window.location.reload();
+            }}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              fontSize: "14px",
+              cursor: "pointer",
+              fontWeight: "500"
+            }}
+          >
+            🔄 Actualiser les signatures
+          </button>
+        </div>
+
+        {/* Informations */}
+        <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f0f8ff", border: "1px solid #b0d4f1", borderRadius: "8px" }}>
+          <h3 style={{ margin: "0 0 10px 0", color: "#1e40af" }}>Instructions :</h3>
+          <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "14px" }}>
+            <li><strong>Signatures automatiques :</strong> Quand vous cochez un jour dans "Suivi Stagiaire", les signatures d'attendance sont créées automatiquement</li>
+            <li><strong>Signatures manuelles :</strong> Vous pouvez aussi signer directement dans chaque case (matin et après-midi)</li>
+            <li><strong>Pre-Job Training automatique :</strong> Quand vous signez l'attendance du matin, le Pre-Job Training est automatiquement signé pour le même jour</li>
+            <li><strong>Modification :</strong> Cliquez sur une signature existante pour la modifier</li>
+            <li><strong>Indicateurs :</strong> Les cases vertes (✓) indiquent une présence confirmée</li>
+            <li><strong>Synchronisation :</strong> Utilisez le bouton "Actualiser" pour voir les signatures générées depuis le suivi stagiaire</li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Modal de signature */}
+      {showSignatureModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: "white",
+            padding: "20px",
+            borderRadius: "8px",
+            maxWidth: "500px",
+            width: "90%",
+            maxHeight: "90%",
+            overflow: "auto"
+          }}>
+            <h3 style={{ margin: "0 0 15px 0" }}>
+              Signature - {currentSignatureKey.replace('-', ' ')}
+            </h3>
+            <SignaturePad
+              onSave={handleSignatureSave}
+              initialValue={signatures[currentSignatureKey] || ''}
+              disabled={false}
+            />
+            <div style={{ marginTop: "15px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button
+                onClick={() => setShowSignatureModal(false)}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#6b7280",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
-} 
+}

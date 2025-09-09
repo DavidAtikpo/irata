@@ -15,14 +15,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Récupérer toutes les sessions uniques depuis les demandes
+    // Récupérer toutes les sessions uniques depuis les demandes avec leurs dates
     const sessionsFromDemandes = await prisma.demande.findMany({
       select: {
-        session: true
+        session: true,
+        createdAt: true
       },
       distinct: ['session'],
       orderBy: {
-        session: 'asc'
+        createdAt: 'desc' // Plus récent en premier
       }
     });
 
@@ -81,12 +82,19 @@ export async function GET(req: NextRequest) {
       if (item.session) allSessions.add(item.session);
     });
 
-    // Convertir en tableau et trier
+    // Convertir en tableau et trier par ordre de création (plus récent en premier)
     const sessionsList = Array.from(allSessions).sort();
+
+    // Créer un objet avec les sessions et leurs dates de création
+    const sessionsWithDates = sessionsFromDemandes.map(demande => ({
+      name: demande.session,
+      createdAt: demande.createdAt
+    }));
 
     return NextResponse.json({
       sessions: sessionsList,
-      trainingSessions: trainingSessions
+      trainingSessions: trainingSessions,
+      sessionsFromDemandes: sessionsWithDates // Ajouter les sessions avec dates
     });
 
   } catch (error) {
