@@ -188,6 +188,12 @@ export async function POST(request: NextRequest) {
 
     const { syllabusItem, traineeId, day, completed } = await request.json();
     
+    // Validation des champs requis
+    if (!syllabusItem || !traineeId || !day) {
+      console.error('Champs manquants:', { syllabusItem, traineeId, day });
+      return NextResponse.json({ error: 'Champs requis manquants' }, { status: 400 });
+    }
+    
     console.log('Mise à jour de la progression stagiaire:', { 
       syllabusItem, 
       traineeId, 

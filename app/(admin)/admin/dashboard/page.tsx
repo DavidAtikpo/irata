@@ -338,7 +338,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <a 
-                  href="/admin/attendance"
+                  href="/admin/liste-presence"
                   className="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                 >
                   Gérer

@@ -1,10 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import SignaturePad from '@/components/SignaturePad';
 
 export default function AttendanceForm() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [userName, setUserName] = useState('');
   const [userLevel, setUserLevel] = useState('');
   const [sessionName, setSessionName] = useState('');
@@ -21,6 +23,12 @@ export default function AttendanceForm() {
   });
 
   useEffect(() => {
+    // Rediriger l'admin vers la page de gestion des présences
+    if (session?.user?.role === 'ADMIN') {
+      router.push('/admin/liste-presence');
+      return;
+    }
+
     const fetchUserProfile = async () => {
       try {
         const r = await fetch('/api/user/profile');
@@ -85,7 +93,7 @@ export default function AttendanceForm() {
     fetchUserProfile();
     fetchSession();
     fetchExistingSignatures();
-  }, []);
+  }, [session, router]);
 
   const handleSignatureClick = (day: string, period: string) => {
     const key = `${day}-${period}`;
@@ -194,6 +202,31 @@ export default function AttendanceForm() {
       console.error('Erreur lors de la signature automatique du Pre-Job Training:', error);
     }
   };
+
+  // Si c'est un admin, afficher un message de redirection
+  if (session?.user?.role === 'ADMIN') {
+    return (
+      <div style={{ padding: "20px", fontFamily: "Arial, sans-serif", textAlign: "center" }}>
+        <div style={{ 
+          backgroundColor: "#fef3c7", 
+          border: "1px solid #f59e0b", 
+          borderRadius: "8px", 
+          padding: "20px", 
+          margin: "20px 0" 
+        }}>
+          <h2 style={{ color: "#92400e", marginBottom: "10px" }}>
+            Redirection en cours...
+          </h2>
+          <p style={{ color: "#92400e" }}>
+            En tant qu'administrateur, vous êtes redirigé vers la page de gestion des présences.
+          </p>
+          <p style={{ color: "#92400e", fontSize: "14px", marginTop: "10px" }}>
+            Si la redirection ne fonctionne pas, <a href="/admin/liste-presence" style={{ color: "#1d4ed8" }}>cliquez ici</a>.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>

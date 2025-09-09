@@ -281,6 +281,7 @@ export default function AdminAttendancePage() {
             </div>
           </div>
 
+
           {/* Liste des utilisateurs groupés par session */}
           <div className="p-6">
             {filteredData.length === 0 ? (
