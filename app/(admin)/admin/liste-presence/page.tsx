@@ -86,20 +86,36 @@ export default function AttendanceForm() {
         const r = await fetch('/api/admin/sessions');
         if (r.ok) {
           const data = await r.json();
-          console.log('Sessions disponibles:', data); // Debug
+          console.log('🔍 Sessions disponibles reçues:', data); // Debug
+          console.log('🔍 Sessions list:', data.sessions);
+          console.log('🔍 TrainingSessions:', data.trainingSessions);
+          console.log('🔍 SessionsFromDemandes:', data.sessionsFromDemandes);
           setAvailableSessions(data.sessions || []);
           setTrainingSessions(data.trainingSessions || []);
           setSessionsFromDemandes(data.sessionsFromDemandes || []);
           
-          // Sélectionner la session la plus récente par défaut depuis le modèle Demande
+          // Sélectionner la session la plus récente par défaut
+          let selectedSession = '';
+          
           if (data.sessionsFromDemandes && data.sessionsFromDemandes.length > 0) {
-            // Les sessionsFromDemandes sont déjà triées par createdAt desc (plus récent en premier)
-            const mostRecentSession = data.sessionsFromDemandes[0];
-            setSelectedSessionForUnlock(mostRecentSession.name);
-            console.log('Session la plus récente sélectionnée (depuis Demande):', mostRecentSession.name); // Debug
+            // Priorité aux sessions du modèle Demande (triées par createdAt desc)
+            selectedSession = data.sessionsFromDemandes[0].name;
+            console.log('✅ Session sélectionnée depuis Demande:', selectedSession);
+          } else if (data.trainingSessions && data.trainingSessions.length > 0) {
+            // Fallback sur TrainingSessions (triées par startDate desc)
+            selectedSession = data.trainingSessions[0].name;
+            console.log('✅ Session sélectionnée depuis TrainingSession:', selectedSession);
           } else if (data.sessions && data.sessions.length > 0) {
-            // Fallback sur la première session de la liste si pas de sessionsFromDemandes
-            setSelectedSessionForUnlock(data.sessions[0]);
+            // Dernier fallback sur la liste générale
+            selectedSession = data.sessions[0];
+            console.log('✅ Session sélectionnée depuis liste générale:', selectedSession);
+          }
+          
+          if (selectedSession) {
+            setSelectedSessionForUnlock(selectedSession);
+            console.log('🎯 Session finale sélectionnée:', selectedSession);
+          } else {
+            console.log('⚠️ Aucune session trouvée pour la sélection par défaut');
           }
         } else {
           console.error('Erreur lors de la récupération des sessions:', r.status);
@@ -293,7 +309,7 @@ export default function AttendanceForm() {
                 const demandeSession = sessionsFromDemandes.find(ds => ds.name === session);
                 const dateInfo = demandeSession && demandeSession.createdAt ? 
                   ` (${new Date(demandeSession.createdAt).toLocaleDateString('fr-FR')})` : '';
-                return (
+    return (
                   <option key={session} value={session}>
                     {session}{dateInfo}
                   </option>
@@ -313,9 +329,9 @@ export default function AttendanceForm() {
                     'Date non disponible'}
                 </p>
               )}
-            </div>
-          )}
         </div>
+          )}
+      </div>
       )}
 
       <style jsx>{`
@@ -457,27 +473,27 @@ export default function AttendanceForm() {
               </h2>
               <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>
                 Révision: 01 | Code: ENR-CIFRA-LOG 002
-              </p>
-            </div>
-            
+        </p>
+      </div>
+
             {/* Informations de formation mobile */}
             <div className="mobile-info-grid">
               <div className="mobile-info-item">
                 <div className="mobile-info-label">Formation</div>
                 <div className="mobile-info-value">{sessionName || 'Chargement...'}</div>
-              </div>
+                </div>
               <div className="mobile-info-item">
                 <div className="mobile-info-label">Site</div>
                 <div className="mobile-info-value">Centre CI.DES</div>
-              </div>
+                </div>
               <div className="mobile-info-item">
                 <div className="mobile-info-label">Période</div>
                 <div className="mobile-info-value">
                   {new Date().toLocaleDateString('fr-FR', { month: 'long' })} {new Date().getFullYear()}
-                </div>
               </div>
             </div>
-            
+          </div>
+
             {/* Informations stagiaire mobile */}
             <div style={{ 
               background: "#e3f2fd", 
@@ -526,8 +542,8 @@ export default function AttendanceForm() {
                         fontWeight: "bold"
                       }}>
                         ✓ Présent
-                      </div>
-                    </div>
+                </div>
+              </div>
                   ) : (
                     <button
                       onClick={() => handleSignatureClick(day, 'matin')}
@@ -536,9 +552,9 @@ export default function AttendanceForm() {
                       ✍️ Signer la présence
                     </button>
                   )}
-                </div>
-              </div>
-              
+            </div>
+          </div>
+
               {/* Après-midi */}
               <div className="mobile-period">
                 <div className="mobile-period-title">Après-midi: 4h</div>
@@ -558,8 +574,8 @@ export default function AttendanceForm() {
                         fontWeight: "bold"
                       }}>
                         ✓ Présent
-                      </div>
-                    </div>
+                </div>
+              </div>
                   ) : (
                     <button
                       onClick={() => handleSignatureClick(day, 'soir')}
@@ -568,9 +584,9 @@ export default function AttendanceForm() {
                       ✍️ Signer la présence
                     </button>
                   )}
-                </div>
-              </div>
             </div>
+          </div>
+        </div>
           ))}
 
           {/* Footer mobile */}
@@ -585,11 +601,11 @@ export default function AttendanceForm() {
           }}>
             <div style={{ fontWeight: "bold" }}>CI.DES sasu – Capital 2 500 Euros</div>
             <div>SIRET: 87840789900011 – VAT: FR71878407899</div>
-          </div>
+            </div>
 
           {/* Bouton d'actualisation mobile */}
           <div style={{ textAlign: "center", marginTop: "20px" }}>
-            <button
+              <button
               onClick={() => {
                 window.location.reload();
               }}
@@ -606,8 +622,8 @@ export default function AttendanceForm() {
               }}
             >
               🔄 Actualiser les signatures
-            </button>
-          </div>
+              </button>
+            </div>
 
           {/* Instructions mobile */}
           <div style={{ 
@@ -627,8 +643,8 @@ export default function AttendanceForm() {
               <li><strong>Synchronisation :</strong> Utilisez le bouton "Actualiser" pour voir les signatures générées depuis le suivi stagiaire</li>
             </ul>
           </div>
+          </div>
         </div>
-      </div>
 
       {/* Version desktop originale */}
       <div className="desktop-only">
@@ -690,8 +706,8 @@ export default function AttendanceForm() {
               <th></th>
               <th></th>
               <th></th>
-            </tr>
-          </thead>
+                </tr>
+              </thead>
           <tbody>
             <React.Fragment>
               <tr>
@@ -700,7 +716,7 @@ export default function AttendanceForm() {
                 <td rowSpan={2}>{userName || 'Utilisateur'}</td>
                                  <td className="bg-gray">
                    <div className="font-bold">Matin: 4 h</div>
-                 </td>
+                      </td>
                 {daysOfWeek.map((day) => (
                   <td key={`${day}-matin`} className="text-center">
                     {signatures[`${day}-matin`] ? (
@@ -712,7 +728,7 @@ export default function AttendanceForm() {
                           onClick={() => handleSignatureClick(day, 'matin')}
                         />
                         <span className="text-xs text-green-600">✓</span>
-                      </div>
+                        </div>
                     ) : (
                       <button
                         onClick={() => handleSignatureClick(day, 'matin')}
@@ -721,7 +737,7 @@ export default function AttendanceForm() {
                         Signer
                       </button>
                     )}
-                  </td>
+                      </td>
                 ))}
                 <td rowSpan={2}></td>
                 <td rowSpan={2}></td>
@@ -731,7 +747,7 @@ export default function AttendanceForm() {
               <tr>
                 <td className="bg-gray">
                   <span className="font-bold">Après-midi: 4 h</span>
-                </td>
+                      </td>
                 {daysOfWeek.map((day) => (
                   <td key={`${day}-soir`} className="text-center">
                     {signatures[`${day}-soir`] ? (
@@ -743,7 +759,7 @@ export default function AttendanceForm() {
                           onClick={() => handleSignatureClick(day, 'soir')}
                         />
                         <span className="text-xs text-green-600">✓</span>
-                      </div>
+                        </div>
                     ) : (
                       <button
                         onClick={() => handleSignatureClick(day, 'soir')}
@@ -752,12 +768,12 @@ export default function AttendanceForm() {
                         Signer
                       </button>
                     )}
-                  </td>
+                      </td>
                 ))}
-              </tr>
+                    </tr>
             </React.Fragment>
-          </tbody>
-        </table>
+              </tbody>
+            </table>
 
         {/* Footer */}
         <div style={{ marginTop: "10px", fontSize: "12px" }}>
@@ -798,7 +814,7 @@ export default function AttendanceForm() {
             <li><strong>Synchronisation :</strong> Utilisez le bouton "Actualiser" pour voir les signatures générées depuis le suivi stagiaire</li>
           </ul>
         </div>
-      </div>
+          </div>
 
       {/* Modal de signature */}
       {showSignatureModal && (
@@ -847,8 +863,8 @@ export default function AttendanceForm() {
               </button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+            </div>
+          )}
+      </div>
   );
-}
+} 

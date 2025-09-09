@@ -109,6 +109,8 @@ export default function FormulairesQuotidiensPage() {
         throw new Error('Erreur lors de la récupération des formulaires');
       }
       const data = await response.json();
+      console.log('🔍 Formulaires reçus:', data);
+      console.log('🔍 Sessions uniques dans les formulaires:', [...new Set(data.map((f: any) => f.session))]);
       setFormulaires(data);
       
       // Calculer les statistiques
