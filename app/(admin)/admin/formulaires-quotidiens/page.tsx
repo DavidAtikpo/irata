@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { SESSIONS, Session } from '../../../../lib/sessions';
@@ -78,6 +78,10 @@ export default function FormulairesQuotidiensPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const modalScrollRef = useRef<HTMLDivElement | null>(null);
+  const [errorQuestionIndex, setErrorQuestionIndex] = useState<number | null>(null);
+  const questionRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const { addNotification } = useNotifications();
 
@@ -100,6 +104,29 @@ export default function FormulairesQuotidiensPage() {
       fetchFormulaires();
     }
   }, [status, session, router]);
+
+  useEffect(() => {
+    if (modalError) {
+      // If we know the specific question, scroll to it; otherwise scroll to top for the sticky banner
+      if (errorQuestionIndex != null && questionRefs.current[errorQuestionIndex]) {
+        try {
+          questionRefs.current[errorQuestionIndex]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch {}
+      } else if (modalScrollRef.current) {
+        try {
+          modalScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch {}
+      }
+    }
+  }, [modalError]);
+
+  useEffect(() => {
+    if (errorQuestionIndex != null && questionRefs.current[errorQuestionIndex]) {
+      try {
+        questionRefs.current[errorQuestionIndex]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch {}
+    }
+  }, [errorQuestionIndex]);
 
   const fetchFormulaires = async () => {
     try {
@@ -139,7 +166,10 @@ export default function FormulairesQuotidiensPage() {
     
     // Vérifier que le total est exactement 20
     if (Math.abs(totalPoints - 20) > 0.01) { // Tolérance de 0.01 pour les erreurs d'arrondi
-      setError(`Le total des points doit être exactement 20. Actuellement : ${totalPoints.toFixed(1)}/20 points.`);
+      const msg = `Le total des points doit être exactement 20. Actuellement : ${totalPoints.toFixed(1)}/20 points.`;
+      setError(msg);
+      setModalError(msg);
+      setErrorQuestionIndex(0);
       return false;
     }
     
@@ -148,23 +178,35 @@ export default function FormulairesQuotidiensPage() {
       
       // Vérifier que la question a des points (minimum 0.5)
       if (!question.points || question.points < 0.5) {
-        setError(`Question ${i + 1} : Veuillez définir un nombre de points valide (minimum 0.5).`);
+        const msg = `Question ${i + 1} : Veuillez définir un nombre de points valide (minimum 0.5).`;
+        setError(msg);
+        setModalError(msg);
+        setErrorQuestionIndex(i);
         return false;
       }
       
       // Vérifier que la question a une bonne réponse selon son type
       if (question.type === 'text' || question.type === 'textarea' || question.type === 'number') {
         if (!question.correctAnswers?.[0] || question.correctAnswers[0].trim() === '') {
-          setError(`Question ${i + 1} : Veuillez définir la bonne réponse.`);
+          const msg = `Question ${i + 1} : Veuillez définir la bonne réponse.`;
+          setError(msg);
+          setModalError(msg);
+          setErrorQuestionIndex(i);
           return false;
         }
       } else if (question.type === 'select' || question.type === 'radio' || question.type === 'checkbox') {
         if (!question.options || question.options.length === 0) {
-          setError(`Question ${i + 1} : Veuillez ajouter au moins une option de réponse.`);
+          const msg = `Question ${i + 1} : Veuillez ajouter au moins une option de réponse.`;
+          setError(msg);
+          setModalError(msg);
+          setErrorQuestionIndex(i);
           return false;
         }
         if (!question.correctAnswers || question.correctAnswers.length === 0) {
-          setError(`Question ${i + 1} : Veuillez sélectionner au moins une bonne réponse.`);
+          const msg = `Question ${i + 1} : Veuillez sélectionner au moins une bonne réponse.`;
+          setError(msg);
+          setModalError(msg);
+          setErrorQuestionIndex(i);
           return false;
         }
       }
@@ -177,7 +219,9 @@ export default function FormulairesQuotidiensPage() {
     e.preventDefault();
     
     if (createForm.questions.length === 0) {
-      setError('Veuillez ajouter au moins une question avant de créer le formulaire.');
+      const msg = 'Veuillez ajouter au moins une question avant de créer le formulaire.';
+      setError(msg);
+      setModalError(msg);
       return;
     }
 
@@ -188,6 +232,8 @@ export default function FormulairesQuotidiensPage() {
 
     setSubmitting(true);
     setError(null);
+    setModalError(null);
+    setErrorQuestionIndex(null);
 
     try {
       const response = await fetch('/api/admin/formulaires-quotidiens', {
@@ -202,8 +248,14 @@ export default function FormulairesQuotidiensPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur lors de la création du formulaire');
+        let errorMessage = 'Erreur lors de la création du formulaire';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // ignore parse error, keep default message
+        }
+        throw new Error(errorMessage);
       }
 
       setShowCreateForm(false);
@@ -219,7 +271,11 @@ export default function FormulairesQuotidiensPage() {
       
     } catch (error) {
       console.error('Erreur:', error);
-      setError(error instanceof Error ? error.message : 'Erreur lors de la création du formulaire');
+      const msg = error instanceof Error ? error.message : 'Erreur lors de la création du formulaire';
+      setError(msg);
+      setModalError(msg);
+      const match = msg.match(/Question\s+(\d+)/i);
+      setErrorQuestionIndex(match ? Math.max(0, parseInt(match[1], 10) - 1) : null);
     } finally {
       setSubmitting(false);
     }
@@ -352,17 +408,23 @@ export default function FormulairesQuotidiensPage() {
       dateFin: formatDateForInput(formulaire.dateFin),
       questions: [...formulaire.questions]
     });
+    setModalError(null);
+    setErrorQuestionIndex(null);
     setShowCreateForm(true);
   };
 
   const handleUpdateFormulaire = async () => {
     if (!editingFormulaire) {
-      setError('Aucun formulaire en cours d\'édition');
+      const msg = 'Aucun formulaire en cours d\'édition';
+      setError(msg);
+      setModalError(msg);
       return;
     }
     
     if (createForm.questions.length === 0) {
-      setError('Veuillez ajouter au moins une question avant de sauvegarder.');
+      const msg = 'Veuillez ajouter au moins une question avant de sauvegarder.';
+      setError(msg);
+      setModalError(msg);
       return;
     }
 
@@ -373,6 +435,8 @@ export default function FormulairesQuotidiensPage() {
 
     setSubmitting(true);
     setError(null);
+    setModalError(null);
+    setErrorQuestionIndex(null);
 
     try {
       const response = await fetch(`/api/admin/formulaires-quotidiens/${editingFormulaire.id}`, {
@@ -384,8 +448,14 @@ export default function FormulairesQuotidiensPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur lors de la mise à jour du formulaire');
+        let errorMessage = 'Erreur lors de la mise à jour du formulaire';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // ignore parse error, keep default message
+        }
+        throw new Error(errorMessage);
       }
 
       setShowCreateForm(false);
@@ -401,7 +471,11 @@ export default function FormulairesQuotidiensPage() {
       );
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
-      setError(error instanceof Error ? error.message : 'Erreur lors de la mise à jour du formulaire');
+      const msg = error instanceof Error ? error.message : 'Erreur lors de la mise à jour du formulaire';
+      setError(msg);
+      setModalError(msg);
+      const match = msg.match(/Question\s+(\d+)/i);
+      setErrorQuestionIndex(match ? Math.max(0, parseInt(match[1], 10) - 1) : null);
     } finally {
       setSubmitting(false);
     }
@@ -1132,6 +1206,8 @@ export default function FormulairesQuotidiensPage() {
                     setShowCreateForm(false);
                     setEditingFormulaire(null);
                     resetCreateForm();
+                    setModalError(null);
+                    setErrorQuestionIndex(null);
                   }}
                   className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-200 transition-colors"
                 >
@@ -1143,8 +1219,23 @@ export default function FormulairesQuotidiensPage() {
               </div>
 
               {/* Contenu scrollable de la modal */}
-              <div className="flex-1 overflow-y-auto p-6">
-                
+              <div ref={modalScrollRef} className="flex-1 overflow-y-auto p-6">
+                {modalError && (
+                  <div className="sticky top-0 z-20 mb-4">
+                    <div className="rounded-md bg-red-50 p-4 border border-red-200 shadow">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <XCircleIcon className="h-5 w-5 text-red-400" />
+                        </div>
+                        <div className="ml-3">
+                          <h4 className="text-sm font-medium text-red-800">Erreur</h4>
+                          <div className="mt-1 text-sm text-red-700">{modalError}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <form id="formulaireForm" className="space-y-8">
                   {/* Informations générales */}
                   <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-lg border border-indigo-200">
@@ -1307,7 +1398,13 @@ export default function FormulairesQuotidiensPage() {
                     ) : (
                       <div className="space-y-4">
                         {createForm.questions.map((question, index) => (
-                          <div key={question.id} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                          <div
+                            key={question.id}
+                            ref={(el) => {
+                              questionRefs.current[index] = el;
+                            }}
+                            className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm"
+                          >
                             <div className="flex items-start justify-between mb-4">
                               <div className="flex items-center space-x-3">
                                 <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -1630,6 +1727,8 @@ export default function FormulairesQuotidiensPage() {
                       setShowCreateForm(false);
                       setEditingFormulaire(null);
                       resetCreateForm();
+                      setModalError(null);
+                      setErrorQuestionIndex(null);
                     }}
                     className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                   >
