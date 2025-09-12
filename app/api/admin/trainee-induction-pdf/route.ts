@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
     const browser = await puppeteer.launch(browserConfig);
     const page = await browser.newPage();
     
-    await page.setViewport({ width: 1200, height: 1600 });
+    await page.setViewport({ width: 1200, height: 1700 });
     await page.setContent(html, { 
       waitUntil: ['networkidle0', 'domcontentloaded'],
       timeout: 30000 
