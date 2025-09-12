@@ -214,7 +214,7 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
          .signatures { margin: 2px 0; text-align: right; }
          .signature-item { margin: 2px 0; padding: 1px; text-align: right; }
          .signature-image { max-height: 40px; max-width: 100px; }
-         .session-info { text-align: right; margin-bottom: 2px; }
+         .session-info { text-align: right; }
 
          .warning-box { background-color: #fef3c7; font-weight: bold; text-align: center; padding: 2px; margin: 2px 0; font-size: 9px; }
          .declaration { margin: 0px 0; }
