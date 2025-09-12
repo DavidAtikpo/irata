@@ -7,6 +7,7 @@ import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import fs from 'fs';
 import path from 'path';
+import { isTextAnswerCorrect, isNumberAnswerCorrect } from '@/lib/fuzzy-matching';
 
 // GET /api/admin/formulaires-quotidiens/[id]/reponses/[reponseId]/pdf
 export async function GET(
@@ -83,16 +84,12 @@ export async function GET(
       let correcte = false;
 
       if ((question as any).type === 'number') {
-        const reponseNum = parseFloat(reponseQuestion.reponse);
-        const bonneReponseNum = parseFloat((question as any).correctAnswers?.[0] || '');
-        if (!isNaN(reponseNum) && !isNaN(bonneReponseNum)) {
-          correcte = Math.abs(reponseNum - bonneReponseNum) < 0.01;
-          pointsObtenus = correcte ? pointsMaxQuestion : 0;
-        }
+        // Pour les questions numériques, utiliser la comparaison floue
+        correcte = isNumberAnswerCorrect(reponseQuestion.reponse, (question as any).correctAnswers?.[0] || '');
+        pointsObtenus = correcte ? pointsMaxQuestion : 0;
       } else if ((question as any).type === 'text' || (question as any).type === 'textarea') {
-        const reponseNormalisee = reponseQuestion.reponse.toLowerCase().trim();
-        const bonneReponseNormalisee = ((question as any).correctAnswers?.[0] || '').toLowerCase().trim();
-        correcte = reponseNormalisee === bonneReponseNormalisee;
+        // Pour les questions texte, utiliser la comparaison floue intelligente
+        correcte = isTextAnswerCorrect(reponseQuestion.reponse, (question as any).correctAnswers?.[0] || '');
         pointsObtenus = correcte ? pointsMaxQuestion : 0;
       } else if ((question as any).type === 'radio' || (question as any).type === 'select') {
         const reponseNormalisee = reponseQuestion.reponse.toLowerCase().trim();

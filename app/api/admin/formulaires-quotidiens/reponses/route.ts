@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { PrismaClient } from '@prisma/client';
+import { isTextAnswerCorrect, isNumberAnswerCorrect } from '@/lib/fuzzy-matching';
 
 const prisma = new PrismaClient();
 
@@ -67,18 +68,12 @@ export async function GET(request: NextRequest) {
         let correcte = false;
 
         if (question.type === 'number') {
-          // Pour les questions numériques, comparer les valeurs
-          const reponseNum = parseFloat(reponseQuestion.reponse);
-          const bonneReponseNum = parseFloat(question.correctAnswers[0] || '');
-          if (!isNaN(reponseNum) && !isNaN(bonneReponseNum)) {
-            correcte = Math.abs(reponseNum - bonneReponseNum) < 0.01; // Tolérance pour les erreurs d'arrondi
-            pointsObtenus = correcte ? pointsMaxQuestion : 0;
-          }
+          // Pour les questions numériques, utiliser la comparaison floue
+          correcte = isNumberAnswerCorrect(reponseQuestion.reponse, question.correctAnswers[0] || '');
+          pointsObtenus = correcte ? pointsMaxQuestion : 0;
         } else if (question.type === 'text' || question.type === 'textarea') {
-          // Pour les questions texte, comparer les chaînes (insensible à la casse)
-          const reponseNormalisee = reponseQuestion.reponse.toLowerCase().trim();
-          const bonneReponseNormalisee = (question.correctAnswers[0] || '').toLowerCase().trim();
-          correcte = reponseNormalisee === bonneReponseNormalisee;
+          // Pour les questions texte, utiliser la comparaison floue intelligente
+          correcte = isTextAnswerCorrect(reponseQuestion.reponse, question.correctAnswers[0] || '');
           pointsObtenus = correcte ? pointsMaxQuestion : 0;
         } else if (question.type === 'radio' || question.type === 'select') {
           // Pour les questions à choix unique
