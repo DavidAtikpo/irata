@@ -57,6 +57,7 @@ export default function TraineeSignaturesPage() {
       // Ajouter à l'ensemble des téléchargements en cours
       setDownloadingIndividual(prev => new Set(prev).add(signatureId));
       
+      console.log('Appel API PDF download avec:', { inductionId, signatureId });
       const response = await fetch(`/api/admin/trainee-induction-pdf`, {
         method: 'POST',
         headers: {
@@ -94,6 +95,7 @@ export default function TraineeSignaturesPage() {
   const viewPDF = async (signatureId: string, inductionId: string) => {
     try {
       setViewingIndividual(signatureId);
+      console.log('Appel API PDF view avec:', { inductionId, signatureId });
       const response = await fetch(`/api/admin/trainee-induction-pdf`, {
         method: 'POST',
         headers: {

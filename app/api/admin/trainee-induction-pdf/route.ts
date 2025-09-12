@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
 
     // Configuration Puppeteer
     const isProduction = process.env.NODE_ENV === 'production';
+    console.log('Environnement:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
     
     let browserConfig: any = {
       headless: true,
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
     const browser = await puppeteer.launch(browserConfig);
     const page = await browser.newPage();
     
-    await page.setViewport({ width: 1200, height: 1700 });
+    await page.setViewport({ width: 1200, height: 2000 });
     await page.setContent(html, { 
       waitUntil: ['networkidle0', 'domcontentloaded'],
       timeout: 30000 
@@ -166,7 +167,9 @@ export async function POST(request: NextRequest) {
     const pdf = await page.pdf({ 
        format: 'A4', 
        printBackground: true, 
-       margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' } 
+       margin: { top: '3mm', right: '3mm', bottom: '3mm', left: '3mm' },
+       preferCSSPageSize: false,
+       displayHeaderFooter: false
      });
     await browser.close();
 
@@ -213,12 +216,16 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
          .validation th, .validation td { border: 1px solid #000; padding: 6px; text-align: left; }
          .signatures { margin: 2px 0; text-align: right; }
          .signature-item { margin: 2px 0; padding: 1px; text-align: right; }
-         .signature-image { max-height: 40px; max-width: 100px; }
+         .signature-image { max-height: 25px; max-width: 70px; }
          .session-info { text-align: right; }
 
          .warning-box { background-color: #fef3c7; font-weight: bold; text-align: center; padding: 2px; margin: 2px 0; font-size: 9px; }
          .declaration { margin: 0px 0; }
          .declaration p { font-size: 9px; }
+         
+         /* Éviter les sauts de page */
+         .no-break { page-break-inside: avoid; break-inside: avoid; }
+         .keep-together { page-break-inside: avoid; break-inside: avoid; }
        </style>
     </head>
     <body>
