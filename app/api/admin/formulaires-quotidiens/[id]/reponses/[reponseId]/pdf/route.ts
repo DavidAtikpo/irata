@@ -196,9 +196,9 @@ export async function GET(
       let browser;
       try {
         browser = await puppeteer.launch(puppeteerConfig);
-        console.log('✅ Puppeteer browser lancé avec succès');
+        
       } catch (launchError) {
-        console.error('❌ Erreur de lancement Puppeteer:', launchError);
+    
         throw launchError;
       }
       const page = await browser.newPage();
@@ -214,7 +214,7 @@ export async function GET(
       
       // Attendre que le contenu soit chargé avec un timeout plus court
       await page.waitForSelector('body', { timeout: 5000 }).catch(() => {
-        console.log('Timeout sur waitForSelector, continuation...');
+        
       });
       
       // URL du logo adaptée à l'environnement
@@ -227,10 +227,10 @@ export async function GET(
         format: 'A4',
         landscape: false,
         margin: {
-          top: '15mm',
-          right: '15mm',
-          bottom: '30mm', // Plus d'espace pour le footer
-          left: '15mm'
+          top: '10mm',
+          right: '10mm',
+          bottom: '25mm', // Plus d'espace pour le footer
+          left: '10mm'
         },
         printBackground: true,
         displayHeaderFooter: true,
@@ -255,16 +255,11 @@ export async function GET(
         `,
         preferCSSPageSize: true
       });
-      console.log('PDF généré, taille:', pdf.length, 'bytes');
+      
 
       await browser.close();
-      console.log('Browser fermé');
+     
     } catch (puppeteerError) {
-      console.error('=== ERREUR PUPPETEER ===');
-      console.error('Type d\'erreur:', puppeteerError instanceof Error ? puppeteerError.name : typeof puppeteerError);
-      console.error('Message:', puppeteerError instanceof Error ? puppeteerError.message : puppeteerError);
-      console.error('Stack:', puppeteerError instanceof Error ? puppeteerError.stack : 'Pas de stack trace');
-      
       // Vérifier si c'est une erreur de lancement de Puppeteer en production
       const isLaunchError = puppeteerError instanceof Error && (
         puppeteerError.message.includes('Failed to launch') ||
@@ -277,8 +272,7 @@ export async function GET(
       if (isLaunchError) {
         console.log('Détection d\'une erreur de lancement Chrome/Chromium en production');
         
-        // Au lieu de retourner une erreur 503, retourner le HTML avec instructions
-        console.log('Fallback vers HTML avec instructions pour impression');
+
         const stagiaireNom = `${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}`.trim();
         const sessionLabel = getSessionLabel(formulaire.session).replace(/[^a-zA-Z0-9]/g, '-');
         
@@ -311,8 +305,7 @@ export async function GET(
         });
       }
       
-      // Pour les autres erreurs, fallback vers HTML
-      console.log('Fallback vers génération HTML pour impression manuelle');
+
       const stagiaireNom = `${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}`.trim();
       const sessionLabel = getSessionLabel(formulaire.session).replace(/[^a-zA-Z0-9]/g, '-');
       
@@ -497,7 +490,7 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCo
         
         /* Règles de pagination avec pied de page */
         @page {
-          margin: 15mm 15mm 30mm 15mm;
+          margin: 10mm 10mm 25mm 10mm;
           size: A4 portrait;
           
           @bottom-center {
@@ -670,11 +663,11 @@ function generateSingleResponsePDFHTML(formulaire: any, reponse: any, reponsesCo
           margin-bottom: 8px;
         }
         .question.correct {
-          border-left: 4px solid #10b981;
-          background-color: #f0fdf4;
+         
+          background-color:rgb(255, 255, 255);
         }
         .question.incorrect {
-          border-left: 4px solid #ef4444;
+         
           background-color: #fef2f2;
         }
         .question-header {
