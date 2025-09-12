@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     const pdf = await page.pdf({ 
        format: 'A4', 
        printBackground: true, 
-       margin: { top: '3mm', right: '3mm', bottom: '3mm', left: '3mm' },
+       margin: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' },
        preferCSSPageSize: false,
        displayHeaderFooter: false
      });
