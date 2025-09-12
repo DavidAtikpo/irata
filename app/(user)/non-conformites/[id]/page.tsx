@@ -271,15 +271,15 @@ export default function NonConformiteDetailPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Contenu principal */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Informations générales */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">{nonConformite.titre}</h2>
-              <p className="text-gray-700 mb-6">{nonConformite.description}</p>
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">{nonConformite.titre}</h2>
+              <p className="text-sm sm:text-base text-gray-700 mb-4 sm:mb-6">{nonConformite.description}</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div>
                   <span className="font-medium text-gray-900">Type:</span>
                   <span className="ml-2 text-gray-600">{typeLabels[nonConformite.type as keyof typeof typeLabels]}</span>
@@ -302,12 +302,12 @@ export default function NonConformiteDetailPage() {
             </div>
 
             {/* Actions correctives */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Actions correctives</h3>
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Actions correctives</h3>
                 <Link
                   href={`/actions-correctives/nouvelle?nonConformiteId=${nonConformite.id}`}
-                  className="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700 transition-colors"
+                  className="w-full sm:w-auto bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700 transition-colors text-center sm:text-left"
                 >
                   Ajouter une action
                 </Link>
@@ -349,22 +349,22 @@ export default function NonConformiteDetailPage() {
             </div>
 
             {/* Commentaires */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Commentaires</h3>
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Commentaires</h3>
               
               {/* Formulaire d'ajout de commentaire */}
-              <form onSubmit={handleAddComment} className="mb-6">
+              <form onSubmit={handleAddComment} className="mb-4 sm:mb-6">
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Ajouter un commentaire..."
                   rows={3}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3 text-sm sm:text-base"
                 />
                 <button
                   type="submit"
                   disabled={submittingComment || !newComment.trim()}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                 >
                   {submittingComment ? 'Ajout...' : 'Ajouter le commentaire'}
                 </button>
@@ -394,10 +394,10 @@ export default function NonConformiteDetailPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Informations sur les participants */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Participants</h3>
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Participants</h3>
               <div className="space-y-4">
                 <div>
                   <span className="font-medium text-gray-900">Détecteur:</span>
@@ -414,8 +414,8 @@ export default function NonConformiteDetailPage() {
 
             {/* Documents */}
             {nonConformite.documents.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
+              <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Documents</h3>
                 <div className="space-y-2">
                   {nonConformite.documents.map((doc) => (
                     <a

@@ -511,7 +511,7 @@ export default function FormulairesQuotidiensPage() {
   }
 
   return (
-    <div className="py-2 sm:py-4 lg:py-6 px-2 sm:px-4 lg:px-6">
+    <div className="min-h-screen bg-gray-50 py-2 sm:py-4 lg:py-6 px-2 sm:px-4 lg:px-6">
       <div className="max-w-4xl mx-auto">
         {/* En-tête */}
         <div className="mb-3 sm:mb-4">
@@ -537,15 +537,15 @@ export default function FormulairesQuotidiensPage() {
         </div>
 
         {/* Filtres */}
-        <div className="bg-white p-2 sm:p-3 rounded-lg shadow mb-3 sm:mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow mb-3 sm:mb-4">
+          <div className="flex flex-col space-y-3">
             <h2 className="text-sm sm:text-base font-medium text-gray-900">Mes formulaires</h2>
-            <div className="flex items-center space-x-2">
-              <label className="text-xs font-medium text-gray-700">Filtrer:</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs sm:text-sm font-medium text-gray-700">Filtrer:</label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="border border-gray-300 rounded px-2 py-1 text-xs"
+                className="border border-gray-300 rounded-md px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-w-[120px]"
               >
                 <option value="all">Tous</option>
                 <option value="available">Disponibles</option>
@@ -601,20 +601,22 @@ export default function FormulairesQuotidiensPage() {
                             <p className="mt-1 text-xs text-gray-600 line-clamp-2">{formulaire.description}</p>
                           )}
                           
-                          <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0 text-xs text-gray-500">
+                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-gray-500">
                             <span className="flex items-center">
-                              <CalendarIcon className="h-3 w-3 mr-1" />
-                              Session: {formulaire.session}
+                              <CalendarIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                              <span className="truncate">Session: {formulaire.session}</span>
                             </span>
                             <span className="flex items-center">
-                              <DocumentTextIcon className="h-3 w-3 mr-1" />
-                              {formulaire.questions.length} questions
+                              <DocumentTextIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                              <span>{formulaire.questions.length} questions</span>
                             </span>
-                            <span className="flex items-center">
-                              <ClockIcon className="h-3 w-3 mr-1" />
-                              Du {new Date(formulaire.dateDebut).toLocaleDateString('fr-FR')} au {new Date(formulaire.dateFin).toLocaleDateString('fr-FR')}
+                            <span className="flex items-center sm:col-span-2 lg:col-span-1">
+                              <ClockIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                              <span className="truncate">
+                                Du {new Date(formulaire.dateDebut).toLocaleDateString('fr-FR')} au {new Date(formulaire.dateFin).toLocaleDateString('fr-FR')}
+                              </span>
                             </span>
-                            <span className="flex items-center">
+                            <span className="flex items-center sm:col-span-2 lg:col-span-1">
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 Niveau {formulaire.niveau}
                               </span>
@@ -664,7 +666,7 @@ export default function FormulairesQuotidiensPage() {
         {/* Modal du formulaire */}
         {showForm && selectedFormulaire && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-2 sm:top-4 mx-auto p-2 sm:p-4 border w-11/12 md:w-4/5 lg:w-3/4 shadow-lg rounded-md bg-white max-h-[95vh] overflow-y-auto">
+            <div className="relative top-0 sm:top-4 mx-auto p-2 sm:p-4 border-0 sm:border w-full sm:w-11/12 md:w-4/5 lg:w-3/4 shadow-lg rounded-none sm:rounded-md bg-white min-h-screen sm:min-h-0 sm:max-h-[95vh] overflow-y-auto">
               <div className="mt-2">
                 <div className="flex items-center justify-between mb-3 sm:mb-4">
                   <div className="flex-1 min-w-0">
@@ -756,11 +758,11 @@ export default function FormulairesQuotidiensPage() {
                     />
                   </div>
 
-                  <div className="flex justify-end space-x-2 pt-3 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-3 border-t border-gray-200">
                     <button
                       type="button"
                       onClick={saveDraftManually}
-                      className="px-3 py-1 sm:px-4 sm:py-2 border border-green-600 text-green-700 rounded text-xs font-medium hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                      className="w-full sm:w-auto px-3 py-2 border border-green-600 text-green-700 rounded text-xs sm:text-sm font-medium hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                     >
                       Enregistrer le brouillon
                     </button>
@@ -770,14 +772,14 @@ export default function FormulairesQuotidiensPage() {
                         setShowForm(false);
                         setFormData({ commentaires: '' });
                       }}
-                      className="px-3 py-1 sm:px-4 sm:py-2 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
                       Annuler
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="px-4 py-1 sm:px-6 sm:py-2 border border-transparent rounded shadow-sm text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className="w-full sm:w-auto px-4 py-2 border border-transparent rounded shadow-sm text-xs sm:text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
                       {submitting ? (
                         <>
