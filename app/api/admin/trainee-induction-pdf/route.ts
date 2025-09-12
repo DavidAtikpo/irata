@@ -202,9 +202,9 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
          .header-table { border-collapse: collapse; width: 100%; font-size: 8px; }
          .header-table td { border: 1px solid #000; padding: 3px; }
          .header-table .bold { font-weight: bold; }
-         .title { text-align: center; font-weight: bold; border: 1px solid #000; padding: 1px; margin: 10px 0; font-size: 12px; }
-         .info { margin: 15px 0; }
-         .section { margin: 12px 0; }
+         .title { text-align: center; font-weight: bold; border: 1px solid #000; padding: 1px; margin: 5px 0; font-size: 12px; }
+         .info { margin: 5px 0; }
+         .section { margin: 8px 0; }
          .section h2 { color: #1e40af; font-size: 11px; margin-bottom: 8px; }
          .section ul { margin: 8px 0; padding-left: 15px; }
          .section li { margin: 3px 0; font-size: 9px; line-height: 1.2; }
