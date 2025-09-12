@@ -564,8 +564,8 @@ export default function FormulairesQuotidiensPage() {
     // Créer une copie du formulaire avec un nouveau titre
     const duplicatedFormulaire = {
       ...formulaire,
-      titre: `${formulaire.titre} (Copie)`,
-      description: formulaire.description ? `${formulaire.description} (Copie)` : '(Copie)',
+      titre: `${formulaire.titre}`,
+      description: formulaire.description ? `${formulaire.description}` : '',
       dateCreation: new Date().toISOString(),
       valide: false, // Le formulaire dupliqué n'est pas validé par défaut
       actif: false, // Le formulaire dupliqué n'est pas actif par défaut

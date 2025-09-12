@@ -43,6 +43,7 @@ export async function GET(
       titre: formulaire.titre,
       description: formulaire.description,
       session: formulaire.session,
+      niveau: formulaire.niveau || '1', // Défaut niveau 1 si non défini
       dateCreation: formulaire.dateCreation,
       dateDebut: formulaire.dateDebut,
       dateFin: formulaire.dateFin,
@@ -77,7 +78,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await req.json();
-    const { titre, description, session: sessionName, dateDebut, dateFin, questions } = body;
+    const { titre, description, session: sessionName, niveau, dateDebut, dateFin, questions } = body;
 
     // Validation des données
     if (!titre || !sessionName || !dateDebut || !dateFin) {
@@ -132,6 +133,7 @@ export async function PUT(
         titre: titre.trim(),
         description: description?.trim() || null,
         session: sessionName.trim(),
+        niveau: niveau || '1', // Défaut niveau 1 si non spécifié
         dateDebut: debut,
         dateFin: fin,
         questions
@@ -145,6 +147,7 @@ export async function PUT(
         titre: formulaire.titre,
         description: formulaire.description,
         session: formulaire.session,
+        niveau: formulaire.niveau,
         dateCreation: formulaire.dateCreation,
         dateDebut: formulaire.dateDebut,
         dateFin: formulaire.dateFin,
