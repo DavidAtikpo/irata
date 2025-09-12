@@ -50,20 +50,113 @@ export async function PATCH(
     // Si le formulaire est validé, envoyer des notifications à tous les stagiaires
     if (valide) {
       try {
-        // Récupérer tous les stagiaires (utilisateurs avec rôle USER)
-        const stagiaires = await prisma.user.findMany({
+        // Debug: Vérifier la session et niveau du formulaire
+        console.log(`Formulaire session: "${formulaire.session}", niveau: "${formulaire.niveau}"`);
+        
+        // Fonction pour convertir le format de session
+        const convertSessionFormat = (sessionValue: string): string => {
+          // Convertir "2025-septembre-08-13" vers "2025 septembre 08 au 13"
+          const parts = sessionValue.split('-');
+          if (parts.length === 4) {
+            const [annee, mois, debut, fin] = parts;
+            return `${annee} ${mois} ${debut} au ${fin}`;
+          }
+          return sessionValue;
+        };
+        
+        const sessionFormatted = convertSessionFormat(formulaire.session);
+        console.log(`Session formatée pour recherche: "${sessionFormatted}"`);
+        
+        // Récupérer toutes les demandes pour debug
+        const allDemandes = await prisma.demande.findMany({
+          select: {
+            session: true,
+            user: {
+              select: {
+                email: true,
+                role: true,
+                niveau: true
+              }
+            }
+          }
+        });
+        
+        console.log('Toutes les demandes:', allDemandes);
+        
+        // Récupérer les stagiaires de la session ET du niveau du formulaire
+        let stagiaires = await prisma.user.findMany({
           where: {
-            role: 'USER'
+            role: 'USER',
+            niveau: formulaire.niveau, // Filtrer par niveau
+            demandes: {
+              some: {
+                OR: [
+                  { session: formulaire.session }, // Format original
+                  { session: sessionFormatted }    // Format converti
+                ]
+              }
+            }
           },
           select: {
             id: true,
             email: true,
             nom: true,
-            prenom: true
+            prenom: true,
+            niveau: true,
+            demandes: {
+              select: {
+                session: true,
+                statut: true
+              }
+            }
           }
         });
 
-        console.log(`Envoi de notifications à ${stagiaires.length} stagiaires pour le formulaire: ${formulaire.titre}`);
+        console.log('Stagiaires trouvés:', stagiaires);
+        
+        // Si aucun stagiaire trouvé, essayer une recherche manuelle plus flexible
+        if (stagiaires.length === 0) {
+          console.log('Aucun stagiaire trouvé avec la correspondance exacte, tentative avec recherche flexible...');
+          
+          const stagiairesFallback = await prisma.user.findMany({
+            where: {
+              role: 'USER',
+              niveau: formulaire.niveau // Toujours filtrer par niveau
+            },
+            select: {
+              id: true,
+              email: true,
+              nom: true,
+              prenom: true,
+              niveau: true,
+              demandes: {
+                select: {
+                  session: true,
+                  statut: true
+                }
+              }
+            }
+          });
+          
+          // Filtrer manuellement les utilisateurs qui ont la session correspondante
+          const stagiairesFiltres = stagiairesFallback.filter(user => 
+            user.demandes.some(demande => 
+              demande.session === formulaire.session ||
+              demande.session === sessionFormatted ||
+              demande.session?.toLowerCase() === formulaire.session?.toLowerCase() ||
+              demande.session?.toLowerCase() === sessionFormatted?.toLowerCase()
+            )
+          );
+          
+          console.log('Stagiaires trouvés avec recherche flexible:', stagiairesFiltres);
+          
+          // Utiliser les stagiaires trouvés avec la recherche flexible
+          if (stagiairesFiltres.length > 0) {
+            stagiaires = stagiairesFiltres;
+          }
+        }
+        
+        console.log(`Envoi de notifications à ${stagiaires.length} stagiaires de la session "${formulaire.session}" niveau ${formulaire.niveau} pour le formulaire: ${formulaire.titre}`);
 
         // Envoyer les notifications en parallèle
         const notificationPromises = stagiaires.map(async (stagiaire) => {
@@ -101,9 +194,10 @@ export async function PATCH(
         console.log(`Notifications envoyées: ${successful} succès, ${failed} échecs`);
 
         // Créer une notification pour l'admin
+        const sessionLabel = getSessionLabel(formulaire.session);
         const notificationData = {
           type: 'FORMULAIRE_VALIDATED',
-          message: `Formulaire "${formulaire.titre}" validé - ${successful} notifications envoyées à ${stagiaires.length} stagiaires`,
+          message: `Formulaire "${formulaire.titre}" validé pour la session ${sessionLabel} niveau ${formulaire.niveau} - ${successful} notifications envoyées à ${stagiaires.length} stagiaires`,
           link: `/admin/formulaires-quotidiens/reponses`
         };
 
