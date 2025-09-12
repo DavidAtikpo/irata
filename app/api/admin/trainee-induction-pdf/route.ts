@@ -208,7 +208,7 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
          .section h2 { color: #1e40af; font-size: 11px; margin-bottom: 8px; }
          .section ul { margin: 8px 0; padding-left: 15px; }
          .section li { margin: 3px 0; font-size: 9px; line-height: 1.2; }
-         .validation { margin: 5px 0; }
+         .validation { margin: 2px 0; }
          .validation table { width: 100%; border-collapse: collapse; margin: 5px 0; font-size: 8px; }
          .validation th, .validation td { border: 1px solid #000; padding: 6px; text-align: left; }
          .signatures { margin: 2px 0; text-align: right; }
