@@ -76,7 +76,13 @@ export async function POST(request: NextRequest) {
     
     let browserConfig: any = {
       headless: true,
-      args: [
+      timeout: 30000
+    };
+
+    // Configuration des arguments selon l'environnement
+    if (isProduction) {
+      // Arguments optimisés pour la production (serverless)
+      browserConfig.args = [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
@@ -92,14 +98,29 @@ export async function POST(request: NextRequest) {
         '--max_old_space_size=4096',
         '--no-zygote',
         '--single-process'
-      ],
-      timeout: 30000
-    };
+      ];
+    } else {
+      // Arguments pour le développement local
+      browserConfig.args = [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-extensions'
+      ];
+    }
 
     // Configuration spécifique selon l'environnement
     if (isProduction) {
-      // Production - utiliser Chromium système
-      browserConfig.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser';
+      // Production - utiliser Chromium avec @sparticuz/chromium
+      try {
+        browserConfig.executablePath = await chromium.executablePath();
+        // Utiliser les arguments de chromium pour la production
+        browserConfig.args = [...browserConfig.args, ...chromium.args];
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation de Chromium:', error);
+        throw new Error('Impossible d\'initialiser Chromium pour la génération PDF');
+      }
     } else {
       // Développement - utiliser Chrome/Chromium local
       const possiblePaths = [
