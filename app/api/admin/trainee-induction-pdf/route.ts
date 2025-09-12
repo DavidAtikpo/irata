@@ -217,8 +217,8 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
          .session-info { text-align: right; margin-bottom: 2px; }
 
          .warning-box { background-color: #fef3c7; font-weight: bold; text-align: center; padding: 2px; margin: 2px 0; font-size: 9px; }
-         .declaration { margin: 1px 0; }
-         .declaration p { margin: 1px 0; font-size: 9px; }
+         .declaration { margin: 0px 0; }
+         .declaration p { font-size: 9px; }
        </style>
     </head>
     <body>
