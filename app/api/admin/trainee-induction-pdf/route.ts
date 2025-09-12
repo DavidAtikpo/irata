@@ -211,10 +211,10 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
          .validation { margin: 5px 0; }
          .validation table { width: 100%; border-collapse: collapse; margin: 5px 0; font-size: 8px; }
          .validation th, .validation td { border: 1px solid #000; padding: 6px; text-align: left; }
-         .signatures { margin: 5px 0; text-align: right; }
-         .signature-item { margin: 5px 0; padding: 1px; text-align: right; }
+         .signatures { margin: 2px 0; text-align: right; }
+         .signature-item { margin: 2px 0; padding: 1px; text-align: right; }
          .signature-image { max-height: 40px; max-width: 100px; }
-         .session-info { text-align: right; margin-bottom: 5px; }
+         .session-info { text-align: right; margin-bottom: 2px; }
 
          .warning-box { background-color: #fef3c7; font-weight: bold; text-align: center; padding: 2px; margin: 2px 0; font-size: 9px; }
          .declaration { margin: 1px 0; }
