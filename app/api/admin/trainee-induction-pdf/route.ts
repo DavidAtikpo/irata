@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
     const pdf = await page.pdf({ 
        format: 'A4', 
        printBackground: true, 
-       margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' } 
+       margin: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' } 
      });
     await browser.close();
 
@@ -196,34 +196,44 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
       <meta charset="UTF-8">
       <title>Document d'Induction des Stagiaires</title>
              <style>
-         body { font-family: Arial, sans-serif; margin: 0; padding: 10px; font-size: 10px; }
-         .header { display: flex; margin-bottom: 15px; }
-         .logo { width: 60px; height: 60px; margin-right: 15px; }
-         .header-table { border-collapse: collapse; width: 100%; font-size: 8px; }
-         .header-table td { border: 1px solid #000; padding: 3px; }
+         body { 
+           font-family: Arial, sans-serif; 
+           margin: 0; 
+           padding: 8px; 
+           font-size: 9px; 
+           line-height: 1.1;
+         }
+         .header { display: flex; margin-bottom: 10px; }
+         .logo { width: 50px; height: 50px; margin-right: 10px; }
+         .header-table { border-collapse: collapse; width: 100%; font-size: 7px; }
+         .header-table td { border: 1px solid #000; padding: 2px; }
          .header-table .bold { font-weight: bold; }
-         .title { text-align: center; font-weight: bold; border: 1px solid #000; padding: 1px; margin: 10px 0; font-size: 12px; }
-         .info { margin: 15px 0; }
-         .section { margin: 12px 0; }
-         .section h2 { color: #1e40af; font-size: 11px; margin-bottom: 8px; }
-         .section ul { margin: 8px 0; padding-left: 15px; }
-         .section li { margin: 3px 0; font-size: 9px; line-height: 1.2; }
-         .validation { margin: 5px 0; }
-         .validation table { width: 100%; border-collapse: collapse; margin: 5px 0; font-size: 8px; }
-         .validation th, .validation td { border: 1px solid #000; padding: 6px; text-align: left; }
-         .signatures { margin: 5px 0; text-align: right; }
-         .signature-item { margin: 5px 0; padding: 1px; text-align: right; }
-         .signature-image { max-height: 40px; max-width: 100px; }
-         .session-info { text-align: right; margin-bottom: 10px; }
+         .title { text-align: center; font-weight: bold; border: 1px solid #000; padding: 1px; margin: 8px 0; font-size: 11px; }
+         .info { margin: 10px 0; }
+         .section { margin: 8px 0; }
+         .section h2 { color: #1e40af; font-size: 10px; margin-bottom: 5px; }
+         .section ul { margin: 5px 0; padding-left: 12px; }
+         .section li { margin: 2px 0; font-size: 8px; line-height: 1.1; }
+         .validation { margin: 3px 0; }
+         .validation table { width: 100%; border-collapse: collapse; margin: 3px 0; font-size: 7px; }
+         .validation th, .validation td { border: 1px solid #000; padding: 4px; text-align: left; }
+         .signatures { margin: 3px 0; text-align: right; }
+         .signature-item { margin: 2px 0; padding: 1px; text-align: right; }
+         .signature-image { max-height: 30px; max-width: 80px; }
+         .session-info { text-align: right; margin-bottom: 5px; }
 
-         .warning-box { background-color: #fef3c7; font-weight: bold; text-align: center; padding: 2px; margin: 2px 0; font-size: 9px; }
-         .declaration { margin: 2px 0; }
-         .declaration p { margin: 2px 0; font-size: 9px; }
+         .warning-box { background-color: #fef3c7; font-weight: bold; text-align: center; padding: 1px; margin: 1px 0; font-size: 8px; }
+         .declaration { margin: 1px 0; }
+         .declaration p { margin: 1px 0; font-size: 8px; }
+         
+         /* Optimisation pour éviter les sauts de page */
+         .page-break-inside-avoid { page-break-inside: avoid; }
+         .no-break { page-break-inside: avoid; }
        </style>
     </head>
     <body>
       <!-- En-tête -->
-      <div class="header">
+      <div class="header no-break">
         <img src="https://www.a-finpart.com/logo.png" alt="CI.DES Logo" class="logo">
         <table class="header-table">
           <tr>
@@ -249,7 +259,7 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
       </div>
 
       <!-- Validation -->
-      <div class="validation">
+      <div class="validation no-break">
         <h2>VALIDATION</h2>
         <table>
           <thead>
@@ -264,7 +274,7 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
               <td>
                 Laurent ARDOUIN<br/>TA / RAMR<br/>Date: 09/10/2023<br/>
                 <strong>Signature:</strong> 
-                ${induction.adminSignature ? `<img src="${induction.adminSignature}" alt="Signature Admin" style="height: 32px;">` : '<span style="color: red;">Non signé</span>'}
+                ${induction.adminSignature ? `<img src="${induction.adminSignature}" alt="Signature Admin" style="height: 25px;">` : '<span style="color: red;">Non signé</span>'}
               </td>
               <td>Dimitar Aleksandrov MATEEB<br/>Formateur<br/>Date: 09/10/2023</td>
               <td>Laurent ARDOUIN<br/>Manager<br/>Date: 09/10/2023</td>
@@ -274,7 +284,7 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
       </div>
 
       <!-- Sections du document -->
-      <div class="section">
+      <div class="section no-break">
         <h2>1. LORSQUE LE COURS SE RASSEMBLE</h2>
         <ul>
           <li>ACCUEIL – offrir des rafraîchissements</li>
@@ -284,7 +294,7 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
         </ul>
       </div>
 
-      <div class="section">
+      <div class="section no-break">
         <h2>2. LORSQUE LE COURS EST RASSEMBLÉ</h2>
         <ul>
           <li>PRÉSENTER LE(S) FORMATEUR(S) – nom, parcours, niveau, etc.</li>
@@ -307,7 +317,7 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
         </ul>
       </div>
 
-      <div class="section">
+      <div class="section no-break">
         <h2>3. PASSER EN REVUE L'ÉVALUATION DES RISQUES</h2>
         <ul>
           <li>GLISSADES, TRÉBUCHER ET CHUTES – garder la zone propre, utiliser les rampes, toujours attaché, etc.</li>
@@ -322,13 +332,13 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
         </ul>
       </div>
 
-             <div class="warning-box">
+             <div class="warning-box no-break">
          MONTRER OÙ L'ÉVALUATION COMPLÈTE DES RISQUES EST AFFICHÉE ET ENCOURAGER LES GENS À LA LIRE<br/>
          TOUS LES STAGIAIRES ET FORMATEURS DOIVENT ENSUITE SIGNER<br/>
          LA DÉCLARATION D'INDUCTION
        </div>
 
-       <div class="declaration" style="padding: 0px;">
+       <div class="declaration no-break" style="padding: 0px;">
          <h2>DÉCLARATION D'INDUCTION</h2>
          <p>
            <strong>DATE DU COURS:</strong> ${new Date(induction.courseDate).toLocaleDateString('fr-FR')} 
@@ -341,13 +351,13 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
          </p>
        </div>
              <!-- Signatures des stagiaires -->
-       <div class="signatures" style="font-size: 11px; padding: 0px;">
+       <div class="signatures no-break" style="font-size: 10px; padding: 0px;">
          <div class="session-info">
            <p><strong>Session:</strong> ${induction.sessionId}</p>
          </div>
 
          ${userSignatures.map((sig, index) => `
-           <div class="signature-item" style="font-size: 9px; padding: 0px;">
+           <div class="signature-item" style="font-size: 8px; padding: 0px; margin: 1px 0;">
              <p><strong>Stagiaire:</strong> ${sig.prenom || ''} ${sig.nom || ''} (${sig.email})</p>
              <p><strong>Date de signature:</strong> ${new Date(sig.createdAt).toLocaleDateString('fr-FR')}</p>
              ${sig.userSignature ? `<img src="${sig.userSignature}" alt="Signature" class="signature-image">` : '<p style="color: red;">Pas de signature</p>'}
