@@ -197,7 +197,7 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
       <title>Document d'Induction des Stagiaires</title>
              <style>
          body { font-family: Arial, sans-serif; margin: 0; padding: 10px; font-size: 10px; }
-         .header { display: flex; margin-bottom: 15px; }
+         .header { display: flex; margin-bottom: 10px; }
          .logo { width: 60px; height: 60px; margin-right: 15px; }
          .header-table { border-collapse: collapse; width: 100%; font-size: 8px; }
          .header-table td { border: 1px solid #000; padding: 3px; }
@@ -214,7 +214,7 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
          .signatures { margin: 5px 0; text-align: right; }
          .signature-item { margin: 5px 0; padding: 1px; text-align: right; }
          .signature-image { max-height: 40px; max-width: 100px; }
-         .session-info { text-align: right; margin-bottom: 10px; }
+         .session-info { text-align: right; margin-bottom: 5px; }
 
          .warning-box { background-color: #fef3c7; font-weight: bold; text-align: center; padding: 2px; margin: 2px 0; font-size: 9px; }
          .declaration { margin: 2px 0; }
