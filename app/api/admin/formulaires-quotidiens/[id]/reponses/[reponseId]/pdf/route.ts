@@ -158,9 +158,7 @@ export async function GET(
     }
     
     try {
-      console.log('Début génération PDF avec Puppeteer');
-      console.log('Plateforme:', process.platform);
-      console.log('Architecture:', process.arch);
+
       
       // Vérifier si nous sommes en mode de développement ou production
       const isDevelopment = process.env.NODE_ENV === 'development';
@@ -190,7 +188,6 @@ export async function GET(
           : await chromium.executablePath()
       };
 
-      console.log('Configuration Puppeteer:', puppeteerConfig);
 
       // Tenter le lancement avec gestion d'erreur détaillée
       let browser;
@@ -222,7 +219,7 @@ export async function GET(
       const logoUrl = `${baseUrl}/logo.png`;
       
       // Configuration PDF avec pied de page
-      console.log('Génération du PDF...');
+      
       pdf = await page.pdf({
         format: 'A4',
         landscape: false,
@@ -248,7 +245,6 @@ export async function GET(
               </div>
               <div style="flex: 1; text-align: right; display: flex; align-items: center; justify-content: flex-end;">
                 <span>© 2025 CI.DES</span>
-                <img src="${baseUrl}/logo.png" style="width: 18px; height: 18px; object-fit: contain; margin-left: 6px;" onerror="this.style.display='none';">
               </div>
             </div>
           </div>
