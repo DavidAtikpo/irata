@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -9,248 +8,87 @@ interface NonConformite {
   id: string;
   numero: string;
   titre: string;
-  description: string;
   type: string;
   gravite: string;
   statut: string;
-  dateDetection: string;
-  dateEcheance?: string;
+  createdAt: string;
+  userId: string;
   lieu?: string;
-  detecteur: {
-    id: string;
-    nom?: string;
-    prenom?: string;
-    email: string;
-  };
-  responsable?: {
-    id: string;
-    nom?: string;
-    prenom?: string;
-    email: string;
-  };
-  actionsCorrectives: ActionCorrective[];
-  commentaires: Commentaire[];
-  documents: Document[];
-}
-
-interface ActionCorrective {
-  id: string;
-  titre: string;
-  description: string;
-  type: string;
-  statut: string;
-  priorite: string;
-  dateDebut: string;
-  dateEcheance?: string;
-  dateRealisation?: string;
-  resultats?: string;
-  efficacite?: string;
-  responsable: {
-    id: string;
-    nom?: string;
-    prenom?: string;
-    email: string;
-  };
-  commentaires: Commentaire[];
-}
-
-interface Commentaire {
-  id: string;
-  commentaire: string;
-  createdAt: string;
-  user: {
-    id: string;
-    nom?: string;
-    prenom?: string;
-    email: string;
-  };
-}
-
-interface Document {
-  id: string;
-  nom: string;
+  dateDetection?: string;
   description?: string;
-  url: string;
-  type: string;
-  createdAt: string;
+  detecteur: {
+    nom?: string;
+    prenom?: string;
+    email: string;
+  };
+  // Champs CI.DES
+  issuerName?: string;
+  issuerSignature?: string;
+  recipientName?: string;
+  recipientDepartment?: string;
+  recipientDate?: string;
+  recipientNumber?: string;
+  anomalyOrigin?: string;
+  anomalyOriginOther?: string;
+  anomalyDescription?: string;
+  immediateCurativeAction?: string;
+  actionPlanned?: string;
+  correctiveActionDescription?: string;
+  preventiveActionDescription?: string;
+  recipientSignature?: string;
+  collaboratorInCharge?: string;
+  categoryOfAnomaly?: string;
+  analysisCauses?: string;
+  collaboratorAppointed?: string;
+  limitTime?: string;
+  effectivenessAction?: string;
+  closingDate?: string;
+  signatureRecipient?: string;
+  closingDepartment?: string;
+  conclusionType?: string;
+  qualityManagerObservation?: string;
+  qualityManagerDate?: string;
+  qualityManagerSignature?: string;
 }
 
-const typeLabels = {
-  SECURITE: 'Sécurité',
-  QUALITE: 'Qualité',
-  PROCEDURE: 'Procédure',
-  EQUIPEMENT: 'Équipement',
-  FORMATION: 'Formation',
-  DOCUMENTATION: 'Documentation',
-  ENVIRONNEMENT: 'Environnement',
-  AUTRE: 'Autre'
-};
-
-const graviteLabels = {
-  MINEURE: 'Mineure',
-  MAJEURE: 'Majeure',
-  CRITIQUE: 'Critique'
-};
-
-const statutLabels = {
-  OUVERTE: 'Ouverte',
-  EN_COURS: 'En cours',
-  FERMEE: 'Fermée',
-  ANNULEE: 'Annulée'
-};
-
-const actionTypeLabels = {
-  CORRECTION_IMMEDIATE: 'Correction immédiate',
-  ACTION_CORRECTIVE: 'Action corrective',
-  ACTION_PREVENTIVE: 'Action préventive',
-  AMELIORATION_CONTINUE: 'Amélioration continue'
-};
-
-const prioriteLabels = {
-  BASSE: 'Basse',
-  MOYENNE: 'Moyenne',
-  HAUTE: 'Haute',
-  CRITIQUE: 'Critique'
-};
-
-const graviteColors = {
-  MINEURE: 'bg-yellow-100 text-yellow-800',
-  MAJEURE: 'bg-orange-100 text-orange-800',
-  CRITIQUE: 'bg-red-100 text-red-800'
-};
-
-const statutColors = {
-  OUVERTE: 'bg-blue-100 text-blue-800',
-  EN_COURS: 'bg-yellow-100 text-yellow-800',
-  FERMEE: 'bg-green-100 text-green-800',
-  ANNULEE: 'bg-gray-100 text-gray-800'
-};
-
-const prioriteColors = {
-  BASSE: 'bg-gray-100 text-gray-800',
-  MOYENNE: 'bg-blue-100 text-blue-800',
-  HAUTE: 'bg-orange-100 text-orange-800',
-  CRITIQUE: 'bg-red-100 text-red-800'
-};
-
-export default function AdminNonConformiteDetailPage() {
-  const { data: session } = useSession();
+export default function NonConformiteDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const nonConformiteId = params.id as string;
+
   const [nonConformite, setNonConformite] = useState<NonConformite | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    titre: '',
-    description: '',
-    type: '',
-    gravite: '',
-    statut: '',
-    lieu: '',
-    responsableId: '',
-    dateEcheance: ''
-  });
-  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (params.id) {
-      fetchNonConformite();
-    }
-  }, [params.id]);
+    fetchNonConformite();
+  }, [nonConformiteId]);
 
   const fetchNonConformite = async () => {
     try {
-      setLoading(true);
-      const response = await fetch(`/api/admin/non-conformites/${params.id}`);
+      const response = await fetch(`/api/admin/non-conformites/${nonConformiteId}`);
       if (response.ok) {
         const data = await response.json();
         setNonConformite(data);
-        setEditForm({
-          titre: data.titre,
-          description: data.description,
-          type: data.type,
-          gravite: data.gravite,
-          statut: data.statut,
-          lieu: data.lieu || '',
-          responsableId: data.responsableId || '',
-          dateEcheance: data.dateEcheance ? new Date(data.dateEcheance).toISOString().split('T')[0] : ''
-        });
       } else {
-        console.error('Erreur lors du chargement de la non-conformité');
+        setError('Non-conformité non trouvée');
       }
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('Erreur lors du chargement:', error);
+      setError('Erreur lors du chargement de la non-conformité');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEdit = () => {
-    setEditing(true);
-  };
-
-  const handleCancel = () => {
-    setEditing(false);
-    if (nonConformite) {
-      setEditForm({
-        titre: nonConformite.titre,
-        description: nonConformite.description,
-        type: nonConformite.type,
-        gravite: nonConformite.gravite,
-        statut: nonConformite.statut,
-        lieu: nonConformite.lieu || '',
-        responsableId: (nonConformite as any).responsableId || '',
-        dateEcheance: nonConformite.dateEcheance ? new Date(nonConformite.dateEcheance).toISOString().split('T')[0] : ''
-      });
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      const response = await fetch(`/api/admin/non-conformites/${params.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editForm),
-      });
-
-      if (response.ok) {
-        await fetchNonConformite();
-        setEditing(false);
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Erreur lors de la mise à jour');
-      }
-    } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors de la mise à jour');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const isOverdue = (dateEcheance?: string) => {
-    if (!dateEcheance) return false;
-    return new Date(dateEcheance) < new Date();
+  const handlePrint = () => {
+    window.print();
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
           </div>
@@ -259,13 +97,13 @@ export default function AdminNonConformiteDetailPage() {
     );
   }
 
-  if (!nonConformite) {
+  if (error || !nonConformite) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Non-conformité non trouvée</h1>
-            <p className="text-gray-600 mb-6">La non-conformité que vous recherchez n'existe pas.</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Erreur</h1>
+            <p className="text-gray-600 mb-6">{error || 'Non-conformité non trouvée'}</p>
             <Link
               href="/admin/non-conformites"
               className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
@@ -279,317 +117,301 @@ export default function AdminNonConformiteDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
-            <button
-              onClick={() => router.back()}
+    <div className="p-6 bg-gray-50 min-h-screen font-sans text-gray-800">
+              <div className="p-4 flex justify-between items-center border-b border-gray-100">
+          <div className="flex items-center space-x-4">
+            <Link
+              href="/admin/non-conformites"
               className="text-gray-500 hover:text-gray-700"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
+            </Link>
+            <h1 className="text-xl font-bold text-gray-900">Non-conformité #{nonConformite.numero}</h1>
+          </div>
+          <div className="flex gap-2">
+            {nonConformite.qualityManagerObservation && (
+              <Link
+                href={`/admin/non-conformites/${nonConformiteId}/documents`}
+                className="px-3 py-1 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
+              >
+                Voir les documents
+              </Link>
+            )}
+            <Link
+              href={`/admin/non-conformites/${nonConformiteId}/actions-correctives/nouvelle`}
+              className="px-3 py-1 rounded-md bg-green-600 text-white text-sm hover:bg-green-700"
+            >
+              Nouvelle action corrective
+            </Link>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="px-3 py-1 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700 print:hidden"
+            >
+              Imprimer / Exporter
             </button>
-            <h1 className="text-3xl font-bold text-gray-900">{nonConformite.numero}</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${graviteColors[nonConformite.gravite as keyof typeof graviteColors]}`}>
-              {graviteLabels[nonConformite.gravite as keyof typeof graviteLabels]}
-            </span>
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statutColors[nonConformite.statut as keyof typeof statutColors]}`}>
-              {statutLabels[nonConformite.statut as keyof typeof statutLabels]}
-            </span>
-            {isOverdue(nonConformite.dateEcheance) && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                En retard
-              </span>
-            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Contenu principal */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Informations générales */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Informations générales</h2>
-                {!editing && (
-                  <button
-                    onClick={handleEdit}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
-                  >
-                    Modifier
-                  </button>
-                )}
-              </div>
-
-              {editing ? (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Titre
-                    </label>
-                    <input
-                      type="text"
-                      value={editForm.titre}
-                      onChange={(e) => setEditForm({ ...editForm, titre: e.target.value })}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={editForm.description}
-                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                      rows={4}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Type
-                      </label>
-                      <select
-                        value={editForm.type}
-                        onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                      >
-                        {Object.entries(typeLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Gravité
-                      </label>
-                      <select
-                        value={editForm.gravite}
-                        onChange={(e) => setEditForm({ ...editForm, gravite: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                      >
-                        {Object.entries(graviteLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Statut
-                      </label>
-                      <select
-                        value={editForm.statut}
-                        onChange={(e) => setEditForm({ ...editForm, statut: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                      >
-                        {Object.entries(statutLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date d'échéance
-                      </label>
-                      <input
-                        type="date"
-                        value={editForm.dateEcheance}
-                        onChange={(e) => setEditForm({ ...editForm, dateEcheance: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Lieu
-                    </label>
-                    <input
-                      type="text"
-                      value={editForm.lieu}
-                      onChange={(e) => setEditForm({ ...editForm, lieu: e.target.value })}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-4">
-                    <button
-                      type="button"
-                      onClick={handleCancel}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {submitting ? 'Sauvegarde...' : 'Sauvegarder'}
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">{nonConformite.titre}</h3>
-                  <p className="text-gray-700 mb-6">{nonConformite.description}</p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-900">Type:</span>
-                      <span className="ml-2 text-gray-600">{typeLabels[nonConformite.type as keyof typeof typeLabels]}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-900">Lieu:</span>
-                      <span className="ml-2 text-gray-600">{nonConformite.lieu || 'Non spécifié'}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-900">Détectée le:</span>
-                      <span className="ml-2 text-gray-600">{formatDate(nonConformite.dateDetection)}</span>
-                    </div>
-                    {nonConformite.dateEcheance && (
-                      <div>
-                        <span className="font-medium text-gray-900">Échéance:</span>
-                        <span className="ml-2 text-gray-600">{formatDate(nonConformite.dateEcheance)}</span>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
+      
+      <div className="max-w-6xl mx-auto bg-white shadow-md border border-gray-200 print:border-none print:shadow-none p-15">
+        {/* Header */}
+        <header className="p-4 border-b border-gray-200">
+          <div className="flex items-center gap-4">
+            <div className="flex-shrink-0">
+              <img src="/logo.png" alt="CI.DES Logo" className="w-16 h-20 object-contain" />
             </div>
-
-            {/* Actions correctives */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Actions correctives</h3>
-                <Link
-                  href={`/admin/actions-correctives/nouvelle?nonConformiteId=${nonConformite.id}`}
-                  className="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700 transition-colors"
-                >
-                  Ajouter une action
-                </Link>
-              </div>
-              
-              {nonConformite.actionsCorrectives.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">Aucune action corrective définie</p>
-              ) : (
-                <div className="space-y-4">
-                  {nonConformite.actionsCorrectives.map((action) => (
-                    <div key={action.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-gray-900">{action.titre}</h4>
-                        <div className="flex items-center space-x-2">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${prioriteColors[action.priorite as keyof typeof prioriteColors]}`}>
-                            {prioriteLabels[action.priorite as keyof typeof prioriteLabels]}
-                          </span>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statutColors[action.statut as keyof typeof statutColors]}`}>
-                            {statutLabels[action.statut as keyof typeof statutColors]}
-                          </span>
-                        </div>
-                      </div>
-                      <p className="text-gray-600 text-sm mb-2">{action.description}</p>
-                      <div className="text-xs text-gray-500">
-                        <span>Type: {actionTypeLabels[action.type as keyof typeof actionTypeLabels]}</span>
-                        <span className="mx-2">•</span>
-                        <span>Responsable: {action.responsable.nom || action.responsable.email}</span>
-                        {action.dateEcheance && (
-                          <>
-                            <span className="mx-2">•</span>
-                            <span>Échéance: {formatDate(action.dateEcheance)}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Commentaires */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Commentaires</h3>
-              
-              {nonConformite.commentaires.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">Aucun commentaire</p>
-              ) : (
-                <div className="space-y-4">
-                  {nonConformite.commentaires.map((commentaire) => (
-                    <div key={commentaire.id} className="border-l-4 border-indigo-200 pl-4">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-medium text-gray-900">
-                          {commentaire.user.nom || commentaire.user.email}
-                        </span>
-                        <span className="text-gray-500 text-sm">
-                          {formatDate(commentaire.createdAt)}
-                        </span>
-                      </div>
-                      <p className="text-gray-700">{commentaire.commentaire}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="flex-1">
+              <table className="w-full border-collapse text-xs">
+                <tbody>
+                  <tr>
+                    <td className="border p-1 font-bold">Titre</td>
+                    <td className="border p-1 font-bold">Numéro de code</td>
+                    <td className="border p-1 font-bold">Révision</td>
+                    <td className="border p-1 font-bold">Création date</td>
+                  </tr>
+                  <tr>
+                    <td className="border p-1">CI.DES NO CONFORMITY - COMPLAINT - MALFUNCTION - (DIGITAL)</td>
+                    <td className="border p-1">ENR-CIFRA-QHSE 002</td>
+                    <td className="border p-1">00</td>
+                    <td className="border p-1">{new Date(nonConformite.createdAt).toLocaleDateString('fr-FR')}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
+        </header>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Informations sur les participants */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Participants</h3>
-              <div className="space-y-4">
-                <div>
-                  <span className="font-medium text-gray-900">Détecteur:</span>
-                  <p className="text-gray-600">{nonConformite.detecteur.nom || nonConformite.detecteur.email}</p>
+        {/* Buttons */}
+
+
+        {/* Form body with data */}
+        <main className="p-6">
+          <section className="grid grid-cols-5 gap-4 mb-4">
+            <label className="col-span-1 text-sm font-medium">Theme</label>
+            <div className="col-span-2 border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.titre || '—'}</div>
+
+            <label className="col-span-1 text-sm font-medium">Localisation / Site</label>
+            <div className="col-span-1 border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.lieu || '—'}</div>
+
+            <label className="col-span-1 text-sm font-medium">Date of discovery</label>
+            <div className="col-span-1 border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.dateDetection ? new Date(nonConformite.dateDetection).toLocaleDateString('fr-FR') : '—'}</div>
+
+            <label className="col-span-1 text-sm font-medium">Issuer</label>
+            <div className="col-span-2 border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.issuerName || '—'}</div>
+
+            <label className="col-span-1 text-sm font-medium">N° d'ordre</label>
+            <div className="col-span-1 border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.recipientNumber || nonConformite.numero}</div>
+          </section>
+
+          {/* Description box */}
+          <section className="mb-4">
+            <div className="text-sm font-medium mb-2">1. Description</div>
+            <div className="border border-gray-300 rounded">
+              <div className="p-3 grid grid-cols-1 gap-2">
+                <div className="text-xs flex items-start gap-2">
+                  <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
+                    {nonConformite.categoryOfAnomaly?.includes('no conformity') ? '✓' : ''}
+                  </span>
+                  no conformity (deviation / baseline)
                 </div>
-                {nonConformite.responsable && (
-                  <div>
-                    <span className="font-medium text-gray-900">Responsable:</span>
-                    <p className="text-gray-600">{nonConformite.responsable.nom || nonConformite.responsable.email}</p>
+                <div className="text-xs flex items-start gap-2">
+                  <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
+                    {nonConformite.categoryOfAnomaly?.includes('claim') ? '✓' : ''}
+                  </span>
+                  claim (customer satisfaction incident)
+                </div>
+                <div className="text-xs flex items-start gap-2">
+                  <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
+                    {nonConformite.categoryOfAnomaly?.includes('malfunction') ? '✓' : ''}
+                  </span>
+                  malfunction (internal anomaly)
+                </div>
+                <div className="w-full h-24 border border-gray-200 rounded p-2 bg-gray-50 text-sm">
+                  {nonConformite.anomalyDescription || nonConformite.description || '—'}
+                </div>
+                
+                {/* Affichage des documents/photos uploadés */}
+                {nonConformite.qualityManagerObservation && (
+                  <div className="mt-2">
+                    <div className="text-xs font-medium mb-1">Documents/Photos joints :</div>
+                    <div className="space-y-1">
+                      {nonConformite.qualityManagerObservation.split(', ').map((fileUrl, index) => {
+                        const fileName = fileUrl.includes('http') 
+                          ? fileUrl.split('/').pop()?.split('?')[0] || `Document ${index + 1}`
+                          : fileUrl;
+                        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
+                        
+                        return (
+                          <div key={index} className="flex items-center justify-between bg-blue-50 px-2 py-1 rounded text-xs">
+                            <span className="flex items-center">
+                              {isImage ? (
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                              ) : (
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              )}
+                              {fileName}
+                            </span>
+                            <a
+                              href={fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 underline"
+                            >
+                              {isImage ? 'Voir' : 'Télécharger'}
+                            </a>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
             </div>
+          </section>
 
-            {/* Documents */}
-            {nonConformite.documents.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
-                <div className="space-y-2">
-                  {nonConformite.documents.map((doc) => (
-                    <a
-                      key={doc.id}
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center space-x-2 text-indigo-600 hover:text-indigo-800"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-sm">{doc.nom}</span>
-                    </a>
-                  ))}
+          <section className="grid grid-cols-3 gap-4 mb-4">
+            <div>
+              <div className="text-sm font-medium mb-2">2. Consequences</div>
+              <div className="border border-gray-300 rounded p-3 space-y-2">
+                <div className="text-xs flex items-start gap-2">
+                  <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
+                    {nonConformite.analysisCauses?.includes('Observed') ? '✓' : ''}
+                  </span>
+                  Observed
+                </div>
+                <div className="text-xs flex items-start gap-2">
+                  <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
+                    {nonConformite.analysisCauses?.includes('Reported') ? '✓' : ''}
+                  </span>
+                  Reported
                 </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+
+            <div className="col-span-2">
+              <div className="text-sm font-medium mb-2">3. Treatment proposal</div>
+              <div className="border border-gray-300 rounded p-3 grid grid-cols-2 gap-2">
+                <div className="text-xs flex items-start gap-2">
+                  <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
+                    {nonConformite.correctiveActionDescription?.includes('Acceptance') ? '✓' : ''}
+                  </span>
+                  Acceptance as is with exemption
+                </div>
+                <div className="text-xs flex items-start gap-2">
+                  <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
+                    {nonConformite.correctiveActionDescription?.includes('repair') ? '✓' : ''}
+                  </span>
+                  Trade-in or repair authorization
+                </div>
+                <div className="text-xs flex items-start gap-2">
+                  <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
+                    {nonConformite.correctiveActionDescription?.includes('Adaptation') ? '✓' : ''}
+                  </span>
+                  Adaptation, modification
+                </div>
+                <div className="text-xs flex items-start gap-2">
+                  <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
+                    {nonConformite.correctiveActionDescription?.includes('Return') ? '✓' : ''}
+                  </span>
+                  Return to supplier
+                </div>
+                <div className="text-xs flex items-start gap-2">
+                  <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
+                    {nonConformite.correctiveActionDescription?.includes('Downgrading') ? '✓' : ''}
+                  </span>
+                  Downgrading
+                </div>
+                <div className="text-xs flex items-start gap-2">
+                  <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
+                    {nonConformite.correctiveActionDescription?.includes('Put Off') ? '✓' : ''}
+                  </span>
+                  Put Off
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-4 grid grid-cols-3 gap-4">
+            <div className="col-span-2">
+              <div className="text-sm font-medium mb-2">Possible Witness</div>
+              <div className="w-full border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.collaboratorInCharge || '—'}</div>
+            </div>
+            <div>
+              <div className="text-sm font-medium mb-2">Visa</div>
+              <div className="w-full border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.recipientSignature || '—'}</div>
+            </div>
+          </section>
+
+          <section className="mb-4">
+            <div className="text-sm font-medium mb-2">4. Curative action (repair) already performed</div>
+            <div className="w-full h-24 border border-gray-200 rounded p-2 bg-gray-50 text-sm">
+              {nonConformite.immediateCurativeAction || '—'}
+            </div>
+          </section>
+
+          <section className="mb-4">
+            <div className="text-sm font-medium mb-2">5. Proposal of corrective actions to act on the causes</div>
+            <div className="w-full h-32 border border-gray-200 rounded p-2 bg-gray-50 text-sm">
+              {nonConformite.correctiveActionDescription || '—'}
+            </div>
+          </section>
+
+
+          <section className="mb-4">
+            <div className="text-sm font-medium mb-2">6. Registration and Monitoring (Digital Form)</div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <div className="text-xs">Manager QHSE / Technical Authority :</div>
+                <div className="w-full border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.recipientName || '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs">Date :</div>
+                <div className="w-full border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.recipientDate ? new Date(nonConformite.recipientDate).toLocaleDateString('fr-FR') : '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs">Visa :</div>
+                <div className="w-full border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.qualityManagerSignature || '—'}</div>
+              </div>
+            </div>
+          </section>
+
+
+          {/* Informations utilisateur */}
+          <section className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
+            <h3 className="text-sm font-medium text-blue-800 mb-2">Informations utilisateur</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Créé par :</span> {nonConformite.detecteur?.nom && nonConformite.detecteur?.prenom ? `${nonConformite.detecteur.prenom} ${nonConformite.detecteur.nom}` : nonConformite.detecteur?.email || 'Utilisateur inconnu'}
+              </div>
+              <div>
+                <span className="font-medium">Date de création :</span> {new Date(nonConformite.createdAt).toLocaleString('fr-FR')}
+              </div>
+              <div>
+                <span className="font-medium">Statut :</span> {nonConformite.statut}
+              </div>
+            </div>
+          </section>
+
+          {/* Footer with company info */}
+          <footer className="text-xs text-gray-600 border-t border-gray-100 pt-4 pb-6 grid grid-cols-3 gap-4">
+            <div>
+              CI.DES sasu<br />Capital 2 500 Euros<br />SIRET: 87840789900011
+            </div>
+            <div className="text-center">
+              ENR-CIFRA-QHSE 002 CI.DES No-Conformity Form
+            </div>
+            <div className="text-right">
+              Page 1 sur 1
+            </div>
+          </footer>
+        </main>
       </div>
     </div>
   );

@@ -231,9 +231,9 @@ export default function TraineeInductionPage() {
           <div className="p-6 max-w-5xl mx-auto bg-white text-black">
             {/* En-tête spécifique aux inductions */}
             <div className="flex flex-col sm:flex-row items-start mb-4">
-              <div className="mr-4 flex-shrink-0 mb-4 sm:mb-0">
+            <div className="mr-4 flex-shrink-0 mb-4 sm:mb-0">
                 <img src="/logo.png" alt="CI.DES Logo" className="w-16 h-20 object-contain" />
-                         </div>
+            </div>
               <div className="flex-1">
                 <table className="w-full border-collapse text-xs mt-3">
                   <tbody>
@@ -251,8 +251,8 @@ export default function TraineeInductionPage() {
                     </tr>
                   </tbody>
                 </table>
-                         </div>
-                       </div>
+              </div>
+             </div>
 
                        <h1 className="text-center font-bold mt-6 border p-2">INDUCTION DES STAGIAIRES</h1>
 

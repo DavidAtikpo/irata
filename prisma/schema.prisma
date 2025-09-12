@@ -21,32 +21,35 @@ model User {
   updatedAt                     DateTime                       @updatedAt
   passwordResetToken            String?                        @unique
   passwordResetExpires          DateTime?
+  actionsCorrectivesResponsable ActionCorrective[]             @relation("ActionCorrectiveResponsable")
+  actionCorrectiveCommentaires  ActionCorrectiveCommentaire[]  @relation("ActionCorrectiveCommentaireUser")
+  attendanceSignatures          AttendanceSignature[]          @relation("AttendanceSignatures")
   contrats                      Contrat[]
   contributions                 Contribution[]
+  corrections                   CorrectionFormulaire[]
   customerSatisfactionResponses CustomerSatisfactionResponse[]
   demandes                      Demande[]
   devis                         Devis[]
   documents                     Document[]
+  documentActions               DocumentAction[]
   assessorInspections           EquipmentInspection[]          @relation("AssessorInspections")
   inspections                   EquipmentInspection[]
   formulairesCrees              FormulairesQuotidiens[]        @relation("AdminFormulaires")
-  IrataDisclaimerSubmission     IrataDisclaimerSubmission[]
   invoices                      Invoice[]
+  IrataDisclaimerSubmission     IrataDisclaimerSubmission[]
+  
   jobPlans                      JobPlan[]
+  nonConformitesDetectees       NonConformite[]                @relation("NonConformiteDetecteur")
+  nonConformitesResponsable     NonConformite[]                @relation("NonConformiteResponsable")
+  nonConformiteCommentaires     NonConformiteCommentaire[]     @relation("NonConformiteCommentaireUser")
+  notifications                 Notification[]
   preJobTrainingSignatures      PreJobTrainingSignature[]
   reponsesFormulaires           ReponseFormulaire[]            @relation("StagiaireReponses")
+  traineeInductionSignatures    TraineeInductionSignature[]
   traineeProgress               TraineeProgress[]
   traineeSignatures             TraineeSignature?
   trainingSessions              TrainingSession[]              @relation("TrainingSessionTrainees")
-  traineeInductionSignatures    TraineeInductionSignature[]
-  notifications                 Notification[]
-  documentActions               DocumentAction[]
-  nonConformitesDetectees       NonConformite[]             @relation("NonConformiteDetecteur")
-  nonConformitesResponsable     NonConformite[]             @relation("NonConformiteResponsable")
-  actionsCorrectivesResponsable ActionCorrective[]          @relation("ActionCorrectiveResponsable")
-  nonConformiteCommentaires     NonConformiteCommentaire[]  @relation("NonConformiteCommentaireUser")
-  actionCorrectiveCommentaires  ActionCorrectiveCommentaire[] @relation("ActionCorrectiveCommentaireUser")
-  attendanceSignatures          AttendanceSignature[]      @relation("AttendanceSignatures")
+  
 
   @@schema("webirata")
 }
@@ -120,10 +123,10 @@ model Devis {
 }
 
 model Contrat {
-  id            String   @id @default(cuid())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  devisId       String   @unique
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  devisId       String    @unique
   userId        String
   nom           String
   prenom        String
@@ -131,9 +134,9 @@ model Contrat {
   profession    String?
   dateSignature DateTime
   signature     String
-  statut        String   @default("EN_ATTENTE")
-  devis         Devis    @relation(fields: [devisId], references: [id])
-  user          User     @relation(fields: [userId], references: [id])
+  statut        String    @default("EN_ATTENTE")
+  devis         Devis     @relation(fields: [devisId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
   invoices      Invoice[]
 
   @@index([devisId])
@@ -162,20 +165,20 @@ model PasswordResetToken {
 }
 
 model Document {
-  id              String   @id @default(cuid())
+  id              String           @id @default(cuid())
   nom             String
   description     String?
-  cloudinaryId    String   @unique
+  cloudinaryId    String           @unique
   url             String
   type            String
-  public          Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  public          Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   userId          String?
   devisId         String?
   certificationId String?
-  devis           Devis?   @relation(fields: [devisId], references: [id])
-  user            User?    @relation(fields: [userId], references: [id])
+  devis           Devis?           @relation(fields: [devisId], references: [id])
+  user            User?            @relation(fields: [userId], references: [id])
   actions         DocumentAction[]
   historiqueItems HistoriqueItem[]
 
@@ -183,27 +186,29 @@ model Document {
 }
 
 model DocumentAction {
-  id         String           @id @default(cuid())
+  id         String             @id @default(cuid())
   documentId String
   userId     String
   action     DocumentActionType
-  timestamp  DateTime         @default(now())
+  timestamp  DateTime           @default(now())
   ipAddress  String?
   userAgent  String?
-  document   Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document   Document           @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, userId, action])
   @@schema("webirata")
 }
 
 enum DocumentActionType {
-  RECEIVED    // Document reçu (accusé de réception)
-  OPENED      // Document ouvert
-  DOWNLOADED  // Document téléchargé
+  RECEIVED
+  OPENED
+  DOWNLOADED
 
   @@schema("webirata")
 }
+
+// Duplicate enum removed (defined later in the file)
 
 model FormulairesQuotidiens {
   id           String              @id @default(cuid())
@@ -241,6 +246,12 @@ model ReponseFormulaire {
   maxScore         Int?
   score            Int?
   scoreAdmin       Int?
+  correction       CorrectionFormulaire?
+  // Nouveaux champs pour le système de correction
+  version          Int                   @default(1)
+  reponseOriginaleId String?
+  reponseOriginale ReponseFormulaire?    @relation("ReponseCorrections", fields: [reponseOriginaleId], references: [id])
+  corrections      ReponseFormulaire[]   @relation("ReponseCorrections")
   formulaire       FormulairesQuotidiens @relation(fields: [formulaireId], references: [id], onDelete: Cascade)
   stagiaire        User                  @relation("StagiaireReponses", fields: [stagiaireId], references: [id], onDelete: Cascade)
 
@@ -451,6 +462,335 @@ model IrataDisclaimerSubmission {
   @@schema("webirata")
 }
 
+model PreJobTrainingSignature {
+  id            String   @id @default(cuid())
+  day           String
+  signatureData String
+  userId        String
+  userName      String?
+  signedAt      DateTime @default(now())
+  autoSigned    Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("webirata")
+}
+
+model Invoice {
+  id            String         @id @default(cuid())
+  invoiceNumber String         @unique
+  amount        Float
+  paymentStatus PaymentStatus  @default(PENDING)
+  paidAmount    Float?
+  paymentMethod PaymentMethod?
+  notes         String?
+  userId        String
+  contratId     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  contrat       Contrat        @relation(fields: [contratId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("webirata")
+}
+
+model TraineeInduction {
+  id             String                      @id @default(cuid())
+  sessionId      String
+  courseDate     String
+  courseLocation String
+  diffusion      String
+  copie          String
+  adminSignature String
+  status         String                      @default("draft")
+  publishedAt    DateTime?
+  createdAt      DateTime                    @default(now())
+  updatedAt      DateTime                    @updatedAt
+  signatures     TraineeInductionSignature[]
+
+  @@schema("webirata")
+}
+
+model TraineeInductionSignature {
+  id            String           @id @default(cuid())
+  inductionId   String
+  userId        String
+  userSignature String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  induction     TraineeInduction @relation(fields: [inductionId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([inductionId, userId])
+  @@schema("webirata")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  category  String?
+  metadata  String?
+  read      Boolean  @default(false)
+  relatedId String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("webirata")
+}
+
+model NonConformite {
+  id                 String                     @id @default(cuid())
+  numero             String                     @unique
+  titre              String
+  description        String
+  type               NonConformiteType
+  gravite            NonConformiteGravite
+  statut             NonConformiteStatut        @default(OUVERTE)
+  dateDetection      DateTime                   @default(now())
+  // Champs du formulaire CI.DES CORRECTIVE ACTION FORM
+  // Section Issuer/Recipient
+  issuerName         String?
+  issuerSignature    String?
+  recipientName      String?
+  recipientDepartment String?
+  recipientDate      DateTime?
+  recipientNumber    String?
+  
+  // Section Anomaly/Malfunction
+  anomalyOrigin      String? // Customer, Prestation, Administration, Other
+  anomalyOriginOther String?
+  anomalyDescription String?
+  immediateCurativeAction String?
+  actionPlanned     String? // Yes, No
+  correctiveActionDescription String?
+  preventiveActionDescription String?
+  recipientSignature String?
+  collaboratorInCharge String?
+  categoryOfAnomaly String?
+  
+  // Section Quality Manager/Technical Authority/CEO
+  analysisCauses     String?
+  collaboratorAppointed String?
+  limitTime          String?
+  
+  // Section Closing of Actions
+  effectivenessAction String? // Very effective, Moderately effective, Ineffective
+  closingDate        DateTime?
+  signatureRecipient String?
+  closingDepartment  String? // Prestation, Administration, Other
+  
+  // Section Conclusion Quality Manager/Technical Authority
+  conclusionType     String? // Request closed by documentary review only, Request closed to be checked during audit, Open request sent back to hierarchy
+  qualityManagerObservation String?
+  qualityManagerDate DateTime?
+  qualityManagerSignature String?
+  dateEcheance       DateTime?
+  lieu               String?
+  detecteurId        String
+  responsableId      String?
+  sessionId          String?
+  formulaireId       String?
+  inspectionId       String?
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  actionsCorrectives ActionCorrective[]
+  detecteur          User                       @relation("NonConformiteDetecteur", fields: [detecteurId], references: [id])
+  responsable        User?                      @relation("NonConformiteResponsable", fields: [responsableId], references: [id])
+  commentaires       NonConformiteCommentaire[]
+  documents          NonConformiteDocument[]
+
+  @@schema("webirata")
+}
+
+model ActionCorrective {
+  id              String                        @id @default(cuid())
+  nonConformiteId String?
+  titre           String
+  description     String
+  type            ActionCorrectiveType
+  statut          ActionCorrectiveStatut        @default(EN_COURS)
+  priorite        ActionCorrectivePriorite      @default(MOYENNE)
+  dateDebut       DateTime                      @default(now())
+  dateEcheance    DateTime?
+  dateRealisation DateTime?
+  responsableId   String?
+  resultats       String?
+  efficacite      ActionCorrectiveEfficacite?
+  createdAt       DateTime                      @default(now())
+  updatedAt       DateTime                      @updatedAt
+  
+  // Champs CI.DES Action Corrective
+  issuerName                    String?
+  recipientName                 String?
+  date                          String?
+  number                        String?
+  department                    String?
+  originCustomer                Boolean? @default(false)
+  originProduction              Boolean? @default(false)
+  originAdministration          Boolean? @default(false)
+  originOther                   Boolean? @default(false)
+  categoryOfAnomaly             String?
+  issuerDescription             String?
+  immediateCurativeAction       Boolean? @default(false)
+  actionPlanned                 String?
+  correctiveDescribed           Boolean? @default(false)
+  preventiveDescribed           Boolean? @default(false)
+  recipientSignature            String?
+  issuerSignature               String?
+  collaboratorInCharge          String?
+  analysis                      String?
+  limitTime                     String?
+  collaboratorAppointed         String?
+  closingDate                   String?
+  effectiveness                 String?
+  effectivenessType             String?
+  signatureReception            String?
+  observation                   String?
+  conclusion                    String?
+  conclusionSignature           String?
+  
+  nonConformite   NonConformite?                @relation(fields: [nonConformiteId], references: [id], onDelete: Cascade)
+  responsable     User?                         @relation("ActionCorrectiveResponsable", fields: [responsableId], references: [id])
+  commentaires    ActionCorrectiveCommentaire[]
+  documents       ActionCorrectiveDocument[]
+
+  @@schema("webirata")
+}
+
+model NonConformiteDocument {
+  id              String        @id @default(cuid())
+  nonConformiteId String
+  nom             String
+  description     String?
+  url             String
+  type            String
+  createdAt       DateTime      @default(now())
+  nonConformite   NonConformite @relation(fields: [nonConformiteId], references: [id], onDelete: Cascade)
+
+  @@schema("webirata")
+}
+
+model ActionCorrectiveDocument {
+  id                 String           @id @default(cuid())
+  actionCorrectiveId String
+  nom                String
+  description        String?
+  url                String
+  type               String
+  createdAt          DateTime         @default(now())
+  actionCorrective   ActionCorrective @relation(fields: [actionCorrectiveId], references: [id], onDelete: Cascade)
+
+  @@schema("webirata")
+}
+
+model NonConformiteCommentaire {
+  id              String        @id @default(cuid())
+  nonConformiteId String
+  userId          String
+  commentaire     String
+  createdAt       DateTime      @default(now())
+  nonConformite   NonConformite @relation(fields: [nonConformiteId], references: [id], onDelete: Cascade)
+  user            User          @relation("NonConformiteCommentaireUser", fields: [userId], references: [id])
+
+  @@schema("webirata")
+}
+
+model ActionCorrectiveCommentaire {
+  id                 String           @id @default(cuid())
+  actionCorrectiveId String
+  userId             String
+  commentaire        String
+  createdAt          DateTime         @default(now())
+  actionCorrective   ActionCorrective @relation(fields: [actionCorrectiveId], references: [id], onDelete: Cascade)
+  user               User             @relation("ActionCorrectiveCommentaireUser", fields: [userId], references: [id])
+
+  @@schema("webirata")
+}
+
+model AttendanceSignature {
+  id            String   @id @default(cuid())
+  userId        String
+  signatureKey  String
+  signatureData String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation("AttendanceSignatures", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, signatureKey])
+  @@schema("webirata")
+}
+
+model AttendanceUnlock {
+  id          String   @id @default(cuid())
+  sessionName String
+  day         String
+  period      String
+  createdBy   String
+  createdAt   DateTime @default(now())
+
+  @@unique([sessionName, day, period])
+  @@schema("webirata")
+}
+
+model CorrectionFormulaire {
+  id             String            @id @default(cuid())
+  reponseId      String            @unique
+  decision       String
+  commentaire    String?
+  score          Float?
+  dateCorrection DateTime          @default(now())
+  adminId        String
+  admin          User              @relation(fields: [adminId], references: [id])
+  reponse        ReponseFormulaire @relation(fields: [reponseId], references: [id], onDelete: Cascade)
+
+  @@schema("webirata")
+}
+
+model TeamMember {
+  id             String   @id @default(cuid())
+  name           String
+  role           String
+  experience     String
+  certifications String?
+  photo          String?
+  email          String?
+  linkedin       String?
+  isActive       Boolean  @default(true)
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@schema("webirata")
+}
+
+model EdgeAndRopeManagementValidation {
+  id             String   @id @default(cuid())
+  adminName      String
+  adminSignature String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@schema("webirata")
+}
+
+model HistoriqueItem {
+  id          String   @id @default(cuid())
+  annee       String
+  session     String
+  commentaire String?
+  documentId  String
+  createdAt   DateTime @default(now())
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@schema("webirata")
+}
+
+// Duplicate enum removed (defined above)
+
 enum Role {
   USER
   ADMIN
@@ -609,259 +949,6 @@ enum ActionCorrectiveEfficacite {
   EFFICACE
   PARTIELLEMENT_EFFICACE
   INEFFICACE
-
-  @@schema("webirata")
-}
-
-model PreJobTrainingSignature {
-  id            String   @id @default(cuid())
-  day           String   // Jour de la semaine (Lundi, Mardi, etc.)
-  signatureData String   // Signature en base64
-  userId        String
-  userName      String?
-  signedAt      DateTime @default(now())
-  autoSigned    Boolean  @default(true) // Indique si c'est une signature automatique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@schema("webirata")
-}
-
-model Invoice {
-  id            String        @id @default(cuid())
-  invoiceNumber String        @unique
-  amount        Float
-  paymentStatus PaymentStatus @default(PENDING)
-  paidAmount    Float?        // Montant déjà payé pour les paiements partiels
-  paymentMethod PaymentMethod?
-  notes         String?       // Notes du paiement
-  userId        String
-  contratId     String
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contrat       Contrat       @relation(fields: [contratId], references: [id], onDelete: Cascade)
-  
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  @@schema("webirata")
-}
-
-model TraineeInduction {
-  id             String   @id @default(cuid())
-  sessionId      String   // ID de la session de formation
-  courseDate     String   // Date du cours
-  courseLocation String   // Lieu du cours
-  diffusion      String   // Diffusion
-  copie          String   // Copie
-  adminSignature String   // Signature de l'administrateur
-  status         String   @default("draft") // draft, admin_signed, published_to_trainees
-  publishedAt    DateTime? // Date de publication aux stagiaires
-  signatures     TraineeInductionSignature[]
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  @@schema("webirata")
-}
-
-model TraineeInductionSignature {
-  id             String          @id @default(cuid())
-  inductionId    String
-  userId         String
-  userSignature  String          // Signature de l'utilisateur
-  induction      TraineeInduction @relation(fields: [inductionId], references: [id], onDelete: Cascade)
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-
-  @@unique([inductionId, userId])
-
-  @@schema("webirata")
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  type      String
-  category  String?
-  metadata  String?
-  read      Boolean  @default(false)
-  relatedId String?
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@schema("webirata")
-}
-
-model NonConformite {
-  id                String                    @id @default(cuid())
-  numero            String                    @unique // Numéro unique de non-conformité
-  titre             String
-  description       String
-  type              NonConformiteType
-  gravite           NonConformiteGravite
-  statut            NonConformiteStatut       @default(OUVERTE)
-  dateDetection     DateTime                  @default(now())
-  dateEcheance      DateTime?
-  lieu              String?
-  detecteurId       String                    // Qui a détecté la non-conformité
-  responsableId     String?                   // Qui est responsable de la correction
-  sessionId         String?                   // Session de formation concernée
-  formulaireId      String?                   // Formulaire lié si applicable
-  inspectionId      String?                   // Inspection liée si applicable
-  documents         NonConformiteDocument[]
-  actionsCorrectives ActionCorrective[]
-  commentaires      NonConformiteCommentaire[]
-  createdAt         DateTime                  @default(now())
-  updatedAt         DateTime                  @updatedAt
-  detecteur         User                      @relation("NonConformiteDetecteur", fields: [detecteurId], references: [id])
-  responsable       User?                     @relation("NonConformiteResponsable", fields: [responsableId], references: [id])
-
-  @@schema("webirata")
-}
-
-model ActionCorrective {
-  id                String                    @id @default(cuid())
-  nonConformiteId   String?
-  titre             String
-  description       String
-  type              ActionCorrectiveType
-  statut            ActionCorrectiveStatut    @default(EN_COURS)
-  priorite          ActionCorrectivePriorite  @default(MOYENNE)
-  dateDebut         DateTime                  @default(now())
-  dateEcheance      DateTime?
-  dateRealisation   DateTime?
-  responsableId     String
-  resultats         String?
-  efficacite        ActionCorrectiveEfficacite?
-  documents         ActionCorrectiveDocument[]
-  commentaires      ActionCorrectiveCommentaire[]
-  createdAt         DateTime                  @default(now())
-  updatedAt         DateTime                  @updatedAt
-  nonConformite     NonConformite?            @relation(fields: [nonConformiteId], references: [id], onDelete: Cascade)
-  responsable       User                      @relation("ActionCorrectiveResponsable", fields: [responsableId], references: [id])
-
-  @@schema("webirata")
-}
-
-model NonConformiteDocument {
-  id              String        @id @default(cuid())
-  nonConformiteId String
-  nom             String
-  description     String?
-  url             String
-  type            String
-  createdAt       DateTime      @default(now())
-  nonConformite   NonConformite @relation(fields: [nonConformiteId], references: [id], onDelete: Cascade)
-
-  @@schema("webirata")
-}
-
-model ActionCorrectiveDocument {
-  id                String           @id @default(cuid())
-  actionCorrectiveId String
-  nom               String
-  description       String?
-  url               String
-  type              String
-  createdAt         DateTime         @default(now())
-  actionCorrective  ActionCorrective @relation(fields: [actionCorrectiveId], references: [id], onDelete: Cascade)
-
-  @@schema("webirata")
-}
-
-model NonConformiteCommentaire {
-  id              String        @id @default(cuid())
-  nonConformiteId String
-  userId          String
-  commentaire     String
-  createdAt       DateTime      @default(now())
-  nonConformite   NonConformite @relation(fields: [nonConformiteId], references: [id], onDelete: Cascade)
-  user            User          @relation("NonConformiteCommentaireUser", fields: [userId], references: [id])
-
-  @@schema("webirata")
-}
-
-model ActionCorrectiveCommentaire {
-  id                String           @id @default(cuid())
-  actionCorrectiveId String
-  userId            String
-  commentaire       String
-  createdAt         DateTime         @default(now())
-  actionCorrective  ActionCorrective @relation(fields: [actionCorrectiveId], references: [id], onDelete: Cascade)
-  user              User             @relation("ActionCorrectiveCommentaireUser", fields: [userId], references: [id])
-
-  @@schema("webirata")
-}
-
-
-
-model AttendanceSignature {
-  id            String   @id @default(cuid())
-  userId        String
-  signatureKey  String   // format: "Lundi-matin", "Mardi-soir", etc.
-  signatureData String   // base64 image data
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  user          User     @relation("AttendanceSignatures", fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, signatureKey])
-  @@schema("webirata")
-}
-
-model AttendanceUnlock {
-  id          String   @id @default(cuid())
-  sessionName String   // e.g., "2025 septembre 01 au 06"
-  day         String   // Lundi, Mardi, ...
-  period      String   // matin, soir
-  createdBy   String   // admin user id
-  createdAt   DateTime @default(now())
-
-  @@unique([sessionName, day, period])
-  @@schema("webirata")
-}
-
-model TeamMember {
-  id             String   @id @default(cuid())
-  name           String
-  role           String
-  experience     String
-  certifications String?  // JSON string des certifications
-  photo          String?
-  email          String?
-  linkedin       String?
-  isActive       Boolean  @default(true)
-  order          Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  @@schema("webirata")
-}
-
-model EdgeAndRopeManagementValidation {
-  id             String   @id @default(cuid())
-  adminName      String
-  adminSignature String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  @@schema("webirata")
-}
-
-model HistoriqueItem {
-  id          String   @id @default(cuid())
-  annee       String
-  session     String
-  commentaire String?
-  documentId  String
-  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
 
   @@schema("webirata")
 }

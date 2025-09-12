@@ -129,6 +129,7 @@ export default function SignaturePad({
       
       <div className="flex space-x-2">
         <button
+          type="button"
           onClick={clearSignature}
           disabled={disabled || !hasSignature}
           className={`px-4 py-2 rounded ${
@@ -140,6 +141,7 @@ export default function SignaturePad({
           Effacer
         </button>
         <button
+          type="button"
           onClick={saveSignature}
           disabled={disabled || !hasSignature}
           className={`px-4 py-2 rounded ${

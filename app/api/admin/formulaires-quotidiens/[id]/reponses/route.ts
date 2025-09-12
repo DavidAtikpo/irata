@@ -1,107 +1,128 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { PrismaClient } from '@prisma/client';
+import { sendFormulaireCorrectionEmail } from '@/lib/email';
 
-// GET /api/admin/formulaires-quotidiens/[id]/reponses
-export async function GET(
-  req: NextRequest,
+const prisma = new PrismaClient();
+
+export async function POST(
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ message: 'Non autorisé' }, { status: 401 })
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    const { id } = await params
-
-    const formulaire = await prisma.formulairesQuotidiens.findUnique({ where: { id } })
-    if (!formulaire) {
-      return NextResponse.json({ message: 'Formulaire non trouvé' }, { status: 404 })
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Accès réservé aux administrateurs' }, { status: 403 });
     }
 
-    const reponses = await prisma.reponseFormulaire.findMany({
-      where: { formulaireId: id },
+    const { reponseId, decision, commentaire, score } = await request.json();
+
+    if (!reponseId || !decision) {
+      return NextResponse.json({ 
+        error: 'Données manquantes: reponseId et decision sont requis' 
+      }, { status: 400 });
+    }
+
+    // Vérifier que la réponse existe
+    const reponse = await prisma.reponseFormulaire.findUnique({
+      where: { id: reponseId },
       include: {
         stagiaire: {
-          select: { id: true, nom: true, prenom: true, email: true }
+          select: {
+            nom: true,
+            prenom: true,
+            email: true
+          }
+        },
+        formulaire: {
+          select: {
+            id: true,
+            titre: true,
+            questions: true
+          }
         }
-      },
-      orderBy: { dateReponse: 'desc' }
-    })
-
-    const reponsesFormatted = reponses.map(reponse => ({
-      id: reponse.id,
-      formulaireId: reponse.formulaireId,
-      utilisateurId: reponse.stagiaireId,
-      utilisateurNom: `${reponse.stagiaire.prenom || ''} ${reponse.stagiaire.nom || ''}`.trim(),
-      utilisateurEmail: reponse.stagiaire.email,
-      dateReponse: reponse.dateReponse,
-      reponses: reponse.reponses,
-      commentaires: reponse.commentaires,
-      soumis: reponse.soumis
-    }))
-
-    return NextResponse.json(reponsesFormatted)
-  } catch (error) {
-    console.error('Erreur lors de la récupération des réponses:', error)
-    return NextResponse.json({ message: 'Erreur lors de la récupération des réponses' }, { status: 500 })
-  }
-}
-
-// POST /api/admin/formulaires-quotidiens/[id]/reponses
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ message: 'Non autorisé' }, { status: 401 })
-    }
-
-    const { id } = await params
-    const body = await req.json()
-    const { reponseId, decision, commentaire, score } = body as {
-      reponseId: string
-      decision?: 'ACCEPTE' | 'REFUSE' | 'A_REVOIR'
-      commentaire?: string
-      score?: number
-    }
-
-    if (!reponseId) {
-      return NextResponse.json({ message: 'reponseId requis' }, { status: 400 })
-    }
-
-    const reponse = await prisma.reponseFormulaire.findUnique({ where: { id: reponseId } })
-    if (!reponse || reponse.formulaireId !== id) {
-      return NextResponse.json({ message: 'Réponse introuvable' }, { status: 404 })
-    }
-
-    const updated = await prisma.reponseFormulaire.update({
-      where: { id: reponseId },
-      data: {
-        decisionAdmin: decision || null,
-        commentaireAdmin: commentaire || null,
-        scoreAdmin: typeof score === 'number' ? score : null
       }
-    })
+    });
 
-    return NextResponse.json({ success: true, updated })
+    if (!reponse) {
+      return NextResponse.json({ error: 'Réponse non trouvée' }, { status: 404 });
+    }
+
+    // Vérifier que la réponse appartient au formulaire spécifié
+    const { id } = await params;
+    if (reponse.formulaireId !== id) {
+      return NextResponse.json({ 
+        error: 'La réponse n\'appartient pas à ce formulaire' 
+      }, { status: 400 });
+    }
+
+    // Créer ou mettre à jour la correction
+    const correction = await prisma.correctionFormulaire.upsert({
+      where: {
+        reponseId: reponseId
+      },
+      update: {
+        decision,
+        commentaire: commentaire || '',
+        score: score || null,
+        dateCorrection: new Date(),
+        adminId: session.user.id
+      },
+      create: {
+        reponseId: reponseId,
+        decision,
+        commentaire: commentaire || '',
+        score: score || null,
+        dateCorrection: new Date(),
+        adminId: session.user.id
+      }
+    });
+
+    // Envoyer l'email de notification à l'étudiant
+    try {
+      await sendFormulaireCorrectionEmail(
+        reponse.stagiaire.email,
+        `${reponse.stagiaire.prenom} ${reponse.stagiaire.nom}`,
+        reponse.formulaire.titre,
+        decision,
+        commentaire || '',
+        score || undefined
+      );
+    } catch (emailError) {
+      console.error('Erreur lors de l\'envoi de l\'email:', emailError);
+      // Ne pas faire échouer la requête si l'email ne peut pas être envoyé
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Correction envoyée avec succès',
+      correction 
+    });
+
   } catch (error) {
-    console.error("Erreur lors de l'envoi de la décision:", error)
-    return NextResponse.json({ message: "Erreur lors de l'envoi de la décision" }, { status: 500 })
+    console.error('Erreur lors de l\'envoi de la correction:', error);
+    return NextResponse.json(
+      { error: 'Erreur interne du serveur' }, 
+      { status: 500 }
+    );
   }
 }
 
-export {}
-
-
-
-
-
-
-
+function getDecisionText(decision: string): string {
+  switch (decision) {
+    case 'ACCEPTE':
+      return '✅ Accepté';
+    case 'A_REVOIR':
+      return '⚠️ À revoir';
+    case 'REFUSE':
+      return '❌ Refusé';
+    default:
+      return decision;
+  }
+}

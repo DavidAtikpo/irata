@@ -129,13 +129,42 @@ export async function POST(req: NextRequest) {
       sessionId,
       formulaireId,
       inspectionId,
-      dateEcheance
+      dateEcheance,
+      dateDetection,
+      // Champs du formulaire CI.DES
+      issuerName,
+      issuerSignature,
+      recipientName,
+      recipientDepartment,
+      recipientDate,
+      recipientNumber,
+      anomalyOrigin,
+      anomalyOriginOther,
+      anomalyDescription,
+      immediateCurativeAction,
+      actionPlanned,
+      correctiveActionDescription,
+      preventiveActionDescription,
+      recipientSignature,
+      collaboratorInCharge,
+      categoryOfAnomaly,
+      analysisCauses,
+      collaboratorAppointed,
+      limitTime,
+      effectivenessAction,
+      closingDate,
+      signatureRecipient,
+      closingDepartment,
+      conclusionType,
+      qualityManagerObservation,
+      qualityManagerDate,
+      qualityManagerSignature
     } = body;
 
-    // Validation des données requises
-    if (!titre || !description || !type || !gravite) {
+    // Validation des données requises (nouvelle fiche): uniquement titre + description
+    if (!titre || !description) {
       return NextResponse.json(
-        { message: 'Titre, description, type et gravité sont requis' },
+        { message: 'Titre et description sont requis' },
         { status: 400 }
       );
     }
@@ -149,14 +178,44 @@ export async function POST(req: NextRequest) {
         numero,
         titre,
         description,
-        type,
-        gravite,
+        // Champs hérités: valeurs par défaut pour compatibilité schéma
+        type: type || 'AUTRE',
+        gravite: gravite || 'MINEURE',
         lieu: lieu || null,
         detecteurId: session.user.id,
         responsableId: responsableId || null,
         sessionId: sessionId || null,
         formulaireId: formulaireId || null,
         inspectionId: inspectionId || null,
+        dateDetection: dateDetection ? new Date(dateDetection) : undefined,
+        // Champs du formulaire CI.DES
+        issuerName: issuerName || null,
+        issuerSignature: issuerSignature || null,
+        recipientName: recipientName || null,
+        recipientDepartment: recipientDepartment || null,
+        recipientDate: recipientDate ? new Date(recipientDate) : null,
+        recipientNumber: recipientNumber || null,
+        anomalyOrigin: anomalyOrigin || null,
+        anomalyOriginOther: anomalyOriginOther || null,
+        anomalyDescription: anomalyDescription || null,
+        immediateCurativeAction: immediateCurativeAction || null,
+        actionPlanned: actionPlanned || null,
+        correctiveActionDescription: correctiveActionDescription || null,
+        preventiveActionDescription: preventiveActionDescription || null,
+        recipientSignature: recipientSignature || null,
+        collaboratorInCharge: collaboratorInCharge || null,
+        categoryOfAnomaly: categoryOfAnomaly || null,
+        analysisCauses: analysisCauses || null,
+        collaboratorAppointed: collaboratorAppointed || null,
+        limitTime: limitTime || null,
+        effectivenessAction: effectivenessAction || null,
+        closingDate: closingDate ? new Date(closingDate) : null,
+        signatureRecipient: signatureRecipient || null,
+        closingDepartment: closingDepartment || null,
+        conclusionType: conclusionType || null,
+        qualityManagerObservation: qualityManagerObservation || null,
+        qualityManagerDate: qualityManagerDate ? new Date(qualityManagerDate) : null,
+        qualityManagerSignature: qualityManagerSignature || null,
         dateEcheance: dateEcheance ? new Date(dateEcheance) : null
       },
       include: {

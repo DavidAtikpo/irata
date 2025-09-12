@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
 interface ActionCorrective {
@@ -9,30 +8,22 @@ interface ActionCorrective {
   titre: string;
   description: string;
   type: string;
-  statut: string;
   priorite: string;
-  dateDebut: string;
-  dateEcheance?: string;
-  dateRealisation?: string;
-  resultats?: string;
-  efficacite?: string;
+  statut: string;
+  dateEcheance: string | null;
+  createdAt: string;
   nonConformite: {
     id: string;
     numero: string;
     titre: string;
-    type: string;
-    gravite: string;
     statut: string;
   };
   responsable: {
     id: string;
-    nom?: string;
-    prenom?: string;
+    nom: string;
+    prenom: string;
     email: string;
-  };
-  _count: {
-    commentaires: number;
-  };
+  } | null;
 }
 
 const typeLabels = {
@@ -42,13 +33,6 @@ const typeLabels = {
   AMELIORATION_CONTINUE: 'Amélioration continue'
 };
 
-const statutLabels = {
-  EN_COURS: 'En cours',
-  TERMINEE: 'Terminée',
-  EN_ATTENTE: 'En attente',
-  ANNULEE: 'Annulée'
-};
-
 const prioriteLabels = {
   BASSE: 'Basse',
   MOYENNE: 'Moyenne',
@@ -56,11 +40,16 @@ const prioriteLabels = {
   CRITIQUE: 'Critique'
 };
 
+const statutLabels = {
+  EN_COURS: 'En cours',
+  TERMINEE: 'Terminée',
+  ANNULEE: 'Annulée'
+};
+
 const statutColors = {
   EN_COURS: 'bg-yellow-100 text-yellow-800',
   TERMINEE: 'bg-green-100 text-green-800',
-  EN_ATTENTE: 'bg-blue-100 text-blue-800',
-  ANNULEE: 'bg-gray-100 text-gray-800'
+  ANNULEE: 'bg-red-100 text-red-800'
 };
 
 const prioriteColors = {
@@ -70,37 +59,27 @@ const prioriteColors = {
   CRITIQUE: 'bg-red-100 text-red-800'
 };
 
-export default function AdminActionsCorrectivesPage() {
-  const { data: session } = useSession();
+export default function ActionsCorrectivesPage() {
   const [actionsCorrectives, setActionsCorrectives] = useState<ActionCorrective[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    statut: '',
-    type: '',
-    priorite: '',
-    responsableId: ''
-  });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchActionsCorrectives();
-  }, [filters]);
+  }, []);
 
   const fetchActionsCorrectives = async () => {
     try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (filters.statut) params.append('statut', filters.statut);
-      if (filters.type) params.append('type', filters.type);
-      if (filters.priorite) params.append('priorite', filters.priorite);
-      if (filters.responsableId) params.append('responsableId', filters.responsableId);
-
-      const response = await fetch(`/api/admin/actions-correctives?${params}`);
+      const response = await fetch('/api/admin/actions-correctives');
       if (response.ok) {
         const data = await response.json();
         setActionsCorrectives(data.actionsCorrectives || []);
+      } else {
+        setError('Erreur lors du chargement des actions correctives');
       }
     } catch (error) {
-      console.error('Erreur lors du chargement des actions correctives:', error);
+      console.error('Erreur:', error);
+      setError('Erreur lors du chargement des actions correctives');
     } finally {
       setLoading(false);
     }
@@ -112,11 +91,6 @@ export default function AdminActionsCorrectivesPage() {
       month: '2-digit',
       year: 'numeric'
     });
-  };
-
-  const isOverdue = (dateEcheance?: string) => {
-    if (!dateEcheance) return false;
-    return new Date(dateEcheance) < new Date();
   };
 
   if (loading) {
@@ -131,99 +105,54 @@ export default function AdminActionsCorrectivesPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Erreur</h1>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={fetchActionsCorrectives}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+            >
+              Réessayer
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Gestion des actions correctives</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Actions Correctives</h1>
               <p className="mt-2 text-gray-600">
-                Vue d'ensemble de toutes les actions correctives du système
+                Gestion des actions correctives créées
               </p>
             </div>
             <Link
-              href="/admin/actions-correctives/nouvelle"
+              href="/admin/non-conformites"
               className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
             >
-              Créer une action corrective
+              Voir les non-conformités
             </Link>
           </div>
         </div>
 
-        {/* Filtres */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Filtres</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Statut
-              </label>
-              <select
-                value={filters.statut}
-                onChange={(e) => setFilters({ ...filters, statut: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">Tous les statuts</option>
-                {Object.entries(statutLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Type
-              </label>
-              <select
-                value={filters.type}
-                onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">Tous les types</option>
-                {Object.entries(typeLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Priorité
-              </label>
-              <select
-                value={filters.priorite}
-                onChange={(e) => setFilters({ ...filters, priorite: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">Toutes les priorités</option>
-                {Object.entries(prioriteLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Responsable
-              </label>
-              <input
-                type="text"
-                value={filters.responsableId}
-                onChange={(e) => setFilters({ ...filters, responsableId: e.target.value })}
-                placeholder="ID du responsable"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Statistiques rapides */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        {/* Statistiques */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
               </div>
@@ -233,6 +162,7 @@ export default function AdminActionsCorrectivesPage() {
               </div>
             </div>
           </div>
+          
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -250,12 +180,13 @@ export default function AdminActionsCorrectivesPage() {
               </div>
             </div>
           </div>
+
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                   <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
               </div>
@@ -267,19 +198,20 @@ export default function AdminActionsCorrectivesPage() {
               </div>
             </div>
           </div>
+
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
                   <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">En retard</p>
+                <p className="text-sm font-medium text-gray-500">Critiques</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {actionsCorrectives.filter(ac => isOverdue(ac.dateEcheance)).length}
+                  {actionsCorrectives.filter(ac => ac.priorite === 'CRITIQUE').length}
                 </p>
               </div>
             </div>
@@ -287,108 +219,122 @@ export default function AdminActionsCorrectivesPage() {
         </div>
 
         {/* Liste des actions correctives */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">Liste des actions correctives</h2>
+          </div>
+          
           {actionsCorrectives.length === 0 ? (
             <div className="text-center py-12">
-              <svg
-                className="mx-auto h-12 w-12 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune action corrective</h3>
               <p className="mt-1 text-sm text-gray-500">
-                Aucune action corrective ne correspond aux critères de recherche.
+                Commencez par créer une action corrective depuis une non-conformité.
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
-              {actionsCorrectives.map((action) => (
-                <div key={action.id} className="p-6 hover:bg-gray-50">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-medium text-gray-900">
-                          {action.titre}
-                        </h3>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${prioriteColors[action.priorite as keyof typeof prioriteColors]}`}>
-                          {prioriteLabels[action.priorite as keyof typeof prioriteLabels]}
-                        </span>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statutColors[action.statut as keyof typeof statutColors]}`}>
-                          {statutLabels[action.statut as keyof typeof statutLabels]}
-                        </span>
-                        {isOverdue(action.dateEcheance) && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            En retard
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-gray-600 mb-4 line-clamp-2">
-                        {action.description}
-                      </p>
-                      <div className="flex items-center space-x-6 text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                          </svg>
-                          {typeLabels[action.type as keyof typeof typeLabels]}
-                        </div>
-                        <div className="flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          Responsable: {action.responsable.nom || action.responsable.email}
-                        </div>
-                        <div className="flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          Début: {formatDate(action.dateDebut)}
-                        </div>
-                        {action.dateEcheance && (
-                          <div className="flex items-center">
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Échéance: {formatDate(action.dateEcheance)}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Action Corrective
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Non-conformité
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Priorité
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Statut
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Responsable
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date création
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {actionsCorrectives.map((actionCorrective) => (
+                    <tr key={actionCorrective.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {actionCorrective.titre}
                           </div>
-                        )}
-                      </div>
-                      <div className="mt-2">
-                        <Link
-                          href={`/admin/non-conformites/${action.nonConformite.id}`}
-                          className="text-indigo-600 hover:text-indigo-800 text-sm"
-                        >
-                          Non-conformité: {action.nonConformite.numero} - {action.nonConformite.titre}
-                        </Link>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4 ml-6">
-                      <div className="text-right text-sm text-gray-500">
-                        <div className="flex items-center mb-1">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                          {action._count.commentaires} commentaire(s)
+                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                            {actionCorrective.description.substring(0, 100)}...
+                          </div>
                         </div>
-                      </div>
-                      <Link
-                        href={`/admin/actions-correctives/${action.id}`}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
-                      >
-                        Gérer
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {actionCorrective.nonConformite.numero}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {actionCorrective.nonConformite.titre}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {typeLabels[actionCorrective.type as keyof typeof typeLabels] || actionCorrective.type}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${prioriteColors[actionCorrective.priorite as keyof typeof prioriteColors]}`}>
+                          {prioriteLabels[actionCorrective.priorite as keyof typeof prioriteLabels] || actionCorrective.priorite}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statutColors[actionCorrective.statut as keyof typeof statutColors]}`}>
+                          {statutLabels[actionCorrective.statut as keyof typeof statutLabels] || actionCorrective.statut}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {actionCorrective.responsable ? (
+                          <div>
+                            <div>{actionCorrective.responsable.prenom} {actionCorrective.responsable.nom}</div>
+                            <div className="text-gray-500">{actionCorrective.responsable.email}</div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">Non assigné</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatDate(actionCorrective.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="space-x-2">
+                          <Link
+                            href={`/admin/actions-correctives/${actionCorrective.id}`}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Voir le détail
+                          </Link>
+                          <span className="text-gray-300">|</span>
+                          <Link
+                            href={`/admin/non-conformites/${actionCorrective.nonConformite.id}`}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Non-conformité
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
