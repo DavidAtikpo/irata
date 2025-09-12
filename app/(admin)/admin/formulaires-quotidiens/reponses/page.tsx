@@ -83,6 +83,17 @@ export default function ReponsesFormulairesQuotidiensPage() {
   });
   const [downloadingReponses, setDownloadingReponses] = useState<Set<string>>(new Set());
   const [downloadingAll, setDownloadingAll] = useState(false);
+  const [selectedReponseForCorrection, setSelectedReponseForCorrection] = useState<Reponse | null>(null);
+  const [showCorrectionModal, setShowCorrectionModal] = useState(false);
+  const [correctionData, setCorrectionData] = useState<{
+    commentaire: string;
+    score: number;
+    decision: 'ACCEPTE' | 'REFUSE' | 'A_REVOIR';
+  }>({
+    commentaire: '',
+    score: 0,
+    decision: 'A_REVOIR'
+  });
 
   const { addNotification } = useNotifications();
 
@@ -166,6 +177,55 @@ export default function ReponsesFormulairesQuotidiensPage() {
   const handleViewDetails = (reponse: Reponse) => {
     setSelectedReponse(reponse);
     setShowDetailsModal(true);
+  };
+
+  const handleSendCorrection = (reponse: Reponse) => {
+    setSelectedReponseForCorrection(reponse);
+    setCorrectionData({
+      commentaire: '',
+      score: reponse.moyenne,
+      decision: 'A_REVOIR'
+    });
+    setShowCorrectionModal(true);
+  };
+
+  const handleSubmitCorrection = async () => {
+    if (!selectedReponseForCorrection) return;
+
+    try {
+      const formulaire = formulaires.find(f => f.id === selectedReponseForCorrection.formulaireId);
+      if (!formulaire) return;
+
+      const response = await fetch(`/api/admin/formulaires-quotidiens/${formulaire.id}/reponses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reponseId: selectedReponseForCorrection.id,
+          decision: correctionData.decision,
+          commentaire: correctionData.commentaire,
+          score: correctionData.score
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de l\'envoi de la correction');
+      }
+
+      setShowCorrectionModal(false);
+      setSelectedReponseForCorrection(null);
+      await fetchReponses();
+      
+      addNotification(
+        'NEW_REPONSE',
+        `Correction envoyée à ${selectedReponseForCorrection.user.prenom} ${selectedReponseForCorrection.user.nom}`,
+        '/admin/formulaires-quotidiens/reponses'
+      );
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de l\'envoi de la correction');
+    }
   };
 
   const handleDownloadReponse = async (reponse: Reponse) => {
@@ -561,6 +621,15 @@ export default function ReponsesFormulairesQuotidiensPage() {
                           <EyeIcon className="h-4 w-4" />
                         </button>
                         <button
+                          onClick={() => handleSendCorrection(reponse)}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded ml-2"
+                          title="Envoyer correction"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                        <button
                           onClick={() => handleDownloadReponse(reponse)}
                           disabled={downloadingReponses.has(reponse.id)}
                           className={`p-1 rounded ml-2 transition-colors ${
@@ -750,6 +819,134 @@ export default function ReponsesFormulairesQuotidiensPage() {
                     className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                   >
                     Fermer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de correction */}
+        {showCorrectionModal && selectedReponseForCorrection && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
+              {/* Header de la modal */}
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Envoyer une correction
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {selectedReponseForCorrection.user.prenom} {selectedReponseForCorrection.user.nom} - {formulaires.find(f => f.id === selectedReponseForCorrection.formulaireId)?.titre}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowCorrectionModal(false);
+                    setSelectedReponseForCorrection(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  <span className="sr-only">Fermer</span>
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Contenu de la modal */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-6">
+                  {/* Informations de la réponse */}
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-blue-900 mb-2">Informations de la réponse</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-blue-700">Score actuel:</span>
+                        <span className="ml-2 font-semibold">{selectedReponseForCorrection.moyenne}/20</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-700">Date de soumission:</span>
+                        <span className="ml-2">{new Date(selectedReponseForCorrection.dateReponse).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Décision */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Décision *
+                    </label>
+                    <select
+                      value={correctionData.decision}
+                      onChange={(e) => setCorrectionData({...correctionData, decision: e.target.value as any})}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="ACCEPTE">✅ Accepté</option>
+                      <option value="A_REVOIR">⚠️ À revoir</option>
+                      <option value="REFUSE">❌ Refusé</option>
+                    </select>
+                  </div>
+
+                  {/* Score */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Score sur 20
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="20"
+                      step="0.1"
+                      value={correctionData.score}
+                      onChange={(e) => setCorrectionData({...correctionData, score: parseFloat(e.target.value) || 0})}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* Commentaire */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Commentaire et corrections
+                    </label>
+                    <textarea
+                      value={correctionData.commentaire}
+                      onChange={(e) => setCorrectionData({...correctionData, commentaire: e.target.value})}
+                      rows={6}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Ajoutez vos commentaires, corrections et conseils pour l'étudiant..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer de la modal */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  Cette correction sera envoyée par email à l'étudiant
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      setShowCorrectionModal(false);
+                      setSelectedReponseForCorrection(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleSubmitCorrection}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  >
+                    Envoyer la correction
                   </button>
                 </div>
               </div>

@@ -3,15 +3,13 @@
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import AdminHeader from '@/app/components/AdminHeader';
 import Sidebar from '@/app/components/Sidebar';
 import { NotificationProvider } from '../../../contexts/NotificationContext';
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// Composant principal qui ne sera rendu que côté client
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -120,4 +118,25 @@ export default function AdminLayout({
       </div>
     </NotificationProvider>
   );
+}
+
+// Composant principal avec dynamic import pour éviter le rendu côté serveur
+const DynamicAdminLayoutContent = dynamic(() => Promise.resolve(AdminLayoutContent), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+        <h2 className="mt-4 text-xl font-semibold text-gray-900">Chargement...</h2>
+      </div>
+    </div>
+  )
+});
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <DynamicAdminLayoutContent>{children}</DynamicAdminLayoutContent>;
 }

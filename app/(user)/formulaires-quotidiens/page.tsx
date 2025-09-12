@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -62,10 +62,13 @@ export default function FormulairesQuotidiensPage() {
   const router = useRouter();
   const [formulaires, setFormulaires] = useState<FormulaireQuotidien[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedFormulaire, setSelectedFormulaire] = useState<FormulaireQuotidien | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'completed'>('all');
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const autosaveTimerRef = useRef<any>(null);
 
   const [formData, setFormData] = useState<{
     [questionId: string]: any;
@@ -74,6 +77,12 @@ export default function FormulairesQuotidiensPage() {
     commentaires: ''
   });
 
+  // États pour le mode correction
+  const [correctionMode, setCorrectionMode] = useState(false);
+  const [reponseOriginale, setReponseOriginale] = useState<any>(null);
+  const [pendingFormulaireId, setPendingFormulaireId] = useState<string | null>(null);
+  const [correctionData, setCorrectionData] = useState<any>(null);
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
@@ -81,6 +90,14 @@ export default function FormulairesQuotidiensPage() {
       router.push('/admin');
     } else if (status === 'authenticated') {
       fetchFormulaires();
+      
+      // Vérifier si on est en mode correction
+      const urlParams = new URLSearchParams(window.location.search);
+      const correctionId = urlParams.get('correction');
+      if (correctionId) {
+        setCorrectionMode(true);
+        fetchReponseOriginale(correctionId);
+      }
     }
   }, [status, session, router]);
 
@@ -99,9 +116,61 @@ export default function FormulairesQuotidiensPage() {
     }
   };
 
+  const fetchReponseOriginale = async (reponseId: string) => {
+    try {
+      const response = await fetch(`/api/user/formulaires-quotidiens/reponses/${reponseId}`);
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération de la réponse originale');
+      }
+      const data = await response.json();
+      setReponseOriginale(data);
+      setCorrectionData(data.correction);
+      setPendingFormulaireId(data.formulaireId);
+
+      // Pré-remplir le formulaire avec les réponses originales
+      const initialFormData: any = { commentaires: data.commentaires || '' };
+      data.reponses.forEach((reponse: any) => {
+        initialFormData[reponse.questionId] = reponse.reponse;
+      });
+      setFormData(initialFormData);
+
+      // La sélection effective du formulaire se fera quand la liste est chargée
+    } catch (error) {
+      console.error('Erreur:', error);
+      setError('Impossible de charger la réponse originale');
+    }
+  };
+
+  // Une fois les formulaires chargés, si on vient d'une correction, sélectionner et ouvrir
+  useEffect(() => {
+    if (pendingFormulaireId && formulaires.length > 0) {
+      const formulaire = formulaires.find(f => f.id === pendingFormulaireId);
+      if (formulaire) {
+        setSelectedFormulaire(formulaire);
+        setShowForm(true);
+        setPendingFormulaireId(null);
+      }
+    }
+  }, [pendingFormulaireId, formulaires]);
+
   const handleStartForm = (formulaire: FormulaireQuotidien) => {
     setSelectedFormulaire(formulaire);
-    setFormData({ commentaires: '' });
+    // Load draft if exists
+    try {
+      const draftKey = `fq_draft_${formulaire.id}`;
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setFormData({ ...parsed });
+        setLastSavedAt(parsed.__savedAt || null);
+      } else {
+        setFormData({ commentaires: '' });
+        setLastSavedAt(null);
+      }
+    } catch {
+      setFormData({ commentaires: '' });
+      setLastSavedAt(null);
+    }
     setShowForm(true);
   };
 
@@ -179,18 +248,31 @@ export default function FormulairesQuotidiensPage() {
       // Calculate score if there are scored questions
       const { totalScore, maxScore } = calculateScore(selectedFormulaire.questions, formData);
 
-      const response = await fetch('/api/user/formulaires-quotidiens/reponses', {
+      // Choisir l'endpoint selon le mode
+      const endpoint = correctionMode 
+        ? '/api/user/formulaires-quotidiens/resubmit'
+        : '/api/user/formulaires-quotidiens/reponses';
+      
+      const requestBody = correctionMode 
+        ? {
+            reponseOriginaleId: reponseOriginale.id,
+            reponses,
+            commentaires: formData.commentaires
+          }
+        : {
+            formulaireId: selectedFormulaire.id,
+            reponses,
+            commentaires: formData.commentaires,
+            score: maxScore > 0 ? totalScore : undefined,
+            maxScore: maxScore > 0 ? maxScore : undefined
+          };
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          formulaireId: selectedFormulaire.id,
-          reponses,
-          commentaires: formData.commentaires,
-          score: maxScore > 0 ? totalScore : undefined,
-          maxScore: maxScore > 0 ? maxScore : undefined
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -201,14 +283,22 @@ export default function FormulairesQuotidiensPage() {
       setShowForm(false);
       setSelectedFormulaire(null);
       setFormData({ commentaires: '' });
+      clearDraft(selectedFormulaire.id);
       await fetchFormulaires(); 
       
-      // Show success message with score if available
-      if (maxScore > 0) {
-        const percentage = Math.round((totalScore / maxScore) * 100);
-        alert(`Formulaire soumis avec succès !\n\nVotre score : ${totalScore}/${maxScore} (${percentage}%)`);
+      // Show success message
+      if (correctionMode) {
+        alert('Correction soumise avec succès !\n\nVotre nouvelle version a été envoyée pour révision.');
+        // Rediriger vers les corrections
+        router.push('/formulaires-quotidiens/corrections');
       } else {
-        alert('Formulaire soumis avec succès !');
+        // Show success message with score if available
+        if (maxScore > 0) {
+          const percentage = Math.round((totalScore / maxScore) * 100);
+          alert(`Formulaire soumis avec succès !\n\nVotre score : ${totalScore}/${maxScore} (${percentage}%)`);
+        } else {
+          alert('Formulaire soumis avec succès !');
+        }
       }
     } catch (error) {
       console.error('Erreur:', error);
@@ -374,6 +464,39 @@ export default function FormulairesQuotidiensPage() {
     }
   });
 
+  // Autosave draft when formData changes (debounced)
+  useEffect(() => {
+    if (!showForm || !selectedFormulaire) return;
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(() => {
+      try {
+        const draftKey = `fq_draft_${selectedFormulaire.id}`;
+        const payload = { ...formData, __savedAt: new Date().toISOString() };
+        localStorage.setItem(draftKey, JSON.stringify(payload));
+        setLastSavedAt(payload.__savedAt);
+      } catch {}
+    }, 600);
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, [formData, showForm, selectedFormulaire]);
+
+  const saveDraftManually = () => {
+    if (!selectedFormulaire) return;
+    try {
+      const draftKey = `fq_draft_${selectedFormulaire.id}`;
+      const payload = { ...formData, __savedAt: new Date().toISOString() };
+      localStorage.setItem(draftKey, JSON.stringify(payload));
+      setLastSavedAt(payload.__savedAt);
+    } catch {}
+  };
+
+  const clearDraft = (formulaireId: string) => {
+    try {
+      localStorage.removeItem(`fq_draft_${formulaireId}`);
+    } catch {}
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
@@ -400,6 +523,15 @@ export default function FormulairesQuotidiensPage() {
             <div className="mt-2 flex items-center justify-center space-x-1 text-xs text-gray-500">
               <UserIcon className="h-3 w-3" />
               <span>Connecté: {session?.user?.prenom} {session?.user?.nom}</span>
+            </div>
+            <div className="mt-3">
+              <button
+                onClick={() => router.push('/formulaires-quotidiens/corrections')}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition-colors"
+              >
+                <DocumentTextIcon className="h-4 w-4 mr-1" />
+                Voir mes corrections
+              </button>
             </div>
           </div>
         </div>
@@ -536,10 +668,25 @@ export default function FormulairesQuotidiensPage() {
               <div className="mt-2">
                 <div className="flex items-center justify-between mb-3 sm:mb-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">{selectedFormulaire.titre}</h3>
+                    <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">
+                      {selectedFormulaire.titre}
+                      {correctionMode && (
+                        <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          Mode Correction
+                        </span>
+                      )}
+                    </h3>
                     <p className="text-xs text-gray-500 mt-1">
                       {selectedFormulaire.questions.length} questions • Session: {selectedFormulaire.session}
+                      {correctionMode && correctionData && (
+                        <span className="block text-orange-600 mt-1">
+                          Correction reçue le {new Date(correctionData.dateCorrection).toLocaleDateString('fr-FR')}
+                        </span>
+                      )}
                     </p>
+                    {lastSavedAt && (
+                      <p className="text-[10px] sm:text-xs text-green-600 mt-1">Brouillon enregistré le {new Date(lastSavedAt).toLocaleString('fr-FR')}</p>
+                    )}
                   </div>
                   <button
                     onClick={() => {
@@ -587,6 +734,14 @@ export default function FormulairesQuotidiensPage() {
                     ))}
                   </div>
 
+                  {/* Affichage des commentaires de correction */}
+                  {correctionMode && correctionData && correctionData.commentaire && (
+                    <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <h4 className="text-sm font-medium text-orange-800 mb-2">Commentaires de correction</h4>
+                      <p className="text-sm text-orange-700 whitespace-pre-wrap">{correctionData.commentaire}</p>
+                    </div>
+                  )}
+
                   {/* Commentaires */}
                   <div className="border border-gray-200 rounded-lg p-2 sm:p-3 bg-gray-50">
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
@@ -602,6 +757,13 @@ export default function FormulairesQuotidiensPage() {
                   </div>
 
                   <div className="flex justify-end space-x-2 pt-3 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={saveDraftManually}
+                      className="px-3 py-1 sm:px-4 sm:py-2 border border-green-600 text-green-700 rounded text-xs font-medium hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      Enregistrer le brouillon
+                    </button>
                     <button
                       type="button"
                       onClick={() => {
@@ -623,7 +785,7 @@ export default function FormulairesQuotidiensPage() {
                           Soumission...
                         </>
                       ) : (
-                        'Soumettre'
+                        correctionMode ? 'Soumettre la correction' : 'Soumettre'
                       )}
                     </button>
                   </div>

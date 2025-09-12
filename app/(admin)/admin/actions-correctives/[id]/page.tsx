@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -10,62 +9,52 @@ interface ActionCorrective {
   titre: string;
   description: string;
   type: string;
-  statut: string;
   priorite: string;
-  dateDebut: string;
-  dateEcheance?: string;
-  dateRealisation?: string;
-  resultats?: string;
-  efficacite?: string;
+  statut: string;
+  dateEcheance: string | null;
+  createdAt: string;
+  updatedAt: string;
+  // Champs CI.DES Action Corrective
+  issuerName?: string;
+  recipientName?: string;
+  date?: string;
+  number?: string;
+  department?: string;
+  originCustomer?: boolean;
+  originProduction?: boolean;
+  originAdministration?: boolean;
+  originOther?: boolean;
+  categoryOfAnomaly?: string;
+  issuerDescription?: string;
+  immediateCurativeAction?: boolean;
+  actionPlanned?: string;
+  correctiveDescribed?: boolean;
+  preventiveDescribed?: boolean;
+  recipientSignature?: string;
+  issuerSignature?: string;
+  collaboratorInCharge?: string;
+  analysis?: string;
+  limitTime?: string;
+  collaboratorAppointed?: string;
+  closingDate?: string;
+  effectiveness?: string;
+  effectivenessType?: string;
+  signatureReception?: string;
+  observation?: string;
+  conclusion?: string;
+  conclusionSignature?: string;
   nonConformite: {
     id: string;
     numero: string;
     titre: string;
-    type: string;
-    gravite: string;
     statut: string;
-    detecteur: {
-      id: string;
-      nom?: string;
-      prenom?: string;
-      email: string;
-    };
-    responsable?: {
-      id: string;
-      nom?: string;
-      prenom?: string;
-      email: string;
-    };
   };
   responsable: {
     id: string;
-    nom?: string;
-    prenom?: string;
+    nom: string;
+    prenom: string;
     email: string;
-  };
-  commentaires: Commentaire[];
-  documents: Document[];
-}
-
-interface Commentaire {
-  id: string;
-  commentaire: string;
-  createdAt: string;
-  user: {
-    id: string;
-    nom?: string;
-    prenom?: string;
-    email: string;
-  };
-}
-
-interface Document {
-  id: string;
-  nom: string;
-  description?: string;
-  url: string;
-  type: string;
-  createdAt: string;
+  } | null;
 }
 
 const typeLabels = {
@@ -75,13 +64,6 @@ const typeLabels = {
   AMELIORATION_CONTINUE: 'Amélioration continue'
 };
 
-const statutLabels = {
-  EN_COURS: 'En cours',
-  TERMINEE: 'Terminée',
-  EN_ATTENTE: 'En attente',
-  ANNULEE: 'Annulée'
-};
-
 const prioriteLabels = {
   BASSE: 'Basse',
   MOYENNE: 'Moyenne',
@@ -89,18 +71,16 @@ const prioriteLabels = {
   CRITIQUE: 'Critique'
 };
 
-const efficaciteLabels = {
-  TRES_EFFICACE: 'Très efficace',
-  EFFICACE: 'Efficace',
-  PARTIELLEMENT_EFFICACE: 'Partiellement efficace',
-  INEFFICACE: 'Inefficace'
+const statutLabels = {
+  EN_COURS: 'En cours',
+  TERMINEE: 'Terminée',
+  ANNULEE: 'Annulée'
 };
 
 const statutColors = {
   EN_COURS: 'bg-yellow-100 text-yellow-800',
   TERMINEE: 'bg-green-100 text-green-800',
-  EN_ATTENTE: 'bg-blue-100 text-blue-800',
-  ANNULEE: 'bg-gray-100 text-gray-800'
+  ANNULEE: 'bg-red-100 text-red-800'
 };
 
 const prioriteColors = {
@@ -110,108 +90,45 @@ const prioriteColors = {
   CRITIQUE: 'bg-red-100 text-red-800'
 };
 
-export default function AdminActionCorrectiveDetailPage() {
-  const { data: session } = useSession();
+export default function ActionCorrectiveDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const actionCorrectiveId = params.id as string;
+
   const [actionCorrective, setActionCorrective] = useState<ActionCorrective | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    titre: '',
-    description: '',
-    type: '',
-    statut: '',
-    priorite: '',
-    responsableId: '',
-    dateEcheance: '',
-    dateRealisation: '',
-    resultats: '',
-    efficacite: ''
-  });
-  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (params.id) {
+    console.log('useEffect triggered, actionCorrectiveId:', actionCorrectiveId);
+    if (actionCorrectiveId) {
       fetchActionCorrective();
     }
-  }, [params.id]);
+  }, [actionCorrectiveId]);
 
   const fetchActionCorrective = async () => {
+    
     try {
-      setLoading(true);
-      const response = await fetch(`/api/admin/actions-correctives/${params.id}`);
+      const response = await fetch(`/api/admin/actions-correctives/${actionCorrectiveId}`);
+      console.log('Response status:', response.status);
       if (response.ok) {
         const data = await response.json();
-        setActionCorrective(data);
-        setEditForm({
-          titre: data.titre,
-          description: data.description,
-          type: data.type,
-          statut: data.statut,
-          priorite: data.priorite,
-          responsableId: data.responsableId,
-          dateEcheance: data.dateEcheance ? new Date(data.dateEcheance).toISOString().split('T')[0] : '',
-          dateRealisation: data.dateRealisation ? new Date(data.dateRealisation).toISOString().split('T')[0] : '',
-          resultats: data.resultats || '',
-          efficacite: data.efficacite || ''
-        });
+        console.log('Données reçues de l\'API:', data.actionCorrective);
+        console.log('issuerSignature:', data.actionCorrective.issuerSignature);
+        console.log('effectivenessType:', data.actionCorrective.effectivenessType);
+        setActionCorrective(data.actionCorrective);
+      } else if (response.status === 404) {
+        console.log('Action corrective non trouvée (404)');
+        setError('Action corrective non trouvée');
       } else {
-        console.error('Erreur lors du chargement de l\'action corrective');
+        console.log('Erreur de réponse:', response.status);
+        setError('Erreur lors du chargement de l\'action corrective');
       }
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('Erreur dans fetchActionCorrective:', error);
+      setError('Erreur lors du chargement de l\'action corrective');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleEdit = () => {
-    setEditing(true);
-  };
-
-  const handleCancel = () => {
-    setEditing(false);
-    if (actionCorrective) {
-      setEditForm({
-        titre: actionCorrective.titre,
-        description: actionCorrective.description,
-        type: actionCorrective.type,
-        statut: actionCorrective.statut,
-        priorite: actionCorrective.priorite,
-        responsableId: (actionCorrective as any).responsableId,
-        dateEcheance: actionCorrective.dateEcheance ? new Date(actionCorrective.dateEcheance).toISOString().split('T')[0] : '',
-        dateRealisation: actionCorrective.dateRealisation ? new Date(actionCorrective.dateRealisation).toISOString().split('T')[0] : '',
-        resultats: actionCorrective.resultats || '',
-        efficacite: actionCorrective.efficacite || ''
-      });
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      const response = await fetch(`/api/admin/actions-correctives/${params.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editForm),
-      });
-
-      if (response.ok) {
-        await fetchActionCorrective();
-        setEditing(false);
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Erreur lors de la mise à jour');
-      }
-    } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors de la mise à jour');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -225,15 +142,11 @@ export default function AdminActionCorrectiveDetailPage() {
     });
   };
 
-  const isOverdue = (dateEcheance?: string) => {
-    if (!dateEcheance) return false;
-    return new Date(dateEcheance) < new Date();
-  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
           </div>
@@ -242,354 +155,369 @@ export default function AdminActionCorrectiveDetailPage() {
     );
   }
 
-  if (!actionCorrective) {
+  if (error || !actionCorrective) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Action corrective non trouvée</h1>
-            <p className="text-gray-600 mb-6">L'action corrective que vous recherchez n'existe pas.</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Erreur</h1>
+            <p className="text-gray-600 mb-6">{error || 'Action corrective non trouvée'}</p>
+            <div className="space-x-4">
+              <button
+                onClick={() => router.back()}
+                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+              >
+                Retour
+              </button>
             <Link
               href="/admin/actions-correctives"
               className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
             >
-              Retour à la liste
+                Voir toutes les actions
             </Link>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
+    // Utiliser directement les champs du modèle au lieu de parser la description
+    const formData = {
+      issuer: actionCorrective.issuerName || '',
+      recipient: actionCorrective.recipientName || '',
+      date: actionCorrective.date || '',
+      number: actionCorrective.number || '',
+      department: actionCorrective.department || '',
+      origin: [
+        actionCorrective.originCustomer && 'Customer',
+        actionCorrective.originProduction && 'Production',
+        actionCorrective.originAdministration && 'Administration',
+        actionCorrective.originOther && 'Other'
+      ].filter(Boolean).join(', ') || '',
+      category: actionCorrective.categoryOfAnomaly || '',
+      issuerDescription: actionCorrective.issuerDescription || '',
+      immediateCurative: actionCorrective.immediateCurativeAction || false,
+      planned: actionCorrective.actionPlanned || '',
+      correctiveDescribed: actionCorrective.correctiveDescribed || false,
+      preventiveDescribed: actionCorrective.preventiveDescribed || false,
+      recipientSignature: actionCorrective.recipientSignature || null,
+      issuerSignature: actionCorrective.issuerSignature || null,
+      collaboratorInCharge: actionCorrective.collaboratorInCharge || '',
+      analysis: actionCorrective.analysis || '',
+      limitTime: actionCorrective.limitTime || '',
+      collaboratorAppointed: actionCorrective.collaboratorAppointed || '',
+      closingDate: actionCorrective.closingDate || '',
+      effectiveness: actionCorrective.effectiveness || '',
+      effectivenessType: actionCorrective.effectivenessType || '',
+      signatureReception: actionCorrective.signatureReception || null,
+      observation: actionCorrective.observation || '',
+      conclusion: actionCorrective.conclusion || '',
+      conclusionSignature: actionCorrective.conclusionSignature || null
+    };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 p-10">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center space-x-4 mb-4">
-            <button
-              onClick={() => router.back()}
+            <Link
+              href="/admin/actions-correctives"
               className="text-gray-500 hover:text-gray-700"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-            </button>
-            <h1 className="text-3xl font-bold text-gray-900">{actionCorrective.titre}</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${prioriteColors[actionCorrective.priorite as keyof typeof prioriteColors]}`}>
-              {prioriteLabels[actionCorrective.priorite as keyof typeof prioriteColors]}
-            </span>
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statutColors[actionCorrective.statut as keyof typeof statutColors]}`}>
-              {statutLabels[actionCorrective.statut as keyof typeof statutColors]}
-            </span>
-            {isOverdue(actionCorrective.dateEcheance) && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                En retard
-              </span>
-            )}
+            </Link>
+            <h1 className="text-3xl font-bold text-gray-900">Détail de l'Action Corrective</h1>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Contenu principal */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Informations générales */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Informations générales</h2>
-                {!editing && (
-                  <button
-                    onClick={handleEdit}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
-                  >
-                    Modifier
-                  </button>
-                )}
-              </div>
 
-              {editing ? (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Titre
-                    </label>
-                    <input
-                      type="text"
-                      value={editForm.titre}
-                      onChange={(e) => setEditForm({ ...editForm, titre: e.target.value })}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={editForm.description}
-                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                      rows={4}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Type
-                      </label>
-                      <select
-                        value={editForm.type}
-                        onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                      >
-                        {Object.entries(typeLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Priorité
-                      </label>
-                      <select
-                        value={editForm.priorite}
-                        onChange={(e) => setEditForm({ ...editForm, priorite: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                      >
-                        {Object.entries(prioriteLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Statut
-                      </label>
-                      <select
-                        value={editForm.statut}
-                        onChange={(e) => setEditForm({ ...editForm, statut: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                      >
-                        {Object.entries(statutLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Efficacité
-                      </label>
-                      <select
-                        value={editForm.efficacite}
-                        onChange={(e) => setEditForm({ ...editForm, efficacite: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      >
-                        <option value="">Non évaluée</option>
-                        {Object.entries(efficaciteLabels).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date d'échéance
-                      </label>
-                      <input
-                        type="date"
-                        value={editForm.dateEcheance}
-                        onChange={(e) => setEditForm({ ...editForm, dateEcheance: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date de réalisation
-                      </label>
-                      <input
-                        type="date"
-                        value={editForm.dateRealisation}
-                        onChange={(e) => setEditForm({ ...editForm, dateRealisation: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Résultats
-                    </label>
-                    <textarea
-                      value={editForm.resultats}
-                      onChange={(e) => setEditForm({ ...editForm, resultats: e.target.value })}
-                      rows={3}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      placeholder="Décrivez les résultats obtenus..."
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-4">
-                    <button
-                      type="button"
-                      onClick={handleCancel}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {submitting ? 'Sauvegarde...' : 'Sauvegarder'}
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <>
-                  <p className="text-gray-700 mb-6">{actionCorrective.description}</p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-900">Type:</span>
-                      <span className="ml-2 text-gray-600">{typeLabels[actionCorrective.type as keyof typeof typeLabels]}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-900">Début:</span>
-                      <span className="ml-2 text-gray-600">{formatDate(actionCorrective.dateDebut)}</span>
-                    </div>
-                    {actionCorrective.dateEcheance && (
-                      <div>
-                        <span className="font-medium text-gray-900">Échéance:</span>
-                        <span className="ml-2 text-gray-600">{formatDate(actionCorrective.dateEcheance)}</span>
-                      </div>
-                    )}
-                    {actionCorrective.dateRealisation && (
-                      <div>
-                        <span className="font-medium text-gray-900">Réalisée le:</span>
-                        <span className="ml-2 text-gray-600">{formatDate(actionCorrective.dateRealisation)}</span>
-                      </div>
-                    )}
-                    {actionCorrective.efficacite && (
-                      <div>
-                        <span className="font-medium text-gray-900">Efficacité:</span>
-                        <span className="ml-2 text-gray-600">{efficaciteLabels[actionCorrective.efficacite as keyof typeof efficaciteLabels]}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {actionCorrective.resultats && (
-                    <div className="mt-4">
-                      <span className="font-medium text-gray-900">Résultats:</span>
-                      <p className="mt-1 text-gray-700">{actionCorrective.resultats}</p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Commentaires */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Commentaires</h3>
-              
-              {actionCorrective.commentaires.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">Aucun commentaire</p>
-              ) : (
-                <div className="space-y-4">
-                  {actionCorrective.commentaires.map((commentaire) => (
-                    <div key={commentaire.id} className="border-l-4 border-indigo-200 pl-4">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-medium text-gray-900">
-                          {commentaire.user.nom || commentaire.user.email}
-                        </span>
-                        <span className="text-gray-500 text-sm">
-                          {formatDate(commentaire.createdAt)}
-                        </span>
-                      </div>
-                      <p className="text-gray-700">{commentaire.commentaire}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+        {/* Non-conformité associée */}
+        <div className="bg-white shadow rounded-lg mb-6">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">Non-conformité associée</h2>
           </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Non-conformité associée */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Non-conformité associée</h3>
-              <div className="space-y-2">
-                <div>
-                  <span className="font-medium text-gray-900">Numéro:</span>
-                  <p className="text-gray-600">{actionCorrective.nonConformite.numero}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-900">Titre:</span>
-                  <p className="text-gray-600">{actionCorrective.nonConformite.titre}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-900">Détecteur:</span>
-                  <p className="text-gray-600">{actionCorrective.nonConformite.detecteur.nom || actionCorrective.nonConformite.detecteur.email}</p>
-                </div>
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  {actionCorrective.nonConformite.numero} - {actionCorrective.nonConformite.titre}
+                </p>
+                <p className="text-sm text-gray-500">Statut: {actionCorrective.nonConformite.statut}</p>
+              </div>
+              <div className="flex space-x-3">
                 <Link
                   href={`/admin/non-conformites/${actionCorrective.nonConformite.id}`}
-                  className="inline-block bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700 transition-colors mt-2"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors text-sm"
                 >
                   Voir la non-conformité
                 </Link>
+                <a
+                  href={`/api/admin/non-conformites/${actionCorrective.nonConformite.id}/pdf`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm flex items-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Télécharger PDF</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Fiche CI.DES Action Corrective - Mode lecture seule */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">Fiche CI.DES Action Corrective</h2>
+          </div>
+          <div className="p-6">
+            {/* Header de la fiche */}
+            <header className="p-4 border-b border-gray-200 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  <img src="/logo.png" alt="CI.DES Logo" className="w-16 h-20 object-contain" />
+                </div>
+                <div className="flex-1">
+                  <table className="w-full border-collapse text-xs">
+                    <tbody>
+                      <tr>
+                        <td className="border p-1 font-bold">Titre</td>
+                        <td className="border p-1 font-bold">Numéro de code</td>
+                        <td className="border p-1 font-bold">Révision</td>
+                        <td className="border p-1 font-bold">Création date</td>
+                      </tr>
+                      <tr>
+                        <td className="border p-1">CI.DES ACTION CORRECTIVE - (DIGITAL)</td>
+                        <td className="border p-1">ENR-CIFRA-QHSE 002</td>
+                        <td className="border p-1">00</td>
+                        <td className="border p-1">{formatDate(actionCorrective.createdAt)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </header>
+
+            {/* Header avec informations de base */}
+            <section className="grid grid-cols-6 gap-4 mb-6">
+              <div>
+                <div className="text-xs font-medium text-gray-700">Émetteur</div>
+                <div className="text-sm text-gray-900 border rounded px-2 py-1 bg-gray-50">
+                  {formData.issuer || '—'}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-gray-700">Destinataire</div>
+                <div className="text-sm text-gray-900 border rounded px-2 py-1 bg-gray-50">
+                  {formData.recipient || '—'}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-gray-700">Date</div>
+                <div className="text-sm text-gray-900 border rounded px-2 py-1 bg-gray-50">
+                  {formData.date || '—'}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-gray-700">N°</div>
+                <div className="text-sm text-gray-900 border rounded px-2 py-1 bg-gray-50">
+                  {formData.number || '—'}
+                </div>
+              </div>
+              <div className="col-span-2">
+                <div className="text-xs font-medium text-gray-700">Département</div>
+                <div className="text-sm text-gray-900 border rounded px-2 py-1 bg-gray-50">
+                  {formData.department || '—'}
+                </div>
+              </div>
+            </section>
+
+            {/* Partie réservée à l'émetteur */}
+            <section className="border border-gray-300 rounded p-4 space-y-3 mb-6">
+              <h2 className="font-medium text-sm mb-2">PARTIE RÉSERVÉE À L'ÉMETTEUR</h2>
+
+              <div className="grid grid-cols-2 gap-4">
+                  <div>
+                  <div className="text-xs mb-1 font-medium text-gray-700">Origine</div>
+                  <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                    {formData.origin || '—'}
+                  </div>
+                </div>
+                  <div>
+                  <div className="text-xs mb-1 font-medium text-gray-700">Catégorie d'anomalie</div>
+                  <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                    {formData.category || '—'}
+                  </div>
+                </div>
+                    </div>
+
+                    <div>
+                <div className="text-xs mb-1 font-medium text-gray-700">Description</div>
+                <div className="text-sm text-gray-900 bg-gray-50 border rounded p-2 min-h-24">
+                  {formData.issuerDescription || '—'}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 items-center">
+                <div className="text-xs flex items-center gap-2">
+                  <input type="checkbox" checked={formData.immediateCurative || false} disabled className="rounded" />
+                  Action curative immédiate
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  Action planifiée ?
+                  <span className="font-medium">
+                    {formData.planned === 'yes' ? 'Oui' : formData.planned === 'no' ? 'Non' : '—'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-xs flex items-center gap-2">
+                  <input type="checkbox" checked={formData.correctiveDescribed || false} disabled className="rounded" />
+                  Corrective (décrite)
+                </div>
+                <div className="text-xs flex items-center gap-2">
+                  <input type="checkbox" checked={formData.preventiveDescribed || false} disabled className="rounded" />
+                  Préventive (décrite)
+                </div>
+                    </div>
+
+                    <div>
+                <div className="text-xs font-medium text-gray-700">Collaborateur responsable de l'action</div>
+                <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                  {formData.collaboratorInCharge || '—'}
+                </div>
+                    </div>
+
+              <div className="flex justify-end">
+                <div className="w-64">
+                  <div className="text-xs font-medium text-gray-700">Signature de l'émetteur</div>
+                  {formData.issuerSignature && formData.issuerSignature !== '—' ? (
+                    <div className="border rounded p-2 bg-gray-50">
+                      <img src={formData.issuerSignature} alt="Signature Émetteur" className="max-w-full h-10 object-contain" />
+                    </div>
+                  ) : (
+                    <div className="border rounded p-2 bg-gray-50 text-gray-400 text-sm">
+                      Aucune signature
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* Partie réservée au responsable qualité */}
+            <section className="border border-gray-300 rounded p-4 space-y-3">
+              <h2 className="font-medium text-sm mb-2">PARTIE RÉSERVÉE AU RESPONSABLE QUALITÉ / AUTORITÉ TECHNIQUE / PDG</h2>
+
+                    <div>
+                <div className="text-xs mb-1 font-medium text-gray-700">Analyse de la cause / Proposition d'action à valider par le PDG</div>
+                <div className="text-sm text-gray-900 bg-gray-50 border rounded p-2 min-h-24">
+                  {formData.analysis || '—'}
+                </div>
+                    </div>
+
+                    <div>
+                <div className="text-xs font-medium text-gray-700">Délai limite :</div>
+                <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                  {formData.limitTime || '—'}
+                    </div>
+                  </div>
+
+                  <div>
+                <div className="text-xs font-medium text-gray-700">Collaborateur responsable de l'action (désigné par le PDG)</div>
+                <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                  {formData.collaboratorAppointed || '—'}
+                </div>
+                  </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs font-medium text-gray-700">Clôture des actions</div>
+                  <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                    {formData.closingDate || '—'}
+                  </div>
+                    </div>
+                    <div>
+                  <div className="text-xs font-medium text-gray-700">Efficacité des actions prises ?</div>
+                  <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                    {formData.effectiveness || '—'}
+                  </div>
+                  {formData.effectivenessType && (
+                    <div className="text-xs font-medium text-gray-700 mt-1">Type d'efficacité :</div>
+                  )}
+                  {formData.effectivenessType && (
+                    <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                      {formData.effectivenessType || '—'}
+                    </div>
+                  )}
+                </div>
+            </div>
+              
+              <div className="flex justify-end">
+                <div className="text-xs font-medium text-gray-700">Signature / Réception</div>
+                {formData.signatureReception && formData.signatureReception !== '—' ? (
+                  <div className=" p-2 ">
+                    <img src={formData.signatureReception} alt="Signature Réception" className="max-w-full h-10 object-contain" />
+                  </div>
+                ) : (
+                  <div className="border rounded p-2 bg-gray-50 text-gray-400 text-sm">
+                    Aucune signature
+                </div>
+              )}
+          </div>
+
+                <div>
+                <div className="text-xs font-medium text-gray-700">Observation du Responsable Qualité / Autorité Technique</div>
+                <div className="text-sm text-gray-900 bg-gray-50 border rounded p-2 min-h-20">
+                  {formData.observation || '—'}
               </div>
             </div>
 
-            {/* Responsable */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Responsable</h3>
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="font-medium text-gray-900">Nom:</span>
-                  <p className="text-gray-600">{actionCorrective.responsable.nom || actionCorrective.responsable.email}</p>
+                  <div className="text-xs font-medium mb-1 text-gray-700">Conclusion du Responsable Qualité / Autorité Technique</div>
+                  <div className="text-sm text-gray-900 bg-gray-50 border rounded p-2">
+                    {formData.conclusion || '—'}
+                  </div>
                 </div>
-                <div>
-                  <span className="font-medium text-gray-900">Email:</span>
-                  <p className="text-gray-600">{actionCorrective.responsable.email}</p>
+                <div className="flex justify-end">
+                  <div className="text-xs font-medium text-gray-700">Signature</div>
+                  {formData.conclusionSignature && formData.conclusionSignature !== '—' ? (
+                    <div className=" p-2 ">
+                      <img src={formData.conclusionSignature} alt="Signature" className="max-w-full h-10 object-contain" />
+                    </div>
+                  ) : (
+                    <div className="border rounded p-2 bg-gray-50 text-gray-400 text-sm">
+                      Aucune signature
+                    </div>
+                  )}
                 </div>
+              </div>
+            </section>
               </div>
             </div>
 
-            {/* Documents */}
-            {actionCorrective.documents.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
-                <div className="space-y-2">
-                  {actionCorrective.documents.map((doc) => (
-                    <a
-                      key={doc.id}
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center space-x-2 text-indigo-600 hover:text-indigo-800"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-sm">{doc.nom}</span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
+        {/* Actions */}
+        <div className="mt-6 flex justify-between">
+          <Link
+            href="/admin/actions-correctives"
+            className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+          >
+            Retour à la liste
+          </Link>
+          <div className="space-x-4">
+            <Link
+              href={`/admin/non-conformites/${actionCorrective.nonConformite.id}`}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+            >
+              Voir la non-conformité
+            </Link>
           </div>
         </div>
       </div>

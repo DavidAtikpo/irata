@@ -46,7 +46,12 @@ const navigationTabs = [
     icon: CalendarIcon,
     description: 'Gestion des présences'
   },
-
+  {
+    name: 'Actions Correctives',
+    href: '/admin/actions-correctives',
+    icon: ClipboardDocumentIcon,
+    description: 'Gestion des actions correctives'
+  },
   {
     name: 'Rapports',
     href: '/admin/rapports',

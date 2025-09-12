@@ -1180,10 +1180,26 @@ export default function FormulairesQuotidiensPage() {
         {/* Modal de création/modification */}
         {showCreateForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[78vh] overflow-hidden flex flex-col mt-28">
               {/* Header de la modal */}
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-                <div className="flex items-center space-x-3">
+              {modalError && (
+                  <div className="sticky top-0 z-100">
+                    <div className="rounded-md bg-red-50 p-2 border border-red-200 shadow">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <XCircleIcon className="h-5 w-5 text-red-400" />
+                        </div>
+                        <div className="ml-3">
+                          <h4 className="text-sm font-medium text-red-800">Erreur</h4>
+                          <div className="mt-1 text-sm text-red-700">{modalError}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              {/* <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50"> */}
+                
+                {/* <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
                     <DocumentTextIcon className="h-6 w-6 text-indigo-600" />
                   </div>
@@ -1200,8 +1216,8 @@ export default function FormulairesQuotidiensPage() {
                       }
                     </p>
                   </div>
-                </div>
-                <button
+                </div> */}
+                {/* <button
                   onClick={() => {
                     setShowCreateForm(false);
                     setEditingFormulaire(null);
@@ -1215,26 +1231,11 @@ export default function FormulairesQuotidiensPage() {
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                </button>
-              </div>
+                </button> */}
+              {/* </div> */}
 
               {/* Contenu scrollable de la modal */}
               <div ref={modalScrollRef} className="flex-1 overflow-y-auto p-6">
-                {modalError && (
-                  <div className="sticky top-0 z-20 mb-4">
-                    <div className="rounded-md bg-red-50 p-4 border border-red-200 shadow">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <XCircleIcon className="h-5 w-5 text-red-400" />
-                        </div>
-                        <div className="ml-3">
-                          <h4 className="text-sm font-medium text-red-800">Erreur</h4>
-                          <div className="mt-1 text-sm text-red-700">{modalError}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 <form id="formulaireForm" className="space-y-8">
                   {/* Informations générales */}
