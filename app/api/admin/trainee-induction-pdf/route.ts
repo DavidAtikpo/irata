@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { inductionId } = body;
+    const { inductionId, signatureId } = body;
 
     if (!inductionId) {
       return NextResponse.json({ error: 'ID d\'induction requis' }, { status: 400 });
@@ -32,28 +32,49 @@ export async function POST(request: NextRequest) {
     const induction = inductionData[0];
 
     // Récupérer les signatures des utilisateurs
-    const signatures = await prisma.$queryRaw`
-      SELECT 
-        tis."userSignature",
-        u.prenom,
-        u.nom,
-        u.email,
-        tis."createdAt"
-      FROM "webirata"."TraineeInductionSignature" tis
-      JOIN "webirata"."User" u ON tis."userId" = u.id
-      WHERE tis."inductionId" = ${inductionId}
-      ORDER BY tis."createdAt" ASC
-    `;
+    let signatures;
+    
+    if (signatureId) {
+      // Récupérer une signature spécifique
+      signatures = await prisma.$queryRaw`
+        SELECT 
+          tis."userSignature",
+          u.prenom,
+          u.nom,
+          u.email,
+          tis."createdAt",
+          tis.id as "signatureId"
+        FROM "webirata"."TraineeInductionSignature" tis
+        JOIN "webirata"."User" u ON tis."userId" = u.id
+        WHERE tis."inductionId" = ${inductionId} AND tis.id = ${signatureId}
+        ORDER BY tis."createdAt" ASC
+      `;
+    } else {
+      // Récupérer toutes les signatures de la session
+      signatures = await prisma.$queryRaw`
+        SELECT 
+          tis."userSignature",
+          u.prenom,
+          u.nom,
+          u.email,
+          tis."createdAt",
+          tis.id as "signatureId"
+        FROM "webirata"."TraineeInductionSignature" tis
+        JOIN "webirata"."User" u ON tis."userId" = u.id
+        WHERE tis."inductionId" = ${inductionId}
+        ORDER BY tis."createdAt" ASC
+      `;
+    }
 
     const userSignatures = Array.isArray(signatures) ? signatures : [];
 
     // Générer le HTML du document
     const html = buildInductionHTML(induction, userSignatures);
 
-    // Configuration Puppeteer pour production
+    // Configuration Puppeteer
     const isProduction = process.env.NODE_ENV === 'production';
     
-    const browserConfig = {
+    let browserConfig: any = {
       headless: true,
       args: [
         '--no-sandbox',
@@ -72,11 +93,43 @@ export async function POST(request: NextRequest) {
         '--no-zygote',
         '--single-process'
       ],
-      ...(isProduction && {
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
-      }),
       timeout: 30000
     };
+
+    // Configuration spécifique selon l'environnement
+    if (isProduction) {
+      // Production - utiliser Chromium système
+      browserConfig.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser';
+    } else {
+      // Développement - utiliser Chrome/Chromium local
+      const possiblePaths = [
+        process.env.PUPPETEER_EXECUTABLE_PATH,
+        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Users\\' + process.env.USERNAME + '\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+      ];
+      
+      const fs = await import('fs');
+      let executablePath = null;
+      
+      for (const path of possiblePaths) {
+        if (path && fs.default.existsSync(path)) {
+          executablePath = path;
+          break;
+        }
+      }
+      
+      if (executablePath) {
+        browserConfig.executablePath = executablePath;
+        console.log('Chrome trouvé à:', executablePath);
+      } else {
+        console.error('Chrome/Chromium non trouvé. Veuillez installer Chrome ou définir PUPPETEER_EXECUTABLE_PATH');
+        throw new Error('Chrome/Chromium non trouvé pour la génération PDF');
+      }
+    }
     
     // Générer le PDF
     const browser = await puppeteer.launch(browserConfig);
@@ -137,9 +190,10 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
          .validation { margin: 5px 0; }
          .validation table { width: 100%; border-collapse: collapse; margin: 5px 0; font-size: 8px; }
          .validation th, .validation td { border: 1px solid #000; padding: 6px; text-align: left; }
-         .signatures { margin: 5px 0; }
-         .signature-item { margin: 5px 0; padding: 1px; }
+         .signatures { margin: 5px 0; text-align: right; }
+         .signature-item { margin: 5px 0; padding: 1px; text-align: right; }
          .signature-image { max-height: 40px; max-width: 100px; }
+         .session-info { text-align: right; margin-bottom: 10px; }
 
          .warning-box { background-color: #fef3c7; font-weight: bold; text-align: center; padding: 2px; margin: 2px 0; font-size: 9px; }
          .declaration { margin: 2px 0; }
@@ -266,8 +320,10 @@ function buildInductionHTML(induction: any, userSignatures: any[]) {
          </p>
        </div>
              <!-- Signatures des stagiaires -->
-       <div style="font-size: 11px; padding: 0px;">
-         <p><strong>Session:</strong> ${induction.sessionId}</p>
+       <div class="signatures" style="font-size: 11px; padding: 0px;">
+         <div class="session-info">
+           <p><strong>Session:</strong> ${induction.sessionId}</p>
+         </div>
 
          ${userSignatures.map((sig, index) => `
            <div class="signature-item" style="font-size: 9px; padding: 0px;">
