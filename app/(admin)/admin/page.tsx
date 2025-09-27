@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../lib/prisma';
 import Image from 'next/image';
 import {
   ClipboardDocumentListIcon,
@@ -51,8 +51,8 @@ async function getStats() {
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== 'ADMIN') {
-    redirect('/');
+  if (!session?.user || session.user.role !== 'ADMIN') {
+    redirect('/login');
   }
 
   const stats = await getStats();

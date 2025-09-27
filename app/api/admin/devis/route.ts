@@ -1,15 +1,66 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 import { Prisma } from '@prisma/client';
-import { sendEmail } from '@/lib/email';
+import { sendEmail } from 'lib/email';
+
+// Fonction pour générer le numéro de devis: CI.DEV YYMM 000
+async function generateDevisNumber(): Promise<string> {
+  const now = new Date();
+  const year = now.getFullYear().toString().slice(-2); // 25 pour 2025
+  const month = (now.getMonth() + 1).toString().padStart(2, '0'); // 09 pour septembre
+  const yearMonth = year + month; // 2509
+  
+  // Compter tous les devis créés cette ANNÉE (comptage global annuel)
+  const startOfYear = new Date(now.getFullYear(), 0, 1); // 1er janvier
+  const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999); // 31 décembre
+  
+  const count = await prisma.devis.count({
+    where: {
+      createdAt: {
+        gte: startOfYear,
+        lte: endOfYear
+      }
+    }
+  });
+  
+  const nextNumber = (count + 1).toString().padStart(3, '0');
+  return `CI.DEV ${yearMonth} ${nextNumber}`;
+}
+
+// Fonction pour générer la référence par session: CI.DES YYMM 000
+async function generateSessionReference(sessionString: string): Promise<string> {
+  const now = new Date();
+  const year = now.getFullYear().toString().slice(-2);
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const yearMonth = year + month;
+  
+  // Compter les devis pour cette session spécifique cette ANNÉE (comptage par session annuel)
+  const startOfYear = new Date(now.getFullYear(), 0, 1); // 1er janvier
+  const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999); // 31 décembre
+  
+  const sessionCount = await prisma.devis.count({
+    where: {
+      createdAt: {
+        gte: startOfYear,
+        lte: endOfYear
+      },
+      demande: {
+        session: sessionString
+      }
+    }
+  });
+  
+  const nextSessionNumber = (sessionCount + 1).toString().padStart(3, '0');
+  return `CI.DES ${yearMonth} ${nextSessionNumber}`;
+}
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session || session?.user?.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }
@@ -77,12 +128,17 @@ export async function POST(req: Request) {
       );
     }
 
+    // Générer les numéros automatiquement
+    const numeroDevis = await generateDevisNumber();
+    const referenceSession = await generateSessionReference(demande.session);
+
     // Créer le devis avec l'ID de l'utilisateur qui a fait la demande
     const devis = await prisma.devis.create({
       data: {
         demandeId,
         userId: demande.userId,
-        numero: body.numero,
+        numero: numeroDevis,
+        referenceAffaire: referenceSession,
         client: body.client,
         mail: body.mail,
         adresseLivraison: body.adresseLivraison,
@@ -158,7 +214,7 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session || session?.user?.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }

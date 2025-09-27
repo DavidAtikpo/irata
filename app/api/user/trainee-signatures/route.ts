@@ -10,12 +10,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    console.log('Récupération des signatures pour l\'utilisateur:', session.user.id);
+    console.log('Récupération des signatures pour l\'utilisateur:', session?.user?.id);
 
     // Récupérer les vraies signatures depuis la base de données
     const signatures = await prisma.traineeSignature.findMany({
       where: {
-        traineeId: session.user.id
+        traineeId: session?.user?.id
       },
       select: {
         traineeId: true,
@@ -32,7 +32,7 @@ export async function GET() {
       console.log('Aucune signature trouvée, création d\'un enregistrement par défaut');
       const defaultSignature = await prisma.traineeSignature.create({
         data: {
-          traineeId: session.user.id,
+          traineeId: session?.user?.id,
           signature: '',
           adminSignature: '',
           currentDay: 1,
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     console.log('Mise à jour de la signature stagiaire:', { 
       traineeId, 
       signature,
-      updatedBy: session.user.email 
+      updatedBy: session?.user?.email 
     });
 
     // Sauvegarder dans la base de données avec Prisma

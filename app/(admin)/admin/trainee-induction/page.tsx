@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import SignaturePad from '@/components/SignaturePad';
+import SignaturePad from '../../../../components/SignaturePad';
 
 interface Session {
   id: string;

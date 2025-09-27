@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 // GET /api/user/non-conformites/[id] - Récupérer une non-conformité spécifique
 export async function GET(
@@ -101,10 +101,10 @@ export async function GET(
 
     // Vérifier que l'utilisateur a accès à cette non-conformité
     const hasAccess = 
-      nonConformite.detecteurId === session.user.id ||
-      nonConformite.responsableId === session.user.id ||
-      session.user.role === 'ADMIN' ||
-      session.user.role === 'GESTIONNAIRE';
+      nonConformite.detecteurId === session?.user?.id ||
+      nonConformite.responsableId === session?.user?.id ||
+      session?.user?.role === 'ADMIN' ||
+      session?.user?.role === 'GESTIONNAIRE';
 
     if (!hasAccess) {
       return NextResponse.json(
@@ -165,10 +165,10 @@ export async function PUT(
 
     // Vérifier les permissions
     const canEdit = 
-      existingNonConformite.detecteurId === session.user.id ||
-      existingNonConformite.responsableId === session.user.id ||
-      session.user.role === 'ADMIN' ||
-      session.user.role === 'GESTIONNAIRE';
+      existingNonConformite.detecteurId === session?.user?.id ||
+      existingNonConformite.responsableId === session?.user?.id ||
+      session?.user?.role === 'ADMIN' ||
+      session?.user?.role === 'GESTIONNAIRE';
 
     if (!canEdit) {
       return NextResponse.json(

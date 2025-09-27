@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 // GET /api/user/non-conformites - Récupérer les non-conformités de l'utilisateur
 export async function GET(req: NextRequest) {
@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
     // Construire les filtres
     const where: any = {
       OR: [
-        { detecteurId: session.user.id },
-        { responsableId: session.user.id }
+        { detecteurId: session?.user?.id },
+        { responsableId: session?.user?.id }
       ]
     };
 
@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
         type: type || 'AUTRE',
         gravite: gravite || 'MINEURE',
         lieu: lieu || null,
-        detecteurId: session.user.id,
+        detecteurId: session?.user?.id || '',
         responsableId: responsableId || null,
         sessionId: sessionId || null,
         formulaireId: formulaireId || null,
@@ -263,7 +263,7 @@ export async function POST(req: NextRequest) {
         data: {
           userId: admin.id,
           title: 'Nouvelle non-conformité déclarée',
-          message: `Une nouvelle non-conformité "${titre}" a été déclarée par ${session.user.nom || session.user.email}.`,
+          message: `Une nouvelle non-conformité "${titre}" a été déclarée par ${session?.user?.nom || session?.user?.email}.`,
           type: 'non_conformite',
           category: 'new',
           relatedId: nonConformite.id

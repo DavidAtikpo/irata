@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    console.log('Session trouvée:', { userId: session.user.id, email: session.user.email });
+    console.log('Session trouvée:', { userId: session?.user?.id, email: session?.user?.email });
 
     const body = await request.json();
     const { inductionId, userSignature } = body;
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     // Vérifier si l'utilisateur a déjà signé cette induction
     const existingSignature = await prisma.$queryRaw`
       SELECT * FROM "webirata"."TraineeInductionSignature" 
-      WHERE "inductionId" = ${inductionId} AND "userId" = ${session.user.id}
+      WHERE "inductionId" = ${inductionId} AND "userId" = ${session?.user?.id}
     `;
 
     console.log('Vérification signature existante:', existingSignature);
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       INSERT INTO "webirata"."TraineeInductionSignature" (
         id, "inductionId", "userId", "userSignature", "createdAt", "updatedAt"
       ) VALUES (
-        gen_random_uuid()::text, ${inductionId}, ${session.user.id}, ${userSignature}, NOW(), NOW()
+        gen_random_uuid()::text, ${inductionId}, ${session?.user?.id}, ${userSignature}, NOW(), NOW()
       )
       RETURNING *
     `;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import SignaturePad from '@/components/SignaturePad';
+import SignaturePad from '../../../components/SignaturePad';
 
 export default function MedicalDeclarationPage() {
   const { data: session } = useSession();

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { sendEmail } from '@/lib/email';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
+import { sendEmail } from 'lib/email';
 
 export async function POST(
   req: Request,
@@ -61,10 +61,10 @@ export async function POST(
     }
 
     // Vérifier que le devis appartient à l'utilisateur
-    if (devis.userId !== session.user.id) {
+    if (devis.userId !== session?.user?.id) {
       console.log('Erreur: Devis n\'appartient pas à l\'utilisateur', {
         devisUserId: devis.userId,
-        sessionUserId: session.user.id
+        sessionUserId: session?.user?.id
       });
       return NextResponse.json(
         { message: 'Non autorisé' },

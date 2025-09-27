@@ -10,12 +10,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    console.log('Vérification du contrat pour l\'utilisateur:', session.user.id);
+    console.log('Vérification du contrat pour l\'utilisateur:', session?.user?.id);
 
     // Vérifier si l'utilisateur a un contrat validé
     const contract = await prisma.contrat.findFirst({
       where: {
-        userId: session.user.id,
+        userId: session?.user?.id,
         statut: 'VALIDE'
       },
       orderBy: {
@@ -29,7 +29,7 @@ export async function GET() {
     if (!contract) {
       const allContracts = await prisma.contrat.findMany({
         where: {
-          userId: session.user.id
+          userId: session?.user?.id
         },
         select: {
           id: true,

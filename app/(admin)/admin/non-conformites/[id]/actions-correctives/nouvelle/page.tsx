@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import SignaturePad from '@/components/SignaturePad';
+import SignaturePad from '../../../../../../../components/SignaturePad';
 
 interface User {
   id: string;

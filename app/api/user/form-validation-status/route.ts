@@ -13,7 +13,7 @@ export async function GET() {
     // Vérifier si le formulaire est validé pour cet utilisateur
     const validationStatus = await prisma.traineeSignature.findUnique({
       where: {
-        traineeId: session.user.id
+        traineeId: session?.user?.id
       },
       select: {
         isValidated: true

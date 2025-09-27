@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/app/lib/auth';
 import UserSignedDocumentsClient from '@/app/(user)/documents/irata-signed/UserSignedDocumentsClient';
 
 export default async function UserSignedDocumentsPage() {

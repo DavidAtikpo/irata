@@ -7,7 +7,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import SignaturePad from '@/components/SignaturePad';
+import SignaturePad from '../../../components/SignaturePad';
 
 // Reusable cell components that accept standard HTML table cell attributes (e.g., colSpan)
 const Th: React.FC<React.PropsWithChildren<React.ThHTMLAttributes<HTMLTableCellElement>>> = ({ children, className, ...rest }) => (

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import SignaturePad from '@/components/SignaturePad';
+import SignaturePad from '../../../../components/SignaturePad';
 
 export default function AttendanceForm() {
   const { data: session } = useSession();

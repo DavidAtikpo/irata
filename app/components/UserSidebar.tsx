@@ -7,9 +7,9 @@ import { signOut } from 'next-auth/react';
 
 interface UserSidebarProps {
   user: {
-    nom?: string;
-    prenom?: string;
-    email?: string;
+    nom?: string | null;
+    prenom?: string | null;
+    email?: string | null;
   };
   collapsed?: boolean;
   isMobileOpen?: boolean;

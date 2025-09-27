@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from '../../../../lib/prisma';
 
 // GET /api/admin/sessions - Récupérer la liste des sessions disponibles
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'GESTIONNAIRE')) {
+    if (!session?.user || (session.user.role !== 'ADMIN' && session.user.role !== 'GESTIONNAIRE')) {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }

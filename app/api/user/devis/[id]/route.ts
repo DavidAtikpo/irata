@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 export async function GET(
   request: Request,
@@ -38,7 +38,7 @@ export async function GET(
     }
 
     // Vérifier que le devis appartient bien à l'utilisateur connecté
-    if (devis.userId !== session.user.id) {
+    if (devis.userId !== session?.user?.id) {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }

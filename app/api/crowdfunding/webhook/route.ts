@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
+import { stripe } from 'lib/stripe';
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
-import { sendContributionConfirmationEmail, sendPaymentFailureEmail } from '@/lib/email';
-import { createContributionNotification, createPaymentNotification } from '@/lib/notification';
+import { sendContributionConfirmationEmail, sendPaymentFailureEmail } from 'lib/email';
+import { createContributionNotification, createPaymentNotification } from 'lib/notification';
 
 const prisma = new PrismaClient();
 

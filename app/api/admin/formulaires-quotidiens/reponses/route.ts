@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/app/lib/auth';
 import { PrismaClient } from '@prisma/client';
-import { isTextAnswerCorrect, isNumberAnswerCorrect } from '@/lib/fuzzy-matching';
+import { isTextAnswerCorrect, isNumberAnswerCorrect } from 'lib/fuzzy-matching';
 
 const prisma = new PrismaClient();
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 // POST /api/user/formulaires-quotidiens/reponses
 export async function POST(req: NextRequest) {
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     const reponseExistante = await prisma.reponseFormulaire.findFirst({
       where: {
         formulaireId,
-        stagiaireId: session.user.id,
+        stagiaireId: session?.user?.id,
         dateReponse: {
           gte: today,
           lt: tomorrow
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     const reponse = await prisma.reponseFormulaire.create({
       data: {
         formulaireId,
-        stagiaireId: session.user.id,
+        stagiaireId: session?.user?.id || '',
         reponses,
         commentaires: commentaires || null,
         soumis: true,

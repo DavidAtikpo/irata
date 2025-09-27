@@ -155,13 +155,13 @@ export default function ReponsesFormulairesQuotidiensPage() {
   };
 
   const getNote = (moyenne: number): string => {
-    if (moyenne >= 16) return 'Excellent';
-    if (moyenne >= 14) return 'Très bien';
-    if (moyenne >= 12) return 'Bien';
-    if (moyenne >= 10) return 'Assez bien';
-    if (moyenne >= 8) return 'Passable';
-    if (moyenne >= 6) return 'Insuffisant';
-    return 'Très insuffisant';
+    if (moyenne >= 17) return 'Excellent';
+    if (moyenne >= 15) return 'Très bien';
+    if (moyenne >= 12) return 'Assez bien';
+    if (moyenne >= 10) return 'Passable';
+    if (moyenne >= 8) return 'Insuffisant';
+    if (moyenne >= 6) return 'Mauvais';
+    return 'Très mauvais';
   };
 
   const getNoteColor = (moyenne: number): string => {

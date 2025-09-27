@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import HeaderInfoTable from '@/app/components/HeaderInfoTable';
 import Image from 'next/image';
-import SignaturePad from '@/components/SignaturePad';
+import SignaturePad from '../../../../../components/SignaturePad';
 
 interface Demande {
   id: string;
@@ -33,18 +33,13 @@ export default function NouveauDevisPage() {
   const banque = 'Revolut Bank UAB';
   const bic = 'REVOFRP2';
   const iban = 'FR 76 2823 3000 0180 0703 6884 878';
-  const adresseLivraison = 'CI.DES BP212 Votokondji TOGO';
-  const siret = 'TGO 00000000000000';
+  const adresseLivraison = 'CI.DES chez chagneau 17270 BORESSE-ET-MARTRON France';
+  const siret = '878 407 899 00011';
   const numNDA = '75170322717';
-  const adresseFacturationFixe = 'CI.DES BP212 Votokondji TOGO';
-  const referenceAffaire = 'CI.DES';
-
-  // Génération automatique du numéro de facture (ex: DEVIS-20240509-001)
-  const today = new Date();
-  const numeroAuto = `DEVIS-${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}-C.D-${Math.floor(Math.random()*900+100000)}`;
-
+  const adresseFacturationFixe = 'CI.DES chez chagneau 17270 BORESSE-ET-MARTRON France';
   // Champs principaux du formulaire
-  const [numero, setNumero] = useState(numeroAuto);
+  const [numero, setNumero] = useState('');
+  const [referenceAffaire, setReferenceAffaire] = useState('');
   const [client, setClient] = useState('');
   const [mail, setMail] = useState('');
   const [dateLivraison, setDateLivraison] = useState('');
@@ -142,6 +137,9 @@ export default function NouveauDevisPage() {
   useEffect(() => {
     if (demandeId) {
       fetchDemande();
+    } else {
+      // Si pas de demande spécifique, générer quand même les numéros avec une session par défaut
+      generateNumbers('2025 septembre 01 au 06');
     }
   }, [demandeId]);
 
@@ -153,6 +151,10 @@ export default function NouveauDevisPage() {
       }
       const data = await response.json();
       setDemande(data);
+      
+      // Générer les numéros automatiquement
+      await generateNumbers(data.session);
+      
       // Pré-remplir les champs avec les informations du client
       setClient(`${data.user.prenom} ${data.user.nom}`);
       setMail(data.user.email);
@@ -166,6 +168,21 @@ export default function NouveauDevisPage() {
     } catch (error) {
       console.error('Erreur:', error);
       setError('Erreur lors de la récupération de la demande');
+    }
+  };
+
+  const generateNumbers = async (sessionString: string) => {
+    try {
+      const response = await fetch(`/api/admin/devis/generate-numbers?session=${encodeURIComponent(sessionString)}`);
+      if (!response.ok) {
+        throw new Error('Erreur lors de la génération des numéros');
+      }
+      const data = await response.json();
+      setNumero(data.numeroDevis);
+      setReferenceAffaire(data.referenceSession);
+    } catch (error) {
+      console.error('Erreur lors de la génération des numéros:', error);
+      setError('Erreur lors de la génération des numéros');
     }
   };
 
@@ -191,6 +208,7 @@ export default function NouveauDevisPage() {
     const devisData = {
       demandeId,
       numero,
+      referenceAffaire,
       client,
       mail,
       adresseLivraison,
@@ -270,11 +288,11 @@ export default function NouveauDevisPage() {
             <legend className="text-xl font-bold text-gray-900 px-2">Informations principales</legend>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Numéro de facture</label>
+                <label className="block text-base font-semibold text-gray-900 mb-1">Numéro</label>
                 <input type="text" className="input text-gray-900" value={numero} readOnly />
               </div>
               <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Notre référence Affaire</label>
+                <label className="block text-base font-semibold text-gray-900 mb-1">Notre référence</label>
                 <input type="text" className="input text-gray-900" value={referenceAffaire} readOnly />
               </div>
               <div>
@@ -359,7 +377,7 @@ export default function NouveauDevisPage() {
                 <input type="text" className="input text-gray-900" value={exoneration} onChange={e => setExoneration(e.target.value)} />
               </div>
               <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Date de prise d'effet</label>
+                <label className="block text-base font-semibold text-gray-900 mb-1">Date d'emission du devis</label>
                 <input type="date" className="input text-gray-900" value={datePriseEffet} onChange={e => setDatePriseEffet(e.target.value)} />
               </div>
             </div>

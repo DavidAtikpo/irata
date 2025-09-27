@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import cloudinary from '@/lib/cloudinary';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
+import cloudinary from 'lib/cloudinary';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -41,9 +41,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     // Vérifier les permissions
-    const isAdmin = session.user.role === 'ADMIN';
-    const isOwner = document.userId === session.user.id;
-    const isDevisOwner = document.devis?.demande?.user?.id === session.user.id;
+    const isAdmin = session?.user?.role === 'ADMIN';
+    const isOwner = document.userId === session?.user?.id;
+    const isDevisOwner = document.devis?.demande?.user?.id === session?.user?.id;
     const isPublic = document.public;
 
     if (!isAdmin && !isOwner && !isDevisOwner && !isPublic) {

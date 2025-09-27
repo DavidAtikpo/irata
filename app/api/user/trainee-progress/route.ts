@@ -15,7 +15,7 @@ export async function GET() {
     // Récupérer les vraies données de progression depuis la base de données
     const progress = await prisma.traineeProgress.findMany({
       where: {
-        traineeId: session.user.id
+        traineeId: session?.user?.id
       },
       select: {
         syllabusItem: true,
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
       traineeId, 
       day, 
       completed,
-      updatedBy: session.user.email 
+      updatedBy: session?.user?.email 
     });
 
     // Sauvegarder dans la base de données avec Prisma

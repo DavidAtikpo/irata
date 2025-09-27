@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { confirmCrowdfundingPayment } from '@/lib/stripe';
+import { confirmCrowdfundingPayment } from 'lib/stripe';
 import { PrismaClient } from '@prisma/client';
-import { sendContributionConfirmationEmail } from '@/lib/email';
-import { createContributionNotification, createPaymentNotification } from '@/lib/notification';
+import { sendContributionConfirmationEmail } from 'lib/email';
+import { createContributionNotification, createPaymentNotification } from 'lib/notification';
 
 const prisma = new PrismaClient();
 

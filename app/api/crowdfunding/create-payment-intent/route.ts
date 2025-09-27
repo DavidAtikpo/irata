@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createCrowdfundingPaymentIntent } from '@/lib/stripe';
+import { createCrowdfundingPaymentIntent } from 'lib/stripe';
 
 export async function POST(request: NextRequest) {
   try {
