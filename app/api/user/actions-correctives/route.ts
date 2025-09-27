@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 // GET /api/user/actions-correctives - Récupérer les actions correctives de l'utilisateur
 export async function GET(req: NextRequest) {
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
     // Construire les filtres
     const where: any = {
-      responsableId: session.user.id
+      responsableId: session?.user?.id
     };
 
     if (statut) {
@@ -149,10 +149,10 @@ export async function POST(req: NextRequest) {
 
     // Vérifier les permissions (seuls les détecteurs, responsables ou admins peuvent créer des actions correctives)
     const canCreate = 
-      nonConformite.detecteurId === session.user.id ||
-      nonConformite.responsableId === session.user.id ||
-      session.user.role === 'ADMIN' ||
-      session.user.role === 'GESTIONNAIRE';
+      nonConformite.detecteurId === session?.user?.id ||
+      nonConformite.responsableId === session?.user?.id ||
+      session?.user?.role === 'ADMIN' ||
+      session?.user?.role === 'GESTIONNAIRE';
 
     if (!canCreate) {
       return NextResponse.json(

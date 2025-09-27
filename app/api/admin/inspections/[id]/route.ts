@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 export async function GET(
   request: NextRequest,
@@ -75,7 +75,7 @@ export async function PUT(
     }
 
     // Si c'est un assesseur qui met à jour
-    if (session.user.role === 'ADMIN' && body.assessorVerdict !== undefined) {
+    if (session?.user?.role === 'ADMIN' && body.assessorVerdict !== undefined) {
       const updatedInspection = await prisma.equipmentInspection.update({
         where: { id },
         data: {
@@ -109,7 +109,7 @@ export async function PUT(
     }
 
     // Si c'est le technicien qui met à jour
-    if (existingInspection.technicianId === session.user.id) {
+    if (existingInspection.technicianId === session?.user?.id) {
       const updatedInspection = await prisma.equipmentInspection.update({
         where: { id },
         data: {
@@ -173,7 +173,7 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session || session?.user?.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 

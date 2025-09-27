@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/app/lib/auth';
 
 interface FormField {
   id: string;
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session || session?.user?.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }
@@ -66,7 +66,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session || session?.user?.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }
@@ -117,7 +117,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session || session?.user?.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }

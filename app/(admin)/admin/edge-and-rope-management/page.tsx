@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useSession } from 'next-auth/react';
-import SignaturePad from '@/components/SignaturePad';
+import SignaturePad from '../../../../components/SignaturePad';
 
 export default function EdgeAndRopeManagement() {
   const { data: session } = useSession();

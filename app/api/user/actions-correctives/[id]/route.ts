@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 // GET /api/user/actions-correctives/[id] - Récupérer une action corrective spécifique
 export async function GET(
@@ -83,11 +83,11 @@ export async function GET(
 
     // Vérifier que l'utilisateur a accès à cette action corrective
         const hasAccess =
-      (actionCorrective as any).responsableId === session.user.id ||
-      (actionCorrective.nonConformite && actionCorrective.nonConformite.detecteurId === session.user.id) ||
-      (actionCorrective.nonConformite && actionCorrective.nonConformite.responsableId === session.user.id) ||
-      session.user.role === 'ADMIN' ||
-      session.user.role === 'GESTIONNAIRE';
+      (actionCorrective as any).responsableId === session?.user?.id ||
+      (actionCorrective.nonConformite && actionCorrective.nonConformite.detecteurId === session?.user?.id) ||
+      (actionCorrective.nonConformite && actionCorrective.nonConformite.responsableId === session?.user?.id) ||
+      session?.user?.role === 'ADMIN' ||
+      session?.user?.role === 'GESTIONNAIRE';
 
     if (!hasAccess) {
       return NextResponse.json(
@@ -160,11 +160,11 @@ export async function PUT(
 
     // Vérifier les permissions
         const canEdit =
-      (existingAction as any).responsableId === session.user.id ||
-      (existingAction.nonConformite && existingAction.nonConformite.detecteurId === session.user.id) ||
-      (existingAction.nonConformite && existingAction.nonConformite.responsableId === session.user.id) ||
-      session.user.role === 'ADMIN' ||
-      session.user.role === 'GESTIONNAIRE';
+      (existingAction as any).responsableId === session?.user?.id ||
+      (existingAction.nonConformite && existingAction.nonConformite.detecteurId === session?.user?.id) ||
+      (existingAction.nonConformite && existingAction.nonConformite.responsableId === session?.user?.id) ||
+      session?.user?.role === 'ADMIN' ||
+      session?.user?.role === 'GESTIONNAIRE';
 
     if (!canEdit) {
       return NextResponse.json(

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 export async function GET(req: Request) {
   try {
@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     // Vérifier si l'utilisateur a un contrat validé
     const validatedContract = await prisma.contrat.findFirst({
       where: {
-        userId: session.user.id,
+        userId: session?.user?.id,
         statut: 'VALIDE',
       },
       include: {
@@ -54,7 +54,7 @@ export async function GET(req: Request) {
     let whereCondition: any = {
       OR: [
         { public: true }, // Documents publics
-        { userId: session.user.id }, // Documents spécifiques à l'utilisateur
+        { userId: session?.user?.id }, // Documents spécifiques à l'utilisateur
       ],
     };
 
@@ -68,7 +68,7 @@ export async function GET(req: Request) {
       const devis = await prisma.devis.findFirst({
         where: {
           id: devisId,
-          userId: session.user.id,
+          userId: session?.user?.id,
         },
       });
 

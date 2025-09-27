@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import cloudinary from '@/lib/cloudinary';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
+import cloudinary from 'lib/cloudinary';
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session || session?.user?.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }

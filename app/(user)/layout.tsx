@@ -22,6 +22,21 @@ export default function UserLayout({
     setIsMounted(true);
   }, []);
 
+  // Gérer la redirection d'authentification
+  useEffect(() => {
+    if (!isMounted || status === 'loading') return;
+
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
+
+    if (session?.user?.role !== 'USER') {
+      router.push('/');
+      return;
+    }
+  }, [status, session, router, isMounted]);
+
   // Charger l'état de la sidebar depuis localStorage
   useEffect(() => {
     if (isMounted) {
@@ -75,14 +90,18 @@ export default function UserLayout({
     );
   }
 
-  if (status === 'unauthenticated') {
-    router.push('/login');
-    return null;
-  }
-
-  if (session?.user?.role !== 'USER') {
-    router.push('/');
-    return null;
+  // Afficher le loading si pas authentifié ou mauvais rôle (la redirection se fait dans useEffect)
+  if (status === 'unauthenticated' || session?.user?.role !== 'USER') {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <div className="flex justify-center items-center h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <h2 className="text-2xl font-semibold text-gray-900 mt-4">Redirection...</h2>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

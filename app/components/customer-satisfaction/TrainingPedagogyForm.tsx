@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import HeaderInfoTable from '@/app/components/HeaderInfoTable';
-import SignaturePad from '@/components/SignaturePad';
+import SignaturePad from '../../../components/SignaturePad';
 import Image from 'next/image';
 
 type TrainingPedagogyFormProps = {

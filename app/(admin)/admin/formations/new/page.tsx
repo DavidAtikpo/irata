@@ -22,7 +22,7 @@ export default function NewFormationPage() {
     return null;
   }
 
-  if (status === 'authenticated' && session.user.role !== 'ADMIN') {
+  if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
     router.push('/');
     return null;
   }

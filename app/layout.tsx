@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "./components/AuthProvider";
 import WeglotScript from "./components/WeglotScript";
+import SessionProvider from "./components/SessionProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -101,13 +102,15 @@ export default function RootLayout({
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <WeglotScript />
-        <AuthProvider>
-          <div className="min-h-screen flex flex-col">
-            <main className="flex-grow">
-              {children}
-            </main>
-          </div>
-        </AuthProvider>
+        <SessionProvider>
+          <AuthProvider>
+            <div className="min-h-screen flex flex-col">
+              <main className="flex-grow">
+                {children}
+              </main>
+            </div>
+          </AuthProvider>
+        </SessionProvider>
       </body>
     </html>
   );

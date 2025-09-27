@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { sendEmail } from '@/lib/email';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
+import { sendEmail } from 'lib/email';
 
 export async function POST(
   req: Request,
@@ -38,7 +38,7 @@ export async function POST(
       );
     }
 
-    if (devis.userId !== session.user.id) {
+    if (devis.userId !== session?.user?.id) {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }

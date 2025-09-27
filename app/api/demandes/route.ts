@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from 'lib/prisma';
 
 // GET /api/demandes
 export async function GET() {
@@ -16,7 +16,7 @@ export async function GET() {
     }
 
     // Si l'utilisateur est un admin, il peut voir toutes les demandes
-    if (session.user.role === 'ADMIN') {
+    if (session?.user?.role === 'ADMIN') {
       const demandes = await prisma.demande.findMany({
         include: {
           user: {
@@ -39,7 +39,7 @@ export async function GET() {
     // Sinon, l'utilisateur ne peut voir que ses propres demandes
     const demandes = await prisma.demande.findMany({
       where: {
-        userId: session.user.id,
+        userId: session?.user?.id,
       },
       select: {
         id: true,
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
     // Créer la demande
     const demande = await prisma.demande.create({
       data: {
-        userId: session.user.id,
+        userId: session?.user?.id as string,
         session: formationId, // Utiliser formationId comme session pour l'instant
         message,
         statut: 'EN_ATTENTE',

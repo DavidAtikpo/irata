@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 // GET /api/user/non-conformites/[id]/commentaires - Récupérer les commentaires d'une non-conformité
 export async function GET(
@@ -38,10 +38,10 @@ export async function GET(
     }
 
     const hasAccess = 
-      nonConformite.detecteurId === session.user.id ||
-      nonConformite.responsableId === session.user.id ||
-      session.user.role === 'ADMIN' ||
-      session.user.role === 'GESTIONNAIRE';
+      nonConformite.detecteurId === session?.user?.id ||
+      nonConformite.responsableId === session?.user?.id ||
+      session?.user?.role === 'ADMIN' ||
+      session?.user?.role === 'GESTIONNAIRE';
 
     if (!hasAccess) {
       return NextResponse.json(
@@ -122,10 +122,10 @@ export async function POST(
     }
 
     const hasAccess = 
-      nonConformite.detecteurId === session.user.id ||
-      nonConformite.responsableId === session.user.id ||
-      session.user.role === 'ADMIN' ||
-      session.user.role === 'GESTIONNAIRE';
+      nonConformite.detecteurId === session?.user?.id ||
+      nonConformite.responsableId === session?.user?.id ||
+      session?.user?.role === 'ADMIN' ||
+      session?.user?.role === 'GESTIONNAIRE';
 
     if (!hasAccess) {
       return NextResponse.json(
@@ -137,7 +137,7 @@ export async function POST(
     const nouveauCommentaire = await prisma.nonConformiteCommentaire.create({
       data: {
         nonConformiteId: id,
-        userId: session.user.id,
+        userId: session?.user?.id || '',
         commentaire: commentaire.trim()
       },
       include: {
@@ -156,7 +156,7 @@ export async function POST(
     const participants = [
       nonConformite.detecteurId,
       nonConformite.responsableId
-    ].filter((participantId) => participantId && participantId !== session.user.id);
+    ].filter((participantId) => participantId && participantId !== session?.user?.id);
 
     for (const participantId of participants) {
       if (participantId) {

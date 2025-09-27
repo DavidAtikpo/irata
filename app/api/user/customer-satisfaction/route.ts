@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 type ItemInput = {
   label: string;
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     const created = await prisma.customerSatisfactionResponse.create({
       data: {
-        user: { connect: { id: session.user.id } },
+        user: { connect: { id: session?.user?.id } },
         traineeName: traineeName || null,
         type,
         items: normalizedItems as unknown as object,

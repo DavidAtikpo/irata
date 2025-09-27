@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import SignaturePad from '@/components/SignaturePad';
+import SignaturePad from '../../../components/SignaturePad';
 
 export default function Page() {
   const [userName, setUserName] = useState('');

@@ -6,7 +6,7 @@ import { sendEmail } from '../../../../lib/email';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { step, email, nom, prenom, password, session, message } = body;
+    const { step, email, nom, prenom, password, session, message, registrationType, entreprise } = body;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
@@ -47,6 +47,8 @@ export async function POST(req: Request) {
             session: session || 'Session non spécifiée',
             message: message || '',
             statut: 'EN_ATTENTE',
+            typeInscription: registrationType || 'personnel',
+            entreprise: entreprise || null,
           },
         });
 
@@ -106,6 +108,8 @@ export async function POST(req: Request) {
                 <h3 style="color: #374151; margin-bottom: 10px;">Informations de l'utilisateur :</h3>
                 <p><strong>Nom :</strong> ${prenom} ${nom}</p>
                 <p><strong>Email :</strong> ${email}</p>
+                <p><strong>Type d'inscription :</strong> ${registrationType === 'entreprise' ? 'Entreprise' : 'Personnel'}</p>
+                ${registrationType === 'entreprise' && entreprise ? `<p><strong>Entreprise :</strong> ${entreprise}</p>` : ''}
                 <p><strong>Session choisie :</strong> ${session || 'Non spécifiée'}</p>
                 <p><strong>Message :</strong> ${message || 'Aucun message'}</p>
                 <p><strong>Date d'inscription :</strong> ${new Date().toLocaleString('fr-FR')}</p>

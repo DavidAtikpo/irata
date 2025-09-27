@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
 
     const where: any = {
-      technicianId: session.user.id
+      technicianId: session?.user?.id
     };
     
     if (status && status !== 'all') {
@@ -56,6 +56,18 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from '../../../../../lib/prisma';
 
 // GET /api/admin/non-conformites/[id] - Récupérer une non-conformité spécifique (admin)
 export async function GET(
@@ -11,7 +11,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'GESTIONNAIRE')) {
+    if (!session?.user || (session.user.role !== 'ADMIN' && session.user.role !== 'GESTIONNAIRE')) {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }
@@ -117,7 +117,7 @@ export async function PUT(
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'GESTIONNAIRE')) {
+    if (!session?.user || (session.user.role !== 'ADMIN' && session.user.role !== 'GESTIONNAIRE')) {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }
@@ -202,7 +202,7 @@ export async function PUT(
       const participants = [
         existingNonConformite.detecteurId,
         existingNonConformite.responsableId
-      ].filter((participantId) => participantId && participantId !== session.user.id);
+      ].filter((participantId) => participantId && participantId !== session?.user?.id);
 
       for (const participantId of participants) {
         if (participantId) {

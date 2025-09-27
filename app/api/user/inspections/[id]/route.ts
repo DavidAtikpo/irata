@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 export async function GET(
   request: NextRequest,
@@ -19,7 +19,7 @@ export async function GET(
     const inspection = await prisma.equipmentInspection.findFirst({
       where: {
         id,
-        technicianId: session.user.id // Seulement les inspections du technicien connecté
+        technicianId: session?.user?.id // Seulement les inspections du technicien connecté
       },
       include: {
         technician: {

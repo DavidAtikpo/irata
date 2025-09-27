@@ -41,6 +41,12 @@ export const authOptions: NextAuthOptions = {
           prenom: user.prenom
         });
 
+        // isActive is newly added; cast to any until prisma types are regenerated
+        if ((user as any).isActive === false) {
+          console.log('❌ Compte désactivé:', credentials.email);
+          throw new Error('Compte désactivé');
+        }
+
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.password
@@ -59,10 +65,13 @@ export const authOptions: NextAuthOptions = {
         return {
           id: user.id,
           email: user.email,
+          // NextAuth expects a name field on User
+          name: `${user.prenom || ''} ${user.nom || ''}`.trim(),
+          // Custom fields carried forward
           nom: user.nom || '',
           prenom: user.prenom || '',
           role: user.role,
-        };
+        } as any;
       }
     })
   ],
@@ -74,17 +83,22 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        const u: any = user;
         console.log('🔧 JWT Callback - User:', {
-          id: user.id,
-          role: user.role,
-          email: user.email,
-          nom: user.nom,
-          prenom: user.prenom
+          id: u.id,
+          role: u.role,
+          email: u.email,
+          nom: u.nom,
+          prenom: u.prenom
         });
-        token.id = user.id;
-        token.role = user.role;
-        token.nom = user.nom;
-        token.prenom = user.prenom;
+        (token as any).id = u.id;
+        (token as any).role = u.role;
+        (token as any).nom = u.nom;
+        (token as any).prenom = u.prenom;
+      }
+      // Fallback: ensure id exists on token using NextAuth default `sub`
+      if (!(token as any).id && typeof token.sub === 'string') {
+        (token as any).id = token.sub;
       }
       return token;
     },
@@ -97,16 +111,24 @@ export const authOptions: NextAuthOptions = {
           nom: token.nom,
           prenom: token.prenom
         });
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.nom = token.nom;
-        session.user.prenom = token.prenom;
+        if (typeof (token as any).id === 'string') {
+          (session.user as any).id = (token as any).id;
+        }
+        if (typeof (token as any).role === 'string') {
+          (session.user as any).role = (token as any).role;
+        }
+        if (typeof (token as any).nom === 'string' || (token as any).nom === null) {
+          (session.user as any).nom = (token as any).nom as any;
+        }
+        if (typeof (token as any).prenom === 'string' || (token as any).prenom === null) {
+          (session.user as any).prenom = (token as any).prenom as any;
+        }
       }
       return session;
     }
   },
   pages: {
-    signIn: '/login',
+    signIn: '/sign-in',
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

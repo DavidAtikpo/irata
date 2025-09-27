@@ -34,7 +34,7 @@ export default function EditFormationPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
-    } else if (status === 'authenticated' && session.user.role !== 'ADMIN') {
+    } else if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
       router.push('/');
     }
   }, [status, session, router]);
@@ -53,7 +53,7 @@ export default function EditFormationPage({ params }: { params: Promise<{ id: st
       }
     };
 
-    if (status === 'authenticated' && session.user.role === 'ADMIN') {
+    if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
       fetchFormation();
     }
   }, [status, session, resolvedParams.id]);

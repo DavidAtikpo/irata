@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/app/lib/auth';
 import { PrismaClient } from '@prisma/client';
-import { sendFormulaireCorrectionEmail } from '@/lib/email';
+import { sendFormulaireCorrectionEmail } from 'lib/email';
 
 const prisma = new PrismaClient();
 

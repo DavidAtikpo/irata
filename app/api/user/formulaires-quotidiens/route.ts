@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/lib/auth';
+import { prisma } from 'lib/prisma';
 
 // GET /api/user/formulaires-quotidiens
 export async function GET(req: NextRequest) {
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
     // Récupérer le niveau de l'utilisateur
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: session?.user?.id },
       select: { niveau: true }
     });
 
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       include: {
         reponses: {
           where: {
-            stagiaireId: session.user.id
+            stagiaireId: session?.user?.id
           },
           orderBy: {
             dateReponse: 'desc'

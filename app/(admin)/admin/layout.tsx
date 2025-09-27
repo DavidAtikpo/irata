@@ -77,7 +77,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session || session?.user?.role !== 'ADMIN') {
     return null;
   }
 
