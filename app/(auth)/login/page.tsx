@@ -89,11 +89,11 @@ function LoginForm() {
               window.location.href = redirectUrl;
             } else {
               console.log('🚀 Rôle non trouvé, redirection vers la page d\'accueil');
-              window.location.href = '/';
+              window.location.href = '/login';
             }
           } catch (error) {
             console.error('Erreur lors de la récupération de la session:', error);
-            window.location.href = '/';
+            window.location.href = '/login';
           }
         }
       } else {

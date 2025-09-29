@@ -29,7 +29,7 @@ async function generateDevisNumber(): Promise<string> {
   return `CI.DEV ${yearMonth} ${nextNumber}`;
 }
 
-// Fonction pour générer la référence par session: CI.DES YYMM 000
+// Fonction pour générer la référence par session: CI.DEV YYMM 000
 async function generateSessionReference(sessionString: string): Promise<string> {
   const now = new Date();
   const year = now.getFullYear().toString().slice(-2);
@@ -53,7 +53,7 @@ async function generateSessionReference(sessionString: string): Promise<string> 
   });
   
   const nextSessionNumber = (sessionCount + 1).toString().padStart(3, '0');
-  return `CI.DES ${yearMonth} ${nextSessionNumber}`;
+  return `CI.DEV ${yearMonth} ${nextSessionNumber}`;
 }
 
 export async function POST(req: Request) {

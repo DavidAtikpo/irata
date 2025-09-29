@@ -21,7 +21,7 @@ model User {
   city                          String?
   zipCode                       String?
   country                       String?
-  role                          Role                           @default(CLIENT)
+  role                          Role                           @default(USER)
   isActive                      Boolean                        @default(true)
   niveau                        String?                       @default("1") // Niveau IRATA (1, 2, 3)
   createdAt                     DateTime                       @default(now())
@@ -104,7 +104,7 @@ model Devis {
   referenceAffaire String?
   client           String
   mail             String
-  mail2            String     @default("atikpododzi4@gmail.com")
+  mail2            String     @default("pm@cides.tf")
   adresseLivraison String?
   dateLivraison    DateTime?
   dateExamen       DateTime?
