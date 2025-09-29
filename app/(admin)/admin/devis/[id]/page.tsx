@@ -120,7 +120,6 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
 
   const adresseFacturationFixe = 'CI.DES BP212 Votokondji TOGO';
   const numeroCode = 'ENR-CIFRA-COMP 00X';
-  const referenceAffaire = 'CI.DES';
   const titre = 'TRAME BDC DEVIS FACTURE';
 
   return (
@@ -169,7 +168,7 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
             </div>
             <div>
               <div className="block text-base font-semibold text-gray-900 mb-1">Notre référence Affaire</div>
-              <div className="input text-gray-900 bg-gray-100">{referenceAffaire}</div>
+              <div className="input text-gray-900 bg-gray-100">{devis.referenceAffaire || '-'}</div>
             </div>
             <div>
               <div className="block text-base font-semibold text-gray-900 mb-1">Client</div>
@@ -188,7 +187,7 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <div className="block text-base font-semibold text-gray-900 mb-1">Adresse de facturation</div>
-              <div className="input text-gray-900 bg-gray-100">{adresseFacturationFixe}</div>
+              <div className="input text-gray-900 bg-gray-100">{devis.adresseLivraison || '-'}</div>
             </div>
             <div>
               <div className="block text-base font-semibold text-gray-900 mb-1">Adresse de livraison</div>
@@ -241,12 +240,12 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
               <div className="input text-gray-900 bg-gray-100">{devis.tva}</div>
             </div>
             <div>
-              <div className="block text-base font-semibold text-gray-900 mb-1">Exonération</div>
-              <div className="input text-gray-900 bg-gray-100">{devis.exoneration || '-'}</div>
+              <div className="block text-base font-semibold text-gray-900 mb-1">Date d'emission du devis</div>
+              <div className="input text-gray-900 bg-gray-100">{devis.datePriseEffet ? new Date(devis.datePriseEffet).toLocaleDateString('fr-FR') : '-'}</div>
             </div>
-            <div>
-              <div className="block text-base font-semibold text-gray-900 mb-1">Date de prise d'effet</div>
-              <div className="input text-gray-900 bg-gray-100">{devis.datePriseEffet ? new Date(devis.datePriseEffet).toLocaleDateString() : '-'}</div>
+            <div className="md:col-span-3">
+              <div className="block text-base font-semibold text-gray-900 mb-1">Exonération</div>
+              <div className="border rounded px-3 py-2 bg-white text-gray-900 whitespace-pre-wrap">{devis.exoneration || '-'}</div>
             </div>
           </div>
         </fieldset>

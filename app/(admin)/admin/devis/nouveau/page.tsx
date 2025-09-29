@@ -54,7 +54,9 @@ export default function NouveauDevisPage() {
   const [unite, setUnite] = useState('lot');
   const [prixUnitaire, setPrixUnitaire] = useState(defaultPrixUnitaire);
   const [tva, setTva] = useState('0');
-  const [exoneration, setExoneration] = useState('0');
+  const [exoneration, setExoneration] = useState(
+    "EXONÉRATION\nCONFORMÉMENT À L'INSTRUCTION FISCALE\nN° 31-3A-2-95 DU 3 FÉVRIER 1995 PRISE\nD'EFFET LE 28/10/2024"
+  );
   const [datePriseEffet, setDatePriseEffet] = useState('');
   const [montant, setMontant] = useState('');
   // const [iban, setIban] = useState('');
@@ -73,6 +75,14 @@ export default function NouveauDevisPage() {
     const total = Number(prixUnitaire || 0) * Number(quantite || 0);
     setMontant(total ? total.toFixed(2) : '');
   }, [prixUnitaire, quantite]);
+
+  // Date d'émission: défaut à la date du jour
+  useEffect(() => {
+    if (!datePriseEffet) {
+      const today = new Date().toISOString().slice(0, 10);
+      setDatePriseEffet(today);
+    }
+  }, [datePriseEffet]);
 
   // Formateur d'affichage pour les sessions de type
   // « 2025 septembre 01 au 06 » ou « 2025 octobre du 20 au 24 (Examen 25) »
@@ -395,6 +405,12 @@ export default function NouveauDevisPage() {
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">Centre Irata</label>
                 <input type="text" className="input text-gray-900" value={suiviPar} readOnly />
+              </div>
+              <div className="md:col-span-3">
+                <label className="block text-base font-semibold text-gray-900 mb-1">Exonération</label>
+                <div className="border rounded px-3 py-2 bg-white text-gray-900 whitespace-pre-wrap">
+                  {exoneration}
+                </div>
               </div>
             </div>
             <fieldset className=" mb-6 bg-gray-50">
