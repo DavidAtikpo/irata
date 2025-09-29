@@ -11,6 +11,8 @@ interface Demande {
   id: string;
   session: string;
   message?: string;
+  entreprise?: string;
+  typeInscription?: string;
   user: {
     nom: string;
     prenom: string;
@@ -72,10 +74,12 @@ export default function NouveauDevisPage() {
     setMontant(total ? total.toFixed(2) : '');
   }, [prixUnitaire, quantite]);
 
-  // Formateur d'affichage pour les sessions de type "2025 septembre 01 au 06"
+  // Formateur d'affichage pour les sessions de type
+  // « 2025 septembre 01 au 06 » ou « 2025 octobre du 20 au 24 (Examen 25) »
   const formatSessionFr = (raw: string) => {
     if (!raw) return '';
-    const m = raw.match(/^(\d{4})\s+([a-zA-Zéèêàùîôïûç]+)\s+(\d{2})\s+au\s+(\d{2})$/i);
+    // tolère "du" optionnel et ignore l'éventuel suffixe "(Examen xx)"
+    const m = raw.match(/^(\d{4})\s+([a-zA-Zéèêàùîôïûç]+)\s+(?:du\s+)?(\d{2})\s+au\s+(\d{2})/i);
     if (!m) return raw;
     const [, year, monthFr, dayStart, dayEnd] = m;
     const monthMap: Record<string, string> = {
@@ -102,12 +106,27 @@ export default function NouveauDevisPage() {
     ? `du ${formatISOToFr(dateFormation)} au ${formatISOToFr(dateExamen)}`
     : '';
 
-  // Extrait la date de fin au format ISO (YYYY-MM-DD) depuis le même format de session
+  // Extrait la date de fin au format ISO (YYYY-MM-DD) depuis le format de session
   const parseSessionEndISO = (raw: string): string | '' => {
     if (!raw) return '';
-    const m = raw.match(/^(\d{4})\s+([a-zA-Zéèêàùîôïûç]+)\s+(\d{2})\s+au\s+(\d{2})$/i);
+    // Cas 1: présence explicite de "(Examen 25)"
+    const mExam = raw.match(/^(\d{4})\s+([a-zA-Zéèêàùîôïûç]+).*?\(\s*Examen\s+(\d{1,2})\s*\)/i);
+    if (mExam) {
+      const [, year, monthFr, examDay] = mExam as unknown as [string, string, string, string];
+      const monthMap: Record<string, string> = {
+        janvier: '01', fevrier: '02', février: '02', mars: '03', avril: '04',
+        mai: '05', juin: '06', juillet: '07', aout: '08', août: '08',
+        septembre: '09', octobre: '10', novembre: '11', decembre: '12', décembre: '12'
+      };
+      const mm = monthMap[monthFr.toLowerCase()];
+      if (!mm) return '';
+      const dd = examDay.padStart(2, '0');
+      return `${year}-${mm}-${dd}`;
+    }
+    // Cas 2: format classique avec "au"
+    const m = raw.match(/^(\d{4})\s+([a-zA-Zéèêàùîôïûç]+)\s+(?:du\s+)?(\d{2})\s+au\s+(\d{2})/i);
     if (!m) return '';
-    const [, year, monthFr, _dayStart, dayEnd] = m;
+    const [, year, monthFr, _dayStart, dayEnd] = m as unknown as [string, string, string, string, string?];
     const monthMap: Record<string, string> = {
       janvier: '01', fevrier: '02', février: '02', mars: '03', avril: '04',
       mai: '05', juin: '06', juillet: '07', aout: '08', août: '08',
@@ -118,10 +137,10 @@ export default function NouveauDevisPage() {
     return `${year}-${mm}-${dayEnd}`;
   };
 
-  // Extrait la date de début au format ISO (YYYY-MM-DD) depuis le même format de session
+  // Extrait la date de début au format ISO (YYYY-MM-DD) depuis le format de session
   const parseSessionStartISO = (raw: string): string | '' => {
     if (!raw) return '';
-    const m = raw.match(/^(\d{4})\s+([a-zA-Zéèêàùîôïûç]+)\s+(\d{2})\s+au\s+(\d{2})$/i);
+    const m = raw.match(/^(\d{4})\s+([a-zA-Zéèêàùîôïûç]+)\s+(?:du\s+)?(\d{2})\s+au\s+(\d{2})/i);
     if (!m) return '';
     const [, year, monthFr, dayStart] = m as unknown as [string, string, string, string, string?];
     const monthMap: Record<string, string> = {
@@ -179,7 +198,14 @@ export default function NouveauDevisPage() {
       }
       const data = await response.json();
       setNumero(data.numeroDevis);
-      setReferenceAffaire(data.referenceSession);
+      // Harmoniser "Notre référence" pour commencer par CI.DEV si le numéro le fait
+      let ref = data.referenceSession as string;
+      if (typeof data.numeroDevis === 'string' && data.numeroDevis.startsWith('CI.DEV')) {
+        if (!/^CI\.DEV/i.test(ref)) {
+          ref = `CI.DEV ${ref?.replace(/^CI\.DEV\s*/i, '')}`.trim();
+        }
+      }
+      setReferenceAffaire(ref);
     } catch (error) {
       console.error('Erreur lors de la génération des numéros:', error);
       setError('Erreur lors de la génération des numéros');
@@ -341,6 +367,12 @@ export default function NouveauDevisPage() {
                 <label className="block text-base font-semibold text-gray-900 mb-1">Date examen</label>
                 <input type="text" className="input text-gray-900" value={formatISOToFr(dateExamen)} readOnly />
               </div>
+              {demande?.entreprise && (
+                <div>
+                  <label className="block text-base font-semibold text-gray-900 mb-1">Entreprise</label>
+                  <input type="text" className="input text-gray-900" value={demande.entreprise} readOnly />
+                </div>
+              )}
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">SIRET / NIF</label>
                 <input type="text" className="input text-gray-900" value={siret} readOnly />

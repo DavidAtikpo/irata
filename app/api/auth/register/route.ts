@@ -14,6 +14,35 @@ export async function POST(req: Request) {
       if (existingUser) {
         return NextResponse.json({ message: 'Un compte avec cet email existe déjà.' }, { status: 409 });
       }
+      // Envoyer un email à l'admin dès la préinscription (étape 1)
+      try {
+        await sendEmail({
+          to: 'pmcides@gmail.com',
+          subject: 'Nouvelle préinscription (Étape 1) - CI.DES',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+              <h2 style="color: #dc2626; margin-bottom: 20px;">Préinscription reçue (Étape 1)</h2>
+              <p><strong>Un utilisateur a soumis le formulaire de préinscription.</strong></p>
+              <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                <h3 style="color: #374151; margin-bottom: 10px;">Informations soumises :</h3>
+                <p><strong>Nom :</strong> ${prenom || ''} ${nom || ''}</p>
+                <p><strong>Email :</strong> ${email || ''}</p>
+                <p><strong>Type d'inscription :</strong> ${(registrationType === 'entreprise') ? 'Entreprise' : 'Personnel'}</p>
+                ${registrationType === 'entreprise' && entreprise ? `<p><strong>Entreprise :</strong> ${entreprise}</p>` : ''}
+                <p><strong>Session choisie :</strong> ${session || 'Non spécifiée'}</p>
+                <p><strong>Message :</strong> ${message || 'Aucun message'}</p>
+                <p><strong>Date de soumission :</strong> ${new Date().toLocaleString('fr-FR')}</p>
+              </div>
+              <p style="margin-top: 20px; color: #6b7280; font-size: 14px;">
+                Cet email est envoyé à l'étape 1 pour permettre un suivi même si l'utilisateur n'achève pas la création du mot de passe.
+              </p>
+            </div>
+          `,
+        })
+      } catch (adminEmailStep1Error) {
+        console.error("Erreur lors de l'envoi de l'email admin (étape 1):", adminEmailStep1Error)
+        // On ne bloque pas le flux, on informe simplement côté API
+      }
       // L'email est disponible, on peut passer à l'étape du mot de passe
       return NextResponse.json({ message: 'Email disponible.' }, { status: 200 });
     }
@@ -69,7 +98,7 @@ export async function POST(req: Request) {
               <p>Votre compte a été créé avec succès sur notre plateforme IRATA.</p>
               <p>Vous pouvez maintenant vous connecter avec votre email <strong>${email}</strong> en cliquant sur le lien ci-dessous :</p>
               <div style="text-align: center; margin: 20px 0;">
-                <a href="https://irata.vercel.app/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+                <a href="https://www.a-finpart.com/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
                   Se connecter
                 </a>
               </div>

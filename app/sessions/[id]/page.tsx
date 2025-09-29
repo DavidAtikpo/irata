@@ -78,9 +78,10 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
             step: 1 
           }),
         });
-        const data = await response.json();
+        const data = await response.json().catch(() => ({} as any));
         if (!response.ok) {
-          throw new Error(data.message || 'Une erreur est survenue');
+          const msg = (data && (data.message || data.error)) || `Erreur ${response.status}`
+          throw new Error(msg)
         }
         if (data.userExists) {
           setAlreadyUser(true);
@@ -88,13 +89,24 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
           setStep(2);
         }
       } catch (err: any) {
-        setError(err.message);
+        console.error('Préinscription échouée:', err)
+        setError(typeof err?.message === 'string' ? err.message : 'Une erreur est survenue');
       }
     } else if (step === 2) {
-      if (Object.values(formData).some((field) => !field)) {
-        setError('Veuillez compléter tous les champs du formulaire de préinscription.');
-        setStep(1);
-        return;
+      // Exiger uniquement les champs nécessaires côté client
+      const requiredFields = registrationType === 'entreprise'
+        ? ['nom', 'prenom', 'email', 'entreprise']
+        : ['nom', 'prenom', 'email']
+
+      const missing = requiredFields.some((key) => !(formData as any)[key])
+      if (missing) {
+        setError("Veuillez renseigner au minimum prénom, nom, email" + (registrationType === 'entreprise' ? " et l'entreprise" : "") + ".")
+        setStep(1)
+        return
+      }
+      if (passwords.password.length < 6) {
+        setError('Le mot de passe doit contenir au moins 6 caractères')
+        return
       }
       if (passwords.password !== passwords.confirmPassword) {
         setError('Les mots de passe ne correspondent pas');
@@ -112,13 +124,15 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
             step: 2,
           }),
         });
-        const data = await response.json();
+        const data = await response.json().catch(() => ({} as any));
         if (!response.ok) {
-          throw new Error(data.message || 'Une erreur est survenue');
+          const msg = (data && (data.message || data.error)) || `Erreur ${response.status}`
+          throw new Error(msg)
         }
         setSuccess(true);
       } catch (err: any) {
-        setError(err.message);
+        console.error('Inscription échouée:', err)
+        setError(typeof err?.message === 'string' ? err.message : 'Une erreur est survenue');
       }
     }
   };
@@ -246,7 +260,19 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
             <input name="confirmPassword" type="password" required placeholder="Confirmer le mot de passe" className="border rounded px-3 py-2 text-sm" value={passwords.confirmPassword} onChange={handlePasswordChange} />
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm transition-colors duration-200" disabled={Object.values(formData).some((f) => !f) || !passwords.password || !passwords.confirmPassword || passwords.password !== passwords.confirmPassword}>Valider le mot de passe</button>
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm transition-colors duration-200"
+              disabled={
+                // Require only minimal fields for step 2
+                !(formData.nom && formData.prenom && formData.email && (registrationType === 'entreprise' ? !!formData.entreprise : true))
+                || !passwords.password
+                || !passwords.confirmPassword
+                || passwords.password !== passwords.confirmPassword
+              }
+            >
+              Valider le mot de passe
+            </button>
             <button type="button" onClick={onClose} className="text-gray-500 underline text-sm">Annuler</button>
           </div>
         </>
