@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       }
       // Envoyer un email à l'admin dès la préinscription (étape 1)
       try {
-        await sendEmail({
+        const result = await sendEmail({
           to: 'pmcides@gmail.com',
           subject: 'Nouvelle préinscription (Étape 1) - CI.DES',
           html: `
@@ -38,7 +38,11 @@ export async function POST(req: Request) {
               </p>
             </div>
           `,
+          replyTo: email,
         })
+        if (!(result as any)?.success) {
+          console.error('Echec envoi email admin étape 1:', (result as any)?.error)
+        }
       } catch (adminEmailStep1Error) {
         console.error("Erreur lors de l'envoi de l'email admin (étape 1):", adminEmailStep1Error)
         // On ne bloque pas le flux, on informe simplement côté API
