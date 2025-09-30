@@ -51,10 +51,11 @@ export async function GET(
       );
     }
 
-    // Add referenceAffaire to the response
+    // Add referenceAffaire and entreprise to the response
     const devisWithReference = {
       ...devis,
-      referenceAffaire
+      referenceAffaire,
+      entreprise: (devis as any).entreprise ?? null
     };
 
     return NextResponse.json(devisWithReference);

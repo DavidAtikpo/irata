@@ -184,7 +184,7 @@ export default function NouveauDevisPage() {
       // Générer les numéros automatiquement
       await generateNumbers(data.session);
       
-      // Pré-remplir les champs avec les informations du client
+      // Pré-remplir le client avec le nom complet (l'entreprise est affichée dans la section adresses)
       setClient(`${data.user.prenom} ${data.user.nom}`);
       setMail(data.user.email);
       setDesignation(`Formation Cordiste IRATA - ${data.session}`);
@@ -247,6 +247,7 @@ export default function NouveauDevisPage() {
       referenceAffaire,
       client,
       mail,
+      entreprise: demande?.entreprise || null,
       adresseLivraison,
       // dateLivraison,
       dateExamen,
@@ -339,16 +340,6 @@ export default function NouveauDevisPage() {
                 <label className="block text-base font-semibold text-gray-900 mb-1">Email</label>
                 <input type="email" className="input text-gray-900" value={mail} onChange={e => setMail(e.target.value)} required />
               </div>
-              {/* <div className="md:col-span-2">
-                <label className="block text-base font-semibold text-gray-900 mb-1">Date de formation</label>
-                <input
-                  type="text"
-                  className="input text-gray-900"
-                  value={sessionRangeFr || formatSessionFr(demande?.session || '')}
-                  readOnly
-                />
-                <p className="mt-1 text-xs text-gray-500">Affichage: du JJ/MM/AAAA au JJ/MM/AAAA</p>
-              </div> */}
             </div>
           </fieldset>
 

@@ -221,6 +221,32 @@ export default function MesDevisPage() {
           </p>
         </div>
 
+        {/* Global banner if any pending devis */}
+        {devis.some(d => d.statut === 'EN_ATTENTE') && (
+          <div className="mb-6 rounded-xl border-2 border-yellow-500 bg-yellow-100 p-5 shadow-lg ring-1 ring-yellow-500/30" role="alert">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start gap-3 text-yellow-900">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 flex-shrink-0 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+                <div>
+                  <p className="text-base sm:text-lg font-extrabold tracking-wide">ACTION REQUISE</p>
+                  <p className="mt-1 text-sm sm:text-base">Ouvrez votre devis et validez-le pour accéder au contrat. Sans validation, vous ne pourrez pas compléter votre inscription.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  const first = devis.find(d => d.statut === 'EN_ATTENTE');
+                  if (first) router.push(`/mes-devis/${first.id}`);
+                }}
+                className="inline-flex w-full sm:w-auto items-center justify-center px-4 py-2.5 text-sm sm:text-base font-bold rounded-md text-yellow-900 bg-yellow-300 hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-600"
+              >
+                Ouvrir et valider maintenant
+              </button>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="mb-4 rounded-md bg-red-50 p-4">
             <div className="flex">
@@ -288,13 +314,24 @@ export default function MesDevisPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="mt-3 sm:mt-2 flex flex-wrap justify-end gap-2">
+                      <div className="mt-3 sm:mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        {devis.statut === 'EN_ATTENTE' && (
+                          <div className="w-full sm:w-auto flex-1 rounded-md bg-yellow-50 border-2 border-yellow-500 px-3 py-2 text-xs sm:text-sm text-yellow-900 font-semibold shadow-sm border-l-8 border-l-yellow-600">
+                            Action requise: ouvrez le devis et validez-le pour continuer vers le contrat.
+                          </div>
+                        )}
+                        {devis.statut === 'VALIDE' && (
+                          <div className="w-full sm:w-auto flex-1 rounded-md bg-blue-50 border-2 border-blue-400 px-3 py-2 text-xs sm:text-sm text-blue-900 font-medium">
+                            Devis validé: ouvrez le contrat, lisez-le attentivement, remplissez les informations demandées et signez pour finaliser votre inscription.
+                          </div>
+                        )}
+                        <div className="flex flex-wrap justify-end gap-2">
                         <button
                           onClick={() => router.push(`/mes-devis/${devis.id}`)}
-                          className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                          className={`inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${devis.statut === 'EN_ATTENTE' ? 'text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500' : 'text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:ring-indigo-500'}`}
                         >
                           <EyeIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                          Voir
+                          {devis.statut === 'EN_ATTENTE' ? 'Ouvrir et valider' : 'Voir'}
                         </button>
                         <button
                           onClick={() => downloadDevis(devis.id, devis.numero)}
@@ -321,6 +358,7 @@ export default function MesDevisPage() {
                             PDF Contrat
                           </button>
                         )}
+                        </div>
                       </div>
                     </div>
                   </li>

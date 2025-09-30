@@ -100,6 +100,7 @@ model Devis {
   client           String
   mail             String
   mail2            String     @default("atikpododzi4@gmail.com")
+  entreprise       String?
   adresseLivraison String?
   dateLivraison    DateTime?
   dateExamen       DateTime?

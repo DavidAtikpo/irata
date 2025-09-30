@@ -141,6 +141,7 @@ export async function POST(req: Request) {
         referenceAffaire: referenceSession,
         client: body.client,
         mail: body.mail,
+        entreprise: body.entreprise ?? null,
         adresseLivraison: body.adresseLivraison,
         dateLivraison: body.dateLivraison ? new Date(body.dateLivraison) : null,
         dateExamen: body.dateExamen ? new Date(body.dateExamen) : null,
