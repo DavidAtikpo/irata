@@ -96,6 +96,7 @@ export default function AdminContratsPage() {
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [activeTypeTab, setActiveTypeTab] = useState<'all' | 'contrats' | 'conventions'>('all');
 
   // Statistiques
   const [stats, setStats] = useState({
@@ -120,7 +121,7 @@ export default function AdminContratsPage() {
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, dateFilter, searchTerm, sortField, sortOrder]);
+  }, [statusFilter, dateFilter, searchTerm, sortField, sortOrder, activeTypeTab]);
 
   const fetchContrats = async () => {
     try {
@@ -259,9 +260,20 @@ export default function AdminContratsPage() {
     return filtered;
   }, [contrats, statusFilter, dateFilter, searchTerm, sortField, sortOrder]);
 
+  // Filtrage par type (contrat vs convention)
+  const isConvention = (c: Contrat) => {
+    return Boolean(c.entrepriseNom) || Boolean(c.devis?.demande?.entreprise) || ((c.devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise');
+  };
+
+  const typeFilteredContrats = useMemo(() => {
+    if (activeTypeTab === 'conventions') return filteredAndSortedContrats.filter(isConvention);
+    if (activeTypeTab === 'contrats') return filteredAndSortedContrats.filter(c => !isConvention(c));
+    return filteredAndSortedContrats;
+  }, [filteredAndSortedContrats, activeTypeTab]);
+
   // Logique de pagination
-  const totalPages = Math.ceil(filteredAndSortedContrats.length / itemsPerPage);
-  const paginatedContrats = filteredAndSortedContrats.slice(
+  const totalPages = Math.ceil(typeFilteredContrats.length / itemsPerPage) || 1;
+  const paginatedContrats = typeFilteredContrats.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -395,9 +407,30 @@ export default function AdminContratsPage() {
           </div>
         </div>
 
-        {/* Filtres et recherche */}
+        {/* Filtres, onglets type et recherche */}
         <div className="bg-white shadow rounded-lg mb-6">
           <div className="px-6 py-4 border-b border-gray-200">
+            {/* Onglets contrat/convention */}
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => setActiveTypeTab('all')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTypeTab === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+              >
+                Tous
+              </button>
+              <button
+                onClick={() => setActiveTypeTab('contrats')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTypeTab === 'contrats' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+              >
+                Contrats
+              </button>
+              <button
+                onClick={() => setActiveTypeTab('conventions')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTypeTab === 'conventions' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+              >
+                Conventions
+              </button>
+            </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
               {/* Recherche */}
               <div className="relative flex-1 max-w-md">

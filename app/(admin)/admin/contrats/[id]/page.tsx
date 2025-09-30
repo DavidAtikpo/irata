@@ -63,6 +63,8 @@ interface Contrat {
   entrepriseVille?: string;
   entrepriseCodePostal?: string;
   entrepriseTelephone?: string;
+  // Signature admin (affichée après validation)
+  adminSignature?: string | null;
   user: User;
   devis: Devis;
 }
@@ -553,7 +555,7 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
               <p className="text-gray-700">Si une contestation ou un différend n'ont pu être réglés à l'amiable, le tribunal de Saintes sera compétent pour régler le litige.</p>
             </div>
 
-            <div className="space-y-4">
+          <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Signature du stagiaire</h3>
               <div className=" p-4 bg-gray-50">
                 {contrat.signature ? (
@@ -568,7 +570,22 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
               </div>
             </div>
 
+          {/* Signature administrateur affichée lorsque le contrat est validé */}
+          {contrat.adminSignature && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Signature de l'administrateur</h3>
+              <div className=" p-4 bg-gray-50 flex justify-end">
+                <img
+                  src={contrat.adminSignature}
+                  alt="Signature administrateur"
+                  className="max-w-xs h-10 bg-white"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Signature administrateur requise avant validation */}
+          {!contrat.adminSignature && (
           <div className="space-y-2 flex justify-end">
             <h3 className="text-base font-semibold text-gray-900">Signature de l'administrateur (obligatoire pour valider)</h3>
             <div className="p-2 bg-white w-fit ml-auto">
@@ -620,6 +637,7 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
               )}
             </div>
           </div>
+          )}
 
             {/* Gestion du statut */}
             <div className="border-t pt-6 mt-8">

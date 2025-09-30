@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from 'lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -12,6 +12,19 @@ export async function GET() {
         { message: 'Non autorisé' },
         { status: 401 }
       );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const statut = searchParams.get('statut');
+
+    // Si on demande seulement le comptage pour les notifications
+    if (statut === 'SIGNE') {
+      const count = await prisma.contrat.count({
+        where: {
+          statut: 'SIGNE'
+        }
+      });
+      return NextResponse.json(count);
     }
 
     const contrats = await prisma.contrat.findMany({

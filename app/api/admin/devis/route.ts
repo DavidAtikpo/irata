@@ -211,7 +211,7 @@ export async function POST(req: Request) {
   }
 } 
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -220,6 +220,19 @@ export async function GET() {
         { message: 'Non autorisé' },
         { status: 401 }
       );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const statut = searchParams.get('statut');
+
+    // Si on demande seulement le comptage pour les notifications
+    if (statut === 'EN_ATTENTE') {
+      const count = await prisma.devis.count({
+        where: {
+          statut: 'EN_ATTENTE'
+        }
+      });
+      return NextResponse.json(count);
     }
 
     const devis = await prisma.devis.findMany({

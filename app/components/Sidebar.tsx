@@ -23,36 +23,37 @@ import {
   ExclamationCircleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
+import { useAdminNotifications } from '@/hooks/useAdminNotifications';
 
 const navigation = [
-  { name: 'Tableau de bord', href: '/admin/dashboard', icon: HomeIcon },
-  { name: 'Demandes', href: '/admin/demandes', icon: ClipboardDocumentListIcon },
-  { name: 'Devis', href: '/admin/devis', icon: DocumentTextIcon },
-  { name: 'Contrats', href: '/admin/contrats', icon: DocumentDuplicateIcon },
-  { name: 'Trame facture', href: '/admin/facture-trame', icon: ReceiptPercentIcon },
-  { name: 'Envoyer documents', href: '/admin/documents', icon: FolderIcon },
-  { name: 'Convocation', href: '/admin/convocation', icon: ClipboardDocumentCheckIcon },
-  { name: 'fiche de présence', href: '/admin/liste-presence', icon: ClipboardDocumentCheckIcon },
-  { name: 'Gestion présence', href: '/admin/attendance', icon: ClipboardDocumentCheckIcon },
-  { name: 'Pré-job training', href: '/admin/pre-job-training', icon: ClipboardDocumentIcon },
-  { name: 'Job Planing', href: '/admin/job-planing', icon: ClipboardDocumentCheckIcon },
-  { name: 'Satisfaction stagiaire', href: '/admin/customer-satisfaction', icon: ClipboardDocumentIcon },
-  { name: 'Induction Stagiaires', href: '/admin/trainee-induction', icon: ClipboardDocumentCheckIcon },
-  { name: 'Signatures induction', href: '/admin/trainee-signatures', icon: ClipboardDocumentCheckIcon },
-  { name: 'Trainee Follow Up', href: '/admin/trainee-folow-up', icon: UserIcon },
-  { name: 'Irata-disclaimer', href: '/admin/irata-disclaimer', icon: ClipboardDocumentCheckIcon },
-  { name: 'Questionnaires', href: '/admin/formulaires-quotidiens', icon: ClipboardDocumentIcon },
-  { name: 'Inspections', href: '/admin/inspections', icon: ClipboardDocumentCheckIcon },
-  { name: 'Déclaration Médicale', href: '/admin/medical-declaration', icon: ClipboardDocumentCheckIcon },
-  { name: 'Non-conformités', href: '/admin/non-conformites', icon: ExclamationCircleIcon },
-  { name: 'Actions correctives', href: '/admin/actions-correctives', icon: CheckCircleIcon },
-  { name: 'Edge and Rope Management', href: '/admin/edge-and-rope-management', icon: ClipboardDocumentCheckIcon },
+  { name: 'Tableau de bord', href: '/admin/dashboard', icon: HomeIcon, showCount: false },
+  { name: 'Demandes', href: '/admin/demandes', icon: ClipboardDocumentListIcon, showCount: true, countKey: 'demandes' },
+  { name: 'Devis', href: '/admin/devis', icon: DocumentTextIcon, showCount: true, countKey: 'devisEnAttente' },
+  { name: 'Contrats', href: '/admin/contrats', icon: DocumentDuplicateIcon, showCount: true, countKey: 'contratsSignes' },
+  { name: 'Trame facture', href: '/admin/facture-trame', icon: ReceiptPercentIcon, showCount: false },
+  { name: 'Envoyer documents', href: '/admin/documents', icon: FolderIcon, showCount: false },
+  { name: 'Convocation', href: '/admin/convocation', icon: ClipboardDocumentCheckIcon, showCount: false },
+  { name: 'fiche de présence', href: '/admin/liste-presence', icon: ClipboardDocumentCheckIcon, showCount: false },
+  { name: 'Gestion présence', href: '/admin/attendance', icon: ClipboardDocumentCheckIcon, showCount: false },
+  { name: 'Pré-job training', href: '/admin/pre-job-training', icon: ClipboardDocumentIcon, showCount: false },
+  { name: 'Job Planing', href: '/admin/job-planing', icon: ClipboardDocumentCheckIcon, showCount: false },
+  { name: 'Satisfaction stagiaire', href: '/admin/customer-satisfaction', icon: ClipboardDocumentIcon, showCount: false },
+  { name: 'Induction Stagiaires', href: '/admin/trainee-induction', icon: ClipboardDocumentCheckIcon, showCount: false },
+  { name: 'Signatures induction', href: '/admin/trainee-signatures', icon: ClipboardDocumentCheckIcon, showCount: false },
+  { name: 'Trainee Follow Up', href: '/admin/trainee-folow-up', icon: UserIcon, showCount: false },
+  { name: 'Irata-disclaimer', href: '/admin/irata-disclaimer', icon: ClipboardDocumentCheckIcon, showCount: false },
+  { name: 'Questionnaires', href: '/admin/formulaires-quotidiens', icon: ClipboardDocumentIcon, showCount: false },
+  { name: 'Inspections', href: '/admin/inspections', icon: ClipboardDocumentCheckIcon, showCount: false },
+  { name: 'Déclaration Médicale', href: '/admin/medical-declaration', icon: ClipboardDocumentCheckIcon, showCount: false },
+  { name: 'Non-conformités', href: '/admin/non-conformites', icon: ExclamationCircleIcon, showCount: false },
+  { name: 'Actions correctives', href: '/admin/actions-correctives', icon: CheckCircleIcon, showCount: false },
+  { name: 'Edge and Rope Management', href: '/admin/edge-and-rope-management', icon: ClipboardDocumentCheckIcon, showCount: false },
 
-  { name: 'Formations', href: '/admin/formations', icon: AcademicCapIcon },
-  { name: 'Stagiaires', href: '/admin/utilisateurs', icon: UserGroupIcon },
-  { name: 'Financement Participatif', href: '/admin/financement-participatif', icon: CurrencyDollarIcon },
+  { name: 'Formations', href: '/admin/formations', icon: AcademicCapIcon, showCount: false },
+  { name: 'Stagiaires', href: '/admin/utilisateurs', icon: UserGroupIcon, showCount: false },
+  { name: 'Financement Participatif', href: '/admin/financement-participatif', icon: CurrencyDollarIcon, showCount: false },
 
-  { name: 'Paramètres', href: '/admin/parametres', icon: Cog6ToothIcon },
+  { name: 'Paramètres', href: '/admin/parametres', icon: Cog6ToothIcon, showCount: false },
 ];
 
 interface SidebarProps {
@@ -64,6 +65,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isCollapsed, onToggle, isMobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
+  const { counts, loading } = useAdminNotifications();
 
   return (
     <>
@@ -92,6 +94,7 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen = false, o
             <ul className="space-y-1">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
+                const count = item.showCount && item.countKey ? counts[item.countKey as keyof typeof counts] : 0;
                 return (
                   <li key={item.name}>
                     <Link
@@ -105,7 +108,14 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen = false, o
                         }
                       `}
                     >
-                      <item.icon className="h-6 w-6 shrink-0" />
+                      <div className="relative">
+                        <item.icon className="h-6 w-6 shrink-0" />
+                        {item.showCount && count > 0 && (
+                          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                            {count > 99 ? '99+' : count}
+                          </span>
+                        )}
+                      </div>
                       <span>{item.name}</span>
                     </Link>
                   </li>
@@ -153,6 +163,7 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen = false, o
                 <ul role="list" className="-mx-2 space-y-1">
                   {navigation.map((item) => {
                     const isActive = pathname === item.href;
+                    const count = item.showCount && item.countKey ? counts[item.countKey as keyof typeof counts] : 0;
                     return (
                       <li key={item.name}>
                         <Link
@@ -167,10 +178,17 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen = false, o
                           `}
                           title={isCollapsed ? item.name : undefined}
                         >
-                          <item.icon
-                            className="h-6 w-6 shrink-0"
-                            aria-hidden="true"
-                          />
+                          <div className="relative">
+                            <item.icon
+                              className="h-6 w-6 shrink-0"
+                              aria-hidden="true"
+                            />
+                            {item.showCount && count > 0 && (
+                              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                                {count > 99 ? '99+' : count}
+                              </span>
+                            )}
+                          </div>
                           {!isCollapsed && (
                             <span className="truncate">{item.name}</span>
                           )}
@@ -179,6 +197,11 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen = false, o
                           {isCollapsed && (
                             <div className="hidden lg:block absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap pointer-events-none border border-gray-700">
                               {item.name}
+                              {item.showCount && count > 0 && (
+                                <div className="mt-1 text-xs text-gray-300">
+                                  {count} en attente
+                                </div>
+                              )}
                               <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 border-l border-b border-gray-700 rotate-45"></div>
                             </div>
                           )}

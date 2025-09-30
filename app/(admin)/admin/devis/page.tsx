@@ -15,7 +15,11 @@ interface Devis {
   montant?: number;
   statut: string;
   createdAt?: string;
-  demande?: { user?: { prenom?: string; nom?: string } };
+  demande?: { 
+    user?: { prenom?: string; nom?: string };
+    entreprise?: string | null;
+    typeInscription?: string | null;
+  };
 }
 
 type FilterStatus = 'tous' | 'VALIDE' | 'INVALIDE' | 'BROUILLON' | 'EN_ATTENTE';
@@ -38,6 +42,7 @@ export default function DevisListPage() {
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [activeTab, setActiveTab] = useState<'tous' | 'en_attente' | 'valides'>('en_attente');
 
   // Utiliser le hook pour les notifications de devis
   useDevisNotifications();
@@ -97,12 +102,33 @@ export default function DevisListPage() {
     return filtered;
   }, [devis, statusFilter, searchTerm, sortField, sortOrder]);
 
+  // Items visibles selon l'onglet
+  const isConvention = (_d: Devis) => false; // inutile sans onglets type
+
+  const tabItems = useMemo(() => {
+    if (activeTab === 'en_attente') return filteredAndSortedDevis.filter(d => d.statut === 'EN_ATTENTE');
+    if (activeTab === 'valides') return filteredAndSortedDevis.filter(d => d.statut === 'VALIDE');
+    return filteredAndSortedDevis;
+  }, [filteredAndSortedDevis, activeTab]);
+
   // Logique de pagination
-  const totalPages = Math.ceil(filteredAndSortedDevis.length / itemsPerPage);
-  const paginatedDevis = filteredAndSortedDevis.slice(
+  const totalPages = Math.ceil(tabItems.length / itemsPerPage) || 1;
+  const paginatedDevis = tabItems.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // Index: compter le nombre de devis par utilisateur (clé: email si présent, sinon nom complet)
+  const devisCountByUser = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const d of devis) {
+      const key = (d.mail && d.mail.trim()) || (
+        d.demande?.user ? `${(d.demande.user.prenom ?? '').trim()} ${(d.demande.user.nom ?? '').trim()}`.trim() : ''
+      ) || '—';
+      map.set(key, (map.get(key) || 0) + 1);
+    }
+    return map;
+  }, [devis]);
 
   // Statistiques
   const stats = useMemo(() => {
@@ -128,7 +154,7 @@ export default function DevisListPage() {
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, searchTerm, sortField, sortOrder]);
+  }, [statusFilter, searchTerm, sortField, sortOrder, activeTab]);
 
 
 
@@ -326,9 +352,30 @@ export default function DevisListPage() {
           </div>
         )}
 
-        {/* Filtres et recherche */}
+        {/* Filtres, onglets et recherche */}
         <div className="bg-white shadow rounded-lg mb-6">
           <div className="px-6 py-4 border-b border-gray-200">
+            {/* Onglets statut devis + type */}
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => setActiveTab('tous')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTab === 'tous' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+              >
+                Tous
+              </button>
+              <button
+                onClick={() => setActiveTab('en_attente')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTab === 'en_attente' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+              >
+                En attente (user)
+              </button>
+              <button
+                onClick={() => setActiveTab('valides')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTab === 'valides' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+              >
+                Validés
+              </button>
+            </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
               {/* Recherche */}
               <div className="relative flex-1 max-w-md">
@@ -474,40 +521,75 @@ export default function DevisListPage() {
                 </div>
               </div>
 
-              {/* Lignes du tableau */}
-              <div className="divide-y divide-gray-200">
-                {paginatedDevis.map((d) => (
+              {/* Lignes groupées par Aujourd'hui / Hier / Date */}
+              {(() => {
+                const toDateOnly = (dt: Date) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+                const today = toDateOnly(new Date());
+                const yesterday = new Date(today);
+                yesterday.setDate(today.getDate() - 1);
+
+                const labelOf = (d: Date) => {
+                  const dOnly = toDateOnly(d);
+                  if (dOnly.getTime() === today.getTime()) return "Aujourd'hui";
+                  if (dOnly.getTime() === yesterday.getTime()) return 'Hier';
+                  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+                };
+
+                const groups = new Map<string, typeof paginatedDevis>();
+                for (const d of paginatedDevis) {
+                  const label = d.createdAt ? labelOf(new Date(d.createdAt)) : '—';
+                  if (!groups.has(label)) groups.set(label, []);
+                  groups.get(label)!.push(d);
+                }
+
+                const renderRow = (d: typeof paginatedDevis[number]) => (
                   <div key={d.id} className="px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
                     <div className="grid grid-cols-12 gap-4 items-center">
                       {/* Numéro */}
                       <div className="col-span-2">
                         <div className="text-sm font-medium text-gray-900">#{d.numero}</div>
                       </div>
-
                       {/* Date */}
                       <div className="col-span-1">
                         <div className="text-sm text-gray-900">
                           {d.createdAt ? new Date(d.createdAt).toLocaleDateString('fr-FR') : '-'}
                         </div>
                       </div>
-
                       {/* Client */}
                       <div className="col-span-2">
-                        <div className="text-sm text-gray-900">
-                          {d.demande?.user 
-                            ? `${d.demande.user.prenom ?? ''} ${d.demande.user.nom ?? ''}`.trim() || 'N/A'
-                            : d.client || 'N/A'
-                          }
+                        <div className="text-sm text-gray-900 flex items-center gap-2">
+                          <span>
+                            {d.demande?.user 
+                              ? `${d.demande.user.prenom ?? ''} ${d.demande.user.nom ?? ''}`.trim() || 'N/A'
+                              : d.client || 'N/A'
+                            }
+                          </span>
+                          {(() => {
+                            const key = (d.mail && d.mail.trim()) || (
+                              d.demande?.user ? `${(d.demande.user.prenom ?? '').trim()} ${(d.demande.user.nom ?? '').trim()}`.trim() : ''
+                            ) || '—';
+                            const count = devisCountByUser.get(key) || 0;
+                            if (count > 1) {
+                              return (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200" title="Nombre total de devis pour cet utilisateur">
+                                  {count} devis
+                                </span>
+                              );
+                            }
+                            return (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-50 text-green-700 border border-green-200" title="Premier devis pour cet utilisateur">
+                                1 devis
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
-
                       {/* Email */}
                       <div className="col-span-3">
                         <div className="text-sm text-gray-900 truncate" title={d.mail || 'N/A'}>
                           {d.mail || 'N/A'}
                         </div>
                       </div>
-
                       {/* Montant */}
                       <div className="col-span-1">
                         <div className="text-sm font-semibold text-gray-900">
@@ -517,14 +599,12 @@ export default function DevisListPage() {
                           }
                         </div>
                       </div>
-
                       {/* Statut */}
                       <div className="col-span-1">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(d.statut)}`}>
                           {d.statut || 'N/A'}
                         </span>
                       </div>
-
                       {/* Actions */}
                       <div className="col-span-2 text-center">
                         <div className="flex items-center justify-center space-x-2">
@@ -555,8 +635,23 @@ export default function DevisListPage() {
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+
+                return (
+                  <>
+                    {Array.from(groups.entries()).map(([label, items]) => (
+                      <div key={label} className="">
+                        <div className="bg-gray-100 px-6 py-2 border-b border-gray-200 mt-6">
+                          <h3 className="text-sm font-semibold text-gray-800">{label}</h3>
+                        </div>
+                        <div className="divide-y divide-gray-200">
+                          {items.map(renderRow)}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                );
+              })()}
 
               {/* Pagination */}
               {totalPages > 1 && (
