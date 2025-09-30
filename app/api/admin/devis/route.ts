@@ -176,6 +176,22 @@ export async function POST(req: Request) {
 
 
 
+    // Créer une notification pour l'utilisateur
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: demande.userId,
+          title: 'Nouveau devis créé',
+          message: `Un devis a été créé pour votre demande (${demande.session}). Numéro: ${devis.numero}.`,
+          type: 'devis',
+          category: 'new',
+          relatedId: devis.id,
+        },
+      });
+    } catch (e) {
+      console.error('Erreur création notification utilisateur (devis créé):', e);
+    }
+
     // Envoyer l'email de notification
     try {
       await sendEmail({
@@ -188,6 +204,11 @@ export async function POST(req: Request) {
           <p>Numéro du devis : ${devis.numero}</p>
           <p>Montant : ${devis.montant} €</p>
           <p>Vous pouvez consulter les détails de votre devis dans votre espace personnel.</p>
+          <div style="margin: 24px 0;">
+              <a href="https://www.a-finpart.com/mes-devis" style="background-color:#2563eb;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;font-weight:600" target="_blank" rel="noopener noreferrer">
+                Accéder à mon devis
+              </a>
+            </div>
           <p>Cordialement,<br>L'équipe CI.DES</p>
         `
       });

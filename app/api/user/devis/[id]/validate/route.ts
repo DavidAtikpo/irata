@@ -64,6 +64,22 @@ export async function POST(
       },
     });
 
+    // Créer une notification pour l'utilisateur: contrat disponible
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: updatedDevis.userId,
+          title: 'Contrat disponible',
+          message: `Votre contrat/convention pour la session ${updatedDevis.demande.session} est maintenant disponible.`,
+          type: 'contrat',
+          category: 'available',
+          relatedId: updatedDevis.id,
+        },
+      });
+    } catch (e) {
+      console.error('Erreur création notification utilisateur (contrat disponible):', e);
+    }
+
     // Envoyer l'email à l'utilisateur
     try {
       await sendEmail({
