@@ -36,6 +36,9 @@ interface Demande {
   createdAt: string;
   user: User;
   hasDevis?: boolean; // Nouveau champ pour indiquer si un devis existe
+  devisId?: string | null;
+  devisNumero?: string | null;
+  devisStatut?: 'EN_ATTENTE' | 'VALIDE' | 'REFUSE' | 'ANNULE' | null;
 }
 
 type FilterStatus = 'all' | 'EN_ATTENTE' | 'VALIDE' | 'REFUSE' | 'ANNULE';
@@ -46,7 +49,7 @@ const statusConfig = {
   EN_ATTENTE: {
     color: 'bg-yellow-500 text-white',
     icon: ClockIcon,
-    label: 'En attente'
+    label: 'Admin attente'
   },
   VALIDE: {
     color: 'bg-green-500 text-white',
@@ -83,6 +86,7 @@ export default function AdminDemandesPage() {
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [activeTab, setActiveTab] = useState<'demandes' | 'demandes_validees' | 'devis_crees' | 'devis_valides'>('demandes');
 
   // Logique de filtrage et tri
   const filteredAndSortedDemandes = useMemo(() => {
@@ -140,12 +144,76 @@ export default function AdminDemandesPage() {
     return filtered;
   }, [demandes, statusFilter, searchTerm, sortField, sortOrder]);
 
-  // Logique de pagination
-  const totalPages = Math.ceil(filteredAndSortedDemandes.length / itemsPerPage);
-  const paginatedDemandes = filteredAndSortedDemandes.slice(
+  // Logique de pagination (sera recalculée selon l'onglet actif)
+  // Placeholders, mis à jour après calcul tabItems
+  let totalPages = Math.ceil(filteredAndSortedDemandes.length / itemsPerPage);
+  let paginatedDemandes = filteredAndSortedDemandes.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // Groupes: 1) A valider (demande EN_ATTENTE, sans devis), 2) A créer devis (demande VALIDE, sans devis), 3) Devis en attente user (demande VALIDE, devis EN_ATTENTE), 4) Devis validé (demande VALIDE, devis VALIDE)
+  const grouped = useMemo(() => {
+    const groups: Record<string, Demande[]> = {
+      a_valider: [],
+      a_creer_devis: [],
+      devis_en_attente_user: [],
+      devis_valide: [],
+    };
+    for (const d of filteredAndSortedDemandes) {
+      if (!d.hasDevis) {
+        if (d.statut === 'EN_ATTENTE') groups.a_valider.push(d);
+        else if (d.statut === 'VALIDE') groups.a_creer_devis.push(d);
+      } else {
+        if (d.devisStatut === 'EN_ATTENTE') groups.devis_en_attente_user.push(d);
+        else if (d.devisStatut === 'VALIDE') groups.devis_valide.push(d);
+        else groups.devis_en_attente_user.push(d);
+      }
+    }
+    return groups;
+  }, [filteredAndSortedDemandes]);
+
+  // Eléments visibles selon onglet
+  const tabItems = useMemo(() => {
+    switch (activeTab) {
+      case 'demandes':
+        return grouped.a_valider;
+      case 'demandes_validees':
+        return grouped.a_creer_devis;
+      case 'devis_crees':
+        return grouped.devis_en_attente_user;
+      case 'devis_valides':
+      default:
+        return grouped.devis_valide;
+    }
+  }, [grouped, activeTab]);
+
+  // Pagination recalculée sur l'onglet actif
+  totalPages = Math.ceil(tabItems.length / itemsPerPage) || 1;
+  paginatedDemandes = tabItems.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Group by date bucket (Aujourd'hui, Hier, dd/mm/yyyy)
+  const bucketizeByDate = (items: Demande[]) => {
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const toKey = (d: Date) => d.toLocaleDateString('fr-FR');
+    const todayKey = toKey(today);
+    const yesterdayKey = toKey(yesterday);
+
+    const map = new Map<string, Demande[]>();
+    for (const it of items) {
+      const key = toKey(new Date(it.createdAt));
+      const label = key === todayKey ? "Aujourd'hui" : key === yesterdayKey ? 'Hier' : key;
+      if (!map.has(label)) map.set(label, []);
+      map.get(label)!.push(it);
+    }
+    return map;
+  };
 
   // Statistiques
   const stats = useMemo(() => {
@@ -162,7 +230,7 @@ export default function AdminDemandesPage() {
     if (status === 'unauthenticated') {
       router.push('/login');
     } else if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
-      router.push('/');
+      router.push('/login');
     } else if (status === 'authenticated') {
       fetchDemandes();
     }
@@ -369,6 +437,34 @@ export default function AdminDemandesPage() {
         {/* Filtres et recherche */}
         <div className="bg-white shadow rounded-lg mb-6">
           <div className="px-6 py-4 border-b border-gray-200">
+            {/* Onglets */}
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => setActiveTab('demandes')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTab === 'demandes' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+              >
+                Demandes
+              </button>
+              <button
+                onClick={() => setActiveTab('demandes_validees')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTab === 'demandes_validees' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+              >
+                Demandes validées
+              </button>
+              <button
+                onClick={() => setActiveTab('devis_crees')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTab === 'devis_crees' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+              >
+                Devis déjà créés
+              </button>
+              <button
+                onClick={() => setActiveTab('devis_valides')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTab === 'devis_valides' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+              >
+                Devis validés
+              </button>
+            </div>
+
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
               {/* Recherche */}
               <div className="relative flex-1 max-w-md">
@@ -509,7 +605,8 @@ export default function AdminDemandesPage() {
                       )}
                     </button>
                   </div>
-                  <div className="col-span-2">Message</div>
+                  <div className="col-span-1">Devis</div>
+                  <div className="col-span-1">Message</div>
                   <div className="col-span-2 text-center">Actions</div>
                 </div>
               </div>
@@ -554,8 +651,21 @@ export default function AdminDemandesPage() {
                         </span>
                       </div>
 
+                      {/* Devis */}
+                      <div className="col-span-1">
+                        {demande.hasDevis ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border bg-green-50 text-green-700 border-green-200" title="Un devis a été créé pour cette demande">
+                            Devis créé
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border bg-yellow-50 text-yellow-700 border-yellow-200" title="Aucun devis créé pour cette demande">
+                            User attente
+                          </span>
+                        )}
+                      </div>
+
                       {/* Message */}
-                      <div className="col-span-2">
+                      <div className="col-span-1">
                         <div className="text-sm text-gray-500 truncate" title={demande.message || 'Aucun message'}>
                           {demande.message || '-'}
                         </div>
@@ -625,6 +735,11 @@ export default function AdminDemandesPage() {
                                   <DocumentTextIcon className="h-3 w-3 mr-1" />
                                   Devis
                                 </button>
+                              )}
+                              {demande.hasDevis && (
+                                <span className="inline-flex items-center px-2 py-1 rounded text-[11px] font-medium bg-gray-100 text-gray-700 border border-gray-200" title="Un devis existe déjà pour cette demande">
+                                  Déjà créé
+                                </span>
                               )}
                             </>
                           )}
