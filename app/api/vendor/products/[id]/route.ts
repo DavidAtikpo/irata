@@ -25,7 +25,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { name, description, price, images, categoryId, inStock } = body
 
     // Update product
-    const product = await prisma.product.updateMany({
+    const product = await prisma.products.updateMany({
       where: {
         id,
       },
@@ -60,7 +60,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     // Delete product
-    const product = await prisma.product.deleteMany({
+    const product = await prisma.products.deleteMany({
       where: {
         id,
       },

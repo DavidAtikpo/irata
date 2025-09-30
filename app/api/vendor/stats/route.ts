@@ -37,25 +37,25 @@ export async function GET(request: NextRequest) {
       shippingStats,
     ] = await Promise.all([
       // Basic stats
-      prisma.product.count(),
-      prisma.order.count(),
-      prisma.order.findMany({
+      prisma.products.count(),
+      prisma.orders.count(),
+      prisma.orders.findMany({
         select: { totalAmount: true, createdAt: true },
       }),
-      prisma.order.count({
+      prisma.orders.count({
         where: {
           status: "PENDING",
         },
       }),
 
       // Extended stats
-      prisma.order.groupBy({
+      prisma.orders.groupBy({
         by: ["userId"],
         _count: { userId: true },
       }),
 
       // Reviews from order items - we'll calculate from existing orders for now
-      prisma.orderItem.findMany({
+      prisma.order_items.findMany({
         select: {
           id: true
         }
@@ -70,19 +70,19 @@ export async function GET(request: NextRequest) {
       Promise.resolve([]),
 
       // Top products by sales (orderItems count)
-      prisma.product.findMany({
+      prisma.products.findMany({
         select: {
           name: true,
-          orderItems: {
+          order_items: {
             select: { quantity: true },
           },
         },
-        orderBy: { orderItems: { _count: "desc" } },
+        orderBy: { order_items: { _count: "desc" } },
         take: 5,
       }),
 
       // Monthly orders for the last 12 months
-      prisma.order.findMany({
+      prisma.orders.findMany({
         where: {
           createdAt: {
             gte: new Date(new Date().setMonth(new Date().getMonth() - 12)),
@@ -92,12 +92,12 @@ export async function GET(request: NextRequest) {
       }),
 
       // Payment method stats - calculate from orders
-      prisma.order.findMany({
+      prisma.orders.findMany({
         select: { paymentMethod: true, status: true }
       }),
 
       // Shipping stats
-      prisma.order.groupBy({
+      prisma.orders.groupBy({
         by: ["status"],
         _count: { status: true },
       }),
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
     const topSellingProducts = products
       .map((product) => ({
         name: product.name,
-        sales: product.orderItems.reduce((sum, item) => sum + item.quantity, 0),
+        sales: product.order_items.reduce((sum, item) => sum + item.quantity, 0),
       }))
       .sort((a, b) => b.sales - a.sales)
       .slice(0, 5)

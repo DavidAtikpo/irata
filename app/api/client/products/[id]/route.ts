@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const product = await prisma.product.findUnique({
+    const product = await prisma.products.findUnique({
       where: { id },
       select: {
         id: true,
@@ -15,7 +15,7 @@ export async function GET(
         description: true,
         price: true,
         images: true,
-        category: {
+        categories: {
           select: {
             id: true,
             name: true,
@@ -45,7 +45,7 @@ export async function GET(
     }
 
     // Incrémenter les vues
-    await prisma.product.update({
+    await prisma.products.update({
       where: { id },
       data: { views: { increment: 1 } }
     })

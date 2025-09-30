@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
+import { randomUUID } from "crypto"
 
 const prisma = new PrismaClient()
 
@@ -23,19 +24,19 @@ export async function GET(request: NextRequest) {
     }
 
     const [orders, total] = await Promise.all([
-      prisma.order.findMany({
+      prisma.orders.findMany({
         where,
         include: {
-          user: {
+          User: {
             select: {
               nom: true,
               prenom: true,
               email: true,
             },
           },
-          orderItems: {
+          order_items: {
             include: {
-              product: {
+              products: {
                 select: {
                   name: true,
                   images: true,
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.order.count({ where }),
+      prisma.orders.count({ where }),
     ])
 
     return NextResponse.json({
@@ -73,10 +74,10 @@ export async function POST(request: NextRequest) {
 
     // Calculer le total
     let total = 0
-    const orderItems = []
+    const orderItems: { id: string; productId: string; quantity: number; unitPrice: number; totalPrice: number }[] = []
 
     for (const item of items) {
-      const product = await prisma.product.findUnique({
+      const product = await prisma.products.findUnique({
         where: { id: item.productId },
       })
 
@@ -92,9 +93,8 @@ export async function POST(request: NextRequest) {
       total += itemTotal
 
       orderItems.push({
-        product: {
-          connect: { id: item.productId }
-        },
+        id: randomUUID(),
+        productId: item.productId,
         quantity: item.quantity,
         unitPrice: product.price,
         totalPrice: itemTotal,
@@ -102,24 +102,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Créer la commande
-    const order = await prisma.order.create({
+    const order = await prisma.orders.create({
       data: {
+        id: randomUUID(),
         orderNumber: `ORD-${Date.now()}`,
-        user: {
+        User: {
           connect: { id: userId }
         },
         totalAmount: total,
         status: "PENDING",
+        updatedAt: new Date(),
         shippingAddress,
         paymentMethod,
-        orderItems: {
-          create: orderItems,
+        order_items: {
+          createMany: {
+            data: orderItems,
+          },
         },
       },
       include: {
-        orderItems: {
+        order_items: {
           include: {
-            product: true,
+            products: true,
           },
         },
       },
@@ -127,7 +131,7 @@ export async function POST(request: NextRequest) {
 
     // Mettre à jour le stock des produits
     for (const item of items) {
-      await prisma.product.update({
+      await prisma.products.update({
         where: { id: item.productId },
         data: {
           stock: {

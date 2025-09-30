@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     const [products, totalCount] = await Promise.all([
-      prisma.product.findMany({
+      prisma.products.findMany({
         where: whereConditions,
         orderBy: { createdAt: "desc" },
         skip,
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
           description: true,
           price: true,
           images: true,
-          category: {
+          categories: {
             select: {
               id: true,
               name: true,
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
           updatedAt: true,
         },
       }),
-      prisma.product.count({ where: whereConditions }),
+      prisma.products.count({ where: whereConditions }),
     ])
 
     return NextResponse.json({

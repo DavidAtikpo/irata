@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
+import { randomUUID } from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
     // Vérifier si des catégories existent déjà
-    const existingCategories = await prisma.category.findMany();
+    const existingCategories = await prisma.categories.findMany();
 
     if (existingCategories.length > 0) {
       return NextResponse.json({
@@ -38,8 +39,12 @@ export async function POST(request: NextRequest) {
     ];
 
     // Insérer les catégories
-    const createdCategories = await prisma.category.createMany({
-      data: categories
+    const createdCategories = await prisma.categories.createMany({
+      data: categories.map(category => ({
+        ...category,
+        id: randomUUID(),
+        updatedAt: new Date()
+      }))
     });
 
     return NextResponse.json({

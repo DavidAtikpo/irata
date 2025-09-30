@@ -22,8 +22,8 @@ export async function GET(
       return new NextResponse('Non authentifié', { status: 401 });
     }
 
-    if (session.user.role !== 'ADMIN') {
-      console.log('Erreur: Accès non autorisé - Rôle:', session.user.role);
+    if (session.user?.role !== 'ADMIN') {
+      console.log('Erreur: Accès non autorisé - Rôle:', session.user?.role);
       return new NextResponse('Accès non autorisé', { status: 403 });
     }
 

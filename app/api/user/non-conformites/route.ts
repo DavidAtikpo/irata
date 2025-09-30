@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }
@@ -21,10 +21,11 @@ export async function GET(req: NextRequest) {
     const gravite = searchParams.get('gravite');
 
     // Construire les filtres
+    const userId = session.user.id;
     const where: any = {
       OR: [
-        { detecteurId: session.user.id },
-        { responsableId: session.user.id }
+        { detecteurId: userId },
+        { responsableId: userId }
       ]
     };
 
@@ -111,12 +112,14 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }
       );
     }
+
+    const userId = session.user.id;
 
     const body = await req.json();
     const {
@@ -182,7 +185,7 @@ export async function POST(req: NextRequest) {
         type: type || 'AUTRE',
         gravite: gravite || 'MINEURE',
         lieu: lieu || null,
-        detecteurId: session.user.id,
+        detecteurId: userId,
         responsableId: responsableId || null,
         sessionId: sessionId || null,
         formulaireId: formulaireId || null,
@@ -263,7 +266,7 @@ export async function POST(req: NextRequest) {
         data: {
           userId: admin.id,
           title: 'Nouvelle non-conformité déclarée',
-          message: `Une nouvelle non-conformité "${titre}" a été déclarée par ${session.user.nom || session.user.email}.`,
+          message: `Une nouvelle non-conformité "${titre}" a été déclarée par ${session.user?.nom || session.user?.email}.`,
           type: 'non_conformite',
           category: 'new',
           relatedId: nonConformite.id

@@ -27,6 +27,7 @@ interface Devis {
   numero: string;
   montant: number;
   statut: string;
+  referenceAffaire?: string; // optional: may be fetched via raw SQL
   dateFormation?: string;
   demande: {
     session: string;

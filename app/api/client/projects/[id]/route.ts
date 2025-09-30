@@ -6,12 +6,12 @@ const prisma = new PrismaClient()
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const project = await prisma.project.findUnique({
+    const project = await prisma.projects.findUnique({
       where: { id },
       include: {
         investments: {
           include: {
-            user: {
+            User: {
               select: {
                 nom: true,
                 prenom: true,

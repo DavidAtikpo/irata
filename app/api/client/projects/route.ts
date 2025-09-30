@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
+import { randomUUID } from "crypto"
 
 const prisma = new PrismaClient()
 
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     const [projects, total] = await Promise.all([
-      prisma.project.findMany({
+      prisma.projects.findMany({
         where,
         include: {
           investments: {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.project.count({ where }),
+      prisma.projects.count({ where }),
     ])
 
     const projectsWithStats = projects.map((project) => {
@@ -71,8 +72,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { title, description, targetAmount, endDate, images, category } = body
 
-    const project = await prisma.project.create({
+    const project = await prisma.projects.create({
       data: {
+        id: randomUUID(),
         title,
         description,
         targetAmount: Number.parseFloat(targetAmount),
@@ -81,6 +83,7 @@ export async function POST(request: NextRequest) {
         images,
         category,
         status: "ACTIVE",
+        updatedAt: new Date(),
       },
     })
 
