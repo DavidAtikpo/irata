@@ -15,15 +15,8 @@ model User {
   password                      String
   nom                           String?
   prenom                        String?
-  // Client profile fields (e-commerce & crowdfunding)
-  phone                         String?
-  address                       String?
-  city                          String?
-  zipCode                       String?
-  country                       String?
   role                          Role                           @default(USER)
-  isActive                      Boolean                        @default(true)
-  niveau                        String?                       @default("1") // Niveau IRATA (1, 2, 3)
+  niveau                        String?                        @default("1") // Niveau IRATA (1, 2, 3)
   createdAt                     DateTime                       @default(now())
   updatedAt                     DateTime                       @updatedAt
   passwordResetToken            String?                        @unique
@@ -57,11 +50,6 @@ model User {
   traineeSignatures             TraineeSignature?
   trainingSessions              TrainingSession[]              @relation("TrainingSessionTrainees")
   
-  // E-commerce and crowdfunding relations
-  orders                        Order[]
-  investments                   Investment[]
-  cartItems                     CartItem[]
-  reviews                       Review[]
 
   @@schema("webirata")
 }
@@ -86,7 +74,7 @@ model Demande {
   session         String
   message         String?
   commentaire     String?
-  typeInscription String?  @default("personnel")
+  typeInscription String?
   entreprise      String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -101,10 +89,9 @@ model Devis {
   demandeId        String     @unique
   userId           String
   numero           String
-  referenceAffaire String?
   client           String
   mail             String
-  mail2            String     @default("pm@cides.tf")
+  mail2            String     @default("atikpododzi4@gmail.com")
   adresseLivraison String?
   dateLivraison    DateTime?
   dateExamen       DateTime?
@@ -119,6 +106,7 @@ model Devis {
   prixUnitaire     Float
   tva              Float
   exoneration      String?
+  referenceAffaire String?
   datePriseEffet   DateTime?
   montant          Float
   iban             String?
@@ -143,6 +131,8 @@ model Contrat {
   updatedAt     DateTime  @updatedAt
   devisId       String    @unique
   userId        String
+  numero        String?   @unique
+  reference     String?
   nom           String
   prenom        String
   adresse       String
@@ -808,7 +798,6 @@ model HistoriqueItem {
 
 enum Role {
   USER
-  CLIENT
   ADMIN
   GESTIONNAIRE
   CONTRIBUTOR
@@ -966,226 +955,5 @@ enum ActionCorrectiveEfficacite {
   PARTIELLEMENT_EFFICACE
   INEFFICACE
 
-  @@schema("webirata")
-}
-
-// pour la parti ecommerce
-
-// Modèle catégorie de produits
-model Category {
-  id          String    @id @default(cuid())
-  name        String
-  description String?
-  image       String?
-  slug        String    @unique
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // Relations
-  products Product[]
-
-  @@map("categories")
-  @@schema("webirata")
-}
-
-// Modèle produit (matériaux cordiste)
-model Product {
-  id          String        @id @default(cuid())
-  name        String
-  description String
-  price       Float
-  stock       Int           @default(0)
-  images      String[]
-  sku         String        @unique
-  weight      Float?
-  dimensions  String?
-  brand       String?
-  tags        String[]
-  views       Int           @default(0)
-  status      ProductStatus @default(ACTIVE)
-  categoryId  String
-  // Nouveaux champs pour équipements de sécurité
-  standards               String?
-  ceMarking              Boolean @default(false)
-  serialNumber           String?
-  technicalNotice        String?
-  conformityCertificate  String?
-  controlCertificate     String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  // Relations
-  category    Category     @relation(fields: [categoryId], references: [id])
-  orderItems  OrderItem[]
-  cartItems   CartItem[]
-  reviews     Review[]
-
-  @@map("products")
-  @@schema("webirata")
-}
-
-enum ProductStatus {
-  ACTIVE
-  INACTIVE
-  OUT_OF_STOCK
-
-  @@schema("webirata")
-}
-
-// Modèle panier
-model CartItem {
-  id        String   @id @default(cuid())
-  userId    String
-  productId String
-  quantity  Int      @default(1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, productId])
-  @@map("cart_items")
-  @@schema("webirata")
-}
-
-// Modèle commande
-model Order {
-  id            String      @id @default(cuid())
-  orderNumber   String      @unique
-  userId        String
-  status        OrderStatus @default(PENDING)
-  totalAmount   Float
-  shippingCost  Float       @default(0)
-  taxAmount     Float       @default(0)
-  paymentMethod String?
-  paymentStatus PaymentStatus @default(PENDING)
-  shippingAddress Json
-  billingAddress  Json?
-  trackingNumber  String?
-  notes         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  // Relations
-  user       User        @relation(fields: [userId], references: [id])
-  orderItems OrderItem[]
-
-  @@map("orders")
-  @@schema("webirata")
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
-  RETURNED
-
-  @@schema("webirata")
-}
-
-
-// Modèle article de commande
-model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  unitPrice Float
-  totalPrice Float
-  createdAt DateTime @default(now())
-
-  // Relations
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
-
-  @@map("order_items")
-  @@schema("webirata")
-}
-
-// Modèle projet de financement participatif
-model Project {
-  id              String        @id @default(cuid())
-  title           String
-  description     String
-  shortDescription String?
-  images          String[]
-  targetAmount    Float
-  currentAmount   Float         @default(0)
-  startDate       DateTime
-  endDate         DateTime
-  status          ProjectStatus @default(DRAFT)
-  category        String
-  location        String?
-  rewards         Json[]        // Récompenses pour les investisseurs
-  updates         Json[]        // Mises à jour du projet
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  // Relations
-  investments Investment[]
-
-  @@map("projects")
-  @@schema("webirata")
-}
-
-enum ProjectStatus {
-  DRAFT
-  ACTIVE
-  FUNDED
-  COMPLETED
-  CANCELLED
-
-  @@schema("webirata")
-}
-
-// Modèle investissement
-model Investment {
-  id        String           @id @default(cuid())
-  userId    String
-  projectId String
-  amount    Float
-  reward    Json?            // Récompense choisie
-  status    InvestmentStatus @default(PENDING)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-
-  // Relations
-  user    User    @relation(fields: [userId], references: [id])
-  project Project @relation(fields: [projectId], references: [id])
-
-  @@map("investments")
-  @@schema("webirata")
-}
-
-enum InvestmentStatus {
-  PENDING
-  CONFIRMED
-  COMPLETED
-  REFUNDED
-
-  @@schema("webirata")
-}
-
-// Modèle avis produit
-model Review {
-  id        String   @id @default(cuid())
-  userId    String
-  productId String
-  rating    Int      // 1-5 étoiles
-  comment   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-
-  @@unique([userId, productId])
-  @@map("reviews")
   @@schema("webirata")
 }

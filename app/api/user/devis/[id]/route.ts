@@ -30,6 +30,12 @@ export async function GET(
       }
     });
 
+    // Fetch referenceAffaire using raw SQL since it's not in the Prisma schema yet
+    const referenceAffaireResult = await prisma.$queryRaw`
+      SELECT "referenceAffaire" FROM "webirata"."Devis" WHERE id = ${id}
+    `;
+    const referenceAffaire = (referenceAffaireResult as any[])[0]?.referenceAffaire || null;
+
     if (!devis) {
       return NextResponse.json(
         { message: 'Devis non trouvé' },
@@ -45,7 +51,13 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(devis);
+    // Add referenceAffaire to the response
+    const devisWithReference = {
+      ...devis,
+      referenceAffaire
+    };
+
+    return NextResponse.json(devisWithReference);
   } catch (error) {
     console.error('Erreur lors de la récupération du devis:', error);
     return NextResponse.json(

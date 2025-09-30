@@ -43,6 +43,8 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.nom && user.prenom ? `${user.prenom} ${user.nom}` : user.email,
             role: user.role,
+            nom: user.nom ?? null,
+            prenom: user.prenom ?? null,
           }
         } catch (error) {
           console.error('Auth error:', error)
@@ -57,7 +59,31 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
+        token.role = (user as any).role
+        // Propager nom/prenom dans le token pour usage côté client
+        token.nom = (user as any).nom ?? token.nom
+        token.prenom = (user as any).prenom ?? token.prenom
+        token.email = (user as any).email ?? token.email
+      }
+      // Si nom/prenom absents, tenter de les récupérer depuis la base via id ou email
+      if (!('nom' in token) || (token as any).nom == null || !('prenom' in token) || (token as any).prenom == null) {
+        try {
+          let dbUser = null as any;
+          if (token.sub) {
+            dbUser = await prisma.user.findUnique({ where: { id: token.sub } });
+          }
+          if (!dbUser && token.email) {
+            dbUser = await prisma.user.findUnique({ where: { email: token.email as string } });
+          }
+          if (dbUser) {
+            (token as any).nom = dbUser.nom ?? null;
+            (token as any).prenom = dbUser.prenom ?? null;
+            token.email = token.email ?? dbUser.email;
+            token.role = token.role ?? (dbUser as any).role;
+          }
+        } catch (e) {
+          // noop
+        }
       }
       return token
     },
@@ -65,6 +91,9 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         session.user.id = token.sub!
         session.user.role = token.role as string
+        // Exposer nom/prenom dans la session (en élargissant le type à l'exécution)
+        ;(session.user as any).nom = (token as any).nom
+        ;(session.user as any).prenom = (token as any).prenom
       }
       return session
     }

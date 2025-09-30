@@ -274,18 +274,18 @@ export default function CorrectionsFormulairesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 sm:py-8 px-2 sm:px-4 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* En-tête */}
-        <div className="mb-4 sm:mb-8">
+        <div className="mb-8">
           <button
             onClick={() => router.back()}
             className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200 mb-4"
           >
             ← Retour aux formulaires
           </button>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Mes Corrections</h1>
-          <p className="mt-2 text-sm sm:text-base text-gray-600">
+          <h1 className="text-3xl font-bold text-gray-900">Mes Corrections</h1>
+          <p className="mt-2 text-gray-600">
             Consultez les corrections de vos formulaires quotidiens
           </p>
         </div>
@@ -307,177 +307,113 @@ export default function CorrectionsFormulairesPage() {
 
         {/* Liste des corrections */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-            <h3 className="text-base sm:text-lg font-medium text-gray-900">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">
               Corrections reçues ({corrections.length})
             </h3>
           </div>
           
           {corrections.length === 0 ? (
-            <div className="text-center py-8 sm:py-12">
-              <DocumentTextIcon className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
+            <div className="text-center py-12">
+              <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune correction</h3>
-              <p className="mt-1 text-xs sm:text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-500">
                 Vous n'avez pas encore reçu de corrections pour vos formulaires
               </p>
             </div>
           ) : (
-            <>
-              {/* Version mobile - cartes */}
-              <div className="block sm:hidden">
-                <div className="divide-y divide-gray-200">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Formulaire
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date de soumission
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date de correction
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Décision
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Score
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Correcteur
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
                   {corrections.map((correction) => (
-                    <div key={correction.id} className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-gray-900 truncate">
+                    <tr key={correction.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
                             {correction.formulaireTitre}
-                          </h4>
-                          <p className="text-xs text-gray-500 mt-1">
+                          </div>
+                          <div className="text-sm text-gray-500">
                             {correction.formulaireSession}
-                          </p>
+                          </div>
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(correction.dateReponse).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(correction.dateCorrection).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          {getDecisionIcon(correction.decision)}
+                          <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDecisionColor(correction.decision)}`}>
+                            {getDecisionText(correction.decision)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {(correction as any).scoreAffiche ? `${(correction as any).scoreAffiche}/20` : (correction.score ? `${correction.score}/20` : '-')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {correction.adminNom}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handleViewDetails(correction)}
-                          className="ml-2 p-1 text-indigo-600 hover:text-indigo-900 rounded"
+                          className="text-indigo-600 hover:text-indigo-900 p-1 rounded"
                           title="Voir les détails"
                         >
                           <EyeIcon className="h-4 w-4" />
                         </button>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <span className="text-gray-500">Soumis:</span>
-                          <div className="text-gray-900">
-                            {new Date(correction.dateReponse).toLocaleDateString('fr-FR')}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Corrigé:</span>
-                          <div className="text-gray-900">
-                            {new Date(correction.dateCorrection).toLocaleDateString('fr-FR')}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Décision:</span>
-                          <div className="flex items-center mt-1">
-                            {getDecisionIcon(correction.decision)}
-                            <span className={`ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getDecisionColor(correction.decision)}`}>
-                              {getDecisionText(correction.decision)}
-                            </span>
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Score:</span>
-                          <div className="text-gray-900">
-                            {(correction as any).scoreAffiche ? `${(correction as any).scoreAffiche}/20` : (correction.score ? `${correction.score}/20` : '-')}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-3 text-xs text-gray-500">
-                        Correcteur: {correction.adminNom}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Version desktop - tableau */}
-              <div className="hidden sm:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Formulaire
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date de soumission
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date de correction
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Décision
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Score
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Correcteur
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {corrections.map((correction) => (
-                      <tr key={correction.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {correction.formulaireTitre}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {correction.formulaireSession}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(correction.dateReponse).toLocaleDateString('fr-FR')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(correction.dateCorrection).toLocaleDateString('fr-FR')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            {getDecisionIcon(correction.decision)}
-                            <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDecisionColor(correction.decision)}`}>
-                              {getDecisionText(correction.decision)}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {(correction as any).scoreAffiche ? `${(correction as any).scoreAffiche}/20` : (correction.score ? `${correction.score}/20` : '-')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {correction.adminNom}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => handleViewDetails(correction)}
-                            className="text-indigo-600 hover:text-indigo-900 p-1 rounded"
-                            title="Voir les détails"
-                          >
-                            <EyeIcon className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
         {/* Modal des détails de la correction */}
         {showDetailsModal && selectedCorrection && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
               {/* Header de la modal */}
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-                <div className="flex items-center space-x-3 flex-1 min-w-0">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+                <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
                     {getDecisionIcon(selectedCorrection.decision)}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-base sm:text-lg font-medium text-gray-900 truncate">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">
                       Détails de la correction
                     </h3>
-                    <p className="text-xs sm:text-sm text-gray-500 truncate">
+                    <p className="text-sm text-gray-500">
                       {selectedCorrection.formulaireTitre} - {selectedCorrection.formulaireSession}
                     </p>
                   </div>
@@ -487,45 +423,45 @@ export default function CorrectionsFormulairesPage() {
                     setShowDetailsModal(false);
                     setSelectedCorrection(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-200 transition-colors flex-shrink-0 ml-2"
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-200 transition-colors"
                 >
                   <span className="sr-only">Fermer</span>
-                  <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
               {/* Contenu de la modal */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-                <div className="space-y-4 sm:space-y-6">
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-6">
                   {/* Informations générales */}
-                  <div className="bg-blue-50 rounded-lg p-3 sm:p-4">
+                  <div className="bg-blue-50 rounded-lg p-4">
                     <h4 className="text-sm font-medium text-blue-900 mb-2">Informations de la correction</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <dt className="text-xs sm:text-sm font-medium text-gray-500">Date de soumission</dt>
-                        <dd className="text-xs sm:text-sm text-gray-900">
+                        <dt className="text-sm font-medium text-gray-500">Date de soumission</dt>
+                        <dd className="text-sm text-gray-900">
                           {new Date(selectedCorrection.dateReponse).toLocaleDateString('fr-FR')}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-xs sm:text-sm font-medium text-gray-500">Date de correction</dt>
-                        <dd className="text-xs sm:text-sm text-gray-900">
+                        <dt className="text-sm font-medium text-gray-500">Date de correction</dt>
+                        <dd className="text-sm text-gray-900">
                           {new Date(selectedCorrection.dateCorrection).toLocaleDateString('fr-FR')}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-xs sm:text-sm font-medium text-gray-500">Décision</dt>
-                        <dd className="text-xs sm:text-sm text-gray-900">
+                        <dt className="text-sm font-medium text-gray-500">Décision</dt>
+                        <dd className="text-sm text-gray-900">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDecisionColor(selectedCorrection.decision)}`}>
                             {getDecisionText(selectedCorrection.decision)}
                           </span>
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-xs sm:text-sm font-medium text-gray-500">Correcteur</dt>
-                        <dd className="text-xs sm:text-sm text-gray-900">{selectedCorrection.adminNom}</dd>
+                        <dt className="text-sm font-medium text-gray-500">Correcteur</dt>
+                        <dd className="text-sm text-gray-900">{selectedCorrection.adminNom}</dd>
                       </div>
                     </div>
                   </div>
@@ -605,17 +541,17 @@ export default function CorrectionsFormulairesPage() {
               </div>
 
               {/* Footer de la modal */}
-              <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
-                <div className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                <div className="text-sm text-gray-500">
                   Correction reçue le {new Date(selectedCorrection.dateCorrection).toLocaleDateString('fr-FR')}
                 </div>
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                <div className="flex space-x-3">
                   <button
                     onClick={() => {
                       setShowDetailsModal(false);
                       setSelectedCorrection(null);
                     }}
-                    className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                   >
                     Fermer
                   </button>
@@ -626,7 +562,7 @@ export default function CorrectionsFormulairesPage() {
                         setSelectedCorrection(null);
                         router.push(`/formulaires-quotidiens?correction=${selectedCorrection.reponseId}`);
                       }}
-                      className="w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                     >
                       Revoir le formulaire
                     </button>

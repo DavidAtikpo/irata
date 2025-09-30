@@ -406,12 +406,7 @@ export default function NouveauDevisPage() {
                 <label className="block text-base font-semibold text-gray-900 mb-1">Centre Irata</label>
                 <input type="text" className="input text-gray-900" value={suiviPar} readOnly />
               </div>
-              <div className="md:col-span-3">
-                <label className="block text-base font-semibold text-gray-900 mb-1">Exonération</label>
-                <div className="border rounded px-3 py-2 bg-white text-gray-900 whitespace-pre-wrap">
-                  {exoneration}
-                </div>
-              </div>
+
             </div>
             <fieldset className=" mb-6 bg-gray-50">
             <legend className="text-xl font-bold text-gray-900 px-2">--</legend>
@@ -420,15 +415,19 @@ export default function NouveauDevisPage() {
                 <label className="block text-base font-semibold text-gray-900 mb-1">TVA (%)</label>
                 <input type="number" className="input text-gray-900" value={tva} onChange={e => setTva(e.target.value)} />
               </div>
-              <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Exonération</label>
-                <input type="text" className="input text-gray-900" value={exoneration} onChange={e => setExoneration(e.target.value)} />
-              </div>
+
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">Date d'emission du devis</label>
                 <input type="date" className="input text-gray-900" value={datePriseEffet} onChange={e => setDatePriseEffet(e.target.value)} />
               </div>
             </div>
+
+            <div className="md:col-span-3">
+                <label className="block text-base font-semibold text-gray-900 mb-1">Exonération</label>
+                <div className="border rounded px-3 py-2 bg-white text-gray-900 whitespace-pre-wrap">
+                  {exoneration}
+                </div>
+              </div>
           </fieldset>
           </fieldset>
 

@@ -61,7 +61,7 @@ export default function NonConformiteDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchNonConformite();
+      fetchNonConformite();
   }, [nonConformiteId]);
 
   const fetchNonConformite = async () => {
@@ -162,7 +162,7 @@ export default function NonConformiteDetailPage() {
           <div className="flex items-center gap-4">
             <div className="flex-shrink-0">
               <img src="/logo.png" alt="CI.DES Logo" className="w-16 h-20 object-contain" />
-            </div>
+                  </div>
             <div className="flex-1">
               <table className="w-full border-collapse text-xs">
                 <tbody>
@@ -180,8 +180,8 @@ export default function NonConformiteDetailPage() {
                   </tr>
                 </tbody>
               </table>
-            </div>
-          </div>
+                  </div>
+                    </div>
         </header>
 
         {/* Buttons */}
@@ -216,23 +216,23 @@ export default function NonConformiteDetailPage() {
                     {nonConformite.categoryOfAnomaly?.includes('no conformity') ? '✓' : ''}
                   </span>
                   no conformity (deviation / baseline)
-                </div>
+                    </div>
                 <div className="text-xs flex items-start gap-2">
                   <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
                     {nonConformite.categoryOfAnomaly?.includes('claim') ? '✓' : ''}
                   </span>
                   claim (customer satisfaction incident)
-                </div>
+                    </div>
                 <div className="text-xs flex items-start gap-2">
                   <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
                     {nonConformite.categoryOfAnomaly?.includes('malfunction') ? '✓' : ''}
                   </span>
                   malfunction (internal anomaly)
-                </div>
+                    </div>
                 <div className="w-full h-24 border border-gray-200 rounded p-2 bg-gray-50 text-sm">
                   {nonConformite.anomalyDescription || nonConformite.description || '—'}
-                </div>
-                
+                  </div>
+
                 {/* Affichage des documents/photos uploadés */}
                 {nonConformite.qualityManagerObservation && (
                   <div className="mt-2">
@@ -266,12 +266,12 @@ export default function NonConformiteDetailPage() {
                             >
                               {isImage ? 'Voir' : 'Télécharger'}
                             </a>
-                          </div>
+                  </div>
                         );
                       })}
                     </div>
                   </div>
-                )}
+              )}
               </div>
             </div>
           </section>
@@ -293,41 +293,41 @@ export default function NonConformiteDetailPage() {
                   Reported
                 </div>
               </div>
-            </div>
-
+              </div>
+              
             <div className="col-span-2">
               <div className="text-sm font-medium mb-2">3. Treatment proposal</div>
               <div className="border border-gray-300 rounded p-3 grid grid-cols-2 gap-2">
                 <div className="text-xs flex items-start gap-2">
                   <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
                     {nonConformite.correctiveActionDescription?.includes('Acceptance') ? '✓' : ''}
-                  </span>
+                          </span>
                   Acceptance as is with exemption
                 </div>
                 <div className="text-xs flex items-start gap-2">
                   <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
                     {nonConformite.correctiveActionDescription?.includes('repair') ? '✓' : ''}
-                  </span>
+                          </span>
                   Trade-in or repair authorization
-                </div>
+                        </div>
                 <div className="text-xs flex items-start gap-2">
                   <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
                     {nonConformite.correctiveActionDescription?.includes('Adaptation') ? '✓' : ''}
                   </span>
                   Adaptation, modification
-                </div>
+                      </div>
                 <div className="text-xs flex items-start gap-2">
                   <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
                     {nonConformite.correctiveActionDescription?.includes('Return') ? '✓' : ''}
                   </span>
                   Return to supplier
-                </div>
+                      </div>
                 <div className="text-xs flex items-start gap-2">
                   <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
                     {nonConformite.correctiveActionDescription?.includes('Downgrading') ? '✓' : ''}
                   </span>
                   Downgrading
-                </div>
+                    </div>
                 <div className="text-xs flex items-start gap-2">
                   <span className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">
                     {nonConformite.correctiveActionDescription?.includes('Put Off') ? '✓' : ''}
@@ -342,18 +342,18 @@ export default function NonConformiteDetailPage() {
             <div className="col-span-2">
               <div className="text-sm font-medium mb-2">Possible Witness</div>
               <div className="w-full border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.collaboratorInCharge || '—'}</div>
-            </div>
+                      </div>
             <div>
               <div className="text-sm font-medium mb-2">Visa</div>
               <div className="w-full border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.recipientSignature || '—'}</div>
-            </div>
+                    </div>
           </section>
 
           <section className="mb-4">
             <div className="text-sm font-medium mb-2">4. Curative action (repair) already performed</div>
             <div className="w-full h-24 border border-gray-200 rounded p-2 bg-gray-50 text-sm">
               {nonConformite.immediateCurativeAction || '—'}
-            </div>
+                </div>
           </section>
 
           <section className="mb-4">
@@ -367,14 +367,14 @@ export default function NonConformiteDetailPage() {
           <section className="mb-4">
             <div className="text-sm font-medium mb-2">6. Registration and Monitoring (Digital Form)</div>
             <div className="grid grid-cols-3 gap-4">
-              <div>
+                <div>
                 <div className="text-xs">Manager QHSE / Technical Authority :</div>
                 <div className="w-full border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.recipientName || '—'}</div>
-              </div>
-              <div>
+                </div>
+                  <div>
                 <div className="text-xs">Date :</div>
                 <div className="w-full border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.recipientDate ? new Date(nonConformite.recipientDate).toLocaleDateString('fr-FR') : '—'}</div>
-              </div>
+                  </div>
               <div>
                 <div className="text-xs">Visa :</div>
                 <div className="w-full border border-gray-300 rounded px-2 py-1 bg-gray-50">{nonConformite.qualityManagerSignature || '—'}</div>
@@ -389,14 +389,14 @@ export default function NonConformiteDetailPage() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="font-medium">Créé par :</span> {nonConformite.detecteur?.nom && nonConformite.detecteur?.prenom ? `${nonConformite.detecteur.prenom} ${nonConformite.detecteur.nom}` : nonConformite.detecteur?.email || 'Utilisateur inconnu'}
-              </div>
+                </div>
               <div>
                 <span className="font-medium">Date de création :</span> {new Date(nonConformite.createdAt).toLocaleString('fr-FR')}
               </div>
               <div>
                 <span className="font-medium">Statut :</span> {nonConformite.statut}
-              </div>
-            </div>
+          </div>
+        </div>
           </section>
 
           {/* Footer with company info */}
