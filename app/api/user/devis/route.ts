@@ -26,7 +26,22 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json(devis);
+    // Add referenceAffaire to each devis using raw SQL
+    const devisWithReferences = await Promise.all(
+      devis.map(async (devis) => {
+        const referenceAffaireResult = await prisma.$queryRaw`
+          SELECT "referenceAffaire" FROM "webirata"."Devis" WHERE id = ${devis.id}
+        `;
+        const referenceAffaire = (referenceAffaireResult as any[])[0]?.referenceAffaire || null;
+        
+        return {
+          ...devis,
+          referenceAffaire
+        };
+      })
+    );
+
+    return NextResponse.json(devisWithReferences);
   } catch (error) {
     console.error('Erreur lors de la récupération des devis:', error);
     return NextResponse.json(

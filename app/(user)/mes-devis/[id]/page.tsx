@@ -36,6 +36,7 @@ interface Devis {
   prixUnitaire: number;
   tva: number;
   exoneration: string | null;
+  referenceAffaire?: string | null;
   datePriseEffet: string | null;
   montant: number;
   iban: string | null;
@@ -293,16 +294,16 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
           {/* En-tête remplacée par HeaderInfoTable ci-dessus */}
 
           {/* Section Informations principales */}
-          <fieldset className="border p-4 sm:p-6 rounded mb-4 sm:mb-6 bg-gray-50">
-            <legend className="text-lg sm:text-xl font-bold text-gray-900 px-2">Informations principales</legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <fieldset className="border p-6 rounded mb-6 bg-gray-50">
+            <legend className="text-xl font-bold text-gray-900 px-2">Informations principales</legend>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm sm:text-base font-semibold text-gray-900 mb-1">Numéro de facture</label>
+                <label className="block text-sm sm:text-base font-semibold text-gray-900 mb-1">Numéro</label>
                 <input type="text" className="input text-sm sm:text-base text-gray-900" value={devis.numero} readOnly />
               </div>
               <div>
-                <label className="block text-sm sm:text-base font-semibold text-gray-900 mb-1">Notre référence Affaire</label>
-                <input type="text" className="input text-sm sm:text-base text-gray-900" value="CI.DES" readOnly />
+                <label className="block text-sm sm:text-base font-semibold text-gray-900 mb-1">Notre référence</label>
+                <input type="text" className="input text-sm sm:text-base text-gray-900" value={devis.referenceAffaire || '-'} readOnly />
               </div>
               <div>
                 <label className="block text-sm sm:text-base font-semibold text-gray-900 mb-1">Client</label>
@@ -316,12 +317,12 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
           </fieldset>
 
           {/* Section Adresses */}
-          <fieldset className="border p-4 sm:p-6 rounded mb-4 sm:mb-6 bg-gray-50">
-            <legend className="text-lg sm:text-xl font-bold text-gray-900 px-2">Adresses</legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <fieldset className="border p-6 rounded mb-6 bg-gray-50">
+            <legend className="text-xl font-bold text-gray-900 px-2">Adresses</legend>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">Adresse de facturation</label>
-                <input type="text" className="input text-gray-900" value="CI.DES BP212 Votokondji TOGO" readOnly />
+                <input type="text" className="input text-gray-900" value="CI.DES chez chagneau 17270 BORESSE-ET-MARTRON France" readOnly />
               </div>
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">Adresse de livraison</label>
@@ -349,49 +350,49 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
           </fieldset>
 
           {/* Section Intervention */}
-          <fieldset className="border p-4 sm:p-6 rounded mb-4 sm:mb-6 bg-gray-50">
-            <legend className="text-lg sm:text-xl font-bold text-gray-900 px-2">Informations administratives</legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <fieldset className="border p-6 rounded mb-6 bg-gray-50">
+            <legend className="text-xl font-bold text-gray-900 px-2">Informations administratives</legend>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">Numéro NDA</label>
                 <input type="text" className="input text-gray-900" value={devis.numNDA || ''} readOnly />
               </div>
-              {/* <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Date formation</label>
-                <div className="input text-gray-900 bg-gray-100">{devis.dateFormation ? new Date(devis.dateFormation).toLocaleDateString() : '-'}</div>
-
-              </div> */}
               <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Suivi par</label>
+                <label className="block text-base font-semibold text-gray-900 mb-1">Centre Irata</label>
                 <input type="text" className="input text-gray-900" value={devis.suiviPar || ''} readOnly />
               </div>
+
             </div>
-            <fieldset className="p-4 sm:p-6 mb-4 sm:mb-6 bg-gray-50">
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <fieldset className="mb-6 bg-gray-50">
+            <legend className="text-xl font-bold text-gray-900 px-2">--</legend>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">TVA (%)</label>
                 <input type="number" className="input text-gray-900" value={devis.tva} readOnly />
               </div>
+              
+
               <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Exonération</label>
-                <input type="text" className="input text-gray-900" value={devis.exoneration || ''} readOnly />
-              </div>
-              <div>
-                <label className="block text-base font-semibold text-gray-900 mb-1">Date de prise d'effet</label>
-                <div className="input text-gray-900 bg-gray-100">{devis.datePriseEffet ? new Date(devis.datePriseEffet).toLocaleDateString() : '-'}</div>
+                <label className="block text-base font-semibold text-gray-900 mb-1">Date d'emission du devis</label>
+                <div className="input text-gray-900 bg-gray-100">{devis.datePriseEffet ? new Date(devis.datePriseEffet).toLocaleDateString('fr-FR') : '-'}</div>
               </div>
             </div>
-          </fieldset>
+            <div className="md:col-span-3">
+                <label className="block text-base font-semibold text-gray-900 mb-1">Exonération</label>
+                <div className="border rounded px-3 py-2 bg-white text-gray-900 whitespace-pre-wrap">
+                  {devis.exoneration || '-'}
+                </div>
+              </div>
 
+          </fieldset>
           </fieldset>
 
           {/* Section Désignation (tableau) */}
-          <fieldset className="border p-4 sm:p-6 rounded mb-4 sm:mb-6 bg-gray-50">
-            <legend className="text-lg sm:text-xl font-bold text-gray-900 px-2">Désignation</legend>
+          <fieldset className="border p-6 rounded mb-6 bg-gray-50">
+            <legend className="text-xl font-bold text-gray-900 px-2">Désignation</legend>
             
             {/* Version mobile - Cards */}
-            <div className="block sm:hidden">
+              <div className="block sm:hidden">
               <div className="bg-white rounded border p-3 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-gray-700">Désignation:</span>
@@ -407,18 +408,18 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-gray-700">Prix unitaire HT:</span>
-                  <span className="text-gray-900">{devis.prixUnitaire} €</span>
+                    <span className="text-gray-900">{Number(devis.prixUnitaire).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
                 <div className="flex justify-between items-center border-t pt-2">
                   <span className="font-bold text-gray-900">Prix total HT:</span>
-                  <span className="font-bold text-gray-900 text-lg">{devis.montant} €</span>
+                    <span className="font-bold text-gray-900 text-lg">{Number(devis.montant).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                 </div>
               </div>
             </div>
 
             {/* Version desktop - Tableau */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="min-w-full border text-sm sm:text-base text-gray-900">
+            <div className="overflow-x-auto">
+              <table className="min-w-full border text-base text-gray-900">
                 <thead>
                   <tr className="bg-gray-200">
                     <th className="border px-2 py-1">Désignation</th>
@@ -440,10 +441,20 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
                       <input type="text" className="input w-full" value={devis.unite} readOnly />
                     </td>
                     <td className="border px-2 py-1">
-                      <input type="number" className="input w-full" value={devis.prixUnitaire} readOnly />
+                      <input
+                        type="text"
+                        className="input w-full"
+                        value={`${Number(devis.prixUnitaire).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`}
+                        readOnly
+                      />
                     </td>
                     <td className="border px-2 py-1">
-                      <input type="number" className="input w-full" value={devis.montant} readOnly />
+                      <input
+                        type="text"
+                        className="input w-full"
+                        value={`${Number(devis.montant).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`}
+                        readOnly
+                      />
                     </td>
                   </tr>
                 </tbody>
@@ -454,9 +465,9 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
 
 
           {/* Section Informations bancaires */}
-          <fieldset className="border p-4 sm:p-6 rounded mb-4 sm:mb-6 bg-gray-50">
-            <legend className="text-lg sm:text-xl font-bold text-gray-900 px-2">Informations bancaires</legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <fieldset className="border p-6 rounded mb-6 bg-gray-50">
+            <legend className="text-xl font-bold text-gray-900 px-2">Informations bancaires</legend>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">IBAN</label>
                 <input type="text" className="input text-gray-900" value={devis.iban || ''} readOnly />
@@ -477,9 +488,9 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
           </fieldset>
 
           {/* Section Signature */}
-          <fieldset className="mb-4 sm:mb-6 bg-gray-50">
-            {/* <legend className="text-lg sm:text-xl font-bold text-gray-900 px-2">Signature</legend> */}
-            <div className="grid grid-cols-1 gap-4 sm:gap-6">
+          <fieldset className="border p-6 rounded mb-6 bg-gray-50">
+            <legend className="text-xl font-bold text-gray-900 px-2">Signature</legend>
+            <div className="grid grid-cols-1 gap-6">
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-2">Signature: Administration</label>
                 {devis.signature && devis.signature.startsWith('data:image/') ? (
@@ -505,8 +516,8 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
           </fieldset>
 
           {/* Section Documents */}
-          <fieldset className="p-4 sm:p-6 mb-4 sm:mb-6 bg-gray-50">
-            <legend className="text-lg sm:text-xl font-bold text-gray-900 px-2">Documents</legend>
+          <fieldset className="border p-6 rounded mb-6 bg-gray-50">
+            <legend className="text-xl font-bold text-gray-900 px-2">Documents</legend>
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -543,8 +554,8 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
 
           {/* Section Validation */}
           {devis.statut === 'EN_ATTENTE' && (
-            <fieldset className="p-4 sm:p-6 mb-4 sm:mb-6 bg-gray-50">
-              <legend className="text-lg sm:text-xl font-bold text-gray-900 px-2">Validation du devis</legend>
+            <fieldset className="border p-6 rounded mb-6 bg-gray-50">
+              <legend className="text-xl font-bold text-gray-900 px-2">Validation du devis</legend>
               <div className="space-y-4">
                 <div className="flex items-start">
                   <div className="flex items-center h-5">

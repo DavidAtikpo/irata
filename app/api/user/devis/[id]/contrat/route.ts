@@ -82,6 +82,45 @@ export async function POST(
     }
 
     console.log('Tentative de création/mise à jour du contrat...');
+
+    // Si un contrat existe déjà, on conserve ses numéros
+    const existing = await prisma.contrat.findUnique({ where: { devisId: id } });
+    let numeroComputed = (existing as any)?.numero || '';
+    let referenceComputed = (existing as any)?.reference || '';
+    
+    // Si pas de contrat existant, générer les numéros définitifs
+    if (!existing || !numeroComputed) {
+      const now = new Date();
+      const yy = String(now.getFullYear()).slice(-2);
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const isEntreprise = devis.demande?.typeInscription?.toLowerCase() === 'entreprise' || !!devis.demande?.entreprise;
+      const prefix = isEntreprise ? 'CI.ICE' : 'CI.ICP';
+
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+      const yearCount = await prisma.contrat.count({
+        where: { createdAt: { gte: startOfYear, lt: endOfYear } },
+      });
+      
+      // Compter les contrats pour cette session spécifique
+      const sessionCount = await prisma.contrat.count({
+        where: {
+          devis: {
+            demande: {
+              session: devis.demande?.session
+            }
+          }
+        }
+      });
+      
+      const nthYear = String(yearCount + 1).padStart(3, '0');
+      const nthSession = String(sessionCount + 1).padStart(3, '0');
+      numeroComputed = `${prefix} ${yy}${mm}${nthYear}`;
+      referenceComputed = `${prefix} ${yy}${mm} ${nthSession}`;
+    }
     console.log('Données pour contrat:', {
       devisId: id,
       userId: session.user.id,
@@ -107,6 +146,8 @@ export async function POST(
         dateSignature: new Date(),
         signature: signature || '',
         statut: 'SIGNE',
+        ...(numeroComputed && { numero: numeroComputed }),
+        ...(referenceComputed && { reference: referenceComputed }),
       },
       create: {
         devisId: id,
@@ -118,6 +159,8 @@ export async function POST(
         dateSignature: new Date(),
         signature: signature || '',
         statut: 'SIGNE',
+        ...(numeroComputed && { numero: numeroComputed }),
+        ...(referenceComputed && { reference: referenceComputed }),
       },
     });
 

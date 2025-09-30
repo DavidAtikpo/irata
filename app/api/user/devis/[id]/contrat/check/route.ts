@@ -24,11 +24,6 @@ export async function GET(
       where: {
         devisId: id,
       },
-      select: {
-        id: true,
-        statut: true,
-        dateSignature: true,
-      },
     });
 
     return NextResponse.json({
@@ -37,6 +32,8 @@ export async function GET(
         id: contrat.id,
         statut: contrat.statut,
         dateSignature: contrat.dateSignature,
+        numero: (contrat as any).numero || null,
+        reference: (contrat as any).reference || null,
       } : null,
     });
 

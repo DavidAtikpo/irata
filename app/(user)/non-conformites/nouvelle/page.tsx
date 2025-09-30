@@ -195,24 +195,24 @@ export default function NoConformityForm() {
   };
 
   return (
-    <div className="p-2 sm:p-4 lg:p-6 bg-gray-50 min-h-screen font-sans text-gray-800">
-        <div className="p-2 sm:p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-gray-100">
-          <div className="text-xs sm:text-sm text-gray-600">Remplissez les champs puis cliquez sur "Enregistrer".</div>
+    <div className="p-6 bg-gray-50 min-h-screen font-sans text-gray-800">
+        <div className="p-4 flex justify-between items-center gap-2 border-b border-gray-100">
+          <div className="text-sm text-gray-600">Remplissez les champs puis cliquez sur "Enregistrer".</div>
             <button
             type="button"
             onClick={handlePrint}
-            className="w-full sm:w-auto px-3 py-1 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700 print:hidden"
+            className="px-3 py-1 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700 print:hidden"
             >
             Imprimer / Exporter
             </button>
         </div>
 
-      <div className="max-w-6xl mx-auto bg-white shadow-md border border-gray-200 print:border-none print:shadow-none p-4 sm:p-8 lg:p-15">
+      <div className="max-w-6xl mx-auto bg-white shadow-md border border-gray-200 print:border-none print:shadow-none p-15">
         {/* Header */}
-        <header className="p-2 sm:p-4 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+        <header className="p-4 border-b border-gray-200">
+          <div className="flex items-center gap-4">
             <div className="flex-shrink-0">
-              <img src="/logo.png" alt="CI.DES Logo" className="w-12 h-16 sm:w-16 sm:h-20 object-contain" />
+              <img src="/logo.png" alt="CI.DES Logo" className="w-16 h-20 object-contain" />
             </div>
             <div className="flex-1">
               <table className="w-full border-collapse text-xs">
@@ -235,20 +235,20 @@ export default function NoConformityForm() {
           </div>
         </header>
         {/* Form body */}
-        <main className="p-2 sm:p-4 lg:p-6">
-          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-3 sm:mb-4">
-            <label className="col-span-1 text-xs sm:text-sm font-medium">Theme</label>
-            <input className="col-span-1 sm:col-span-2 lg:col-span-2 border border-gray-300 rounded px-2 py-1 text-xs sm:text-sm" placeholder="Thème" value={theme} onChange={(e)=>setTheme(e.target.value)} />
+        <main className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+          <section className="grid grid-cols-5 gap-4 mb-4">
+            <label className="col-span-1 text-sm font-medium">Theme</label>
+            <input className="col-span-2 border border-gray-300 rounded px-2 py-1" placeholder="Thème" value={theme} onChange={(e)=>setTheme(e.target.value)} />
 
-            <label className="col-span-1 text-xs sm:text-sm font-medium">Localisation / Site</label>
-            <input className="col-span-1 border border-gray-300 rounded px-2 py-1 text-xs sm:text-sm" placeholder="Site" value={site} onChange={(e)=>setSite(e.target.value)} />
+            <label className="col-span-1 text-sm font-medium">Localisation / Site</label>
+            <input className="col-span-1 border border-gray-300 rounded px-2 py-1" placeholder="Site" value={site} onChange={(e)=>setSite(e.target.value)} />
 
-            <label className="col-span-1 text-xs sm:text-sm font-medium">Date of discovery</label>
-            <input type="date" className="col-span-1 border border-gray-300 rounded px-2 py-1 text-xs sm:text-sm" value={dateDiscovery} onChange={(e)=>setDateDiscovery(e.target.value)} />
+            <label className="col-span-1 text-sm font-medium">Date of discovery</label>
+            <input type="date" className="col-span-1 border border-gray-300 rounded px-2 py-1" value={dateDiscovery} onChange={(e)=>setDateDiscovery(e.target.value)} />
 
-            <label className="col-span-1 text-xs sm:text-sm font-medium">Issuer</label>
-            <input className="col-span-1 sm:col-span-2 lg:col-span-2 border border-gray-300 rounded px-2 py-1 text-xs sm:text-sm" placeholder="Émetteur" value={issuer} onChange={(e)=>setIssuer(e.target.value)} />
+            <label className="col-span-1 text-sm font-medium">Issuer</label>
+            <input className="col-span-2 border border-gray-300 rounded px-2 py-1" placeholder="Émetteur" value={issuer} onChange={(e)=>setIssuer(e.target.value)} />
 
           </section>
 
@@ -265,12 +265,12 @@ export default function NoConformityForm() {
                 </label>
                 <label className="text-xs flex items-start gap-2">
                   <input type="checkbox" checked={flagMalfunction} onChange={(e)=>setFlagMalfunction(e.target.checked)} /> malfunction (internal anomaly)
-                </label>
+              </label>
                 <textarea className="w-full h-24 border border-gray-200 rounded p-2" placeholder="Détails / Référence de documents (standards, spécifications, photos...)" value={descriptionText} onChange={(e)=>setDescriptionText(e.target.value)} />
                 
                 {/* Upload de fichiers */}
                 <div className="mt-2">
-                  <input
+              <input
                     type="file"
                     multiple
                     accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
@@ -286,7 +286,7 @@ export default function NoConformityForm() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     Ajouter des documents/photos
-                  </label>
+              </label>
                   
                   {/* Liste des fichiers uploadés */}
                   {uploadedFiles.length > 0 && (
@@ -310,14 +310,14 @@ export default function NoConformityForm() {
                           </button>
                         </div>
                       ))}
-                    </div>
-                  )}
-                </div>
               </div>
+                )}
+              </div>
+            </div>
             </div>
           </section>
 
-          <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
+          <section className="grid grid-cols-3 gap-4 mb-4">
             <div>
               <div className="text-sm font-medium mb-2">2. Consequences</div>
               <div className="border border-gray-300 rounded p-3 space-y-2">
@@ -326,9 +326,9 @@ export default function NoConformityForm() {
               </div>
             </div>
 
-            <div className="col-span-1 sm:col-span-2">
+            <div className="col-span-2">
               <div className="text-sm font-medium mb-2">3. Treatment proposal</div>
-              <div className="border border-gray-300 rounded p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="border border-gray-300 rounded p-3 grid grid-cols-2 gap-2">
                 <label className="text-xs flex items-start gap-2"><input type="checkbox" checked={tpAcceptance} onChange={(e)=>setTpAcceptance(e.target.checked)} /> Acceptance as is with exemption</label>
                 <label className="text-xs flex items-start gap-2"><input type="checkbox" checked={tpRepair} onChange={(e)=>setTpRepair(e.target.checked)} /> Trade-in or repair authorization</label>
                 <label className="text-xs flex items-start gap-2"><input type="checkbox" checked={tpAdaptation} onChange={(e)=>setTpAdaptation(e.target.checked)} /> Adaptation, modification</label>
@@ -339,14 +339,14 @@ export default function NoConformityForm() {
             </div>
           </section>
 
-          <section className="mb-3 sm:mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            <div className="col-span-1 sm:col-span-2">
+          <section className="mb-4 grid grid-cols-3 gap-4">
+            <div className="col-span-2">
               <div className="text-sm font-medium mb-2">Possible Witness</div>
-              <input className="w-full border border-gray-300 rounded px-2 py-1 text-xs sm:text-sm" placeholder="Nom" value={witnessName} onChange={(e)=>setWitnessName(e.target.value)} />
+              <input className="w-full border border-gray-300 rounded px-2 py-1" placeholder="Nom" value={witnessName} onChange={(e)=>setWitnessName(e.target.value)} />
             </div>
             <div>
               <div className="text-sm font-medium mb-2">Visa</div>
-              <input className="w-full border border-gray-300 rounded px-2 py-1 text-xs sm:text-sm" placeholder="Visa" value={witnessVisa} onChange={(e)=>setWitnessVisa(e.target.value)} />
+              <input className="w-full border border-gray-300 rounded px-2 py-1" placeholder="Visa" value={witnessVisa} onChange={(e)=>setWitnessVisa(e.target.value)} />
             </div>
           </section>
 
@@ -360,33 +360,33 @@ export default function NoConformityForm() {
             <textarea className="w-full h-32 border border-gray-200 rounded p-2" value={correctiveProposal} onChange={(e)=>setCorrectiveProposal(e.target.value)} />
           </section>
 
-          <section className="mb-3 sm:mb-4">
+          <section className="mb-4">
             <div className="text-sm font-medium mb-2">6. Registration and Monitoring (Digital Form)</div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <div className="text-xs">Manager QHSE / Technical Authority :</div>
-                <input className="w-full border border-gray-300 rounded px-2 py-1 text-xs sm:text-sm" placeholder="Nom" value={regManager} onChange={(e)=>setRegManager(e.target.value)} />
+                <input className="w-full border border-gray-300 rounded px-2 py-1" placeholder="Nom" value={regManager} onChange={(e)=>setRegManager(e.target.value)} />
               </div>
               <div>
                 <div className="text-xs">Date :</div>
-                <input type="date" className="w-full border border-gray-300 rounded px-2 py-1 text-xs sm:text-sm" value={regDate} onChange={(e)=>setRegDate(e.target.value)} />
+                <input type="date" className="w-full border border-gray-300 rounded px-2 py-1" value={regDate} onChange={(e)=>setRegDate(e.target.value)} />
               </div>
               <div>
                 <div className="text-xs">Visa :</div>
-                <input className="w-full border border-gray-300 rounded px-2 py-1 text-xs sm:text-sm" placeholder="Visa" value={regVisa} onChange={(e)=>setRegVisa(e.target.value)} />
+                <input className="w-full border border-gray-300 rounded px-2 py-1" placeholder="Visa" value={regVisa} onChange={(e)=>setRegVisa(e.target.value)} />
               </div>
             </div>
           </section>
 
-          <div className="flex flex-col sm:flex-row justify-end gap-3 print:hidden">
-            <button type="submit" disabled={submitting} className="w-full sm:w-auto px-3 py-1 rounded-md bg-green-600 text-white text-sm hover:bg-green-700 disabled:opacity-50">
+          <div className="flex justify-end gap-3 print:hidden">
+            <button type="submit" disabled={submitting} className="px-3 py-1 rounded-md bg-green-600 text-white text-sm hover:bg-green-700 disabled:opacity-50">
               {submitting ? 'Enregistrement...' : 'Enregistrer'}
               </button>
             </div>
           </form>
 
           {/* Footer with company info (mimic original) */}
-          <footer className="text-xs text-gray-600 border-t border-gray-100 pt-3 sm:pt-4 pb-4 sm:pb-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <footer className="text-xs text-gray-600 border-t border-gray-100 pt-4 pb-6 grid grid-cols-3 gap-4">
             <div>
               CI.DES sasu<br />Capital 2 500 Euros<br />SIRET: 87840789900011
             </div>

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/lib/auth';
+import { authOptions } from '@/lib/auth';
 import { PrismaClient } from '@prisma/client';
-import { isTextAnswerCorrect, isNumberAnswerCorrect } from 'lib/fuzzy-matching';
 
 const prisma = new PrismaClient();
 
@@ -99,12 +98,13 @@ export async function GET(request: NextRequest) {
           } else if (isText) {
             const userAnswer = Array.isArray(userResponse) ? userResponse[0] : userResponse;
             const correctAnswer = correctAnswers[0];
-            correcte = isTextAnswerCorrect(userAnswer || '', correctAnswer || '');
+            correcte = userAnswer?.toLowerCase().trim() === correctAnswer?.toLowerCase().trim();
             pointsObtenus = correcte ? pointsValue : 0;
           } else if (normalizedType === 'number') {
-            const userAnswer = Array.isArray(userResponse) ? userResponse[0] : userResponse;
-            const correctAnswer = correctAnswers[0];
-            correcte = isNumberAnswerCorrect(userAnswer, correctAnswer);
+            const userAnswer = parseFloat(Array.isArray(userResponse) ? userResponse[0] : userResponse);
+            const correctAnswer = parseFloat(correctAnswers[0]);
+            const tolerance = 0.01;
+            correcte = !isNaN(userAnswer) && !isNaN(correctAnswer) && Math.abs(userAnswer - correctAnswer) <= tolerance;
             pointsObtenus = correcte ? pointsValue : 0;
           } else if (isVraiFaux) {
             const userAnswer = (Array.isArray(userResponse) ? userResponse[0] : userResponse)?.toString().toLowerCase().trim();
@@ -172,12 +172,13 @@ export async function GET(request: NextRequest) {
             } else if (isText) {
               const userAnswer = Array.isArray(userResponse) ? userResponse[0] : userResponse;
               const correctAnswer = correctAnswers[0];
-              correcte = isTextAnswerCorrect(userAnswer || '', correctAnswer || '');
+              correcte = userAnswer?.toLowerCase().trim() === correctAnswer?.toLowerCase().trim();
               pointsObtenus = correcte ? pointsValue : 0;
             } else if (normalizedType === 'number') {
-              const userAnswer = Array.isArray(userResponse) ? userResponse[0] : userResponse;
-              const correctAnswer = correctAnswers[0];
-              correcte = isNumberAnswerCorrect(userAnswer, correctAnswer);
+              const userAnswer = parseFloat(Array.isArray(userResponse) ? userResponse[0] : userResponse);
+              const correctAnswer = parseFloat(correctAnswers[0]);
+              const tolerance = 0.01;
+              correcte = !isNaN(userAnswer) && !isNaN(correctAnswer) && Math.abs(userAnswer - correctAnswer) <= tolerance;
               pointsObtenus = correcte ? pointsValue : 0;
             } else if (isVraiFaux) {
               const userAnswer = (Array.isArray(userResponse) ? userResponse[0] : userResponse)?.toString().toLowerCase().trim();

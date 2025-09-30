@@ -27,7 +27,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     } else if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
       console.log('❌ Utilisateur authentifié mais pas admin, redirection vers /');
       console.log('🔍 Rôle de l\'utilisateur:', session?.user?.role);
-      router.push('/');
+      router.push('/login');
     } else if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
       console.log('✅ Utilisateur admin authentifié');
     }
@@ -77,7 +77,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!session || session?.user?.role !== 'ADMIN') {
+  if (!session || session.user?.role !== 'ADMIN') {
     return null;
   }
 

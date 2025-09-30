@@ -15,6 +15,12 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [devisId, setDevisId] = useState<string>('');
+  const [contratInfo, setContratInfo] = useState<any>(null);
+  const [pays, setPays] = useState('');
+  const [codePostal, setCodePostal] = useState('');
+  const [ville, setVille] = useState('');
+  const [telephone, setTelephone] = useState('');
+
 
   useEffect(() => {
     const getParams = async () => {
@@ -44,6 +50,18 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
         return;
       }
       setDevis(data);
+      // Récupérer les informations du contrat pour ce devis
+      try {
+        const contratResp = await fetch(`/api/user/devis/${devisId}/contrat/check`);
+        if (contratResp.ok) {
+          const contratData = await contratResp.json();
+          if (contratData.contrat) {
+            setContratInfo(contratData.contrat);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération du contrat:', error);
+      }
     } catch (error) {
       setError('Erreur lors de la récupération du devis');
       console.error('Erreur:', error);
@@ -59,7 +77,13 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          pays,
+          codePostal,
+          ville,
+          telephone,
+        }),
       });
 
       if (!response.ok) {
@@ -93,6 +117,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto bg-white shadow rounded-lg p-6">
+
         <div className="mb-4">
           <p className="text-sm text-gray-600">
             Remplissez le formulaire ci-dessous avec vos informations personnelles et signez électroniquement pour finaliser votre inscription
@@ -113,6 +138,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
         )}
 
         <div className="bg-white border rounded-lg p-6">
+          <div className="h-4" />
           <div className="prose max-w-none">
             <p className="text-gray-700">
               Veuillez remplir vos informations personnelles dans le formulaire ci-dessous et apposer votre signature électronique. 

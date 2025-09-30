@@ -318,8 +318,13 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
             <div>
               <h2 className="text-3xl font-bold text-gray-900">Contrat de formation</h2>
               <p className="mt-2 text-sm text-gray-600">
-                Contrat #{contrat.id.slice(-6)} - {contrat.prenom} {contrat.nom}
+                Contrat {contrat.devis?.numero ? contrat.devis.numero.replace(/^CI\.DEV/i, 'CI.CON') : `#${contrat.id.slice(-6)}`} - {contrat.prenom} {contrat.nom}
               </p>
+              {contrat.devis?.referenceAffaire && (
+                <p className="text-xs text-gray-500">
+                  Référence: {contrat.devis.referenceAffaire.replace(/^CI\.DEV/i, 'CI.CON')}
+                </p>
+              )}
             </div>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}>
               <StatusIcon className="h-5 w-5 mr-1" />
@@ -336,7 +341,7 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
               <table className="w-full border-collapse">
                 <tbody>
                   <tr>
-                    <td className="border p-2 font-semibold text-gray-800">Title</td>
+                  <td className="border p-2 font-semibold text-gray-800">Titre</td>
                     <td className="border p-2 font-semibold text-gray-800">Code Number</td>
                     <td className="border p-2 font-semibold text-gray-800">Revision</td>
                     <td className="border p-2 font-semibold text-gray-800">Creation date</td>
@@ -440,7 +445,7 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Article 5 - Dispositions financières</h3>
-              <p className="text-gray-700">Le prix de l'action de formation est fixé à : <span className="font-semibold">{contrat.devis.montant} Euros net</span></p>
+              <p className="text-gray-700">Le prix de l'action de formation est fixé à : <span className="font-semibold">{(contrat.devis.montant || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Euros net</span></p>
               <p className="text-gray-700">Le stagiaire s'engage à payer la prestation selon les modalités de paiement suivantes :</p>
               <ul className="list-disc pl-6 space-y-2 text-gray-700">
                 <li>Après un délai de rétractation mentionné à l'article 5 du présent contrat, le stagiaire effectue un premier versement d'un montant de 350 euros.</li>

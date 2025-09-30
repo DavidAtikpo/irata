@@ -16,13 +16,21 @@ import {
 interface Devis {
   id: string;
   numero: string;
-  montant: number;
+  montant?: number;
   statut: 'EN_ATTENTE' | 'VALIDE' | 'REFUSE';
   createdAt: string;
-  demande: {
-    session: string;
+  demande?: {
+    session?: string;
     message?: string;
   };
+  // Champs éventuellement présents sur les devis créés par l'admin
+  prixUnitaire?: number;
+  quantite?: number;
+  tva?: number;
+  dateFormation?: string | null;
+  dateExamen?: string | null;
+  referenceAffaire?: string | null;
+  exoneration?: string | null;
   hasContract?: boolean;
 }
 
@@ -32,6 +40,53 @@ export default function MesDevisPage() {
   const [devis, setDevis] = useState<Devis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Helpers d'affichage alignés avec la page admin
+  const formatISOToFr = (iso: string) => {
+    if (!iso) return '';
+    const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return iso;
+    const [, y, mo, d] = m;
+    return `${d}/${mo}/${y}`;
+  };
+
+  const formatDateToFr = (dateString: string | null | undefined) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR');
+    } catch {
+      return formatISOToFr(dateString as string);
+    }
+  };
+
+  const formatSessionFr = (raw: string) => {
+    if (!raw) return '';
+    const m = raw.match(/^(\d{4})\s+([a-zA-Zéèêàùîôïûç]+)\s+(\d{2})\s+au\s+(\d{2})$/i);
+    if (!m) return raw;
+    const [, year, monthFr, dayStart, dayEnd] = m;
+    const monthMap: Record<string, string> = {
+      janvier: '01', fevrier: '02', février: '02', mars: '03', avril: '04',
+      mai: '05', juin: '06', juillet: '07', aout: '08', août: '08',
+      septembre: '09', octobre: '10', novembre: '11', decembre: '12', décembre: '12'
+    };
+    const mm = monthMap[monthFr.toLowerCase()];
+    if (!mm) return raw;
+    return `${dayStart}/${mm}/${year} au ${dayEnd}/${mm}/${year}`;
+  };
+
+  const sessionRangeFr = (dateFormation?: string | null, dateExamen?: string | null) => {
+    if (!dateFormation || !dateExamen) return '';
+    return `du ${formatDateToFr(dateFormation)} au ${formatDateToFr(dateExamen)}`;
+  };
+
+  const computeMontant = (d: Devis) => {
+    if (typeof d.montant === 'number') return d.montant;
+    if (typeof d.prixUnitaire === 'number' && typeof d.quantite === 'number') {
+      return Number((d.prixUnitaire * d.quantite).toFixed(2));
+    }
+    return 0;
+  };
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -201,7 +256,7 @@ export default function MesDevisPage() {
                         <div className="flex items-center">
                           <DocumentTextIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-2" />
                           <p className="text-sm font-medium text-indigo-600 truncate">
-                            Devis #{devis.numero}
+                            Numéro: {devis.numero}
                           </p>
                         </div>
                         <div className="flex-shrink-0 flex">
@@ -212,14 +267,24 @@ export default function MesDevisPage() {
                         </div>
                       </div>
                       <div className="mt-3 sm:mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex">
+                        <div className="sm:flex sm:flex-col gap-1">
                           <p className="flex items-center text-xs sm:text-sm text-gray-500">
-                            Formation Cordiste IRATA - {devis.demande.session}
+                            Formation Cordiste IRATA - {sessionRangeFr(devis.dateFormation || null, devis.dateExamen || null) || formatSessionFr(devis.demande?.session || '') || (devis.dateFormation ? formatDateToFr(devis.dateFormation) : '-')}
                           </p>
+                          {devis.referenceAffaire && (
+                            <p className="text-xs sm:text-sm text-gray-500">
+                              Notre référence Affaire: <span className="text-gray-700">{devis.referenceAffaire}</span>
+                            </p>
+                          )}
+                          {devis.exoneration && (
+                            <p className="text-xs sm:text-sm text-gray-500 truncate" title={devis.exoneration || undefined}>
+                              Exonération: <span className="text-gray-700">{devis.exoneration}</span>
+                            </p>
+                          )}
                         </div>
                         <div className="mt-2 flex items-center text-xs sm:text-sm text-gray-500 sm:mt-0">
                           <p>
-                            {new Date(devis.createdAt).toLocaleDateString('fr-FR')} - {devis.montant.toLocaleString('fr-FR')} €
+                            {new Date(devis.createdAt).toLocaleDateString('fr-FR')} - {computeMontant(devis).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                           </p>
                         </div>
                       </div>
