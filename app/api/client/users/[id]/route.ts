@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             amount: true,
             status: true,
             createdAt: true,
-            project: {
+            projects: {
               select: {
                 title: true,
               },
@@ -49,20 +49,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Calculer les statistiques
-    const totalOrders = await prisma.order.count({
+    const totalOrders = await prisma.orders.count({
       where: { userId: id },
     })
 
-    const totalSpent = await prisma.order.aggregate({
+    const totalSpent = await prisma.orders.aggregate({
       where: { userId: id, status: "DELIVERED" },
       _sum: { totalAmount: true },
     })
 
-    const totalInvestments = await prisma.investment.count({
+    const totalInvestments = await prisma.investments.count({
       where: { userId: id },
     })
 
-    const totalInvested = await prisma.investment.aggregate({
+    const totalInvested = await prisma.investments.aggregate({
       where: { userId: id },
       _sum: { amount: true },
     })

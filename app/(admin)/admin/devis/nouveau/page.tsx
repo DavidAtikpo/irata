@@ -34,7 +34,7 @@ export default function NouveauDevisPage() {
   const intituleCompte = 'CI.DES';
   const banque = 'Revolut Bank UAB';
   const bic = 'REVOFRP2';
-  const iban = 'FR 76 2823 3000 0180 0703 6884 878';
+  const iban = 'FR 76 2823 3000 0180 0703 6484 878';
   const adresseLivraison = 'CI.DES chez chagneau 17270 BORESSE-ET-MARTRON France';
   const siret = '878 407 899 00011';
   const numNDA = '75170322717';

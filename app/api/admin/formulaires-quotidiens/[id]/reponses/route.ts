@@ -17,7 +17,7 @@ export async function POST(
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    if (session.user.role !== 'ADMIN') {
+    if (session.user?.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Accès réservé aux administrateurs' }, { status: 403 });
     }
 
@@ -72,7 +72,7 @@ export async function POST(
         commentaire: commentaire || '',
         score: score || null,
         dateCorrection: new Date(),
-        adminId: session.user.id
+        adminId: session.user!.id
       },
       create: {
         reponseId: reponseId,
@@ -80,7 +80,7 @@ export async function POST(
         commentaire: commentaire || '',
         score: score || null,
         dateCorrection: new Date(),
-        adminId: session.user.id
+        adminId: session.user!.id
       }
     });
 

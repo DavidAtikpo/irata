@@ -31,17 +31,17 @@ export async function GET(request: NextRequest) {
     }
 
     const [orders, totalCount] = await Promise.all([
-      prisma.order.findMany({
+      prisma.orders.findMany({
         where: whereConditions,
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
         include: {
-          orderItems: true,
-          user: { select: { id: true, email: true } }
+          order_items: true,
+          User: { select: { id: true, email: true } }
         }
       }),
-      prisma.order.count({ where: whereConditions }),
+      prisma.orders.count({ where: whereConditions }),
     ])
 
     return NextResponse.json({

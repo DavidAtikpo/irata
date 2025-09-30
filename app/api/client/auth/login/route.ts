@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient, Role } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 
@@ -20,13 +20,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email ou mot de passe incorrect" }, { status: 401 })
     }
 
-    // Vérifier si l'utilisateur est actif
-    if (!user.isActive) {
+    // Vérifier si l'utilisateur est actif (champ optionnel selon le schéma)
+    if ((user as any)?.isActive === false) {
       return NextResponse.json({ error: "Compte désactivé" }, { status: 401 })
     }
 
-    // Vérifier que seul le rôle CLIENT peut se connecter via cette route
-    if (user.role !== 'CLIENT' && user.role !== 'ADMIN') {
+    // Vérifier que seuls certains rôles peuvent se connecter via cette route
+    if (user.role !== Role.USER && user.role !== Role.ADMIN) {
       return NextResponse.json({ error: "Accès réservé aux clients" }, { status: 403 })
     }
 

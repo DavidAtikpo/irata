@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
+import { randomUUID } from "crypto"
 
 const prisma = new PrismaClient()
 
@@ -23,17 +24,17 @@ export async function GET(request: NextRequest) {
     }
 
     const [investments, total] = await Promise.all([
-      prisma.investment.findMany({
+      prisma.investments.findMany({
         where,
         include: {
-          user: {
+          User: {
             select: {
               nom: true,
               prenom: true,
               email: true,
             },
           },
-          project: {
+          projects: {
             select: {
               title: true,
               status: true,
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.investment.count({ where }),
+      prisma.investments.count({ where }),
     ])
 
     return NextResponse.json({
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     const { userId, projectId, amount } = body
 
     // Vérifier que le projet existe et est actif
-    const project = await prisma.project.findUnique({
+    const project = await prisma.projects.findUnique({
       where: { id: projectId },
     })
 
@@ -86,15 +87,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Créer l'investissement
-    const investment = await prisma.investment.create({
+    const investment = await prisma.investments.create({
       data: {
-        userId,
-        projectId,
+        id: randomUUID(),
         amount: Number.parseFloat(amount),
         status: "CONFIRMED",
+        updatedAt: new Date(),
+        projects: { connect: { id: projectId } },
+        User: { connect: { id: userId } },
       },
       include: {
-        project: {
+        projects: {
           select: {
             title: true,
           },

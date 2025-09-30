@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../../../lib/auth"
 import { prisma } from "../../../../lib/prisma"
+import { randomUUID } from "crypto"
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     const [products, totalCount] = await Promise.all([
-      prisma.product.findMany({
+      prisma.products.findMany({
         where: whereConditions,
         orderBy: { createdAt: "desc" },
         skip,
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
           description: true,
           price: true,
           images: true,
-          category: {
+          categories: {
             select: {
               id: true,
               name: true,
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
           updatedAt: true,
         },
       }),
-      prisma.product.count({ where: whereConditions }),
+      prisma.products.count({ where: whereConditions }),
     ])
 
     return NextResponse.json({
@@ -123,13 +124,15 @@ export async function POST(request: NextRequest) {
       allImages.push(...images.filter(img => img && img.trim()))
     }
 
-    const product = await prisma.product.create({
+    const product = await prisma.products.create({
       data: {
+        id: randomUUID(),
+        updatedAt: new Date(),
         name,
         description,
         price,
         images: allImages, // All images
-        category: {
+        categories: {
           connect: { id: categoryId }
         },
         stock: typeof inStock === 'boolean' ? (inStock ? 1 : 0) : (quantity ? Number.parseInt(quantity.toString()) : 0),

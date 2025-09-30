@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient, Role } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 
@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { firstName, lastName, email, password, phone, address, city, zipCode } = body
+    const { firstName, lastName, email, password } = body
     const normEmail = (email as string).trim().toLowerCase()
 
     // Vérifier si l'utilisateur existe déjà
@@ -30,12 +30,7 @@ export async function POST(request: NextRequest) {
         nom: lastName ?? null,
         email: normEmail,
         password: hashedPassword,
-        role: "CLIENT",
-        isActive: true,
-        phone: phone ?? null,
-        address: address ?? null,
-        city: city ?? null,
-        zipCode: zipCode ?? null,
+        role: Role.USER,
       },
     })
 

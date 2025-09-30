@@ -6,19 +6,19 @@ const prisma = new PrismaClient()
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const order = await prisma.order.findUnique({
+    const order = await prisma.orders.findUnique({
       where: { id },
       include: {
-        user: {
+        User: {
           select: {
             nom: true,
             prenom: true,
             email: true,
           },
         },
-        orderItems: {
+        order_items: {
           include: {
-            product: true,
+            products: true,
           },
         },
       },
@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json()
     const { status, trackingNumber } = body
 
-    const order = await prisma.order.update({
+    const order = await prisma.orders.update({
       where: { id },
       data: {
         status,
@@ -49,16 +49,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         updatedAt: new Date(),
       },
       include: {
-        user: {
+        User: {
           select: {
             nom: true,
             prenom: true,
             email: true,
           },
         },
-        orderItems: {
+        order_items: {
           include: {
-            product: true,
+            products  : true,
           },
         },
       },

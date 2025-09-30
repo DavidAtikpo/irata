@@ -11,18 +11,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     if (quantity <= 0) {
       // Supprimer l'article si la quantité est 0 ou négative
-      await prisma.cartItem.delete({
+      await prisma.cart_items.delete({
         where: { id },
       })
 
       return NextResponse.json({ message: "Article supprimé du panier" })
     }
 
-    const cartItem = await prisma.cartItem.update({
+    const cartItem = await prisma.cart_items.update({
       where: { id },
       data: { quantity },
       include: {
-        product: {
+        products: {
           select: {
             name: true,
             price: true,
@@ -43,7 +43,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    await prisma.cartItem.delete({
+    await prisma.cart_items.delete({
       where: { id },
     })
 

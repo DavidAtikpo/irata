@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
+import { randomUUID } from "crypto"
 
 const prisma = new PrismaClient()
 
@@ -12,10 +13,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "ID utilisateur requis" }, { status: 400 })
     }
 
-    const cartItems = await prisma.cartItem.findMany({
+    const cartItems = await prisma.cart_items.findMany({
       where: { userId },
       include: {
-        product: {
+        products: {
           select: {
             id: true,
             name: true,
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     })
 
     const total = cartItems.reduce((sum, item) => {
-      return sum + item.product?.price * item.quantity
+      return sum + item.products?.price * item.quantity
     }, 0)
 
     return NextResponse.json({
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     const { userId, productId, quantity } = body
 
     // Vérifier si le produit existe et est disponible
-    const product = await prisma.product.findUnique({
+    const product = await prisma.products.findUnique({
       where: { id: productId },
     })
 
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier si l'article existe déjà dans le panier
-    const existingItem = await prisma.cartItem.findUnique({
+    const existingItem = await prisma.cart_items.findUnique({
       where: {
         userId_productId: {
           userId,
@@ -75,11 +76,11 @@ export async function POST(request: NextRequest) {
 
     if (existingItem) {
       // Mettre à jour la quantité
-      cartItem = await prisma.cartItem.update({
+      cartItem = await prisma.cart_items.update({
         where: { id: existingItem.id },
         data: { quantity: existingItem.quantity + quantity },
         include: {
-          product: {
+          products: {
             select: {
               name: true,
               price: true,
@@ -90,14 +91,22 @@ export async function POST(request: NextRequest) {
       })
     } else {
       // Créer un nouvel article
-      cartItem = await prisma.cartItem.create({
+      cartItem = await prisma.cart_items.create({
         data: {
+          id: randomUUID(),
           userId,
           productId,
           quantity,
+          updatedAt: new Date(),
+          products: {
+            connect: { id: productId },
+          },
+          User: {
+            connect: { id: userId },
+          },
         },
         include: {
-          product: {
+          products: {
             select: {
               name: true,
               price: true,

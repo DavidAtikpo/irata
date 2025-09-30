@@ -11,7 +11,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'GESTIONNAIRE')) {
+    if (!session || (session.user?.role !== 'ADMIN' && session.user?.role !== 'GESTIONNAIRE')) {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }
@@ -117,7 +117,7 @@ export async function PUT(
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'GESTIONNAIRE')) {
+    if (!session || (session.user?.role !== 'ADMIN' && session.user?.role !== 'GESTIONNAIRE')) {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }
@@ -202,7 +202,7 @@ export async function PUT(
       const participants = [
         existingNonConformite.detecteurId,
         existingNonConformite.responsableId
-      ].filter((participantId) => participantId && participantId !== session.user.id);
+      ].filter((participantId) => participantId && participantId !== session.user?.id);
 
       for (const participantId of participants) {
         if (participantId) {

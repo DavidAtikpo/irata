@@ -25,7 +25,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { trackingNumber } = body
 
     // Update order tracking number (only if it belongs to this vendor)
-    const order = await prisma.order.updateMany({
+    const order = await prisma.orders.updateMany({
       where: {
         id,
         userId: vendor.id,
