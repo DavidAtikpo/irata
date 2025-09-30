@@ -266,9 +266,9 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
     <>
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* En-tête du contrat (logo à gauche, tableau à droite) */}
-        <div className="border rounded mb-6 bg-white shadow-sm p-3">
+        <div className=" mb-6 bg-white shadow-sm p-3">
           <div className="flex items-start gap-4">
-            <img src="/logo.png" alt="logo" className="w-14 h-14 flex-shrink-0" />
+            <img src="/logo.png" alt="logo" className="w-20 h-20 flex-shrink-0" />
             <table className="w-full border-collapse">
               <tbody>
                 <tr>
@@ -286,53 +286,7 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
               </tbody>
             </table>
           </div>
-          {(contratInfo || generatedNumbers) && (
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <div className="text-xs font-medium text-gray-700 flex items-center gap-2">
-                  Numéro
-                  {generatedNumbers && !contratInfo && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                      Généré définitivement
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 p-2 border rounded bg-gray-50 text-gray-900">
-                  {contratInfo?.numero || generatedNumbers?.numero || '-'}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs font-medium text-gray-700 flex items-center gap-2">
-                  Référence
-                  {generatedNumbers && !contratInfo && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                      Générée définitivement
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 p-2 border rounded bg-gray-50 text-gray-900">
-                  {contratInfo?.reference || generatedNumbers?.reference || '-'}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {generatedNumbers && !contratInfo && (
-            <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-green-800">
-                    <strong>Numéros de contrat générés :</strong> Les numéros affichés sont générés définitivement et seront sauvegardés lors de la signature du contrat.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+
         </div>
 
         {error && (
@@ -342,6 +296,27 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
         )}
 
         <div className="space-y-6">
+        {(contratInfo || generatedNumbers) && (
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div>
+                <div className="text-xs font-medium text-gray-700 flex items-center gap-2">
+                  Numéro
+                </div>
+                <div className="mt-1 p-2 border rounded bg-gray-50 text-gray-900">
+                  {contratInfo?.numero || generatedNumbers?.numero || '-'}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-gray-700 flex items-center gap-2">
+                  Référence
+
+                </div>
+                <div className="mt-1 p-2 border rounded bg-gray-50 text-gray-900">
+                  {contratInfo?.reference || generatedNumbers?.reference || '-'}
+                </div>
+              </div>
+            </div>
+          )}
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2 text-gray-900">{(devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise ? 'CONVENTION DE FORMATION PROFESSIONNELLE' : 'CONTRAT DE FORMATION PROFESSIONNELLE'}</h2>
           <p className="text-sm text-gray-600">En application des articles L. 6353-3 à L. 6353-7 du Code du Travail</p>
@@ -360,33 +335,10 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">B. Si Particulier Cocontractant :</h3>
-            
-            {/* Message d'information */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-blue-800">
-                    <strong>Informations pré-remplies :</strong> Vos informations personnelles ont été automatiquement récupérées depuis votre profil. 
-                    Vous pouvez les modifier si nécessaire avant de signer le contrat.
-                  </p>
-                </div>
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="nom" className="text-gray-700 flex items-center">
                   NOM
-                  {formData.nom && (
-                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                      Pré-rempli
-                    </span>
-                  )}
                 </Label>
                 <Input
                   id="nom"
@@ -400,11 +352,6 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
               <div className="space-y-2">
                 <Label htmlFor="prenom" className="text-gray-700 flex items-center">
                   Prénom
-                  {formData.prenom && (
-                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                      Pré-rempli
-                    </span>
-                  )}
                 </Label>
                 <Input
                   id="prenom"
@@ -418,11 +365,6 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
               <div className="space-y-2">
                 <Label htmlFor="adresse" className="text-gray-700 flex items-center">
                   Adresse
-                  {formData.adresse && formData.adresse !== 'À compléter' && (
-                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                      Pré-rempli
-                    </span>
-                  )}
                 </Label>
                 <Input
                   id="adresse"
@@ -477,11 +419,6 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
               <div className="space-y-2">
                 <Label htmlFor="profession" className="text-gray-700 flex items-center">
                   Profession
-                  {formData.profession && formData.profession !== 'Stagiaire' && (
-                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                      Pré-rempli
-                    </span>
-                  )}
                 </Label>
                 <Input
                   id="profession"
@@ -494,11 +431,6 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
               <div className="space-y-2">
                 <Label htmlFor="statut" className="text-gray-700 flex items-center">
                   Statut
-                  {formData.statut && formData.statut !== 'Particulier' && (
-                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                      Pré-rempli
-                    </span>
-                  )}
                 </Label>
                 <Input
                   id="statut"
@@ -664,7 +596,7 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
               <div>
                 <p className="font-medium mb-2 text-gray-700">Signature du stagiaire :</p>
-                <div className="border rounded-lg p-3 sm:p-4 bg-white">
+                <div className=" p-3 sm:p-4 bg-white">
                   <SignaturePad
                     canvasProps={{
                       className: 'signature-canvas w-full h-32 sm:h-48 border rounded bg-white',
@@ -698,11 +630,6 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
               <div>
               <p className="font-medium mb-2 text-gray-700">Pour l'organisme de formation :</p>
               <p className="text-sm text-gray-600">ARDOUIN Laurent, Président</p>
-              {devis?.signature && devis.signature.startsWith('data:image/') && (
-                <div className="mt-2">
-                  <img src={devis.signature} alt="Signature admin" className="h-16 bg-white border rounded" />
-                </div>
-              )}
               </div>
             </div>
           </div>

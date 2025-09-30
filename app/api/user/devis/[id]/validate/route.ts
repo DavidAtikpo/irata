@@ -81,6 +81,11 @@ export async function POST(
               <li>Date de formation : ${devis.dateFormation ? new Date(devis.dateFormation).toLocaleDateString('fr-FR') : 'Non définie'}</li>
             </ul>
             <p> Le contrat est envoyé. Vous pouvez consulter les détails complets du contrat dans votre espace personnel.</p>
+            <div style="margin: 24px 0;">
+              <a href="https://www.a-finpart.com/mon-contrat" style="background-color:#2563eb;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;font-weight:600" target="_blank" rel="noopener noreferrer">
+                Accéder à mon contrat
+              </a>
+            </div>
             <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
               Cordialement,<br>
               L'équipe CI.DES

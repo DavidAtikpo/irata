@@ -116,7 +116,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto bg-white shadow rounded-lg p-6">
+      <div className="max-w-7xl mx-auto bg-white shadow  p-6">
 
         <div className="mb-4">
           <p className="text-sm text-gray-600">
@@ -137,14 +137,8 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
           </div>
         )}
 
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white  p-10">
           <div className="h-4" />
-          <div className="prose max-w-none">
-            <p className="text-gray-700">
-              Veuillez remplir vos informations personnelles dans le formulaire ci-dessous et apposer votre signature électronique. 
-              Une fois le contrat signé, vous recevrez une confirmation par email et nous vous contacterons pour finaliser les détails de votre formation.
-            </p>
-          </div>
           <div className="mt-6">
             <EditablePDF devis={devis} onSubmit={handleSubmit} />
           </div>

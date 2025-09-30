@@ -22,6 +22,7 @@ interface Devis {
   numero: string;
   client: string;
   mail: string;
+    entreprise?: string | null;
   adresseLivraison: string | null;
   dateLivraison: string | null;
   dateExamen: string | null;
@@ -264,7 +265,7 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="min-h-screen bg-gray-100 py-4 sm:py-8 px-2 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-4 sm:p-6">
+      <div className="max-w-5xl mx-auto bg-white shadow  p-4 sm:p-15">
         <div className="mb-4">
           <HeaderInfoTable
             title="TRAME BDC DEVIS FACTURE"
@@ -342,6 +343,12 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
                   {devis.dateExamen ? formatDateToFr(devis.dateExamen) : '-'}
                 </div>
               </div>
+              {devis.entreprise && (
+                <div>
+                  <label className="block text-base font-semibold text-gray-900 mb-1">Entreprise</label>
+                  <input type="text" className="input text-gray-900" value={devis.entreprise} readOnly />
+                </div>
+              )}
               <div>
                 <label className="block text-base font-semibold text-gray-900 mb-1">SIRET / NIF</label>
                 <input type="text" className="input text-gray-900" value={devis.siret || ''} readOnly />
