@@ -136,7 +136,13 @@ export async function PUT(
             <h2 style="color: #2563eb; margin-bottom: 20px;">Mise à jour de votre contrat de formation</h2>
             <p>Bonjour ${contrat.user.prenom} ${contrat.user.nom},</p>
             <p>Votre contrat de formation pour la session <strong>${contrat.devis.demande.session}</strong> est maintenant <strong>${statusText}</strong>.</p>
-            <p>Vous pouvez consulter les détails en vous connectant à votre espace personnel.</p>
+            <p>Facture est disponible. Vous pouvez consulter les détails en vous connectant à votre espace personnel.</p>
+           <div style="margin: 24px 0;">
+              <a href="https://www.a-finpart.com/invoice" style="background-color:#2563eb;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;font-weight:600" target="_blank" rel="noopener noreferrer">
+                Accéder à la facture
+              </a>
+            </div>
+
             ${extraHtml}
             <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
               Cordialement,<br>
@@ -148,6 +154,24 @@ export async function PUT(
     } catch (emailError) {
       console.error('Erreur lors de l\'envoi de l\'email:', emailError);
       // On continue même si l'envoi de l'email échoue
+    }
+
+    // Notifications côté utilisateur selon le statut
+    try {
+      if (status === 'VALIDE') {
+        await prisma.notification.create({
+          data: {
+            userId: contrat.userId,
+            title: 'Contrat validé',
+            message: 'Votre contrat a été validé par l\'administration. Votre facture est disponible.',
+            type: 'contrat',
+            category: 'validated',
+            relatedId: contrat.id,
+          },
+        });
+      }
+    } catch (e) {
+      console.error('Erreur création notification utilisateur (contrat validé):', e);
     }
 
     return NextResponse.json(contrat);

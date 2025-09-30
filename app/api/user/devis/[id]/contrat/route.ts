@@ -233,6 +233,25 @@ export async function POST(
 
     console.log('Contrat créé avec succès:', { contratId: contrat.id });
 
+    // Notification aux admins: nouveau contrat signé
+    try {
+      const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true } });
+      for (const admin of admins) {
+        await prisma.notification.create({
+          data: {
+            userId: admin.id,
+            title: 'Nouveau contrat signé',
+            message: `${prenom} ${nom} a signé un ${isEntreprise ? 'convention' : 'contrat'} pour ${devis.demande.session}.`,
+            type: 'contrat',
+            category: 'signed',
+            relatedId: contrat.id,
+          },
+        });
+      }
+    } catch (e) {
+      console.error('Erreur création notification admin (contrat signé):', e);
+    }
+
     // Envoyer les emails de notification
     try {
       console.log('Tentative d\'envoi des emails...');
@@ -247,14 +266,19 @@ export async function POST(
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
             <h2 style="color: #2563eb; margin-bottom: 20px;">Contrat de formation signé</h2>
             <p>Bonjour ${prenom} ${nom},</p>
-            <p>Votre contrat de formation a été signé avec succès pour la session <strong>${devis.demande.session}</strong>.</p>
+            <p>Votre contrat de formation a été signé avec succès pour la session. <strong>${devis.demande.session}</strong>.</p>
             <p>Détails du contrat :</p>
             <ul style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 15px 0;">
               <li>Formation : Formation Cordiste IRATA - ${devis.demande.session}</li>
               <li>Montant : ${devis.montant} €</li>
               <li>Date de formation : ${devis.dateFormation ? new Date(devis.dateFormation).toLocaleDateString('fr-FR') : 'Non définie'}</li>
             </ul>
-            <p>Nous vous contacterons prochainement pour finaliser les détails pratiques de la formation.</p>
+            <p>Accedez à votre espace personnel pour attendre la validation de l'administration.</p>
+            <div style="margin: 24px 0;">
+              <a href="https://www.a-finpart.com/mon-contrat" style="background-color:#2563eb;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;font-weight:600" target="_blank" rel="noopener noreferrer">
+                Accéder à mon contrat
+              </a>
+            </div>
             <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
               Cordialement,<br>
               L'équipe CI.DES
