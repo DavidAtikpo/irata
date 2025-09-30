@@ -75,7 +75,7 @@ export async function PUT(
       );
     }
 
-    const { status } = await request.json();
+    const { status, adminSignature } = await request.json();
 
     if (!status || !['EN_ATTENTE', 'SIGNE', 'VALIDE', 'REFUSE', 'ANNULE'].includes(status)) {
       return NextResponse.json(
@@ -86,9 +86,14 @@ export async function PUT(
 
     const { id } = await params;
 
+    const dataToUpdate: any = { statut: status };
+    if (adminSignature) {
+      dataToUpdate.adminSignature = adminSignature;
+    }
+
     const contrat = await prisma.contrat.update({
       where: { id },
-      data: { statut: status },
+      data: dataToUpdate,
       include: {
         user: true,
         devis: {

@@ -26,9 +26,30 @@ export async function POST(
     console.log('ID du devis:', id);
 
     const data = await req.json();
-    console.log('Données reçues:', { ...data, signature: data.signature ? '[SIGNATURE_DATA]' : 'null' });
+    console.log('Données reçues:', { ...data, signature: data.signature ? `[SIGNATURE length=${String(data.signature).length}]` : 'null' });
 
-    const { signature, nom, prenom, adresse, profession, telephone, email, dateNaissance, lieuNaissance, ...otherData } = data;
+    const {
+      signature,
+      nom,
+      prenom,
+      adresse,
+      profession,
+      telephone,
+      email,
+      dateNaissance,
+      lieuNaissance,
+      // Champs adresse personnel
+      pays,
+      codePostal,
+      ville,
+      // Champs entreprise pour convention
+      entrepriseNom,
+      entrepriseAdresse,
+      entrepriseCodePostal,
+      entrepriseVille,
+      entrepriseTelephone,
+      ...otherData
+    } = data;
 
     console.log('Tentative de récupération du devis...');
     
@@ -129,9 +150,33 @@ export async function POST(
       adresse,
       profession: profession || '',
       dateSignature: new Date(),
-      signature,
+      signature: signature ? `[length=${String(signature).length}]` : 'null',
       statut: 'SIGNE'
     });
+
+    // Normaliser champs entreprise/perso
+    const entrepriseCodePostalStr = (entrepriseCodePostal ?? '').toString().trim();
+    const entrepriseVilleStr = (entrepriseVille ?? '').toString().trim();
+    const entrepriseAdresseStr = (entrepriseAdresse ?? '').toString().trim();
+    const codePostalStr = (codePostal ?? '').toString().trim();
+    const villeStr = (ville ?? '').toString().trim();
+    const paysStr = (pays ?? '').toString().trim();
+
+    console.log('Champs entreprise reçus:', {
+      entrepriseNom,
+      entrepriseAdresse: entrepriseAdresseStr,
+      entrepriseVille: entrepriseVilleStr,
+      entrepriseCodePostal: entrepriseCodePostalStr,
+      entrepriseTelephone,
+    });
+
+    // Construire une adresse complète (personnelle ou entreprise)
+    const isEntreprise = devis.demande?.typeInscription?.toLowerCase() === 'entreprise' || !!devis.demande?.entreprise;
+    const baseAdresse = (isEntreprise ? (entrepriseAdresseStr || adresse) : adresse) || '';
+    const city = (isEntreprise ? entrepriseVilleStr : villeStr) || '';
+    const zip = (isEntreprise ? entrepriseCodePostalStr : codePostalStr) || '';
+    const country = paysStr || '';
+    const fullAdresse = [baseAdresse, city].filter(Boolean).join(', ') + (zip ? ` ${zip}` : '') + (country ? `, ${country}` : '');
 
     // Utiliser upsert pour créer ou mettre à jour le contrat
     const contrat = await prisma.contrat.upsert({
@@ -139,10 +184,21 @@ export async function POST(
         devisId: id,
       },
       update: {
-        nom: nom || '',
+        nom: nom || (isEntreprise ? entrepriseNom || '' : ''),
         prenom: prenom || '',
-        adresse: adresse || '',
+        adresse: fullAdresse.trim(),
         profession: profession || '',
+        // Champs adresse personnels
+        ville: villeStr,
+        codePostal: codePostalStr,
+        pays: paysStr,
+        telephone: telephone || '',
+        // Champs entreprise
+        entrepriseNom: entrepriseNom || '',
+        entrepriseAdresse: entrepriseAdresseStr,
+        entrepriseVille: entrepriseVilleStr,
+        entrepriseCodePostal: entrepriseCodePostalStr,
+        entrepriseTelephone: entrepriseTelephone || '',
         dateSignature: new Date(),
         signature: signature || '',
         statut: 'SIGNE',
@@ -152,10 +208,21 @@ export async function POST(
       create: {
         devisId: id,
         userId: session.user.id,
-        nom: nom || '',
+        nom: nom || (isEntreprise ? entrepriseNom || '' : ''),
         prenom: prenom || '',
-        adresse: adresse || '',
+        adresse: fullAdresse.trim(),
         profession: profession || '',
+        // Champs adresse personnels
+        ville: villeStr,
+        codePostal: codePostalStr,
+        pays: paysStr,
+        telephone: telephone || '',
+        // Champs entreprise
+        entrepriseNom: entrepriseNom || '',
+        entrepriseAdresse: entrepriseAdresseStr,
+        entrepriseVille: entrepriseVilleStr,
+        entrepriseCodePostal: entrepriseCodePostalStr,
+        entrepriseTelephone: entrepriseTelephone || '',
         dateSignature: new Date(),
         signature: signature || '',
         statut: 'SIGNE',
@@ -200,7 +267,7 @@ export async function POST(
 
       // Email à l'admin
       await sendEmail({
-        to: 'atikpododzi4@gmail.com',
+        to: 'com,pmcides@gmail.com,pm@cides.tf',
         subject: 'Nouveau contrat signé',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">

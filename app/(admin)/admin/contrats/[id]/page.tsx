@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+// import SignaturePad from 'components/SignaturePad';
 import { 
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -14,6 +15,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button } from '@/app/components/ui/button';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import SignatureCanvas from 'react-signature-canvas';
+import { useRef } from 'react';
 
 interface User {
   id: string;
@@ -32,6 +35,8 @@ interface Devis {
   demande: {
     session: string;
     message?: string;
+    entreprise?: string | null;
+    typeInscription?: string | null;
   };
 }
 
@@ -45,6 +50,19 @@ interface Contrat {
   signature: string;
   statut: string;
   createdAt: string;
+  numero?: string | null;
+  reference?: string | null;
+  // Champs adresse personnels (optionnels)
+  ville?: string;
+  codePostal?: string;
+  pays?: string;
+  telephone?: string;
+  // Champs entreprise (convention)
+  entrepriseNom?: string;
+  entrepriseAdresse?: string;
+  entrepriseVille?: string;
+  entrepriseCodePostal?: string;
+  entrepriseTelephone?: string;
   user: User;
   devis: Devis;
 }
@@ -84,6 +102,9 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [contratId, setContratId] = useState<string>('');
+  const [adminSignature, setAdminSignature] = useState<string | null>(null);
+  const [signatureError, setSignatureError] = useState<string | null>(null);
+  const sigRef = useRef<SignatureCanvas | null>(null);
 
   useEffect(() => {
     const getParams = async () => {
@@ -121,12 +142,16 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
 
   const handleStatusChange = async (newStatus: string) => {
     try {
+      if (newStatus === 'VALIDE' && !adminSignature) {
+        setSignatureError("La signature de l'administrateur est requise avant validation.");
+        return;
+      }
       const response = await fetch(`/api/admin/contrats/${contratId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: newStatus, adminSignature }),
       });
 
       if (!response.ok) {
@@ -150,6 +175,17 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
+    const isConvention = Boolean(
+      contrat.entrepriseNom ||
+      contrat.entrepriseAdresse ||
+      contrat.entrepriseTelephone ||
+      contrat.devis?.demande?.entreprise ||
+      ((contrat.devis?.demande as any)?.typeInscription || '').toLowerCase() === 'entreprise'
+    );
+    const numeroPrefix = isConvention ? 'CI.ICE' : 'CI.ICP';
+    const displayNumero = contrat.numero || (contrat.devis?.numero ? contrat.devis.numero.replace(/^CI\.DEV/i, numeroPrefix) : '');
+    const displayReference = contrat.reference || (contrat.devis?.referenceAffaire ? contrat.devis.referenceAffaire.replace(/^CI\.DEV/i, numeroPrefix) : '');
+
     // En-tête
     page.drawText('CI.DES AGREEMENT SERVICE CONTRACT', {
       x: 50, y: height - 50, size: 14, font: boldFont, color: rgb(0,0,0)
@@ -163,6 +199,13 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
     page.drawText('CONTRAT DE FORMATION PROFESSIONNELLE', {
       x: (width - 300) / 2, y, size: 16, font: boldFont, color: rgb(0,0,0)
     });
+    y -= 20;
+    if (displayNumero) {
+      page.drawText(`Numéro: ${displayNumero}`, { x: 50, y, size: 10, font, color: rgb(0,0,0) });
+    }
+    if (displayReference) {
+      page.drawText(`Référence: ${displayReference}`, { x: 300, y, size: 10, font, color: rgb(0,0,0) });
+    }
     
     y -= 40;
     page.drawText('A. Organisme de Formation :', { x: 50, y, size: 12, font: boldFont, color: rgb(0,0,0) });
@@ -302,6 +345,13 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
     label: contrat.statut || 'Inconnu'
   };
   const StatusIcon = statusInfo.icon;
+  const isConvention = Boolean(
+    contrat.entrepriseNom ||
+    contrat.entrepriseAdresse ||
+    contrat.entrepriseTelephone ||
+    contrat.devis?.demande?.entreprise ||
+    ((contrat.devis?.demande as any)?.typeInscription || '').toLowerCase() === 'entreprise'
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -317,13 +367,13 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
           </button>
           <div className="mt-4 flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Contrat de formation</h2>
+              <h2 className="text-3xl font-bold text-gray-900">{isConvention ? 'Convention de formation' : 'Contrat de formation'}</h2>
               <p className="mt-2 text-sm text-gray-600">
-                Contrat {contrat.devis?.numero ? contrat.devis.numero.replace(/^CI\.DEV/i, 'CI.CON') : `#${contrat.id.slice(-6)}`} - {contrat.prenom} {contrat.nom}
+                {(isConvention ? 'Convention' : 'Contrat')} {contrat.numero || (contrat.devis?.numero ? contrat.devis.numero.replace(/^CI\.DEV/i, isConvention ? 'CI.CON' : 'CI.CON') : `#${contrat.id.slice(-6)}`)} - {contrat.prenom} {contrat.nom}
               </p>
               {contrat.devis?.referenceAffaire && (
                 <p className="text-xs text-gray-500">
-                  Référence: {contrat.devis.referenceAffaire.replace(/^CI\.DEV/i, 'CI.CON')}
+                  Référence: {contrat.reference || contrat.devis.referenceAffaire.replace(/^CI\.DEV/i, isConvention ? 'CI.CON' : 'CI.CON')}
                 </p>
               )}
             </div>
@@ -334,11 +384,11 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className=" w-full bg-white rounded-lg shadow-lg p-15">
           {/* En-tête du contrat (alignée avec le user: logo à gauche, tableau à droite) */}
-          <div className="border rounded mb-6 bg-white shadow-sm p-3">
+          <div className=" mb-6 bg-white shadow-sm p-3">
             <div className="flex items-start gap-4">
-              <img src="/logo.png" alt="Logo CI.DES" className="w-14 h-14 flex-shrink-0" />
+              <img src="/logo.png" alt="Logo CI.DES" className="w-20 h-20 flex-shrink-0" />
               <table className="w-full border-collapse">
                 <tbody>
                   <tr>
@@ -348,7 +398,7 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
                     <td className="border p-2 font-semibold text-gray-800">Creation date</td>
                   </tr>
                   <tr>
-                    <td className="border p-2 font-bold underline text-gray-900">CI.DES AGREEMENT SERVICE CONTRACT</td>
+                    <td className="border p-2 font-bold underline text-gray-900">{isConvention ? 'CI.DES AGREEMENT SERVICE CONVENTION' : 'CI.DES AGREEMENT SERVICE CONTRACT'}</td>
                     <td className="border p-2 font-bold underline text-gray-900">ENR-CIDESA-RH 023</td>
                     <td className="border p-2 font-bold text-gray-900">02</td>
                     <td className="border p-2 font-bold text-gray-900">29/07/2024</td>
@@ -376,41 +426,74 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">B. Si Particulier Cocontractant :</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-gray-700 font-medium">NOM</label>
-                  <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.nom}</div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-gray-700 font-medium">Prénom</label>
-                  <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.prenom}</div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-gray-700 font-medium">Adresse</label>
-                  <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.adresse}</div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-gray-700 font-medium">Profession</label>
-                  <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.profession || 'Non renseigné'}</div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-gray-700 font-medium">Email</label>
-                  <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.user.email}</div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-gray-700 font-medium">Date de signature</label>
-                  <div className="p-3 bg-gray-50 border rounded text-gray-900">
-                    {new Date(contrat.dateSignature).toLocaleDateString('fr-FR', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+              <h3 className="text-lg font-semibold text-gray-900">B. {isConvention ? 'Si Entreprise Cocontractante :' : 'Si Particulier Cocontractant :'}</h3>
+              {isConvention ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-gray-700 font-medium">Nom de l'entreprise</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.entrepriseNom || '—'}</div>
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-gray-700 font-medium">Adresse de l'entreprise</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.entrepriseAdresse || contrat.adresse || '—'}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Code postal</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.entrepriseCodePostal || contrat.codePostal || '—'}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Ville</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.entrepriseVille || contrat.ville || '—'}</div>
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-gray-700 font-medium">Téléphone de l'entreprise</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.entrepriseTelephone || '—'}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Nom du signataire</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.nom} {contrat.prenom}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Email</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.user.email}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Date de signature</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{new Date(contrat.dateSignature).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">NOM</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.nom}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Prénom</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.prenom}</div>
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <label className="text-gray-700 font-medium">Adresse</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.adresse}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Profession</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.profession || 'Non renseigné'}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Téléphone</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.telephone || '—'}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Email</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.user.email}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Date de signature</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{new Date(contrat.dateSignature).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                  </div>
+                </div>
+              )}
               <p className="italic text-gray-600">(Ci-après dénommé le stagiaire).</p>
             </div>
 
@@ -472,18 +555,71 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Signature du stagiaire</h3>
-              <div className="border rounded-lg p-4 bg-gray-50">
+              <div className=" p-4 bg-gray-50">
                 {contrat.signature ? (
                   <img 
                     src={contrat.signature} 
                     alt="Signature du stagiaire" 
-                    className="max-w-xs h-24 border border-gray-300 rounded bg-white"
+                    className="max-w-xs h-10   bg-white"
                   />
                 ) : (
                   <span className="text-gray-500">Aucune signature</span>
                 )}
               </div>
             </div>
+
+          {/* Signature administrateur requise avant validation */}
+          <div className="space-y-2 flex justify-end">
+            <h3 className="text-base font-semibold text-gray-900">Signature de l'administrateur (obligatoire pour valider)</h3>
+            <div className="p-2 bg-white w-fit ml-auto">
+              <SignatureCanvas
+                ref={sigRef}
+                canvasProps={{
+                  width: 240,
+                  height: 80,
+                  className: 'border rounded bg-white',
+                  style: { touchAction: 'none' }
+                }}
+                onEnd={() => {
+                  if (sigRef.current) {
+                    setAdminSignature(sigRef.current.getCanvas().toDataURL('image/png'));
+                    setSignatureError(null);
+                  }
+                }}
+              />
+              <div className="mt-2 flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (sigRef.current) {
+                      sigRef.current.clear();
+                    }
+                    setAdminSignature(null);
+                    setSignatureError(null);
+                  }}
+                  className="border-gray-300 px-2 py-1 text-xs"
+                >
+                  Effacer
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (sigRef.current) {
+                      setAdminSignature(sigRef.current.getCanvas().toDataURL('image/png'));
+                      setSignatureError(null);
+                    }
+                  }}
+                  className="bg-indigo-600 hover:bg-indigo-700 px-2 py-1 text-xs"
+                >
+                  Enregistrer la signature
+                </Button>
+              </div>
+              {signatureError && (
+                <p className="mt-2 text-sm text-red-600">{signatureError}</p>
+              )}
+            </div>
+          </div>
 
             {/* Gestion du statut */}
             <div className="border-t pt-6 mt-8">

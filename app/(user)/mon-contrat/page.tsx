@@ -25,12 +25,16 @@ interface Contrat {
   prenom: string;
   adresse: string;
   profession?: string;
+  adminSignature?: string | null;
+  entrepriseNom?: string | null;
   devis: {
     numero: string;
     montant: number;
     dateFormation?: string;
     demande: {
       session: string;
+      entreprise?: string | null;
+      typeInscription?: string | null;
     };
   };
 }
@@ -58,7 +62,9 @@ export default function MonContratPage() {
         throw new Error('Erreur lors de la récupération des contrats');
       }
       const data = await response.json();
-      setContrats(data);
+      // Ne garder que les contrats/conventions validés ET signés par l'admin
+      const validated = (data || []).filter((c: Contrat) => c.statut === 'VALIDE' && c.adminSignature);
+      setContrats(validated);
       
       // Vérifier si un contrat est validé pour afficher le popup
       const hasValidatedContract = data.some((contrat: Contrat) => contrat.statut === 'VALIDE');
@@ -191,10 +197,8 @@ export default function MonContratPage() {
             Retour
           </button>
           <div className="mt-2 sm:mt-4 text-center sm:text-left">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Mon contrat</h1>
-            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600">
-              Consultez votre contrat de formation validé
-            </p>
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Mes contrats / conventions</h1>
+            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600">Vous trouverez ici vos contrats ou conventions validés par l'administration</p>
           </div>
         </div>
 
@@ -225,6 +229,11 @@ export default function MonContratPage() {
           <div className="space-y-3 sm:space-y-4">
             {contrats.map((contrat) => {
               const statusConfig = getStatusConfig(contrat.statut);
+              const isConvention = Boolean(
+                contrat.entrepriseNom ||
+                contrat.devis?.demande?.entreprise ||
+                (contrat.devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise'
+              );
               
               return (
                 <div key={contrat.id} className="bg-white shadow rounded-lg overflow-hidden">
@@ -237,7 +246,7 @@ export default function MonContratPage() {
                         </div>
                         <div>
                           <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900">
-                            Contrat #{contrat.id.slice(-6)}
+                            {isConvention ? 'Convention' : 'Contrat'} #{contrat.id.slice(-6)}
                           </h3>
                           <p className="text-xs sm:text-sm text-gray-500">
                             Devis #{contrat.devis.numero} - {contrat.devis.demande.session}

@@ -143,12 +143,23 @@ model Contrat {
   nom           String
   prenom        String
   adresse       String
+  ville         String?
+  codePostal    String?
+  pays          String?
+  telephone     String?
   profession    String?
   dateSignature DateTime
   signature     String
+  adminSignature String?
   statut        String    @default("EN_ATTENTE")
   numero        String?   @unique
   reference     String?
+  // Champs spécifiques aux conventions (entreprise)
+  entrepriseNom         String?
+  entrepriseAdresse     String?
+  entrepriseVille       String?
+  entrepriseCodePostal  String?
+  entrepriseTelephone   String?
   devis         Devis     @relation(fields: [devisId], references: [id])
   user          User      @relation(fields: [userId], references: [id])
   invoices      Invoice[]

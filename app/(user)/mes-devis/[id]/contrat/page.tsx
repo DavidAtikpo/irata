@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { EditablePDF } from '@/app/components/EditablePDF';
+import { ConventionPDF } from '@/app/components/ConventionPDF';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import HeaderInfoTable from '@/app/components/HeaderInfoTable';
 import Image from 'next/image';
@@ -140,7 +141,9 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
         <div className="bg-white  p-10">
           <div className="h-4" />
           <div className="mt-6">
-            <EditablePDF devis={devis} onSubmit={handleSubmit} />
+            {((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise)
+              ? <ConventionPDF devis={devis} onSubmit={handleSubmit} />
+              : <EditablePDF devis={devis} onSubmit={handleSubmit} />}
           </div>
         </div>
       </div>
