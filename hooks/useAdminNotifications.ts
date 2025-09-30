@@ -15,24 +15,32 @@ export function useAdminNotifications() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchCount = async (url: string): Promise<number> => {
+      try {
+        const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
+        if (!res.ok) return 0;
+        const data = await res.json();
+        if (typeof data === 'number') return data;
+        if (Array.isArray(data)) return data.length;
+        return 0;
+      } catch (e) {
+        console.error('Fetch error for', url, e);
+        return 0;
+      }
+    };
+
     const fetchCounts = async () => {
       try {
-        const [demandesRes, devisRes, contratsRes] = await Promise.all([
-          fetch('/api/admin/demandes?statut=EN_ATTENTE'),
-          fetch('/api/admin/devis?statut=EN_ATTENTE'),
-          fetch('/api/admin/contrats?statut=SIGNE')
-        ]);
-
         const [demandes, devis, contrats] = await Promise.all([
-          demandesRes.json(),
-          devisRes.json(),
-          contratsRes.json()
+          fetchCount('/api/admin/demandes?statut=EN_ATTENTE'),
+          fetchCount('/api/admin/devis?statut=EN_ATTENTE'),
+          fetchCount('/api/admin/contrats?statut=SIGNE')
         ]);
 
         setCounts({
-          demandes: typeof demandes === 'number' ? demandes : demandes.length || 0,
-          devisEnAttente: typeof devis === 'number' ? devis : devis.length || 0,
-          contratsSignes: typeof contrats === 'number' ? contrats : contrats.length || 0
+          demandes,
+          devisEnAttente: devis,
+          contratsSignes: contrats
         });
       } catch (error) {
         console.error('Erreur lors de la récupération des compteurs:', error);
