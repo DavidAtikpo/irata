@@ -32,6 +32,10 @@ interface Devis {
   numero: string;
   montant: number;
   statut: string;
+  demande?: {
+    entreprise?: string | null;
+    typeInscription?: string | null;
+  };
 }
 
 interface Contrat {
@@ -40,6 +44,9 @@ interface Contrat {
   dateDebut?: string;
   dateFin?: string;
   createdAt: string;
+  entrepriseNom?: string | null;
+  numero?: string | null;
+  reference?: string | null;
   user: User;
   devis: Devis;
 }
@@ -483,7 +490,7 @@ export default function AdminContratsPage() {
           </div>
         </div>
 
-        {/* Liste des contrats */}
+        {/* Liste des contrats (groupée par Aujourd'hui / Hier / Autres dates) */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           {filteredAndSortedContrats.length === 0 ? (
             <div className="text-center py-12">
@@ -497,24 +504,58 @@ export default function AdminContratsPage() {
             </div>
           ) : (
             <>
-              <ul className="divide-y divide-gray-200">
-                {paginatedContrats.map((contrat) => {
+              {(() => {
+                const today = new Date();
+                const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                const startOfYesterday = new Date(startOfToday);
+                startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+                const endOfYesterday = new Date(startOfToday);
+                endOfYesterday.setMilliseconds(endOfYesterday.getMilliseconds() - 1);
+
+                const formatHeading = (d: Date) => d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+                const todayItems: typeof paginatedContrats = [];
+                const yesterdayItems: typeof paginatedContrats = [];
+                const othersMap: Record<string, typeof paginatedContrats> = {};
+
+                for (const c of paginatedContrats) {
+                  const d = new Date(c.createdAt);
+                  if (d >= startOfToday) {
+                    todayItems.push(c);
+                  } else if (d >= startOfYesterday && d <= endOfYesterday) {
+                    yesterdayItems.push(c);
+                  } else {
+                    const key = formatHeading(d);
+                    if (!othersMap[key]) othersMap[key] = [];
+                    othersMap[key].push(c);
+                  }
+                }
+
+                const renderItem = (contrat: typeof paginatedContrats[number]) => {
                   const status = statusConfig[contrat.statut] || {
                     color: 'bg-gray-500 text-white',
                     icon: ExclamationCircleIcon,
                     label: contrat.statut || 'Inconnu'
                   };
                   const StatusIcon = status.icon;
-                  
                   return (
                     <li key={contrat.id} className="px-4 py-6 sm:px-6 hover:bg-gray-50 transition-colors duration-150">
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center">
                             <DocumentDuplicateIcon className="h-5 w-5 text-gray-400 mr-2" />
-                            <h3 className="text-lg font-medium text-gray-900 truncate">
-                              Contrat #{contrat.id.slice(-6)}
-                            </h3>
+                            {(() => {
+                              const isConvention = Boolean(
+                                contrat.entrepriseNom ||
+                                contrat.devis?.demande?.entreprise ||
+                                ((contrat.devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise')
+                              );
+                              return (
+                                <h3 className="text-lg font-medium text-gray-900 truncate">
+                                  {isConvention ? 'Convention' : 'Contrat'} #{contrat.id.slice(-6)}
+                                </h3>
+                              );
+                            })()}
                             <span className={`ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
                               <StatusIcon className="h-4 w-4 mr-1" />
                               {status.label}
@@ -537,30 +578,19 @@ export default function AdminContratsPage() {
                                 <DocumentTextIcon className="h-4 w-4 inline mr-1" />
                                 <span className="font-medium">Devis:</span> {contrat.devis.numero}
                               </p>
+                              {(contrat.numero || contrat.reference) && (
+                                <p className="text-sm text-gray-500 mt-1">
+                                  <span className="font-medium">N°:</span> {contrat.numero || '—'}
+                                  {`  `}
+                                  <span className="font-medium ml-3">Réf:</span> {contrat.reference || '—'}
+                                </p>
+                              )}
                               <p className="text-sm text-gray-500">
                                 <CurrencyEuroIcon className="h-4 w-4 inline mr-1" />
                                 <span className="font-medium">Montant:</span> {contrat.devis.montant.toLocaleString('fr-FR')} €
                               </p>
                             </div>
                           </div>
-
-                          {contrat.dateDebut && (
-                            <div className="mt-2">
-                              <p className="text-sm text-gray-500">
-                                <CalendarIcon className="h-4 w-4 inline mr-1" />
-                                <span className="font-medium">Date de début:</span> {new Date(contrat.dateDebut).toLocaleDateString('fr-FR')}
-                              </p>
-                            </div>
-                          )}
-
-                          {contrat.dateFin && (
-                            <div className="mt-2">
-                              <p className="text-sm text-gray-500">
-                                <CalendarIcon className="h-4 w-4 inline mr-1" />
-                                <span className="font-medium">Date de fin:</span> {new Date(contrat.dateFin).toLocaleDateString('fr-FR')}
-                              </p>
-                            </div>
-                          )}
 
                           <p className="mt-2 text-sm text-gray-500">
                             <CalendarIcon className="h-4 w-4 inline mr-1" />
@@ -591,14 +621,46 @@ export default function AdminContratsPage() {
                             className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                           >
                             <DocumentTextIcon className="h-4 w-4 mr-2" />
-                            Voir le contrat
+                            {(() => {
+                              const isConvention = Boolean(
+                                contrat.entrepriseNom ||
+                                contrat.devis?.demande?.entreprise ||
+                                ((contrat.devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise')
+                              );
+                              return isConvention ? 'Voir la convention' : 'Voir le contrat';
+                            })()}
                           </button>
                         </div>
                       </div>
                     </li>
                   );
-                })}
-              </ul>
+                };
+
+                return (
+                  <>
+                    {todayItems.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="px-4 py-3 sm:px-6 font-semibold text-gray-900 bg-gray-50 rounded-t">Aujourd'hui</h4>
+                        <ul className="divide-y divide-gray-200">{todayItems.map(renderItem)}</ul>
+                      </div>
+                    )}
+                    {yesterdayItems.length > 0 && (
+                      <div className="mt-10">
+                        <h4 className="px-4 py-3 sm:px-6 font-semibold text-gray-900 bg-gray-50 rounded-t">Hier</h4>
+                        <ul className="divide-y divide-gray-200">{yesterdayItems.map(renderItem)}</ul>
+                      </div>
+                    )}
+                    {Object.keys(othersMap)
+                      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+                      .map((key) => (
+                        <div key={key} className="mt-10">
+                          <h4 className="px-4 py-3 sm:px-6 font-semibold text-gray-900 bg-gray-50 rounded-t">{key}</h4>
+                          <ul className="divide-y divide-gray-200">{othersMap[key].map(renderItem)}</ul>
+                        </div>
+                      ))}
+                  </>
+                );
+              })()}
 
               {/* Pagination */}
               {totalPages > 1 && (

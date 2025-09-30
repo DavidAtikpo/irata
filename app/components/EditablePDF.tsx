@@ -30,6 +30,11 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
     codePostal: '',
     ville: '',
     telephone: '',
+    entrepriseNom: '',
+    entrepriseAdresse: '',
+    entrepriseCodePostal: '',
+    entrepriseVille: '',
+    entrepriseTelephone: '',
     dateSignature: new Date().toISOString().split('T')[0],
   });
   const [submittedData, setSubmittedData] = useState<any | null>(null);
@@ -108,6 +113,21 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
     if (devis?.id) fetchContrat();
   }, [devis?.id]);
 
+  // Préremplir les infos entreprise si convention (entreprise)
+  useEffect(() => {
+    const isEntreprise = ((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise') || !!devis?.demande?.entreprise || !!devis?.entreprise;
+    if (isEntreprise) {
+      setFormData(prev => ({
+        ...prev,
+        entrepriseNom: devis?.entreprise || devis?.demande?.entreprise || prev.entrepriseNom,
+        entrepriseAdresse: prev.entrepriseAdresse || prev.adresse,
+        entrepriseVille: prev.entrepriseVille || prev.ville,
+        entrepriseCodePostal: prev.entrepriseCodePostal || prev.codePostal,
+        entrepriseTelephone: prev.entrepriseTelephone || prev.telephone,
+      }));
+    }
+  }, [devis, formData.adresse, formData.ville, formData.codePostal, formData.telephone]);
+
   // Fonction pour générer les numéros de contrat définitifs via l'API
   const generateContractNumbers = async () => {
     try {
@@ -179,42 +199,68 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
 
     // Champs remplis
     let y = height - 120;
-    page.drawText('Nom :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
-    page.drawText(submittedData.nom, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
-    y -= 20;
-    page.drawText('Prénom :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
-    page.drawText(submittedData.prenom, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
-    y -= 20;
-    page.drawText('Adresse :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
-    page.drawText(submittedData.adresse, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
-    y -= 20;
-    if (submittedData.ville) {
-      page.drawText('Ville :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
-      page.drawText(submittedData.ville, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+    if (isEntreprise) {
+      page.drawText('Entreprise :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+      page.drawText(submittedData.entrepriseNom || devis?.entreprise || devis?.demande?.entreprise || '', { x: 150, y, size: 11, font, color: rgb(0,0,0) });
       y -= 20;
-    }
-    if (submittedData.codePostal) {
-      page.drawText('Code postal :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
-      page.drawText(submittedData.codePostal, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+      page.drawText('Adresse :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+      page.drawText(submittedData.entrepriseAdresse || '', { x: 150, y, size: 11, font, color: rgb(0,0,0) });
       y -= 20;
-    }
-    if (submittedData.pays) {
-      page.drawText('Pays :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
-      page.drawText(submittedData.pays, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+      if (submittedData.entrepriseVille) {
+        page.drawText('Ville :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+        page.drawText(submittedData.entrepriseVille, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+        y -= 20;
+      }
+      if (submittedData.entrepriseCodePostal) {
+        page.drawText('Code postal :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+        page.drawText(submittedData.entrepriseCodePostal, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+        y -= 20;
+      }
+      if (submittedData.entrepriseTelephone) {
+        page.drawText('Téléphone :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+        page.drawText(submittedData.entrepriseTelephone, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+        y -= 20;
+      }
+      page.drawText('Nom du signataire :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+      page.drawText(`${submittedData.nom} ${submittedData.prenom}`, { x: 200, y, size: 11, font, color: rgb(0,0,0) });
+      y -= 30;
+    } else {
+      page.drawText('Nom :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+      page.drawText(submittedData.nom, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
       y -= 20;
-    }
-    if (submittedData.telephone) {
-      page.drawText('Téléphone :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
-      page.drawText(submittedData.telephone, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+      page.drawText('Prénom :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+      page.drawText(submittedData.prenom, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
       y -= 20;
+      page.drawText('Adresse :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+      page.drawText(submittedData.adresse, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+      y -= 20;
+      if (submittedData.ville) {
+        page.drawText('Ville :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+        page.drawText(submittedData.ville, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+        y -= 20;
+      }
+      if (submittedData.codePostal) {
+        page.drawText('Code postal :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+        page.drawText(submittedData.codePostal, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+        y -= 20;
+      }
+      if (submittedData.pays) {
+        page.drawText('Pays :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+        page.drawText(submittedData.pays, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+        y -= 20;
+      }
+      if (submittedData.telephone) {
+        page.drawText('Téléphone :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+        page.drawText(submittedData.telephone, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+        y -= 20;
+      }
+      page.drawText('Profession :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+      page.drawText(submittedData.profession, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+      y -= 20;
+      page.drawText('Statut :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
+      page.drawText(submittedData.statut, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
+      y -= 30;
     }
-    
-    page.drawText('Profession :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
-    page.drawText(submittedData.profession, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
-    y -= 20;
-    page.drawText('Statut :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
-    page.drawText(submittedData.statut, { x: 150, y, size: 11, font, color: rgb(0,0,0) });
-    y -= 30;
     page.drawText('Date de signature :', { x: 50, y, size: 11, font: boldFont, color: rgb(0,0,0) });
     page.drawText(submittedData.dateSignature, { x: 180, y, size: 11, font, color: rgb(0,0,0) });
     y -= 40;
@@ -278,7 +324,7 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
                   <td className="border p-2 font-semibold text-gray-800">Creation date</td>
                 </tr>
                 <tr>
-                  <td className="border p-2 font-bold underline text-gray-900">CI.DES AGREEMENT SERVICE CONTRACT</td>
+                  <td className="border p-2 font-bold underline text-gray-900">{((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise) ? 'CI.DES AGREEMENT SERVICE CONVENTION' : 'CI.DES AGREEMENT SERVICE CONTRACT'}</td>
                   <td className="border p-2 font-bold underline text-gray-900">ENR-CIDESA-RH 023</td>
                   <td className="border p-2 font-bold text-gray-900">02</td>
                   <td className="border p-2 font-bold text-gray-900">29/07/2024</td>
@@ -334,8 +380,32 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">B. Si Particulier Cocontractant :</h3>
+            <h3 className="text-lg font-semibold text-gray-900">B. {((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise) ? 'Si Entreprise Cocontractante :' : 'Si Particulier Cocontractant :'}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise) && (
+                <>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="entrepriseNom" className="text-gray-700 flex items-center">Nom de l'entreprise</Label>
+                    <Input id="entrepriseNom" value={formData.entrepriseNom} onChange={(e) => setFormData({ ...formData, entrepriseNom: e.target.value })} className="text-gray-900" placeholder="Nom de l'entreprise" />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="entrepriseAdresse" className="text-gray-700 flex items-center">Adresse de l'entreprise</Label>
+                    <Input id="entrepriseAdresse" value={formData.entrepriseAdresse} onChange={(e) => setFormData({ ...formData, entrepriseAdresse: e.target.value })} className="text-gray-900" placeholder="Adresse complète de l'entreprise" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="entrepriseCodePostal" className="text-gray-700 flex items-center">Code postal</Label>
+                    <Input id="entrepriseCodePostal" value={formData.entrepriseCodePostal} onChange={(e) => setFormData({ ...formData, entrepriseCodePostal: e.target.value })} className="text-gray-900" placeholder="Code postal" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="entrepriseVille" className="text-gray-700 flex items-center">Ville</Label>
+                    <Input id="entrepriseVille" value={formData.entrepriseVille} onChange={(e) => setFormData({ ...formData, entrepriseVille: e.target.value })} className="text-gray-900" placeholder="Ville" />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="entrepriseTelephone" className="text-gray-700 flex items-center">Numéro de téléphone de l'entreprise</Label>
+                    <Input id="entrepriseTelephone" type="tel" value={formData.entrepriseTelephone} onChange={(e) => setFormData({ ...formData, entrepriseTelephone: e.target.value })} className="text-gray-900" placeholder="Téléphone de l'entreprise" />
+                  </div>
+                </>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="nom" className="text-gray-700 flex items-center">
                   NOM
@@ -362,6 +432,7 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
                   placeholder="Votre prénom"
                 />
               </div>
+              {(!((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise)) && (
               <div className="space-y-2">
                 <Label htmlFor="adresse" className="text-gray-700 flex items-center">
                   Adresse
@@ -375,6 +446,8 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
                   placeholder="Votre adresse complète"
                 />
               </div>
+              )}
+              {(!((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise)) && (
               <div className="space-y-2">
                 <Label htmlFor="pays" className="text-gray-700 flex items-center">Pays</Label>
                 <Input
@@ -385,6 +458,8 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
                   placeholder="Votre pays"
                 />
               </div>
+              )}
+              {(!((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise)) && (
               <div className="space-y-2">
                 <Label htmlFor="codePostal" className="text-gray-700 flex items-center">Code postal</Label>
                 <Input
@@ -395,6 +470,8 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
                   placeholder="Votre code postal"
                 />
               </div>
+              )}
+              {(!((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise)) && (
               <div className="space-y-2">
                 <Label htmlFor="ville" className="text-gray-700 flex items-center">Ville</Label>
                 <Input
@@ -405,6 +482,8 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
                   placeholder="Votre ville"
                 />
               </div>
+              )}
+              {(!((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise)) && (
               <div className="space-y-2">
                 <Label htmlFor="telephone" className="text-gray-700 flex items-center">Numéro de téléphone</Label>
                 <Input
@@ -416,6 +495,8 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
                   placeholder="Votre numéro de téléphone"
                 />
               </div>
+              )}
+              {(!((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise)) && (
               <div className="space-y-2">
                 <Label htmlFor="profession" className="text-gray-700 flex items-center">
                   Profession
@@ -428,6 +509,8 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
                   placeholder="Votre profession"
                 />
               </div>
+              )}
+              {(!((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise)) && (
               <div className="space-y-2">
                 <Label htmlFor="statut" className="text-gray-700 flex items-center">
                   Statut
@@ -440,6 +523,7 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
                   placeholder="Votre statut"
                 />
               </div>
+              )}
             </div>
             <p className="italic text-gray-600">(Ci-après dénommé le stagiaire).</p>
           </div>
@@ -541,55 +625,59 @@ export function EditablePDF({ devis, onSubmit }: EditablePDFProps) {
           </>
         )}
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Article 2 - Nature et caractéristique des actions de formation :</h3>
-            <ul className="list-disc pl-6 space-y-2 text-gray-700">
-              <li>L'action de formation entre dans la catégorie des actions de « développement de compétences avec accès à des niveaux de qualifications » prévue par l'article L. 6313-1 du code du travail.</li>
-              <li>Elle a pour objectif de qualifié et certifié le stagiaire comme Technicien cordiste apte à exercer des interventions cordiste et apte à évoluer sur cordes en sécurité.</li>
-              <li>Sa durée est fixée à : 5 jours soit 40 heures à compter du {devis.dateFormation ? new Date(devis.dateFormation).toLocaleDateString('fr-FR') : 'Non définie'}</li>
-              <li>Programme de formation (voir Manuel Stagiaire)</li>
-              <li>Sanction de la formation : CERTIFICATION IRATA si aptitude reconnu l'hors de l'examen</li>
-            </ul>
-          </div>
+          {(!((devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise' || devis?.demande?.entreprise)) && (
+            <>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Article 2 - Nature et caractéristique des actions de formation :</h3>
+                <ul className="list-disc pl-6 space-y-2 text-gray-700">
+                  <li>L'action de formation entre dans la catégorie des actions de « développement de compétences avec accès à des niveaux de qualifications » prévue par l'article L. 6313-1 du code du travail.</li>
+                  <li>Elle a pour objectif de qualifié et certifié le stagiaire comme Technicien cordiste apte à exercer des interventions cordiste et apte à évoluer sur cordes en sécurité.</li>
+                  <li>Sa durée est fixée à : 5 jours soit 40 heures à compter du {devis.dateFormation ? new Date(devis.dateFormation).toLocaleDateString('fr-FR') : 'Non définie'}</li>
+                  <li>Programme de formation (voir Manuel Stagiaire)</li>
+                  <li>Sanction de la formation : CERTIFICATION IRATA si aptitude reconnu l'hors de l'examen</li>
+                </ul>
+              </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Article 3 - Niveau de connaissances préalables nécessaire :</h3>
-            <p className="text-gray-700">Afin de suivre au mieux l'action de formation susvisée et obtenir la ou les qualifications auxquelles elle prépare, le stagiaire est informé qu'il est nécessaire de posséder, avant l'entrée en formation, le niveau de connaissances suivant :</p>
-            <p className="font-semibold text-gray-900">« Être majeur, en bonne condition mentale et physique ».</p>
-          </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Article 3 - Niveau de connaissances préalables nécessaire :</h3>
+                <p className="text-gray-700">Afin de suivre au mieux l'action de formation susvisée et obtenir la ou les qualifications auxquelles elle prépare, le stagiaire est informé qu'il est nécessaire de posséder, avant l'entrée en formation, le niveau de connaissances suivant :</p>
+                <p className="font-semibold text-gray-900">« Être majeur, en bonne condition mentale et physique ».</p>
+              </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Article 4 - Délai de rétractation</h3>
-            <p className="text-gray-700">Le stagiaire est informé qu'il dispose d'un délai de rétractation de 10 jours (14 jours si le contrat est conclu à distance ou hors établissement), à compter de la date de la conclusion du présent contrat.</p>
-            <p className="text-gray-700">Le cas échéant, le stagiaire informe l'organisme de formation par lettre recommandée avec accusé de réception.</p>
-            <p className="text-gray-700">Aucune somme ne peut être exigée du stagiaire qui a exercé son droit de rétractation dans les délais prévus.</p>
-          </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Article 4 - Délai de rétractation</h3>
+                <p className="text-gray-700">Le stagiaire est informé qu'il dispose d'un délai de rétractation de 10 jours (14 jours si le contrat est conclu à distance ou hors établissement), à compter de la date de la conclusion du présent contrat.</p>
+                <p className="text-gray-700">Le cas échéant, le stagiaire informe l'organisme de formation par lettre recommandée avec accusé de réception.</p>
+                <p className="text-gray-700">Aucune somme ne peut être exigée du stagiaire qui a exercé son droit de rétractation dans les délais prévus.</p>
+              </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Article 5 - Dispositions financières</h3>
-            <p className="text-gray-700">Le prix de l'action de formation est fixé à : {devis.montant} Euros net</p>
-            <p className="text-gray-700">Le stagiaire s'engage à payer la prestation selon les modalités de paiement suivantes :</p>
-            <ul className="list-disc pl-6 space-y-2 text-gray-700">
-              <li>Après un délai de rétractation mentionné à l'article 5 du présent contrat, le stagiaire effectue un premier versement d'un montant de 350 euros.</li>
-              <li>Le paiement du solde, à la charge du stagiaire, est échelonné au fur et à mesure du déroulement de l'action de formation, selon le calendrier ci-dessous :</li>
-              <li>900 euros le premier jour de formation et 100 euros au deuxième jour de formation</li>
-            </ul>
-          </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Article 5 - Dispositions financières</h3>
+                <p className="text-gray-700">Le prix de l'action de formation est fixé à : {devis.montant} Euros net</p>
+                <p className="text-gray-700">Le stagiaire s'engage à payer la prestation selon les modalités de paiement suivantes :</p>
+                <ul className="list-disc pl-6 space-y-2 text-gray-700">
+                  <li>Après un délai de rétractation mentionné à l'article 5 du présent contrat, le stagiaire effectue un premier versement d'un montant de 350 euros.</li>
+                  <li>Le paiement du solde, à la charge du stagiaire, est échelonné au fur et à mesure du déroulement de l'action de formation, selon le calendrier ci-dessous :</li>
+                  <li>900 euros le premier jour de formation et 100 euros au deuxième jour de formation</li>
+                </ul>
+              </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Article 6 - Interruption du stage</h3>
-            <p className="text-gray-700">En cas de cessation anticipée de la formation du fait de l'organisme de formation ou l'abandon du stage par le stagiaire pour un autre motif que la force majeure dûment reconnue, le présent contrat est résilié selon les modalités financières suivantes :</p>
-            <ul className="list-disc pl-6 space-y-2 text-gray-700">
-              <li>Paiement des heures réellement suivies selon règle du prorata temporis</li>
-              <li>Versement à titre de dédommagement pour les heures non suivies du fait du stagiaire : 900 euros</li>
-            </ul>
-            <p className="text-gray-700">Si le stagiaire est empêché de suivre la formation par suite de force majeure dûment reconnue, le contrat de formation professionnelle est résilié. Dans ce cas, seules les prestations effectivement dispensées sont dues au prorata temporis de leur valeur prévue au présent contrat.</p>
-          </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Article 6 - Interruption du stage</h3>
+                <p className="text-gray-700">En cas de cessation anticipée de la formation du fait de l'organisme de formation ou l'abandon du stage par le stagiaire pour un autre motif que la force majeure dûment reconnue, le présent contrat est résilié selon les modalités financières suivantes :</p>
+                <ul className="list-disc pl-6 space-y-2 text-gray-700">
+                  <li>Paiement des heures réellement suivies selon règle du prorata temporis</li>
+                  <li>Versement à titre de dédommagement pour les heures non suivies du fait du stagiaire : 900 euros</li>
+                </ul>
+                <p className="text-gray-700">Si le stagiaire est empêché de suivre la formation par suite de force majeure dûment reconnue, le contrat de formation professionnelle est résilié. Dans ce cas, seules les prestations effectivement dispensées sont dues au prorata temporis de leur valeur prévue au présent contrat.</p>
+              </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Article 7 - Cas de différend :</h3>
-            <p className="text-gray-700">Si une contestation ou un différend n'ont pu être réglés à l'amiable, le tribunal de Saintes sera compétent pour régler le litige.</p>
-          </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Article 7 - Cas de différend :</h3>
+                <p className="text-gray-700">Si une contestation ou un différend n'ont pu être réglés à l'amiable, le tribunal de Saintes sera compétent pour régler le litige.</p>
+              </div>
+            </>
+          )}
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Signature</h3>
