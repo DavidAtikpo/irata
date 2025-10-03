@@ -119,23 +119,23 @@ export async function GET(
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Devis ${devis.numero}</title>
   <style>
-    body{font-family: Arial, Helvetica, sans-serif; color:#111827;}
+    body{font-family: Inter, Arial, Helvetica, sans-serif; font-size:11px; line-height:1.5; color:#111827;}
     .container{max-width:900px;margin:24px auto;padding:24px;background:#ffffff;}
     .muted{color:rgb(0, 0, 0);}
     .section{background:#ffffff; border-top:3px solid rgb(99, 100, 102); margin: 7px 0px 7px 0px; padding: 0px 5px 0px 5px;}
-    .legend{font-size:18px;font-weight:700;}
-    table{width:100%;border-collapse:collapse  }
-    th,td{border:1px solid rgb(35, 36, 37);padding:8px;text-align:left}
+    .legend{font-size:14px;font-weight:700;}
+    table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid rgb(35, 36, 37);padding:6px;text-align:left;font-size:10px}
     th{background:#e5e7eb}
     .headerRow{display:flex;align-items:center;justify-content:space-between}
-    .badge{display:inline-block;padding:2px 6px;border-radius:9999px;background:#e5e7eb;color:#111827;font-size:12px}
-    .h1{font-size:20px;font-weight:800;margin:0}
+    .badge{display:inline-block;padding:2px 6px;border-radius:9999px;background:#e5e7eb;color:#111827;font-size:10px}
+    .h1{font-size:16px;font-weight:800;margin:0}
     .mt8{margin-top:8px}
     .mt16{margin-top:16px}
     .mt24{margin-top:24px}
-    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-    .input{background:#fff;border:1px solid rgb(141, 141, 141);border-radius:6px;padding:8px}
-    .footer{margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280;display:flex;justify-content:space-between;align-items:center}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .input{background:#fff;border:1px solid rgb(141, 141, 141);border-radius:6px;padding:6px;font-size:10px}
+    .footer{margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:10px;color:#6b7280;display:flex;justify-content:space-between;align-items:center}
     .center{text-align:center}
     .right{text-align:right}
   </style>
@@ -272,7 +272,7 @@ export async function GET(
       <div class="center">
         <div>CI.DES sasu  Capital 2 500 Euros</div>
         <div>SIRET : 87840789900011  VAT : FR71878407899</div>
-        <div>Page 1 sur 2</div>
+        <div>Page 1</div>
       </div>
       <div><img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="height:32px;width:32px"> </div>
        
