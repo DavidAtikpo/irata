@@ -122,7 +122,7 @@ export async function GET(
     body{font-family: Inter, Arial, Helvetica, sans-serif; font-size:11px; line-height:1.5; color:#111827;}
     .container{max-width:900px;margin:24px auto;padding:24px;background:#ffffff;}
     .muted{color:rgb(0, 0, 0);}
-    .section{background:#ffffff; border-top:3px solid rgb(99, 100, 102); margin: 7px 0px 7px 0px; padding: 0px 5px 0px 5px;}
+    .section{background:#ffffff; border-top:3px solid rgb(99, 100, 102); margin: 10px; padding: 10px;}
     .legend{font-size:14px;font-weight:700;}
     table{width:100%;border-collapse:collapse}
     th,td{border:1px solid rgb(35, 36, 37);padding:6px;text-align:left;font-size:10px}
