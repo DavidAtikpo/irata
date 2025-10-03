@@ -94,7 +94,7 @@ export async function GET(
           }
           .container { max-width: 900px; margin: 0 auto; }
           .header {
-            margin-bottom: 24px;
+            margin-bottom: 10px;
             padding-bottom: 10px;
           }
           .header-row { display: flex; gap: 16px; align-items: flex-start; }
@@ -104,15 +104,15 @@ export async function GET(
           .info-table .th { font-weight: 600; color: #1f2937; background: #f9fafb; }
           .info-table .title-cell { font-weight: 700; text-decoration: underline; color: #111827; }
           .section {
-            margin-bottom: 25px;
+            margin-bottom: 15px;
           }
           .section-title {
             font-size: 14px;
             font-weight: bold;
             color: #111827;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 5px;
+            margin-bottom: 5px;
+            
+          
           }
           .info-grid {
             display: grid;
@@ -121,10 +121,8 @@ export async function GET(
             margin-bottom: 20px;
           }
           .info-item {
-            background-color: #f9fafb;
-            padding: 10px;
-            border-radius: 5px;
-            border-left: 3px solid #2563eb;
+            background-color:#ffffff;
+            padding: 2px;
           }
           .info-label {
             font-weight: bold;
@@ -141,26 +139,27 @@ export async function GET(
           .muted { color: #6b7280; font-style: italic; }
           .numbers { display: flex; justify-content: space-between; font-size: 10px; margin-top: 6px; }
           .signature-section {
-            margin-top: 40px;
+            margin-top: 10px;
             border-top: 1px solid #e5e7eb;
-            padding-top: 20px;
+            padding-top: 10px;
           }
           .signature-box {
-            border: 1px solid #d1d5db;
-            padding: 15px;
-            margin-top: 10px;
-            min-height: 80px;
+            padding: 5px;
+            margin-top: 5px;
+            min-height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
           }
           .footer {
-            margin-top: 40px;
-            text-align: center;
+            margin-top: 10px;
             font-size: 10px;
             color: #666;
             border-top: 1px solid #e5e7eb;
-            padding-top: 20px;
+            padding-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
           }
           .status-badge {
             display: inline-block;
@@ -217,7 +216,7 @@ export async function GET(
 
         <div class="section">
           <h2 class="section-title">A. Organisme de Formation :</h2>
-          <div class="info-item" style="border-left-color:#111827">
+          <div class="info-item">
             <div class="info-value">La société CI.DES sasu, immatriculée sous le numéro SIREN-SIRET : 878407899 00011,</div>
             <div class="info-value">représentée par Monsieur Laurent ARDOUIN, gérant de la société et du centre de formation cordiste</div>
             <div class="info-value">À l'adresse « Chez Chagneau » 17 270 Boresse et Martron France</div>
@@ -375,10 +374,13 @@ export async function GET(
         </div>
 
         <div class="footer">
-          <p><strong>CI.DES sasu</strong> - Capital 2 500 Euros</p>
-          <p>SIRET: 87840789900011 - VAT: FR71878407899</p>
-          <p>250501 CI.DES 2504SS03 11 Florent MIRBEAU Contrat Formation Professionnelle</p>
-          <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="height: 70px;">
+          <div></div>
+          <div class="center">
+            <div><strong>CI.DES sasu</strong> - Capital 2 500 Euros</div>
+            <div>SIRET: 87840789900011 - VAT: FR71878407899</div>
+            <div>250501 CI.DES 2504SS03 11 Florent MIRBEAU ${isConvention ? 'Convention Formation Professionnelle' : 'Contrat Formation Professionnelle'}</div>
+          </div>
+          <div><img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="height:32px;width:32px"></div>
         </div>
         </div>
       </body>
@@ -447,10 +449,10 @@ export async function GET(
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '20mm',
-        right: '20mm',
-        bottom: '20mm',
-        left: '20mm'
+        top: '10mm',
+        right: '10mm',
+        bottom: '10mm',
+        left: '10mm'
       }
     });
 
