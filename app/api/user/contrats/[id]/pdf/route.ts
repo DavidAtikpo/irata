@@ -85,11 +85,12 @@ export async function GET(
         <title>${isConvention ? 'Convention' : 'Contrat'} de formation - ${contrat.devis.demande.session}</title>
         <style>
           body {
-            font-family: Arial, sans-serif;
+            font-family: Inter, Arial, Helvetica, sans-serif;
+            font-size: 11px;
             margin: 0;
             padding: 20px;
             color: #333;
-            line-height: 1.6;
+            line-height: 1.5;
           }
           .container { max-width: 900px; margin: 0 auto; }
           .header {
@@ -99,14 +100,14 @@ export async function GET(
           .header-row { display: flex; gap: 16px; align-items: flex-start; }
           .header-row img { width: 80px; height: 80px; object-fit: contain; }
           .info-table { width: 100%; border-collapse: collapse; }
-          .info-table td { border: 1px solid #d1d5db; padding: 8px; font-size: 12px; }
+          .info-table td { border: 1px solid #d1d5db; padding: 8px; font-size: 10px; }
           .info-table .th { font-weight: 600; color: #1f2937; background: #f9fafb; }
           .info-table .title-cell { font-weight: 700; text-decoration: underline; color: #111827; }
           .section {
             margin-bottom: 25px;
           }
           .section-title {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
             color: #111827;
             margin-bottom: 10px;
@@ -128,17 +129,17 @@ export async function GET(
           .info-label {
             font-weight: bold;
             color: #666;
-            font-size: 12px;
+            font-size: 10px;
             text-transform: uppercase;
             margin-bottom: 5px;
           }
           .info-value {
-            font-size: 14px;
+            font-size: 12px;
             color: #333;
           }
           .center { text-align: center; }
           .muted { color: #6b7280; font-style: italic; }
-          .numbers { display: flex; justify-content: space-between; font-size: 12px; margin-top: 6px; }
+          .numbers { display: flex; justify-content: space-between; font-size: 10px; margin-top: 6px; }
           .signature-section {
             margin-top: 40px;
             border-top: 1px solid #e5e7eb;
@@ -156,7 +157,7 @@ export async function GET(
           .footer {
             margin-top: 40px;
             text-align: center;
-            font-size: 12px;
+            font-size: 10px;
             color: #666;
             border-top: 1px solid #e5e7eb;
             padding-top: 20px;
@@ -165,7 +166,7 @@ export async function GET(
             display: inline-block;
             padding: 5px 10px;
             border-radius: 15px;
-            font-size: 12px;
+            font-size: 10px;
             font-weight: bold;
             text-transform: uppercase;
           }
@@ -185,7 +186,7 @@ export async function GET(
         <div class="container">
           <div class="header">
             <div class="header-row">
-              <img src="${process.env.NEXT_PUBLIC_BASE_URL || ''}/logo.png" alt="Logo CI.DES" />
+              <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="height: 70px;">
               <table class="info-table">
                 <tbody>
                   <tr>
@@ -377,9 +378,7 @@ export async function GET(
           <p><strong>CI.DES sasu</strong> - Capital 2 500 Euros</p>
           <p>SIRET: 87840789900011 - VAT: FR71878407899</p>
           <p>250501 CI.DES 2504SS03 11 Florent MIRBEAU Contrat Formation Professionnelle</p>
-          <p style="margin-top: 10px; font-size: 10px; color: #999;">
-            Document généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}
-          </p>
+          <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="height: 70px;">
         </div>
         </div>
       </body>
