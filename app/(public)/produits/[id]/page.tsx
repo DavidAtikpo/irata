@@ -170,8 +170,8 @@ export default function ProductDetailPage() {
           <div className="space-y-4">
             <div className="aspect-square rounded-lg overflow-hidden bg-white shadow-lg">
               <Image
-                src={product.images[selectedImage] || "/placeholder.svg"}
-                alt={product.name}
+                src={product.images?.[selectedImage] ?? "/placeholder.svg"}
+                alt={product.name ?? 'Produit'}
                 width={600}
                 height={600}
                 className="w-full h-full object-cover"
@@ -181,7 +181,7 @@ export default function ProductDetailPage() {
               />
             </div>
             
-            {product.images.length > 1 && (
+            {Array.isArray(product.images) && product.images.length > 1 && (
               <div className="grid grid-cols-4 gap-2">
                 {product.images.map((image, index) => (
                   <button
@@ -193,7 +193,7 @@ export default function ProductDetailPage() {
                   >
                     <Image
                       src={image}
-                      alt={`${product.name} ${index + 1}`}
+                      alt={`${product.name ?? 'Produit'} ${index + 1}`}
                       width={150}
                       height={150}
                       className="w-full h-full object-cover"
@@ -208,7 +208,9 @@ export default function ProductDetailPage() {
           <div className="space-y-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Badge variant="secondary">{product.category.name}</Badge>
+                {product.category?.name && (
+                  <Badge variant="secondary">{product.category.name}</Badge>
+                )}
                 {product.ceMarking && (
                   <Badge className="bg-green-500">CE</Badge>
                 )}
@@ -230,7 +232,7 @@ export default function ProductDetailPage() {
               </div>
 
               <div className="text-3xl font-bold text-stone-900 mb-6">
-                €{product.price.toFixed(2)}
+                €{Number(product.price ?? 0).toFixed(2)}
               </div>
             </div>
 
@@ -290,25 +292,25 @@ export default function ProductDetailPage() {
                     onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
                     className="w-16 text-center border-0"
                     min="1"
-                    max={product.stock}
+                    max={product.stock ?? 0}
                   />
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleQuantityChange(quantity + 1)}
-                    disabled={quantity >= product.stock}
+                    disabled={quantity >= (product.stock ?? 0)}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
                 <span className="text-sm text-stone-500">
-                  {product.stock} en stock
+                  {(product.stock ?? 0)} en stock
                 </span>
               </div>
 
               <Button
                 onClick={handleAddToCart}
-                disabled={addingToCart || product.stock === 0}
+                disabled={addingToCart || (product.stock ?? 0) === 0}
                 className="w-full bg-stone-900 hover:bg-stone-800 text-white py-3"
                 size="lg"
               >

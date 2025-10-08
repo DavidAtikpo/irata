@@ -222,7 +222,7 @@ export default function DevisDetailPage({ params }: { params: Promise<{ id: stri
     if (!devis) return;
     
     try {
-      const response = await fetch(`/api/user/devis/${resolvedParams.id}/contrat/pdf`);
+      const response = await fetch(`/api/user/contrats/${resolvedParams.id}/pdf`);
       if (!response.ok) {
         throw new Error('Erreur lors du téléchargement du contrat');
       }

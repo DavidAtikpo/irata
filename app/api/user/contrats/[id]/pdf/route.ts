@@ -86,7 +86,7 @@ export async function GET(
         <style>
           body {
             font-family: Inter, Arial, Helvetica, sans-serif;
-            font-size: 11px;
+            font-size: 15px;
             margin: 0;
             padding: 20px;
             color: #333;

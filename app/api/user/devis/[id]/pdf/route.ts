@@ -119,7 +119,7 @@ export async function GET(
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Devis ${devis.numero}</title>
   <style>
-    body{font-family: Inter, Arial, Helvetica, sans-serif; font-size:11px; line-height:1.5; color:#111827;}
+    body{font-family: Inter, Arial, Helvetica, sans-serif; font-size:12px; line-height:1.5; color:#111827;}
     .container{max-width:900px;margin:24px auto;padding:24px;background:#ffffff;}
     .muted{color:rgb(0, 0, 0);}
     .section{background:#ffffff; border-top:3px solid rgb(99, 100, 102); margin: 10px; padding: 10px;}
