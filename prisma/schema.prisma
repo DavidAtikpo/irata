@@ -15,7 +15,7 @@ model User {
   password                      String
   nom                           String?
   prenom                        String?
-  role                          Role                           @default(CLIENT)
+  role                          Role                           @default(USER)
   createdAt                     DateTime                       @default(now())
   updatedAt                     DateTime                       @updatedAt
   passwordResetToken            String?                        @unique

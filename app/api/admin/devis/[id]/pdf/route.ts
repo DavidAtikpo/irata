@@ -1,17 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from 'lib/prisma';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
+import { existsSync } from 'node:fs';
 
 export async function GET(
-  request: NextRequest,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-
-    if (!session || session?.user?.role !== 'ADMIN') {
+    if (!session || session.user?.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }
@@ -23,11 +24,7 @@ export async function GET(
     const devis = await prisma.devis.findUnique({
       where: { id },
       include: {
-        demande: {
-          include: {
-            user: true,
-          },
-        },
+        demande: { include: { user: true } },
       },
     });
 
@@ -38,101 +35,248 @@ export async function GET(
       );
     }
 
-    // Créer le PDF du devis
-    const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595.28, 841.89]); // A4
-    const { width, height } = page.getSize();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const isProd = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+    let executablePath: string | undefined;
 
-    // En-tête
-    page.drawText('DEVIS FORMATION CORDISTE IRATA', {
-      x: 50, y: height - 50, size: 16, font: boldFont, color: rgb(0,0,0)
-    });
-    
-    let y = height - 90;
-    page.drawText(`Numéro de devis: ${devis.numero}`, { x: 50, y, size: 12, font: boldFont, color: rgb(0,0,0) });
-    y -= 20;
-    page.drawText(`Date: ${new Date(devis.createdAt).toLocaleDateString('fr-FR')}`, { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-
-    // Informations entreprise
-    y -= 40;
-    page.drawText('CI.DES sasu', { x: 50, y, size: 12, font: boldFont, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText('SIRET: 878407899 00011', { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText('Chez Chagneau, 17270 Boresse et Martron', { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText('France', { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-
-    // Informations client
-    y -= 40;
-    page.drawText('Client:', { x: 50, y, size: 12, font: boldFont, color: rgb(0,0,0) });
-    y -= 20;
-    page.drawText(`${devis.demande.user.prenom} ${devis.demande.user.nom}`, { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText(`Email: ${devis.demande.user.email}`, { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-    if (devis.adresse) {
-      y -= 15;
-      page.drawText(`Adresse: ${devis.adresse}`, { x: 50, y, size: 10, font, color: rgb(0,0,0) });
+    if (isProd) {
+      executablePath = await chromium.executablePath();
+    } else if (process.platform === 'win32') {
+      const candidates = [
+        'C:/Program Files/Google/Chrome/Application/chrome.exe',
+        'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+        'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+        'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+      ];
+      for (const p of candidates) {
+        if (existsSync(p)) { executablePath = p; break; }
+      }
+    } else {
+      const candidates = [
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      ];
+      for (const p of candidates) {
+        if (existsSync(p)) { executablePath = p; break; }
+      }
     }
 
-    // Détails de la formation
-    y -= 40;
-    page.drawText('Détails de la formation:', { x: 50, y, size: 12, font: boldFont, color: rgb(0,0,0) });
-    y -= 20;
-    page.drawText(`Formation: Formation Cordiste IRATA - ${devis.demande.session}`, { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText(`Désignation: ${devis.designation}`, { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText(`Quantité: ${devis.quantite || 0} ${devis.unite || ''}`, { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText(`Prix unitaire: ${(devis.prixUnitaire || 0).toLocaleString('fr-FR').replace(/\s/g, ' ')} €`, { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText(`TVA: ${devis.tva || 0}%`, { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-
-    if (devis.dateFormation) {
-      y -= 15;
-      page.drawText(`Date de formation: ${new Date(devis.dateFormation).toLocaleDateString('fr-FR')}`, { x: 50, y, size: 10, font, color: rgb(0,0,0) });
+    if (!executablePath) {
+      return NextResponse.json(
+        { message: 'Navigateur non trouvé pour la génération PDF. Installez Chrome/Edge localement.' },
+        { status: 500 }
+      );
     }
 
-    // Montant total
-    y -= 30;
-    page.drawText(`MONTANT TOTAL: ${(devis.montant || 0).toLocaleString('fr-FR').replace(/\s/g, ' ')} € NET`, { 
-      x: 50, y, size: 14, font: boldFont, color: rgb(0,0,0) 
+    const args = isProd ? chromium.args : ['--no-sandbox', '--disable-setuid-sandbox'];
+    const browser = await puppeteer.launch({
+      args,
+      headless: true,
+      executablePath,
+      defaultViewport: { width: 1240, height: 1754 },
     });
+    const page = await browser.newPage();
 
-    // Conditions
-    y -= 40;
-    page.drawText('Conditions:', { x: 50, y, size: 12, font: boldFont, color: rgb(0,0,0) });
-    y -= 20;
-    page.drawText('• Formation de 5 jours + 1 jour d\'examen', { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText('• Hébergement inclus', { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText('• Certification IRATA', { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText('• Matériel fourni', { x: 50, y, size: 10, font, color: rgb(0,0,0) });
+    const formatISOToFr = (value?: string | Date | null) => {
+      if (!value) return '-';
+      try {
+        if (value instanceof Date) return value.toLocaleDateString('fr-FR');
+        return new Date(value).toLocaleDateString('fr-FR');
+      } catch {
+        return typeof value === 'string' ? value : '-';
+      }
+    };
 
-    // Pied de page
-    page.drawText('CI.DES sasu - Capital 2 500 Euros', { x: 50, y: 60, size: 8, font, color: rgb(0,0,0) });
-    page.drawText('SIRET: 87840789900011 - VAT: FR71878407899', { x: 50, y: 45, size: 8, font, color: rgb(0,0,0) });
-    page.drawText('Devis valable 30 jours', { x: 50, y: 30, size: 8, font, color: rgb(0,0,0) });
+    const sessionText = devis.demande?.session || '';
+    const montant = (devis.montant || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const pu = (devis.prixUnitaire || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    const pdfBytes = await pdfDoc.save();
+    const html = `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Devis ${devis.numero}</title>
+  <style>
+    body{font-family: Inter, Arial, Helvetica, sans-serif; font-size:12px; line-height:1.5; color:#111827;}
+    .container{max-width:900px;margin:24px auto;padding:24px;background:#ffffff;}
+    .muted{color:rgb(0, 0, 0);}
+    .section{background:#ffffff; border-top:3px solid rgb(99, 100, 102); margin: 7px 10px; padding: 10px;}
+    .legend{font-size:14px;font-weight:700;}
+    table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid rgb(35, 36, 37);padding:6px;text-align:left;font-size:10px}
+    th{background:#e5e7eb}
+    .headerRow{display:flex;align-items:center;justify-content:space-between}
+    .badge{display:inline-block;padding:2px 6px;border-radius:9999px;background:#e5e7eb;color:#111827;font-size:10px}
+    .h1{font-size:16px;font-weight:800;margin:0}
+    .mt8{margin-top:8px}
+    .mt16{margin-top:16px}
+    .mt24{margin-top:24px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .input{background:#fff;border:1px solid rgb(141, 141, 141);border-radius:6px;padding:6px;font-size:10px}
+    .footer{margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:10px;color:#6b7280;display:flex;justify-content:space-between;align-items:center}
+    .center{text-align:center}
+    .right{text-align:right}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="headerRow">
+       <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="height: 70px;">
+      <table>
+        <tbody>
+          <tr>
+            <td class="input"><strong>Titre</strong></td>
+            <td class="input"><strong>Numéro de code</strong></td>
+            <td class="input"><strong>Révision</strong></td>
+            <td class="input"><strong>Création date</strong></td>
+          </tr>
+          <tr>
+            <td class="input">TRAME DE DEVIS</td>
+            <td class="input">ENR-CIFRA-COMP 00X</td>
+            <td class="input">00</td>
+            <td class="input">${new Date().toLocaleDateString('fr-FR')}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-    return new Response(new Uint8Array(pdfBytes), {
-      status: 200,
+    <div class="section">
+      <div class="legend">Informations principales</div>
+      <div class="grid">
+        <div>
+          <div class="muted">Numéro</div>
+          <div class="input">${devis.numero}</div>
+        </div>
+        <div>
+          <div class="muted">Notre référence</div>
+          <div class="input">${devis.referenceAffaire || '-'}</div>
+        </div>
+        <div>
+          <div class="muted">Client</div>
+          <div class="input">${devis.client}</div>
+        </div>
+        <div>
+          <div class="muted">Email</div>
+          <div class="input">${devis.mail}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="legend">Adresses</div>
+      <div class="grid">
+        <div>
+          <div class="muted">Adresse de facturation</div>
+          <div class="input">CI.DES chez chagneau 17270 BORESSE-ET-MARTRON France</div>
+        </div>
+        <div>
+          <div class="muted">Adresse de livraison</div>
+          <div class="input">${devis.adresseLivraison || ''}</div>
+        </div>
+        <div>
+          <div class="muted">Date de formation</div>
+          <div class="input">${formatISOToFr(devis.dateFormation)}${devis.dateExamen ? ' au ' + formatISOToFr(devis.dateExamen) : ''} ${!devis.dateFormation && sessionText ? sessionText : ''}</div>
+        </div>
+        <div>
+          <div class="muted">Date examen</div>
+          <div class="input">${formatISOToFr(devis.dateExamen)}</div>
+        </div>
+        ${devis.entreprise ? `<div><div class="muted">Entreprise</div><div class="input">${devis.entreprise}</div></div>` : ''}
+        <div>
+          <div class="muted">SIRET / NIF</div>
+          <div class="input">${devis.siret || ''}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="legend">Informations administratives</div>
+      <div class="grid">
+        <div>
+          <div class="muted">Numéro NDA</div>
+          <div class="input">${devis.numNDA || ''}</div>
+        </div>
+        <div>
+          <div class="muted">Centre Irata</div>
+          <div class="input">${devis.suiviPar || ''}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="legend">Désignation</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Désignation</th>
+            <th>Quantité</th>
+            <th>Unité</th>
+            <th>Prix unitaire HT</th>
+            <th>Prix total HT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${devis.designation}</td>
+            <td>${devis.quantite}</td>
+            <td>${devis.unite}</td>
+            <td>${pu} €</td>
+            <td>${montant} €</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="legend">Informations bancaires</div>
+      <div class="grid">
+        <div><div class="muted">IBAN</div><div class="input">${devis.iban || ''}</div></div>
+        <div><div class="muted">BIC</div><div class="input">${devis.bic || ''}</div></div>
+        <div><div class="muted">Banque</div><div class="input">${devis.banque || ''}</div></div>
+        <div><div class="muted">Intitulé du compte</div><div class="input">${devis.intituleCompte || ''}</div></div>
+      </div>
+    </div>
+
+        <div class="section">
+      <div class="legend">Signature</div>
+      <div>
+        <div class="muted">Signature: Administration</div>
+        ${devis.signature && devis.signature.startsWith('data:image/') ? `<img src="${devis.signature}" alt="Signature" style="height:64px;background:#ffffff;border:1px solid #e5e7eb"/>` : `<div style="height:64px;border:2px dashed #d1d5db;border-radius:8px;background:#f9fafb;display:flex;align-items:center;justify-content:center;color:#9ca3af;">Aucune signature</div>`}
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>${devis.numero} Trame</div>
+      <div class="center">
+        <div>CI.DES sasu  Capital 2 500 Euros</div>
+        <div>SIRET : 87840789900011  VAT : FR71878407899</div>
+        <div>Page 1</div>
+      </div>
+      <div><img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="height:32px;width:32px"></div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '4mm', left: '4mm', right: '4mm', bottom: '4mm' }, scale: 0.96 });
+    await browser.close();
+
+    const pdfArrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength);
+    return new NextResponse(pdfArrayBuffer as ArrayBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="devis_${devis.numero}.pdf"`,
       },
     });
   } catch (error) {
-    console.error('Erreur lors de la génération du PDF du devis:', error);
+    console.error('Erreur lors de la génération du PDF admin devis:', error);
     return NextResponse.json(
       { message: 'Erreur lors de la génération du PDF du devis' },
       { status: 500 }
     );
   }
-} 
+}
