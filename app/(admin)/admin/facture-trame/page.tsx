@@ -111,6 +111,13 @@ export default function FactureTramePage() {
     }
   }, [session]);
 
+  // Recalculer les statistiques quand la session sélectionnée change
+  useEffect(() => {
+    if (userInvoices.length > 0) {
+      calculateStats(userInvoices);
+    }
+  }, [selectedSession, userInvoices]);
+
   const loadUserInvoices = async () => {
     try {
       console.log('Chargement des factures...');
@@ -286,6 +293,8 @@ export default function FactureTramePage() {
     try {
       const amount = paymentType === 'partial' ? partialAmount : undefined;
       
+      console.log('Tentative de marquage comme payé:', { invoiceId, paymentType, amount });
+      
       const response = await fetch(`/api/admin/invoices/${invoiceId}/mark-paid`, {
         method: 'POST',
         headers: {
@@ -298,13 +307,18 @@ export default function FactureTramePage() {
       });
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('Paiement enregistré avec succès:', result);
         setMessage('Paiement enregistré avec succès');
         setShowPartialPaymentModal(false);
         setPartialAmount(0);
         setInvoiceToMarkPartial(null);
+        setSelectedInvoice(null); // Fermer les détails
         await loadUserInvoices(); // Recharger les données
       } else {
-        setMessage('Erreur lors de l\'enregistrement du paiement');
+        const errorData = await response.json();
+        console.error('Erreur lors de l\'enregistrement du paiement:', errorData);
+        setMessage(`Erreur lors de l'enregistrement du paiement: ${errorData.message || 'Erreur inconnue'}`);
       }
     } catch (error) {
       console.error('Erreur:', error);
@@ -461,7 +475,7 @@ export default function FactureTramePage() {
             value={selectedSession}
             onChange={(e) => {
               setSelectedSession(e.target.value);
-              calculateStats(userInvoices);
+              // Les statistiques seront recalculées automatiquement via useEffect
             }}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
@@ -548,7 +562,10 @@ export default function FactureTramePage() {
               <span className="text-sm text-gray-500 ml-2">({filteredUsers.length})</span>
             </h2>
             <button
-              onClick={() => setSelectedStatType(null)}
+              onClick={() => {
+                setSelectedStatType(null);
+                setSelectedInvoice(null);
+              }}
               className="text-gray-500 hover:text-gray-700"
             >
               ✕ Fermer
@@ -559,50 +576,130 @@ export default function FactureTramePage() {
           ) : (
             <div className="space-y-3">
               {filteredUsers.map((invoice) => (
-                <div key={invoice.id} className="border rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-medium">{invoice.userName}</h3>
-                      <p className="text-sm text-gray-600">{invoice.userEmail}</p>
-                      <div className="grid grid-cols-2 gap-4 mt-2">
-                        <div>
-                          <p className="text-xs text-gray-500">Facture</p>
-                          <p className="text-sm font-medium text-blue-600">{invoice.invoiceNumber}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Montant</p>
-                          <p className="text-sm font-medium">{invoice.amount}€</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Statut</p>
-                          <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
-                            invoice.paymentStatus === 'PAID' 
-                              ? 'bg-green-100 text-green-800' 
-                              : invoice.paymentStatus === 'PARTIAL'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {invoice.paymentStatus === 'PAID' ? 'Payée' : 
-                             invoice.paymentStatus === 'PARTIAL' ? 'Partiel' : 'En attente'}
-                          </span>
-                        </div>
-                </div>
-              </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => selectInvoice(invoice)}
-                        className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-                      >
-                        Voir détails
-                      </button>
-                      <button
-                        onClick={() => downloadUserInvoicePdf(invoice)}
-                        className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                      >
-                        Télécharger PDF
-                      </button>
+                <div key={invoice.id}>
+                  <div className="border rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-medium">{invoice.userName}</h3>
+                        <p className="text-sm text-gray-600">{invoice.userEmail}</p>
+                        <div className="grid grid-cols-2 gap-4 mt-2">
+                          <div>
+                            <p className="text-xs text-gray-500">Facture</p>
+                            <p className="text-sm font-medium text-blue-600">{invoice.invoiceNumber}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Montant</p>
+                            <p className="text-sm font-medium">{invoice.amount}€</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Statut</p>
+                            <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
+                              invoice.paymentStatus === 'PAID' 
+                                ? 'bg-green-100 text-green-800' 
+                                : invoice.paymentStatus === 'PARTIAL'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {invoice.paymentStatus === 'PAID' ? 'Payée' : 
+                               invoice.paymentStatus === 'PARTIAL' ? 'Partiel' : 'En attente'}
+                            </span>
+                          </div>
+                      </div>
+                    </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => selectInvoice(invoice)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        >
+                          Voir détails
+                        </button>
+                        <button
+                          onClick={() => downloadUserInvoicePdf(invoice)}
+                          className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                        >
+                          Télécharger PDF
+                        </button>
+                      </div>
                     </div>
                   </div>
+                  
+                  {/* Détails de la facture sélectionnée - affichés directement sous l'utilisateur */}
+                  {selectedInvoice && selectedInvoice.id === invoice.id && (
+                    <div className="mt-3 bg-gray-50 rounded-lg border p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold">Détails de la facture</h3>
+                        <button
+                          onClick={() => setSelectedInvoice(null)}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          ✕ Fermer
+                        </button>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <h4 className="font-medium mb-2">Informations utilisateur</h4>
+                          <p><strong>Nom:</strong> {selectedInvoice.userName}</p>
+                          <p><strong>Email:</strong> {selectedInvoice.userEmail}</p>
+                          <p><strong>Facture:</strong> {selectedInvoice.invoiceNumber}</p>
+                          <p><strong>Montant:</strong> {selectedInvoice.amount}€</p>
+                          <p><strong>Date de création:</strong> {new Date(selectedInvoice.createdAt).toLocaleDateString('fr-FR')}</p>
+                          <p><strong>Dernière mise à jour:</strong> {new Date(selectedInvoice.updatedAt).toLocaleDateString('fr-FR')}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium mb-2">Statut de paiement</h4>
+                          <p><strong>Statut:</strong> 
+                            <span className={`ml-2 inline-flex px-2 py-1 rounded text-xs font-medium ${
+                              selectedInvoice.paymentStatus === 'PAID' 
+                                ? 'bg-green-100 text-green-800' 
+                                : selectedInvoice.paymentStatus === 'PARTIAL'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {selectedInvoice.paymentStatus === 'PAID' ? 'Payée' : 
+                               selectedInvoice.paymentStatus === 'PARTIAL' ? 'Paiement partiel' : 'En attente'}
+                            </span>
+                          </p>
+                          {selectedInvoice.paymentStatus === 'PARTIAL' && (
+                            <p><strong>Montant payé:</strong> {selectedInvoice.paidAmount}€</p>
+                          )}
+                          {selectedInvoice.paymentMethod && (
+                            <p><strong>Méthode de paiement:</strong> {selectedInvoice.paymentMethod}</p>
+                          )}
+                          {selectedInvoice.notes && (
+                            <div className="mt-2">
+                              <p><strong>Notes:</strong></p>
+                              <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">{selectedInvoice.notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => markAsPaid(selectedInvoice.id, 'full')}
+                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          Marquer comme payée
+                        </button>
+                        <button
+                          onClick={() => {
+                            setInvoiceToMarkPartial(selectedInvoice);
+                            setShowPartialPaymentModal(true);
+                          }}
+                          className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                        >
+                          Paiement partiel
+                        </button>
+                        <button
+                          onClick={() => downloadUserInvoicePdf(selectedInvoice)}
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          Télécharger PDF
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
               </div>
@@ -610,79 +707,19 @@ export default function FactureTramePage() {
           </div>
         )}
 
-      {/* Détails de la facture sélectionnée */}
-      {selectedInvoice && (
-        <div className="bg-white rounded-lg border p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Détails de la facture</h2>
-            <button
-              onClick={() => setSelectedInvoice(null)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              ✕ Fermer
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <h3 className="font-medium mb-2">Informations utilisateur</h3>
-              <p><strong>Nom:</strong> {selectedInvoice.userName}</p>
-              <p><strong>Email:</strong> {selectedInvoice.userEmail}</p>
-              <p><strong>Facture:</strong> {selectedInvoice.invoiceNumber}</p>
-              <p><strong>Montant:</strong> {selectedInvoice.amount}€</p>
-            </div>
-            <div>
-              <h3 className="font-medium mb-2">Statut de paiement</h3>
-              <p><strong>Statut:</strong> 
-                <span className={`ml-2 inline-flex px-2 py-1 rounded text-xs font-medium ${
-                  selectedInvoice.paymentStatus === 'PAID' 
-                    ? 'bg-green-100 text-green-800' 
-                    : selectedInvoice.paymentStatus === 'PARTIAL'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {selectedInvoice.paymentStatus === 'PAID' ? 'Payée' : 
-                   selectedInvoice.paymentStatus === 'PARTIAL' ? 'Paiement partiel' : 'En attente'}
-                </span>
-              </p>
-              {selectedInvoice.paymentStatus === 'PARTIAL' && (
-                <p><strong>Montant payé:</strong> {selectedInvoice.paidAmount}€</p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => markAsPaid(selectedInvoice.id, 'full')}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              Marquer comme payée
-            </button>
-            <button
-              onClick={() => {
-                setInvoiceToMarkPartial(selectedInvoice);
-                setShowPartialPaymentModal(true);
-              }}
-              className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
-            >
-              Paiement partiel
-            </button>
-            <button
-              onClick={() => downloadUserInvoicePdf(selectedInvoice)}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Télécharger PDF
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Modal pour paiement partiel */}
-      {showPartialPaymentModal && (
+      {showPartialPaymentModal && invoiceToMarkPartial && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">
             <h3 className="text-lg font-semibold mb-4">Paiement partiel</h3>
             <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                Facture: {invoiceToMarkPartial.invoiceNumber}
+              </p>
+              <p className="text-sm text-gray-600 mb-4">
+                Montant total: {invoiceToMarkPartial.amount}€
+              </p>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Montant payé (€)
               </label>
@@ -692,12 +729,21 @@ export default function FactureTramePage() {
                 onChange={(e) => setPartialAmount(Number(e.target.value))}
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
                 placeholder="Montant"
+                min="0"
+                max={invoiceToMarkPartial.amount}
               />
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => markAsPaid(invoiceToMarkPartial.id, 'partial')}
-                className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                onClick={() => {
+                  if (partialAmount > 0 && partialAmount <= invoiceToMarkPartial.amount) {
+                    markAsPaid(invoiceToMarkPartial.id, 'partial');
+                  } else {
+                    setMessage('Veuillez saisir un montant valide');
+                  }
+                }}
+                disabled={partialAmount <= 0 || partialAmount > invoiceToMarkPartial.amount}
+                className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Confirmer
               </button>
