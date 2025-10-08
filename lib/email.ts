@@ -254,6 +254,84 @@ export async function sendPaymentFailureEmail(
   return sendEmail({ to: contributorEmail, subject, html });
 }
 
+export async function sendPaymentStatusUpdateEmail(
+  to: string,
+  userName: string,
+  invoiceNumber: string,
+  amount: number,
+  paymentStatus: string,
+  paidAmount?: number
+) {
+  const subject = `Mise à jour du statut de paiement - Facture ${invoiceNumber}`;
+  
+  const statusText = paymentStatus === 'PAID' ? 'Payée' : 
+                    paymentStatus === 'PARTIAL' ? 'Paiement partiel' : 'En attente';
+  
+  const statusColor = paymentStatus === 'PAID' ? '#10b981' : 
+                     paymentStatus === 'PARTIAL' ? '#f59e0b' : '#ef4444';
+  
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px;">CI.DES</h1>
+        <p style="margin: 10px 0 0 0; font-size: 16px;">Centre de Formation Cordiste IRATA</p>
+      </div>
+      
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #333; margin-bottom: 20px;">Mise à jour du statut de paiement</h2>
+        
+        <p>Bonjour ${userName},</p>
+        
+        <p>Nous vous informons que le statut de paiement de votre facture a été mis à jour.</p>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid ${statusColor};">
+          <h3 style="color: #667eea; margin-top: 0;">Détails de la facture :</h3>
+          <ul style="list-style: none; padding: 0;">
+            <li style="margin: 10px 0;"><strong>Numéro de facture :</strong> ${invoiceNumber}</li>
+            <li style="margin: 10px 0;"><strong>Montant total :</strong> ${amount.toLocaleString('fr-FR')} €</li>
+            <li style="margin: 10px 0;"><strong>Nouveau statut :</strong> 
+              <span style="background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                ${statusText}
+              </span>
+            </li>
+            ${paidAmount ? `<li style="margin: 10px 0;"><strong>Montant payé :</strong> ${paidAmount.toLocaleString('fr-FR')} €</li>` : ''}
+          </ul>
+        </div>
+        
+        ${paymentStatus === 'PAID' ? `
+          <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+            <h3 style="color: #065f46; margin-top: 0;">✅ Paiement confirmé</h3>
+            <p style="color: #047857; margin: 0;">Votre paiement a été confirmé avec succès. Merci pour votre confiance !</p>
+          </div>
+        ` : paymentStatus === 'PARTIAL' ? `
+          <div style="background: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+            <h3 style="color: #92400e; margin-top: 0;">⚠️ Paiement partiel</h3>
+            <p style="color: #b45309; margin: 0;">Un paiement partiel a été enregistré. Le solde restant est de ${(amount - (paidAmount || 0)).toLocaleString('fr-FR')} €.</p>
+          </div>
+        ` : `
+          <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+            <h3 style="color: #dc2626; margin-top: 0;">⏳ En attente de paiement</h3>
+            <p style="color: #b91c1c; margin: 0;">Votre facture est en attente de paiement. Merci de procéder au règlement.</p>
+          </div>
+        `}
+        
+        <p>Pour toute question concernant votre facture, n'hésitez pas à nous contacter.</p>
+        
+        <p>Cordialement,<br>
+        <strong>L'équipe CI.DES</strong></p>
+      </div>
+      
+      <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
+        <p>CI.DES - Centre de Formation Cordiste IRATA<br>
+        17270 BORESSE-ET-MARTRON<br>
+        Tél: +33 6 24 67 13 65 | Email: ${process.env.SMTP_FROM_EMAIL}</p>
+      </div>
+    </div>
+  `;
+
+  return sendEmail({ to, subject, html });
+}
+
 export async function sendWelcomeEmail({
   email,
   name,

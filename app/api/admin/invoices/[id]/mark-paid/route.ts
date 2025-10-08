@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from 'lib/prisma';
+import { sendPaymentStatusUpdateEmail } from '@/lib/email';
 
 export async function POST(
   request: NextRequest,
@@ -22,12 +23,19 @@ export async function POST(
       return NextResponse.json({ error: 'ID de facture requis' }, { status: 400 });
     }
 
-    // Récupérer la facture
-    const invoices = await prisma.$queryRaw`
-      SELECT * FROM "webirata"."Invoice" WHERE id = ${invoiceId}
-    `;
-    
-    const invoice = Array.isArray(invoices) ? invoices[0] : null;
+    // Récupérer la facture avec les informations utilisateur
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+      include: {
+        user: {
+          select: {
+            email: true,
+            prenom: true,
+            nom: true
+          }
+        }
+      }
+    });
 
     if (!invoice) {
       return NextResponse.json({ error: 'Facture non trouvée' }, { status: 404 });
@@ -51,17 +59,32 @@ export async function POST(
       return NextResponse.json({ error: 'Type de paiement invalide' }, { status: 400 });
     }
 
-    // Mettre à jour la facture
-    const updateResult = await prisma.$queryRaw`
-      UPDATE "webirata"."Invoice" 
-      SET "paymentStatus" = ${updateData.paymentStatus}, 
-          "paidAmount" = ${updateData.paidAmount}, 
-          "updatedAt" = ${updateData.updatedAt}
-      WHERE id = ${invoiceId}
-      RETURNING *
-    `;
-    
-    const updatedInvoice = Array.isArray(updateResult) ? updateResult[0] : null;
+    // Mettre à jour la facture en utilisant Prisma ORM au lieu de requête raw
+    const updatedInvoice = await prisma.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        paymentStatus: updateData.paymentStatus as 'PAID' | 'PARTIAL' | 'PENDING',
+        paidAmount: updateData.paidAmount,
+        updatedAt: updateData.updatedAt
+      }
+    });
+
+    // Envoyer un email de notification à l'utilisateur
+    try {
+      const userName = `${invoice.user.prenom} ${invoice.user.nom}`;
+      await sendPaymentStatusUpdateEmail(
+        invoice.user.email,
+        userName,
+        invoice.invoiceNumber,
+        invoice.amount,
+        updateData.paymentStatus,
+        updateData.paidAmount
+      );
+      console.log('Email de notification envoyé avec succès');
+    } catch (emailError) {
+      console.error('Erreur lors de l\'envoi de l\'email:', emailError);
+      // Ne pas faire échouer la requête si l'email échoue
+    }
 
     return NextResponse.json({
       success: true,

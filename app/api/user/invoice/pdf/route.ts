@@ -4,8 +4,8 @@ import { authOptions } from '@/app/lib/auth';
 import { PrismaClient } from '@prisma/client';
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 const prisma = new PrismaClient();
 
@@ -32,295 +32,144 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    // Récupérer la facture avec vérification d'autorisation
-    const invoice = await prisma.invoice.findFirst({
-      where: {
-        id: invoiceId,
-        userId: user.id, // Vérifier que la facture appartient à l'utilisateur
-      },
-      include: {
-        contrat: {
-          include: {
-            devis: true,
-          },
-        },
-      },
-    });
+    // Récupérer la facture avec toutes les informations nécessaires (comme l'admin)
+    const userInvoices = await prisma.$queryRaw`
+      SELECT 
+        i.id, i."invoiceNumber", i.amount, i."paymentStatus", i."paidAmount", i."paymentMethod", i.notes, i."createdAt", i."updatedAt",
+        u.prenom, u.nom, u.email,
+        c.adresse,
+        d.numero as devis_numero, d.designation, d.quantite, d.unite, d."prixUnitaire", d.tva, d.montant as devis_montant,
+        dm.session
+      FROM "webirata"."Invoice" i
+      JOIN "webirata"."User" u ON i."userId" = u.id
+      JOIN "webirata"."Contrat" c ON i."contratId" = c.id
+      JOIN "webirata"."Devis" d ON c."devisId" = d.id
+      JOIN "webirata"."Demande" dm ON d."demandeId" = dm.id
+      WHERE i.id = ${invoiceId} AND i."userId" = ${user.id}
+    `;
+    
+    const userInvoice = Array.isArray(userInvoices) && userInvoices.length > 0 ? userInvoices[0] : null;
 
-    if (!invoice) {
+    if (!userInvoice) {
       return NextResponse.json({ error: 'Facture non trouvée' }, { status: 404 });
     }
 
-    // Charger le logo en base64
-    let logoBase64 = '';
-    try {
-      const logoPath = join(process.cwd(), 'public', 'logo.png');
-      const logoBuffer = readFileSync(logoPath);
-      logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
-    } catch (error) {
-      console.warn('Logo non trouvé, utilisation d\'un placeholder');
-      logoBase64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMjAwIDUwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iNTAiIGZpbGw9IiM2QjcyOEYiLz48dGV4dCB4PSIxMDAiIHk9IjMwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5DSURFUyBMb2dvPC90ZXh0Pjwvc3ZnPg==';
+    // Construire les données de la facture (comme l'admin)
+    const invoiceData = {
+      title: 'TRAME BDC DEVIS FACTURE',
+      codeNumberLabel: 'Numéro de code',
+      codeNumber: 'ENR-CIDFA-COMP 002',
+      revisionLabel: 'Révision',
+      revision: '00',
+      creationDateLabel: 'Création date',
+      creationDate: new Date().toLocaleDateString('fr-FR'),
+      company: {
+        name: 'CI.DES',
+        contactName: 'CHEZ CHAGNEAU',
+        addressLines: ['17270 BORESSE-ET-MARTRON', 'admin38@cides.fr'],
+        siret: '87840789900011',
+        invoiceNumberLabel: 'FACTURE N°',
+        invoiceNumber: userInvoice.invoiceNumber,
+        invoiceDateLabel: 'Le',
+        invoiceDate: new Date(userInvoice.createdAt).toLocaleDateString('fr-FR'),
+      },
+      customer: {
+        companyTitle: 'FRANCE TRAVAIL DR BRETAGNE',
+        addressLines: ['Adresses :'],
+        siretLabel: 'N°SIRET :',
+        siret: '13000548108070',
+        convLabel: 'N°Convention (Enregistrement)',
+        conv: '41C27G263296',
+        name: '',
+        email: '',
+        phone: '',
+      },
+      recipient: {
+        name: `Monsieur ${userInvoice.prenom} ${userInvoice.nom}`,
+        addressLines: [userInvoice.adresse || 'Adresse non spécifiée'],
+        phone: '',
+        email: userInvoice.email
+      },
+      items: [
+        {
+          reference: 'CI.IFF',
+          designation: `Formation Cordiste IRATA\nDevis #${userInvoice.devis_numero}\nSession: ${userInvoice.session || 'Non spécifiée'}${userInvoice.paymentStatus === 'PARTIAL' ? '\n(Paiement partiel)' : ''}`,
+          quantity: 1,
+          unitPrice: userInvoice.paymentStatus === 'PARTIAL' ? userInvoice.paidAmount : userInvoice.amount,
+          tva: 0,
+        }
+      ],
+      footerRight: 'Page 1 sur 1',
+      showQr: true,
+      paymentStatus: userInvoice.paymentStatus,
+    };
+
+    // Générer le HTML avec toutes les données (même fonction que l'admin)
+    const html = buildHtml(invoiceData, userInvoice.amount, userInvoice);
+
+    // Configuration Puppeteer comme dans l'admin
+    const isProd = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+    let executablePath: string | undefined;
+
+    if (isProd) {
+      executablePath = await chromium.executablePath();
+    } else if (process.platform === 'win32') {
+      const candidates = [
+        'C:/Program Files/Google/Chrome/Application/chrome.exe',
+        'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+        'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+        'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+      ];
+      for (const p of candidates) {
+        if (existsSync(p)) { executablePath = p; break; }
+      }
+    } else {
+      const candidates = [
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      ];
+      for (const p of candidates) {
+        if (existsSync(p)) { executablePath = p; break; }
+      }
     }
 
-    // Générer le HTML pour le PDF avec le même format que l'aperçu
-    const totalHT = invoice.amount;
-    const totalTVA = 0; // TVA à 0%
-    const totalTTC = totalHT + totalTVA;
+    if (!executablePath) {
+      return NextResponse.json(
+        { message: 'Navigateur non trouvé pour la génération PDF. Installez Chrome/Edge localement.' },
+        { status: 500 }
+      );
+    }
 
-    const html = `
-      <!DOCTYPE html>
-      <html lang="fr">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Facture ${invoice.invoiceNumber}</title>
-        <style>
-          @page {
-            size: A4 portrait;
-            margin: 2cm;
-          }
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            margin: 0;
-            padding: 0;
-          }
-          .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-          }
-          .header {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 20px;
-          }
-          .logo {
-            width: 60px;
-            height: 60px;
-            margin-right: 16px;
-          }
-          .info-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-          }
-          .info-table td {
-            border: 1px solid #e5e7eb;
-            padding: 6px 8px;
-          }
-          .info-table th {
-            border: 1px solid #e5e7eb;
-            padding: 6px 8px;
-            background: #f9fafb;
-            font-weight: bold;
-            text-align: left;
-          }
-          .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin: 24px 0;
-          }
-          .card {
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 12px;
-            font-size: 11px;
-          }
-          .card-title {
-            font-weight: 600;
-            margin-bottom: 6px;
-            font-size: 12px;
-          }
-          .recipient {
-            text-align: center;
-            margin: 24px 0;
-            font-size: 12px;
-          }
-          .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            margin: 24px 0;
-          }
-          .items-table th,
-          .items-table td {
-            border: 1px solid #e5e7eb;
-            padding: 6px 8px;
-          }
-          .items-table th {
-            background: #f9fafb;
-            font-weight: bold;
-            text-align: left;
-          }
-          .text-right {
-            text-align: right;
-          }
-          .text-center {
-            text-align: center;
-          }
-          .totals {
-            margin-top: 24px;
-          }
-          .footer {
-            margin-top: 32px;
-            text-align: center;
-            font-size: 10px;
-            color: #6b7280;
-            border-top: 1px solid #e5e7eb;
-            padding-top: 12px;
-          }
-          .whitespace-pre-line {
-            white-space: pre-line;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <!-- Header with Logo and Info Table -->
-          <div class="header">
-            <img src="${logoBase64}" alt="CI.DES Logo" class="logo">
-            <table class="info-table">
-              <tbody>
-                <tr>
-                  <th>Titre</th>
-                  <th>Numéro de code</th>
-                  <th>Révision</th>
-                  <th>Création date</th>
-                </tr>
-                <tr>
-                  <td>TRAME BDC DEVIS FACTURE</td>
-                  <td>ENR-CIDFA-COMP 002</td>
-                  <td>00</td>
-                  <td>${new Date().toLocaleDateString('fr-FR')}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Company / Customer blocks -->
-          <div class="grid">
-            <div class="card">
-              <div class="card-title">CI.DES</div>
-              <div>CHEZ CHAGNEAU</div>
-              <div>17270 BORESSE-ET-MARTRON</div>
-              <div>admin38@cides.fr</div>
-              <div>SIRET: 87840789900011</div>
-              <div style="margin-top: 8px;">
-                <strong>FACTURE N°</strong> ${invoice.invoiceNumber}
-              </div>
-              <div>
-                <strong>Le</strong> ${new Date(invoice.createdAt).toLocaleDateString('fr-FR')}
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-title">FRANCE TRAVAIL DR BRETAGNE</div>
-              <div>Adresses :</div>
-              <div><strong>N°SIRET:</strong> 13000548108070</div>
-              <div><strong>N°Convention:</strong> 41C27G263296</div>
-              <div style="margin-top: 8px;">
-                <strong>Stagiaire:</strong> ${invoice.contrat.nom} ${invoice.contrat.prenom}
-              </div>
-              <div>
-                <strong>Email:</strong> ${user.email}
-              </div>
-            </div>
-          </div>
-
-          <!-- Recipient -->
-          <div class="recipient">
-            <div style="font-weight: 600;">Monsieur ${invoice.contrat.nom} ${invoice.contrat.prenom}</div>
-            <div>Adresse de l'utilisateur</div>
-            <div>Email: ${user.email}</div>
-          </div>
-
-          <!-- Items Table -->
-          <table class="items-table">
-            <thead>
-              <tr>
-                <th>Référence</th>
-                <th>Désignation</th>
-                <th class="text-right">Quantité</th>
-                <th class="text-right">Prix unitaire</th>
-                <th class="text-right">TVA</th>
-                <th class="text-right">Montant HT</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>CI.IFF</td>
-                                 <td class="whitespace-pre-line">Formation Cordiste IRATA
-${invoice.contrat?.devis?.numero ? `Devis #${invoice.contrat.devis.numero}` : ''}</td>
-                <td class="text-right">1.00</td>
-                <td class="text-right">${invoice.amount.toFixed(2)} €</td>
-                <td class="text-right">0.00 %</td>
-                <td class="text-right">${invoice.amount.toFixed(2)} €</td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colspan="5" class="text-right"><strong>Total HT</strong></td>
-                <td class="text-right"><strong>${totalHT.toFixed(2)} €</strong></td>
-              </tr>
-              <tr>
-                <td colspan="5" class="text-right">Total TVA</td>
-                <td class="text-right">${totalTVA.toFixed(2)} €</td>
-              </tr>
-              <tr style="background-color: #f3f4f6;">
-                <td colspan="5" class="text-right"><strong>Total TTC</strong></td>
-                <td class="text-right"><strong>${totalTTC.toFixed(2)} €</strong></td>
-              </tr>
-              ${invoice.paymentStatus === 'PARTIAL' && invoice.paidAmount ? `
-              <tr style="color: #dc2626;">
-                <td colspan="5" class="text-right"><strong>Reste à payer</strong></td>
-                <td class="text-right"><strong>${(invoice.amount - invoice.paidAmount).toFixed(2)} €</strong></td>
-              </tr>
-              ` : ''}
-            </tfoot>
-          </table>
-
-          <!-- Footer -->
-          <div class="footer">
-            <div><strong>CI.DES sasu</strong> · Capital 2 500 Euros</div>
-            <div>SIRET : 87840789900011 · VAT : FR71878407899</div>
-            <div style="margin-top: 8px;">Page 1 sur 1</div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    // Générer le PDF avec Puppeteer
+    // Générer le PDF comme dans l'admin
+    const args = isProd ? chromium.args : ['--no-sandbox', '--disable-setuid-sandbox'];
     const browser = await puppeteer.launch({
+      args,
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath,
+      defaultViewport: { width: 1240, height: 1754 },
     });
-
     const page = await browser.newPage();
+
     await page.setContent(html, { waitUntil: 'networkidle0' });
-
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '2cm',
-        right: '2cm',
-        bottom: '3cm',
-        left: '2cm',
-      },
-      displayHeaderFooter: false,
+    const pdf = await page.pdf({ 
+      format: 'A4', 
+      printBackground: true, 
+      margin: { top: '4mm', left: '4mm', right: '4mm', bottom: '4mm' }, 
+      scale: 0.96 
     });
-
     await browser.close();
 
-    // Retourner le PDF
-    return new NextResponse(Buffer.from(pdf), {
+    // Vérifier que le numéro de facture existe et le nettoyer
+    const invoiceNumber = userInvoice.invoiceNumber || 'facture';
+    const cleanInvoiceNumber = invoiceNumber.toString().replace(/\s+/g, '_');
+    
+    // Convertir le PDF en ArrayBuffer comme dans l'admin
+    const pdfArrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength);
+    return new NextResponse(pdfArrayBuffer as ArrayBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="facture_${invoice.invoiceNumber.replace(/\s+/g, '_')}.pdf"`,
+        'Content-Disposition': `attachment; filename="facture_${cleanInvoiceNumber}.pdf"`,
       },
     });
   } catch (error) {
@@ -332,4 +181,267 @@ ${invoice.contrat?.devis?.numero ? `Devis #${invoice.contrat.devis.numero}` : ''
   } finally {
     await prisma.$disconnect();
   }
+}
+
+function euro(n: number) {
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n);
+}
+
+function buildHtml(data: any, originalAmount?: number, invoiceData?: any) {
+  const logoUrl = `${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png`;
+  const totalHT = data.items.reduce((s: number, it: any) => s + it.quantity * it.unitPrice, 0);
+  const totalTVA = data.items.reduce((s: number, it: any) => s + (it.quantity * it.unitPrice * it.tva) / 100, 0);
+  const totalTTC = totalHT + totalTVA;
+  const remainingAmount = originalAmount ? originalAmount - totalTTC : 0;
+
+  return `<!DOCTYPE html>
+  <html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Facture ${data.company.invoiceNumber ?? ''}</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { 
+        font-family: Inter, Arial, Helvetica, sans-serif; 
+        margin: 0; 
+        padding: 12px; 
+        color: #111827; 
+        font-size: 11px;
+        line-height: 1.3;
+        max-height: 148mm; /* Demi-page A4 */
+        overflow: hidden;
+      }
+      .container { 
+        display: flex; 
+        flex-direction: column; 
+        height: 100%;
+        gap: 4px;
+      }
+      .header { 
+        display: flex; 
+        align-items: flex-start; 
+        gap: 8px; 
+        margin-bottom: 4px; 
+      }
+      .logo { 
+        width: 40px; 
+        height: 40px; 
+        object-fit: contain; 
+        flex-shrink: 0;
+      }
+      .header-info {
+        flex: 1;
+        font-size: 10px;
+      }
+      .header-info table { 
+        border-collapse: collapse; 
+        width: 100%; 
+      }
+      .header-info th, .header-info td { 
+        border: 1px solid #d1d5db; 
+        padding: 2px 4px; 
+        font-size: 9px; 
+      }
+      .header-info th { 
+        background: #f3f4f6; 
+        text-align: left; 
+        font-weight: 600;
+      }
+      .main-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        flex: 1;
+      }
+      .card { 
+        border: 1px solid #d1d5db; 
+        border-radius: 4px; 
+        padding: 6px; 
+        font-size: 10px; 
+        background: #fafafa;
+      }
+      .card-title { 
+        font-weight: 600; 
+        margin-bottom: 3px; 
+        font-size: 10px; 
+        color: #374151;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 2px;
+      }
+      .card-content {
+        font-size: 9px;
+        line-height: 1.1;
+      }
+      .items-table { 
+        border-collapse: collapse; 
+        width: 100%; 
+        font-size: 9px;
+        margin-top: 4px;
+      }
+      .items-table th, .items-table td { 
+        border: 1px solid #d1d5db; 
+        padding: 2px 3px; 
+        font-size: 8px; 
+      }
+      .items-table th { 
+        background: #f3f4f6; 
+        text-align: left; 
+        font-weight: 600;
+      }
+      .text-right { text-align: right; }
+      .text-center { text-align: center; }
+      .footer { 
+        margin-top: 4px; 
+        text-align: center; 
+        font-size: 8px; 
+        color: #6b7280; 
+        border-top: 1px solid #d1d5db; 
+        padding-top: 3px; 
+        flex-shrink: 0;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 1px 4px;
+        border-radius: 3px;
+        font-size: 8px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+      .status-paid { background: #dcfce7; color: #166534; }
+      .status-partial { background: #fef3c7; color: #92400e; }
+      .status-pending { background: #fee2e2; color: #dc2626; }
+      .payment-info {
+        background: #f0f9ff;
+        border: 1px solid #0ea5e9;
+        border-radius: 3px;
+        padding: 3px;
+        margin-top: 2px;
+        font-size: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <img class="logo" src="${logoUrl}" alt="CI.DES Logo" />
+        <div class="header-info">
+          <table>
+            <tbody>
+              <tr>
+                <th>Titre</th>
+                <th>Code</th>
+                <th>Révision</th>
+                <th>Date</th>
+              </tr>
+              <tr>
+                <td>${data.title}</td>
+                <td>${data.codeNumber ?? ''}</td>
+                <td>${data.revision ?? ''}</td>
+                <td>${data.creationDate ?? ''}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="card">
+          <div class="card-title">${data.company.name}</div>
+          <div class="card-content">
+            <div>${data.company.contactName ?? ''}</div>
+            <div>${data.company.addressLines.join('<br/>')}</div>
+            <div>SIRET : ${data.company.siret ?? ''}</div>
+            <div><strong>${data.company.invoiceNumberLabel ?? 'FACTURE N°'} ${data.company.invoiceNumber ?? ''}</strong></div>
+            <div>${data.company.invoiceDateLabel ?? 'Le'} ${data.company.invoiceDate ?? ''}</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Destinataire</div>
+          <div class="card-content">
+            <div><strong>${data.recipient.name}</strong></div>
+            <div>${data.recipient.addressLines.join('<br/>')}</div>
+            <div>${data.recipient.email ?? ''}</div>
+            ${invoiceData?.paymentMethod ? `<div>Méthode: ${invoiceData.paymentMethod}</div>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Détails de la formation</div>
+        <div class="card-content">
+          <div><strong>Devis:</strong> ${invoiceData?.devis_numero || 'N/A'}</div>
+          <div><strong>Session:</strong> ${invoiceData?.session || 'Non spécifiée'}</div>
+          <div><strong>Désignation:</strong> ${invoiceData?.designation || 'Formation Cordiste IRATA'}</div>
+          ${invoiceData?.notes ? `<div><strong>Notes:</strong> ${invoiceData.notes}</div>` : ''}
+        </div>
+      </div>
+
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Réf.</th>
+            <th>Désignation</th>
+            <th>Qté</th>
+            <th>Prix HT</th>
+            <th>TVA</th>
+            <th>Total HT</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.items.map((it: any) => {
+            const montantHT = it.quantity * it.unitPrice;
+            return `<tr>
+              <td>${it.reference}</td>
+              <td>${(it.designation || '').replace(/\n/g, '<br/>')}</td>
+              <td class="text-center">${it.quantity}</td>
+              <td class="text-right">${euro(it.unitPrice)}</td>
+              <td class="text-center">${it.tva}%</td>
+              <td class="text-right">${euro(montantHT)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" class="text-right"><strong>Total HT</strong></td>
+            <td class="text-right"><strong>${euro(totalHT)}</strong></td>
+          </tr>
+          <tr>
+            <td colspan="5" class="text-right">TVA</td>
+            <td class="text-right">${euro(totalTVA)}</td>
+          </tr>
+          <tr style="background: #f3f4f6;">
+            <td colspan="5" class="text-right"><strong>TOTAL TTC</strong></td>
+            <td class="text-right"><strong>${euro(totalTTC)}</strong></td>
+          </tr>
+          ${remainingAmount > 0 ? `
+          <tr>
+            <td colspan="5" class="text-right" style="color: #dc2626;"><strong>Reste à payer</strong></td>
+            <td class="text-right" style="color: #dc2626;"><strong>${euro(remainingAmount)}</strong></td>
+          </tr>
+          ` : ''}
+        </tfoot>
+      </table>
+
+      <div class="payment-info">
+        <div><strong>Statut:</strong> 
+          <span class="status-badge ${invoiceData?.paymentStatus === 'PAID' ? 'status-paid' : invoiceData?.paymentStatus === 'PARTIAL' ? 'status-partial' : 'status-pending'}">
+            ${invoiceData?.paymentStatus === 'PAID' ? 'Payée' : invoiceData?.paymentStatus === 'PARTIAL' ? 'Partiel' : 'En attente'}
+          </span>
+        </div>
+        ${invoiceData?.paymentStatus === 'PARTIAL' && invoiceData?.paidAmount ? `
+          <div><strong>Montant payé:</strong> ${euro(invoiceData.paidAmount)}</div>
+        ` : ''}
+        <div><strong>Créé le:</strong> ${new Date(invoiceData?.createdAt || Date.now()).toLocaleDateString('fr-FR')}</div>
+        <div><strong>Mis à jour:</strong> ${new Date(invoiceData?.updatedAt || Date.now()).toLocaleDateString('fr-FR')}</div>
+      </div>
+
+      <div class="footer">
+        <div><strong>CI.DES sasu</strong> · Capital 2 500 Euros · SIRET : 87840789900011</div>
+        <div>VAT : FR71878407899 · ${data.footerRight ?? 'Page 1 sur 1'}</div>
+      </div>
+    </div>
+  </body>
+  </html>`;
 }
