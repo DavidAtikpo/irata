@@ -292,7 +292,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const html = buildHtml(responses, userEmail);
+    // Convertir les données pour correspondre au type SatisfactionResponse
+    const formattedResponses: SatisfactionResponse[] = responses.map(response => ({
+      id: response.id,
+      traineeName: response.traineeName,
+      type: response.type,
+      date: response.date.toISOString(),
+      createdAt: response.createdAt.toISOString(),
+      items: Array.isArray(response.items) ? response.items as Array<{
+        label: string;
+        rating: string;
+        comment?: string;
+      }> : [],
+      suggestions: response.suggestions,
+      session: response.session,
+      signature: response.signature,
+      user: response.user,
+    }));
+
+    const html = buildHtml(formattedResponses, userEmail);
 
     // Configuration Puppeteer
     const isProd = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
@@ -339,7 +357,7 @@ export async function POST(request: NextRequest) {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
     
-    const pdf = await page.pdf({ 
+    const pdfBuffer = await page.pdf({ 
       format: 'A4', 
       printBackground: true, 
       margin: { top: '15mm', left: '10mm', right: '10mm', bottom: '15mm' },
@@ -350,11 +368,14 @@ export async function POST(request: NextRequest) {
 
     const fileName = `satisfaction-client-${userEmail.replace('@', '-').replace('.', '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
 
-    return new NextResponse(pdf, {
+    // Convertir le PDF en ArrayBuffer
+    const pdfArrayBuffer = pdfBuffer.buffer.slice(pdfBuffer.byteOffset, pdfBuffer.byteOffset + pdfBuffer.byteLength);
+    
+    return new NextResponse(pdfArrayBuffer as ArrayBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${fileName}"`,
-        'Content-Length': pdf.length.toString(),
+        'Content-Length': pdfArrayBuffer.byteLength.toString(),
       },
     });
 
