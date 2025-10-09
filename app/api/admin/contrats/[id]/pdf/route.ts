@@ -1,19 +1,19 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from 'lib/prisma';
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
-import { execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 export async function GET(
-  req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user?.role !== 'USER') {
+    if (!session || session.user?.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Non autorisé' },
         { status: 401 }
@@ -35,6 +35,13 @@ export async function GET(
             },
           },
         },
+        user: {
+          select: {
+            email: true,
+            nom: true,
+            prenom: true,
+          },
+        },
       },
     });
 
@@ -45,37 +52,21 @@ export async function GET(
       );
     }
 
-    // Vérifier que le contrat appartient à l'utilisateur
-    if (contrat.userId !== session.user.id) {
-      return NextResponse.json(
-        { message: 'Non autorisé' },
-        { status: 401 }
-      );
-    }
-
-    // S'assurer que le contrat est validé et signé par l'admin avant téléchargement
-    if (contrat.statut !== 'VALIDE' || !contrat.adminSignature) {
-      return NextResponse.json(
-        { message: "Le document n'est disponible qu'après validation et signature admin." },
-        { status: 403 }
-      );
-    }
-
     const isConvention = Boolean(
-      (contrat as any).entrepriseNom ||
-      (contrat as any).entrepriseAdresse ||
-      (contrat as any).entrepriseTelephone ||
-      (contrat.devis?.demande as any)?.entreprise ||
-      (((contrat.devis?.demande as any)?.typeInscription || '').toLowerCase() === 'entreprise')
+      contrat.entrepriseNom ||
+      contrat.entrepriseAdresse ||
+      contrat.entrepriseTelephone ||
+      contrat.devis?.demande?.entreprise ||
+      ((contrat.devis?.demande as any)?.typeInscription || '').toLowerCase() === 'entreprise'
     );
 
     const numeroPrefix = isConvention ? 'CI.ICE' : 'CI.ICP';
-    const displayNumero = (contrat as any).numero
+    const displayNumero = contrat.numero
       || (contrat.devis?.numero ? contrat.devis.numero.replace(/^CI\.DEV/i, numeroPrefix) : '');
-    const displayReference = (contrat as any).reference
+    const displayReference = contrat.reference
       || (contrat.devis?.referenceAffaire ? contrat.devis.referenceAffaire.replace(/^CI\.DEV/i, numeroPrefix) : '');
 
-    // Générer le HTML du contrat/convention avec structure alignée à la page
+    // Générer le HTML du contrat/convention
     const html = `
       <!DOCTYPE html>
       <html lang="fr">
@@ -111,8 +102,6 @@ export async function GET(
             font-weight: bold;
             color: #111827;
             margin-bottom: 5px;
-            
-          
           }
           .info-grid {
             display: grid;
@@ -231,31 +220,31 @@ export async function GET(
             <div class="info-grid">
               <div class="info-item" style="grid-column: 1 / span 2">
                 <div class="info-label">Nom de l'entreprise</div>
-                <div class="info-value">${(contrat as any).entrepriseNom || '—'}</div>
+                <div class="info-value">${contrat.entrepriseNom || '—'}</div>
               </div>
               <div class="info-item" style="grid-column: 1 / span 2">
                 <div class="info-label">Adresse de l'entreprise</div>
-                <div class="info-value">${(contrat as any).entrepriseAdresse || (contrat as any).adresse || '—'}</div>
+                <div class="info-value">${contrat.entrepriseAdresse || contrat.adresse || '—'}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Code postal</div>
-                <div class="info-value">${(contrat as any).entrepriseCodePostal || (contrat as any).codePostal || '—'}</div>
+                <div class="info-value">${contrat.entrepriseCodePostal || contrat.codePostal || '—'}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Ville</div>
-                <div class="info-value">${(contrat as any).entrepriseVille || (contrat as any).ville || '—'}</div>
+                <div class="info-value">${contrat.entrepriseVille || contrat.ville || '—'}</div>
               </div>
               <div class="info-item" style="grid-column: 1 / span 2">
                 <div class="info-label">Téléphone de l'entreprise</div>
-                <div class="info-value">${(contrat as any).entrepriseTelephone || '—'}</div>
+                <div class="info-value">${contrat.entrepriseTelephone || '—'}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Nom du signataire</div>
-                <div class="info-value">${(contrat as any).nom} ${(contrat as any).prenom}</div>
+                <div class="info-value">${contrat.nom} ${contrat.prenom}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Email</div>
-                <div class="info-value">${contrat.devis.demande.user.email}</div>
+                <div class="info-value">${contrat.user.email}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Date de signature</div>
@@ -266,27 +255,27 @@ export async function GET(
             <div class="info-grid">
               <div class="info-item">
                 <div class="info-label">NOM</div>
-                <div class="info-value">${(contrat as any).nom}</div>
+                <div class="info-value">${contrat.nom}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Prénom</div>
-                <div class="info-value">${(contrat as any).prenom}</div>
+                <div class="info-value">${contrat.prenom}</div>
               </div>
               <div class="info-item" style="grid-column: 1 / span 2">
                 <div class="info-label">Adresse</div>
-                <div class="info-value">${(contrat as any).adresse}</div>
+                <div class="info-value">${contrat.adresse}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Profession</div>
-                <div class="info-value">${(contrat as any).profession || 'Non renseigné'}</div>
+                <div class="info-value">${contrat.profession || 'Non renseigné'}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Téléphone</div>
-                <div class="info-value">${(contrat as any).telephone || '—'}</div>
+                <div class="info-value">${contrat.telephone || '—'}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Email</div>
-                <div class="info-value">${contrat.devis.demande.user.email}</div>
+                <div class="info-value">${contrat.user.email}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Date de signature</div>
@@ -361,7 +350,7 @@ export async function GET(
               <div class="signature-box">
                 ${contrat.signature ? `<img src="${contrat.signature}" alt="Signature stagiaire" style="max-width: 220px; max-height: 70px;" />` : 'Signature électronique'}
               </div>
-              <div class="muted" style="margin-top:8px;">${(contrat as any).prenom} ${(contrat as any).nom}</div>
+              <div class="muted" style="margin-top:8px;">${contrat.prenom} ${contrat.nom}</div>
             </div>
             <div style="flex:1;">
               <div class="info-label">Signature de l'administrateur</div>
@@ -388,69 +377,56 @@ export async function GET(
     `;
 
     // Configuration Puppeteer
-    const isProduction = process.env.NODE_ENV === 'production';
-    
-    const browserConfig: any = {
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-software-rasterizer',
-        '--disable-extensions',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-features=TranslateUI,VizDisplayCompositor',
-        '--disable-ipc-flooding-protection',
-        '--memory-pressure-off',
-        '--max_old_space_size=4096',
-        '--no-zygote',
-        '--single-process'
-      ],
-      timeout: 30000
-    };
+    const isProd = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+    let executablePath: string | undefined;
 
-    // Configuration spécifique selon l'environnement
-    if (isProduction) {
-      // En production, utiliser Chromium
-      browserConfig.executablePath = await chromium.executablePath();
+    if (isProd) {
+      executablePath = await chromium.executablePath();
+    } else if (process.platform === 'win32') {
+      const candidates = [
+        'C:/Program Files/Google/Chrome/Application/chrome.exe',
+        'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+        'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+        'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+      ];
+      for (const p of candidates) {
+        if (existsSync(p)) { executablePath = p; break; }
+      }
     } else {
-      // En développement, utiliser le Chrome local ou Chromium
-      try {
-        // Essayer de trouver Chrome
-        const chromePath = execSync('where chrome', { encoding: 'utf8' }).trim();
-        browserConfig.executablePath = chromePath;
-      } catch {
-        try {
-          // Essayer de trouver Chromium
-          const chromiumPath = execSync('where chromium', { encoding: 'utf8' }).trim();
-          browserConfig.executablePath = chromiumPath;
-        } catch {
-          // Utiliser le chemin par défaut
-          browserConfig.executablePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-        }
+      const candidates = [
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      ];
+      for (const p of candidates) {
+        if (existsSync(p)) { executablePath = p; break; }
       }
     }
 
-    // Générer le PDF avec Puppeteer
-    const browser = await puppeteer.launch(browserConfig);
-    const page = await browser.newPage();
-    
-    await page.setViewport({ width: 1200, height: 1600 });
-    await page.setContent(html, { 
-      waitUntil: ['networkidle0', 'domcontentloaded'],
-      timeout: 30000 
+    if (!executablePath) {
+      return NextResponse.json(
+        { message: 'Navigateur non trouvé pour la génération PDF' },
+        { status: 500 }
+      );
+    }
+
+    const args = isProd ? chromium.args : ['--no-sandbox', '--disable-setuid-sandbox'];
+    const browser = await puppeteer.launch({
+      args,
+      headless: true,
+      executablePath,
+      defaultViewport: { width: 1200, height: 1600 },
     });
-    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
     
     // Calculer le nombre de pages approximatif
     const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
     const pageHeight = 1123; // Hauteur A4 en pixels (297mm)
     const totalPages = Math.ceil(bodyHeight / pageHeight);
     
-    const pdf = await page.pdf({
+    const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: {
@@ -496,14 +472,18 @@ export async function GET(
 
     await browser.close();
 
-    // Retourner le PDF
-    const arrayBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
-    return new NextResponse(arrayBuffer, {
+    const fileName = `${isConvention ? 'convention' : 'contrat'}_${contrat.devis.numero}.pdf`;
+
+    // Convertir le PDF en ArrayBuffer
+    const pdfArrayBuffer = pdfBuffer.buffer.slice(pdfBuffer.byteOffset, pdfBuffer.byteOffset + pdfBuffer.byteLength);
+    
+    return new NextResponse(pdfArrayBuffer as ArrayBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="contrat_${contrat.devis.numero}.pdf"`,
+        'Content-Disposition': `attachment; filename="${fileName}"`,
       },
     });
+
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
     return NextResponse.json(
@@ -511,4 +491,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}

@@ -175,11 +175,49 @@ export async function POST(request: NextRequest) {
     const page = await browser.newPage();
 
     await page.setContent(html, { waitUntil: 'networkidle0' });
+    
+    // Calculer le nombre de pages approximatif
+    const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
+    const pageHeight = 1123; // Hauteur A4 en pixels (297mm)
+    const totalPages = Math.ceil(bodyHeight / pageHeight);
+    
     const pdf = await page.pdf({ 
       format: 'A4', 
       printBackground: true, 
-      margin: { top: '4mm', left: '4mm', right: '4mm', bottom: '4mm' }, 
-      scale: 0.96 
+      margin: { top: '20mm', left: '15mm', right: '15mm', bottom: '30mm' },
+      displayHeaderFooter: true,
+      headerTemplate: `
+        <div style="font-size: 10px; color: #6b7280; text-align: center; width: 100%; padding: 5px 15mm; background-color: white; border-bottom: 1px solid #e5e7eb;">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 180mm; margin: 0 auto;">
+            <div style="flex: 1; font-weight: 600; color: #1e40af;">
+              CI.DES - Facturation
+            </div>
+            <div style="flex: 2; text-align: center; font-size: 9px;">
+              <div>Trame de devis facture</div>
+            </div>
+            <div style="flex: 1; text-align: right; font-size: 9px;">
+              ${new Date().toLocaleDateString('fr-FR')}
+            </div>
+          </div>
+        </div>
+      `,
+      footerTemplate: `
+        <div style="font-size: 9px; color: #6b7280; text-align: center; width: 100%; padding: 5px 15mm; background-color: white; border-top: 1px solid #e5e7eb;">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 180mm; margin: 0 auto;">
+            <div style="flex: 1; font-weight: 500;">
+              CI.DES - Facturation
+            </div>
+            <div style="flex: 2; text-align: center;">
+              <div style="margin: 1px 0;">CI.DES sasu · Capital 2 500 Euros</div>
+              <div style="margin: 1px 0;">SIRET : 87840789900011 · VAT : FR71878407899</div>
+              <div style="margin: 1px 0;">Page <span class="pageNumber"></span> sur <span class="totalPages"></span></div>
+            </div>
+            <div style="flex: 1; text-align: right; display: flex; align-items: center; justify-content: flex-end;">
+              <span>© 2025 CI.DES</span>
+            </div>
+          </div>
+        </div>
+      `
     });
     await browser.close();
 
