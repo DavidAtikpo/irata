@@ -44,17 +44,42 @@ export async function POST(req: NextRequest) {
       ...(i.comment ? { comment: String(i.comment) } : {}),
     }));
 
-    const created = await prisma.customerSatisfactionResponse.create({
-      data: {
-        user: { connect: { id: session?.user?.id } },
-        traineeName: traineeName || null,
-        type,
-        items: normalizedItems as unknown as object,
-        suggestions: suggestions || null,
-        session: trainingSession || null,
-        signature: signature || null,
+    // Vérifier s'il existe déjà un enregistrement pour cet utilisateur et ce type
+    const existing = await prisma.customerSatisfactionResponse.findFirst({
+      where: {
+        userId: session?.user?.id,
+        type: type,
       },
     });
+
+    let created;
+    if (existing) {
+      // Mettre à jour l'enregistrement existant
+      created = await prisma.customerSatisfactionResponse.update({
+        where: { id: existing.id },
+        data: {
+          traineeName: traineeName || null,
+          items: normalizedItems as unknown as object,
+          suggestions: suggestions || null,
+          session: trainingSession || null,
+          signature: signature || null,
+          updatedAt: new Date(),
+        },
+      });
+    } else {
+      // Créer un nouvel enregistrement
+      created = await prisma.customerSatisfactionResponse.create({
+        data: {
+          user: { connect: { id: session?.user?.id } },
+          traineeName: traineeName || null,
+          type,
+          items: normalizedItems as unknown as object,
+          suggestions: suggestions || null,
+          session: trainingSession || null,
+          signature: signature || null,
+        },
+      });
+    }
 
     return NextResponse.json(
       {

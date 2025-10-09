@@ -56,7 +56,6 @@ export async function GET(request: NextRequest) {
       paymentStatus: invoice.paymentStatus,
       paidAmount: invoice.paidAmount,
       createdAt: invoice.createdAt,
-      updatedAt: invoice.updatedAt,
       userName: `${invoice.prenom} ${invoice.nom}`,
       userEmail: invoice.email,
       userAddress: 'Adresse non disponible',

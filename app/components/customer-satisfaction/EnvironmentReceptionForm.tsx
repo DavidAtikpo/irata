@@ -111,22 +111,77 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
   const setRowComment = (index: number, comment: string) => {
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, comment } : r)));
   };
+
+  // Sauvegarde automatique des données
+  useEffect(() => {
+    if (!isLoaded || rows.every(r => !r.rating)) return;
+    
+    const autoSave = async () => {
+      try {
+        await fetch('/api/user/customer-satisfaction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'ENVIRONMENT_RECEPTION',
+            traineeName: name || undefined,
+            session: sessionName || undefined,
+            items: rows.map((r) => ({
+              label: r.label,
+              rating: r.rating as string,
+              ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
+            })),
+          }),
+        });
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde automatique:', error);
+      }
+    };
+
+    const timeoutId = setTimeout(autoSave, 1000); // Sauvegarde après 1 seconde d'inactivité
+    return () => clearTimeout(timeoutId);
+  }, [rows, name, sessionName, isLoaded]);
   
-  const handleNext = () => {
+  const handleNext = async () => {
     if (rows.some((r) => !r.rating)) {
       alert('Veuillez sélectionner une note pour chaque ligne.');
       return;
     }
-    onNextWithData?.({
-      traineeName: name || undefined,
-      session: sessionName || undefined,
-      items: rows.map((r) => ({
-        label: r.label,
-        rating: r.rating as string,
-        ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
-      })),
-    });
-    onNext?.();
+    
+    setSubmitting(true);
+    try {
+      const formData = {
+        traineeName: name || undefined,
+        session: sessionName || undefined,
+        items: rows.map((r) => ({
+          label: r.label,
+          rating: r.rating as string,
+          ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
+        })),
+      };
+
+      // Sauvegarder les données en base
+      const response = await fetch('/api/user/customer-satisfaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'ENVIRONMENT_RECEPTION',
+          ...formData,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Erreur lors de la sauvegarde');
+      }
+
+      onNextWithData?.(formData);
+      onNext?.();
+    } catch (error: any) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      alert(error.message || 'Erreur lors de la sauvegarde');
+    } finally {
+      setSubmitting(false);
+    }
   };
   
   const today = new Date().toLocaleDateString('fr-FR');
