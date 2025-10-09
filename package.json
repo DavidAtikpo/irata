@@ -37,6 +37,7 @@
     "nodemailer": "^6.10.1",
     "pdf-lib": "^1.17.1",
     "pdfkit": "^0.15.0",
+    "puppeteer": "^24.23.0",
     "puppeteer-core": "^24.19.0",
     "react": "^19.0.0",
     "react-chartjs-2": "^5.3.0",
