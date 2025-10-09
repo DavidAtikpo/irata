@@ -436,21 +436,6 @@ export async function GET(
         left: '15mm'
       },
       displayHeaderFooter: true,
-      headerTemplate: `
-        <div style="font-size: 10px; color: #6b7280; text-align: center; width: 100%; padding: 5px 15mm; background-color: white; border-bottom: 1px solid #e5e7eb;">
-          <div style="display: flex; justify-content: space-between; align-items: center; width: 180mm; margin: 0 auto;">
-            <div style="flex: 1; font-weight: 600; color: #1e40af;">
-              CI.DES - Contrats
-            </div>
-            <div style="flex: 2; text-align: center; font-size: 9px;">
-              <div>${isConvention ? 'Convention' : 'Contrat'} de formation professionnelle</div>
-            </div>
-            <div style="flex: 1; text-align: right; font-size: 9px;">
-              ${new Date().toLocaleDateString('fr-FR')}
-            </div>
-          </div>
-        </div>
-      `,
       footerTemplate: `
         <div style="font-size: 9px; color: #6b7280; text-align: center; width: 100%; padding: 5px 15mm; background-color: white; border-top: 1px solid #e5e7eb;">
           <div style="display: flex; justify-content: space-between; align-items: center; width: 180mm; margin: 0 auto;">

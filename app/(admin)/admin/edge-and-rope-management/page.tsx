@@ -14,6 +14,29 @@ export default function EdgeAndRopeManagement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  
+  // États pour le formulaire Toolbox Talk
+  const [toolboxData, setToolboxData] = useState({
+    site: '',
+    date: '',
+    reason: '',
+    startTime: '',
+    finishTime: '',
+    mattersRaised: [
+      { matter: '', action: '' },
+      { matter: '', action: '' },
+      { matter: '', action: '' }
+    ],
+    comments: ''
+  });
+  const [isSavingToolbox, setIsSavingToolbox] = useState(false);
+  const [toolboxRecordId, setToolboxRecordId] = useState<string | null>(null);
+  const [existingToolboxData, setExistingToolboxData] = useState<any>(null);
+  
+  // États pour la gestion des signatures utilisateurs
+  const [userSignatures, setUserSignatures] = useState<any[]>([]);
+  const [loadingSignatures, setLoadingSignatures] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
 
   // Récupérer le nom de l'admin et le statut de validation
   useEffect(() => {
@@ -47,6 +70,10 @@ export default function EdgeAndRopeManagement() {
 
     if (session?.user?.role === 'ADMIN') {
       fetchAdminData();
+      // Charger les données existantes du Toolbox Talk
+      fetchExistingToolboxData();
+      // Charger les signatures des utilisateurs
+      fetchUserSignatures();
     }
   }, [session]);
 
@@ -81,6 +108,225 @@ export default function EdgeAndRopeManagement() {
       alert('Erreur lors de la validation du document');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleToolboxDataChange = (field: string, value: any) => {
+    setToolboxData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleMatterChange = (index: number, field: 'matter' | 'action', value: string) => {
+    setToolboxData(prev => ({
+      ...prev,
+      mattersRaised: prev.mattersRaised.map((item, i) => 
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  const saveToolboxTalk = async () => {
+    if (!toolboxData.site || !toolboxData.date || !toolboxData.reason || !toolboxData.startTime || !toolboxData.finishTime) {
+      alert('Veuillez remplir tous les champs requis du formulaire Toolbox Talk.');
+      return;
+    }
+
+    if (!adminSignature) {
+      alert('Veuillez signer avant de sauvegarder le Toolbox Talk.');
+      return;
+    }
+
+    setIsSavingToolbox(true);
+    try {
+      const response = await fetch('/api/admin/toolbox-talk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...toolboxData,
+          adminName,
+          adminSignature,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setToolboxRecordId(result.id);
+        alert('Toolbox Talk enregistré avec succès !');
+      } else {
+        throw new Error('Erreur lors de l\'enregistrement');
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement:', error);
+      alert('Erreur lors de l\'enregistrement du Toolbox Talk');
+    } finally {
+      setIsSavingToolbox(false);
+    }
+  };
+
+  const publishToolboxTalk = async () => {
+    if (!toolboxRecordId) {
+      alert('Aucun Toolbox Talk à publier.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/toolbox-talk/${toolboxRecordId}/publish`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        alert('Toolbox Talk publié avec succès ! Les utilisateurs peuvent maintenant le signer.');
+        // Recharger les signatures après publication
+        fetchUserSignatures();
+      } else {
+        throw new Error('Erreur lors de la publication');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la publication:', error);
+      alert('Erreur lors de la publication du Toolbox Talk');
+    }
+  };
+
+  // Fonction pour récupérer les données existantes du Toolbox Talk
+  const fetchExistingToolboxData = async () => {
+    try {
+      const response = await fetch('/api/admin/toolbox-talk');
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const latestRecord = data[0]; // Prendre le plus récent
+          setExistingToolboxData(latestRecord);
+          setToolboxRecordId(latestRecord.id);
+          
+          // Pré-remplir les champs avec les données existantes
+          setToolboxData({
+            site: latestRecord.site || '',
+            date: latestRecord.date ? new Date(latestRecord.date).toISOString().split('T')[0] : '',
+            reason: latestRecord.reason || '',
+            startTime: latestRecord.startTime || '',
+            finishTime: latestRecord.finishTime || '',
+            mattersRaised: latestRecord.mattersRaised && Array.isArray(latestRecord.mattersRaised) 
+              ? latestRecord.mattersRaised.map((matter: any) => ({
+                  matter: matter.matter || '',
+                  action: matter.action || ''
+                }))
+              : [
+                  { matter: '', action: '' },
+                  { matter: '', action: '' },
+                  { matter: '', action: '' }
+                ],
+            comments: latestRecord.comments || ''
+          });
+          
+          // Pré-remplir la signature admin si elle existe
+          if (latestRecord.adminSignature) {
+            setAdminSignature(latestRecord.adminSignature);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données Toolbox Talk:', error);
+    }
+  };
+
+  // Fonction pour récupérer les signatures des utilisateurs
+  const fetchUserSignatures = async () => {
+    setLoadingSignatures(true);
+    try {
+      const response = await fetch('/api/admin/toolbox-talk/signatures');
+      if (response.ok) {
+        const data = await response.json();
+        setUserSignatures(data);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Erreur lors de la récupération des signatures:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        alert(`Erreur ${response.status}: ${errorData.message || 'Erreur lors de la récupération des signatures'}`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des signatures:', error);
+      alert('Erreur de connexion lors de la récupération des signatures');
+    } finally {
+      setLoadingSignatures(false);
+    }
+  };
+
+  // Fonction pour télécharger le PDF d'un utilisateur
+  const downloadUserPdf = async (recordId: string, userId: string, userName: string) => {
+    setDownloadingPdf(`${recordId}-${userId}`);
+    try {
+      const response = await fetch('/api/admin/toolbox-talk/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recordId,
+          userId
+        }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `toolbox-talk-${userName.replace(/\s+/g, '-').toLowerCase()}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        throw new Error('Erreur lors du téléchargement');
+      }
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      alert('Erreur lors du téléchargement du PDF');
+    } finally {
+      setDownloadingPdf(null);
+    }
+  };
+
+  // Fonction pour télécharger le document complet (15 pages + Toolbox Talk)
+  const downloadCompleteDocument = async (recordId: string, userId: string, userName: string) => {
+    setDownloadingPdf(`complete-${recordId}-${userId}`);
+    try {
+      const response = await fetch('/api/admin/edge-and-rope-management/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recordId,
+          userId
+        }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `edge-and-rope-management-complet-${userName.replace(/\s+/g, '-').toLowerCase()}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        throw new Error('Erreur lors du téléchargement');
+      }
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      alert('Erreur lors du téléchargement du document complet');
+    } finally {
+      setDownloadingPdf(null);
     }
   };
 
@@ -167,6 +413,109 @@ export default function EdgeAndRopeManagement() {
       <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">
         Edge and Rope Management - Document Complet
       </h1>
+
+      {/* Section des signatures utilisateurs */}
+      <div className="mb-8 bg-white rounded-lg shadow-lg p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-blue-800">
+            📋 Signatures des Utilisateurs
+          </h2>
+          <button
+            onClick={fetchUserSignatures}
+            disabled={loadingSignatures}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          >
+            {loadingSignatures ? 'Chargement...' : 'Actualiser'}
+          </button>
+        </div>
+
+        {loadingSignatures ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Chargement des signatures...</p>
+          </div>
+        ) : userSignatures.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-600">Aucun Toolbox Talk publié ou aucune signature trouvée.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {userSignatures.map((record) => (
+              <div key={record.id} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {record.topic} - {record.site}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Date: {new Date(record.date).toLocaleDateString('fr-FR')} | 
+                      Publié le: {new Date(record.publishedAt).toLocaleDateString('fr-FR')}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      {record.signatures.length} signature{record.signatures.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+
+                {record.signatures.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="text-left p-3 border">Utilisateur</th>
+                          <th className="text-left p-3 border">Email</th>
+                          <th className="text-left p-3 border">Date de signature</th>
+                          <th className="text-left p-3 border">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {record.signatures.map((signature: any) => (
+                          <tr key={signature.id} className="border-b">
+                            <td className="p-3 border">
+                              <div className="font-medium">{signature.userName}</div>
+                            </td>
+                            <td className="p-3 border text-gray-600">
+                              {signature.userEmail}
+                            </td>
+                            <td className="p-3 border text-gray-600">
+                              {new Date(signature.signedAt).toLocaleDateString('fr-FR')} à {new Date(signature.signedAt).toLocaleTimeString('fr-FR')}
+                            </td>
+                            <td className="p-3 border">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => downloadUserPdf(record.id, signature.userId, signature.userName)}
+                                  disabled={downloadingPdf === `${record.id}-${signature.userId}`}
+                                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                >
+                                  {downloadingPdf === `${record.id}-${signature.userId}` ? 'Génération...' : '📄 PDF'}
+                                </button>
+                                <button
+                                  onClick={() => downloadCompleteDocument(record.id, signature.userId, signature.userName)}
+                                  disabled={downloadingPdf === `complete-${record.id}-${signature.userId}`}
+                                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                  title="Télécharger le document complet (15 pages + Toolbox Talk)"
+                                >
+                                  {downloadingPdf === `complete-${record.id}-${signature.userId}` ? 'Génération...' : '📄 PDF Complet'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    Aucune signature pour ce Toolbox Talk
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       
       <div className="space-y-8">
         {/* Paire 1: Page 1 + Page 2 */}
@@ -401,15 +750,36 @@ export default function EdgeAndRopeManagement() {
                 TOOLBOX TALK - RECORD FORM
               </h2>
               
+              {existingToolboxData && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-600">ℹ️</span>
+                    <span className="text-sm text-blue-800">
+                      Données existantes chargées. Vous pouvez modifier les champs ci-dessous.
+                    </span>
+                  </div>
+                </div>
+              )}
+              
               {/* Section Administrative */}
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Site:</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input 
+                    type="text" 
+                    value={toolboxData.site}
+                    onChange={(e) => handleToolboxDataChange('site', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Date:</label>
-                  <input type="date" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input 
+                    type="date" 
+                    value={toolboxData.date}
+                    onChange={(e) => handleToolboxDataChange('date', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                  />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Topic(s) for discussion:</label>
@@ -417,16 +787,31 @@ export default function EdgeAndRopeManagement() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Reason for talk:</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input 
+                    type="text" 
+                    value={toolboxData.reason}
+                    onChange={(e) => handleToolboxDataChange('reason', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Start time:</label>
-                    <input type="time" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input 
+                      type="time" 
+                      value={toolboxData.startTime}
+                      onChange={(e) => handleToolboxDataChange('startTime', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Finish time:</label>
-                    <input type="time" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input 
+                      type="time" 
+                      value={toolboxData.finishTime}
+                      onChange={(e) => handleToolboxDataChange('finishTime', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
                   </div>
                 </div>
               </div>
@@ -470,13 +855,25 @@ export default function EdgeAndRopeManagement() {
                     <div>Matters raised by employees</div>
                     <div>Action taken as a result</div>
                   </div>
-                  {[...Array(3)].map((_, index) => (
+                  {toolboxData.mattersRaised.map((item, index) => (
                     <div key={index} className="grid grid-cols-2 border-t border-gray-300">
                       <div className="p-3 border-r border-gray-300">
-                        <textarea placeholder="Enter matter raised" className="w-full border-none outline-none text-sm resize-none" rows={2}></textarea>
+                        <textarea 
+                          placeholder="Enter matter raised" 
+                          value={item.matter}
+                          onChange={(e) => handleMatterChange(index, 'matter', e.target.value)}
+                          className="w-full border-none outline-none text-sm resize-none" 
+                          rows={2}
+                        ></textarea>
                       </div>
                       <div className="p-3">
-                        <textarea placeholder="Enter action taken" className="w-full border-none outline-none text-sm resize-none" rows={2}></textarea>
+                        <textarea 
+                          placeholder="Enter action taken" 
+                          value={item.action}
+                          onChange={(e) => handleMatterChange(index, 'action', e.target.value)}
+                          className="w-full border-none outline-none text-sm resize-none" 
+                          rows={2}
+                        ></textarea>
                       </div>
                     </div>
                   ))}
@@ -489,7 +886,7 @@ export default function EdgeAndRopeManagement() {
                 <h3 className="text-lg font-semibold text-center mb-2">Validation Administrateur</h3>
                 <p className="text-sm text-center text-gray-600 mb-4">Je confirme avoir validé ce document et l'avoir mis à disposition des utilisateurs</p>
                 
-                {isValidated ? (
+                {isValidated || existingToolboxData ? (
                   <div className="border border-green-300 rounded-md overflow-hidden bg-green-50">
                     <div className="bg-green-100 grid grid-cols-3 p-3 font-medium text-sm">
                       <div>Nom de l'administrateur</div>
@@ -498,11 +895,11 @@ export default function EdgeAndRopeManagement() {
                     </div>
                     <div className="grid grid-cols-3 border-t border-green-300">
                       <div className="p-3 border-r border-green-300">
-                        <div className="text-sm font-medium text-green-800">{adminName}</div>
+                        <div className="text-sm font-medium text-green-800">{adminName || existingToolboxData?.adminName}</div>
                       </div>
                       <div className="p-3 border-r border-green-300">
-                        {adminSignature ? (
-                          <img src={adminSignature} alt="Signature Admin" className="w-24 h-8 object-contain" />
+                        {adminSignature || existingToolboxData?.adminSignature ? (
+                          <img src={adminSignature || existingToolboxData?.adminSignature} alt="Signature Admin" className="w-24 h-8 object-contain" />
                         ) : (
                           <div className="w-24 h-8 border border-green-300 rounded bg-green-100 flex items-center justify-center text-xs text-green-600">
                             Signé
@@ -510,13 +907,15 @@ export default function EdgeAndRopeManagement() {
                         )}
                       </div>
                       <div className="p-3">
-                        <div className="text-sm text-green-800">{new Date().toLocaleDateString('fr-FR')}</div>
+                        <div className="text-sm text-green-800">
+                          {existingToolboxData?.createdAt ? new Date(existingToolboxData.createdAt).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR')}
+                        </div>
                       </div>
                     </div>
                     <div className="p-3 bg-green-100 border-t border-green-300">
                       <div className="text-center">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                          ✓ Document validé et publié
+                          {existingToolboxData?.isPublished ? '✓ Document publié' : '✓ Document enregistré'}
                         </span>
                       </div>
                     </div>
@@ -591,11 +990,32 @@ export default function EdgeAndRopeManagement() {
                   <div className="col-span-3">
                     <textarea 
                       placeholder="Enter any additional comments here..." 
+                      value={toolboxData.comments}
+                      onChange={(e) => handleToolboxDataChange('comments', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
                       rows={4}
                     ></textarea>
                   </div>
                 </div>
+              </div>
+
+              {/* Boutons d'action pour le Toolbox Talk */}
+              <div className="mb-6 flex gap-4 justify-center">
+                <button
+                  onClick={saveToolboxTalk}
+                  disabled={isSavingToolbox || !adminSignature}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isSavingToolbox ? 'Enregistrement...' : 'Enregistrer Toolbox Talk'}
+                </button>
+                {toolboxRecordId && (
+                  <button
+                    onClick={publishToolboxTalk}
+                    className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
+                  >
+                    Publier pour les utilisateurs
+                  </button>
+                )}
               </div>
 
               {/* Footer */}

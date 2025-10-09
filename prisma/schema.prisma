@@ -58,6 +58,7 @@ model User {
   orders                        orders[]
   reviews                       reviews[]
   trainingSessions              TrainingSession[]              @relation("TrainingSessionTrainees")
+  toolboxTalkRecordSignatures   ToolboxTalkRecordSignature[]
 
   @@schema("webirata")
 }
@@ -774,6 +775,40 @@ model EdgeAndRopeManagementValidation {
   adminSignature String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@schema("webirata")
+}
+
+model ToolboxTalkRecord {
+  id                    String                      @id @default(cuid())
+  site                  String
+  date                  DateTime
+  topic                 String                      @default("Toolbox Talk: Edge Management")
+  reason                String
+  startTime             String
+  finishTime            String
+  mattersRaised         Json                        // Array of {matter: string, action: string}
+  comments              String?
+  adminName             String
+  adminSignature        String
+  isPublished           Boolean                     @default(false)
+  publishedAt           DateTime?
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+  signatures            ToolboxTalkRecordSignature[]
+
+  @@schema("webirata")
+}
+
+model ToolboxTalkRecordSignature {
+  id                    String            @id @default(cuid())
+  recordId              String
+  userId                String
+  userName              String
+  signature             String
+  signedAt              DateTime          @default(now())
+  record                ToolboxTalkRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@schema("webirata")
 }
