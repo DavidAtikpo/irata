@@ -60,7 +60,7 @@ function buildHtml(userResponses: SatisfactionResponse[], userEmail: string) {
         align-items: center;
         justify-content: space-between;
         margin-bottom: 20px;
-        padding: 15px 0;
+        padding: 5px 0;
         border-bottom: 2px solid #2563eb;
       }
       .headerRow table {
@@ -153,22 +153,19 @@ function buildHtml(userResponses: SatisfactionResponse[], userEmail: string) {
         color: #1e40af;
       }
       .signature-section {
-        margin-top: 15px;
+        margin-top: 8px;
         text-align: center;
       }
       .signature-box {
-        border: 1px solid #d1d5db;
         padding: 15px;
         margin: 8px 0;
         background: #f9fafb;
-        min-height: 80px;
+        min-height: 40px;
         display: flex;
-        align-items: center;
-        justify-content: center;
       }
       .signature-img {
-        max-width: 180px;
-        max-height: 60px;
+        max-width: 100px;
+        max-height: 40px;
       }
       .signature-status {
         font-size: 11px;
@@ -188,7 +185,7 @@ function buildHtml(userResponses: SatisfactionResponse[], userEmail: string) {
   </head>
   <body>
     <div class="headerRow">
-      <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="height: 70px;">
+      <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="height: 60px;">
       <table>
         <tbody>
           <tr>
@@ -424,7 +421,6 @@ export async function POST(request: NextRequest) {
             </div>
             <div style="flex: 1; text-align: right; display: flex; align-items: center; justify-content: flex-end;">
               <span>© 2025 CI.DES</span>
-              <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" style="width: 20px; height: 20px; object-fit: contain; margin-left: 8px;" onerror="this.style.display='none';">
             </div>
           </div>
         </div>
