@@ -55,26 +55,43 @@ function buildHtml(userResponses: SatisfactionResponse[], userEmail: string) {
         color: #333;
         line-height: 1.4;
       }
-      .header {
-        text-align: center;
+      .headerRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         margin-bottom: 20px;
         padding: 15px 0;
         border-bottom: 2px solid #2563eb;
       }
-      .header h1 {
-        color: #2563eb;
-        margin: 0;
-        font-size: 20px;
-        font-weight: bold;
+      .headerRow table {
+        border-collapse: collapse;
+        font-size: 12px;
       }
-      .header h2 {
+      .headerRow td {
+        border: 1px solid #d1d5db;
+        padding: 6px 8px;
+        text-align: center;
+        font-size: 11px;
+      }
+      .headerRow .input {
+        background: #f9fafb;
+        font-weight: 600;
+      }
+      .headerRow .value {
+        background: white;
+      }
+      .headerInfo {
+        text-align: center;
+        margin: 10px 0;
+      }
+      .headerInfo h2 {
         color: #666;
-        margin: 8px 0 0 0;
+        margin: 0 0 5px 0;
         font-size: 16px;
         font-weight: normal;
       }
-      .header p {
-        margin: 8px 0 0 0;
+      .headerInfo p {
+        margin: 0;
         font-size: 12px;
         color: #6b7280;
       }
@@ -170,8 +187,27 @@ function buildHtml(userResponses: SatisfactionResponse[], userEmail: string) {
     </style>
   </head>
   <body>
-    <div class="header">
-      <h1>FORMULAIRES D'ENQUÊTE DE SATISFACTION CLIENT</h1>
+    <div class="headerRow">
+      <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="height: 70px;">
+      <table>
+        <tbody>
+          <tr>
+            <td class="input"><strong>Titre</strong></td>
+            <td class="input"><strong>Numéro de code</strong></td>
+            <td class="input"><strong>Révision</strong></td>
+            <td class="input"><strong>Création date</strong></td>
+          </tr>
+          <tr>
+            <td class="value">FORMULAIRES D'ENQUÊTE DE SATISFACTION CLIENT</td>
+            <td class="value">ENR-CIFRA-QHSE 007</td>
+            <td class="value">00</td>
+            <td class="value">${new Date().toLocaleDateString('fr-FR')}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="headerInfo">
       <h2>${userName}</h2>
       <p>Session: ${firstResponse.session || 'Non spécifiée'} | Date: ${new Date(firstResponse.createdAt || firstResponse.date).toLocaleDateString('fr-FR')}</p>
     </div>
