@@ -11,13 +11,51 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const sessionFilter = searchParams.get('session');
+    const sessionsOnly = searchParams.get('sessions') === 'true';
+
+    // Si on demande seulement les sessions disponibles
+    if (sessionsOnly) {
+      try {
+        const sessions = await prisma.toolboxTalkRecord.findMany({
+          select: {
+            site: true,
+          },
+          where: {
+            isPublished: true,
+          },
+          distinct: ['site'],
+          orderBy: {
+            site: 'asc',
+          },
+        });
+
+        return NextResponse.json(
+          sessions.map(s => s.site).filter(Boolean)
+        );
+      } catch (dbError) {
+        console.error('Erreur de base de données pour les sessions:', dbError);
+        return NextResponse.json([]);
+      }
+    }
+
     // Vérifier si les tables existent en essayant une requête simple
     let toolboxTalks;
     try {
+      const where: any = {
+        isPublished: true
+      };
+
+      if (sessionFilter) {
+        where.site = {
+          contains: sessionFilter,
+          mode: 'insensitive'
+        };
+      }
+
       toolboxTalks = await prisma.toolboxTalkRecord.findMany({
-        where: {
-          isPublished: true
-        },
+        where,
         include: {
           signatures: {
             include: {

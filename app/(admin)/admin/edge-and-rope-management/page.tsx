@@ -37,6 +37,8 @@ export default function EdgeAndRopeManagement() {
   const [userSignatures, setUserSignatures] = useState<any[]>([]);
   const [loadingSignatures, setLoadingSignatures] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
+  const [sessionFilter, setSessionFilter] = useState<string>('');
+  const [availableSessions, setAvailableSessions] = useState<string[]>([]);
 
   // Récupérer le nom de l'admin et le statut de validation
   useEffect(() => {
@@ -72,10 +74,19 @@ export default function EdgeAndRopeManagement() {
       fetchAdminData();
       // Charger les données existantes du Toolbox Talk
       fetchExistingToolboxData();
+      // Charger les sessions disponibles
+      fetchAvailableSessions();
       // Charger les signatures des utilisateurs
       fetchUserSignatures();
     }
   }, [session]);
+
+  // Recharger les signatures quand le filtre de session change
+  useEffect(() => {
+    if (session?.user?.role === 'ADMIN') {
+      fetchUserSignatures();
+    }
+  }, [sessionFilter]);
 
   const handleAdminValidation = async () => {
     if (!adminSignature) {
@@ -233,11 +244,28 @@ export default function EdgeAndRopeManagement() {
     }
   };
 
+  // Fonction pour récupérer les sessions disponibles
+  const fetchAvailableSessions = async () => {
+    try {
+      const response = await fetch('/api/admin/toolbox-talk/signatures?sessions=true');
+      if (response.ok) {
+        const sessions = await response.json();
+        setAvailableSessions(sessions);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des sessions:', error);
+    }
+  };
+
   // Fonction pour récupérer les signatures des utilisateurs
   const fetchUserSignatures = async () => {
     setLoadingSignatures(true);
     try {
-      const response = await fetch('/api/admin/toolbox-talk/signatures');
+      const url = sessionFilter 
+        ? `/api/admin/toolbox-talk/signatures?session=${encodeURIComponent(sessionFilter)}`
+        : '/api/admin/toolbox-talk/signatures';
+      
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setUserSignatures(data);
@@ -420,13 +448,27 @@ export default function EdgeAndRopeManagement() {
           <h2 className="text-2xl font-bold text-blue-800">
             📋 Signatures des Utilisateurs
           </h2>
-          <button
-            onClick={fetchUserSignatures}
-            disabled={loadingSignatures}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-          >
-            {loadingSignatures ? 'Chargement...' : 'Actualiser'}
-          </button>
+          <div className="flex gap-3 items-center">
+            <select
+              value={sessionFilter}
+              onChange={(e) => setSessionFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            >
+              <option value="">Toutes les sessions</option>
+              {availableSessions.map((session) => (
+                <option key={session} value={session}>
+                  {session}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={fetchUserSignatures}
+              disabled={loadingSignatures}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              {loadingSignatures ? 'Chargement...' : 'Actualiser'}
+            </button>
+          </div>
         </div>
 
         {loadingSignatures ? (
@@ -484,13 +526,13 @@ export default function EdgeAndRopeManagement() {
                             </td>
                             <td className="p-3 border">
                               <div className="flex gap-2">
-                                <button
+                                {/* <button
                                   onClick={() => downloadUserPdf(record.id, signature.userId, signature.userName)}
                                   disabled={downloadingPdf === `${record.id}-${signature.userId}`}
                                   className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                                 >
-                                  {downloadingPdf === `${record.id}-${signature.userId}` ? 'Génération...' : '📄 PDF'}
-                                </button>
+                                  {downloadingPdf === `${record.id}-${signature.userId}` ? 'Génération...' : ''}
+                                </button> */}
                                 <button
                                   onClick={() => downloadCompleteDocument(record.id, signature.userId, signature.userName)}
                                   disabled={downloadingPdf === `complete-${record.id}-${signature.userId}`}
