@@ -50,106 +50,112 @@ function buildHtml(userResponses: SatisfactionResponse[], userEmail: string) {
       body {
         font-family: Arial, sans-serif;
         margin: 0;
-        padding: 20px;
+        padding: 0;
         background: white;
         color: #333;
         line-height: 1.4;
       }
       .header {
         text-align: center;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
+        padding: 15px 0;
         border-bottom: 2px solid #2563eb;
-        padding-bottom: 20px;
       }
       .header h1 {
         color: #2563eb;
         margin: 0;
-        font-size: 24px;
+        font-size: 20px;
+        font-weight: bold;
       }
       .header h2 {
         color: #666;
-        margin: 10px 0 0 0;
-        font-size: 18px;
+        margin: 8px 0 0 0;
+        font-size: 16px;
         font-weight: normal;
       }
+      .header p {
+        margin: 8px 0 0 0;
+        font-size: 12px;
+        color: #6b7280;
+      }
       .form-section {
-        margin-bottom: 40px;
+        margin-bottom: 30px;
         page-break-inside: avoid;
       }
       .form-header {
         background: #f8fafc;
         border: 1px solid #e2e8f0;
-        padding: 15px;
-        margin-bottom: 20px;
+        padding: 12px;
+        margin-bottom: 15px;
       }
       .form-title {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: bold;
         color: #1e40af;
-        margin: 0 0 10px 0;
+        margin: 0 0 8px 0;
       }
       .form-info {
         display: flex;
         justify-content: space-between;
-        font-size: 12px;
+        font-size: 11px;
         color: #666;
       }
       .items-table {
         width: 100%;
         border-collapse: collapse;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
       }
       .items-table th,
       .items-table td {
         border: 1px solid #d1d5db;
-        padding: 8px;
+        padding: 6px;
         text-align: left;
         vertical-align: top;
       }
       .items-table th {
         background: #f3f4f6;
         font-weight: bold;
-        font-size: 12px;
+        font-size: 11px;
       }
       .items-table td {
-        font-size: 11px;
+        font-size: 10px;
       }
       .rating {
         font-weight: bold;
         color: #059669;
       }
       .suggestions {
-        margin-top: 15px;
-        padding: 10px;
+        margin-top: 12px;
+        padding: 8px;
         background: #f9fafb;
         border-left: 4px solid #3b82f6;
       }
       .suggestions h4 {
-        margin: 0 0 8px 0;
-        font-size: 14px;
+        margin: 0 0 6px 0;
+        font-size: 12px;
         color: #1e40af;
       }
       .signature-section {
-        margin-top: 20px;
+        margin-top: 15px;
         text-align: center;
       }
       .signature-box {
         border: 1px solid #d1d5db;
-        padding: 20px;
-        margin: 10px 0;
+        padding: 15px;
+        margin: 8px 0;
         background: #f9fafb;
-        min-height: 100px;
+        min-height: 80px;
         display: flex;
         align-items: center;
         justify-content: center;
       }
       .signature-img {
-        max-width: 200px;
-        max-height: 80px;
+        max-width: 180px;
+        max-height: 60px;
       }
       .signature-status {
-        font-size: 12px;
-        margin-top: 5px;
+        font-size: 11px;
+        margin-top: 4px;
         font-weight: bold;
       }
       .signed {
@@ -158,14 +164,6 @@ function buildHtml(userResponses: SatisfactionResponse[], userEmail: string) {
       .not-signed {
         color: #dc2626;
       }
-      .footer {
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 1px solid #e5e7eb;
-        font-size: 10px;
-        color: #6b7280;
-        text-align: center;
-      }
       .page-break {
         page-break-before: always;
       }
@@ -173,7 +171,7 @@ function buildHtml(userResponses: SatisfactionResponse[], userEmail: string) {
   </head>
   <body>
     <div class="header">
-      <h1>CI.DES - FORMULAIRES D'ENQUÊTE DE SATISFACTION CLIENT</h1>
+      <h1>FORMULAIRES D'ENQUÊTE DE SATISFACTION CLIENT</h1>
       <h2>${userName}</h2>
       <p>Session: ${firstResponse.session || 'Non spécifiée'} | Date: ${new Date(firstResponse.createdAt || firstResponse.date).toLocaleDateString('fr-FR')}</p>
     </div>
@@ -235,11 +233,6 @@ function buildHtml(userResponses: SatisfactionResponse[], userEmail: string) {
         </div>
       </div>
     `).join('')}
-
-    <div class="footer">
-      <p>CI.DES sasu Capital 2 500 Euros | SIRET : 87840789900011 | VAT : FR71878407899</p>
-      <p>Page générée le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
-    </div>
   </body>
   </html>`;
 }
@@ -357,11 +350,49 @@ export async function POST(request: NextRequest) {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
     
+    // Calculer le nombre de pages approximatif
+    const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
+    const pageHeight = 1123; // Hauteur A4 en pixels (297mm)
+    const totalPages = Math.ceil(bodyHeight / pageHeight);
+    
     const pdfBuffer = await page.pdf({ 
       format: 'A4', 
       printBackground: true, 
-      margin: { top: '15mm', left: '10mm', right: '10mm', bottom: '15mm' },
-      displayHeaderFooter: false
+      margin: { top: '20mm', left: '15mm', right: '15mm', bottom: '30mm' },
+      displayHeaderFooter: true,
+      headerTemplate: `
+        <div style="font-size: 10px; color: #6b7280; text-align: center; width: 100%; padding: 5px 15mm; background-color: white; border-bottom: 1px solid #e5e7eb;">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 180mm; margin: 0 auto;">
+            <div style="flex: 1; font-weight: 600; color: #1e40af;">
+              CI.DES - Satisfaction Client
+            </div>
+            <div style="flex: 2; text-align: center; font-size: 9px;">
+              <div>Formulaires d'enquête de satisfaction client</div>
+            </div>
+            <div style="flex: 1; text-align: right; font-size: 9px;">
+              ${new Date().toLocaleDateString('fr-FR')}
+            </div>
+          </div>
+        </div>
+      `,
+      footerTemplate: `
+        <div style="font-size: 9px; color: #6b7280; text-align: center; width: 100%; padding: 5px 15mm; background-color: white; border-top: 1px solid #e5e7eb;">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 180mm; margin: 0 auto;">
+            <div style="flex: 1; font-weight: 500;">
+              CI.DES - Satisfaction Client
+            </div>
+            <div style="flex: 2; text-align: center;">
+              <div style="margin: 1px 0;">CI.DES sasu · Capital 2 500 Euros</div>
+              <div style="margin: 1px 0;">SIRET : 87840789900011 · VAT : FR71878407899</div>
+              <div style="margin: 1px 0;">Page <span class="pageNumber"></span> sur <span class="totalPages"></span></div>
+            </div>
+            <div style="flex: 1; text-align: right; display: flex; align-items: center; justify-content: flex-end;">
+              <span>© 2025 CI.DES</span>
+              <img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" style="width: 20px; height: 20px; object-fit: contain; margin-left: 8px;" onerror="this.style.display='none';">
+            </div>
+          </div>
+        </div>
+      `
     });
     
     await browser.close();
