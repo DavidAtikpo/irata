@@ -14,7 +14,6 @@ import {
   DocumentArrowDownIcon
 } from '@heroicons/react/24/outline';
 import { Button } from '@/app/components/ui/button';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import SignatureCanvas from 'react-signature-canvas';
 import { useRef } from 'react';
 
@@ -171,112 +170,25 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
   const generateContractPDF = async () => {
     if (!contrat) return;
     
-    const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595.28, 841.89]); // A4
-    const { width, height } = page.getSize();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-    const isConvention = Boolean(
-      contrat.entrepriseNom ||
-      contrat.entrepriseAdresse ||
-      contrat.entrepriseTelephone ||
-      contrat.devis?.demande?.entreprise ||
-      ((contrat.devis?.demande as any)?.typeInscription || '').toLowerCase() === 'entreprise'
-    );
-    const numeroPrefix = isConvention ? 'CI.ICE' : 'CI.ICP';
-    const displayNumero = contrat.numero || (contrat.devis?.numero ? contrat.devis.numero.replace(/^CI\.DEV/i, numeroPrefix) : '');
-    const displayReference = contrat.reference || (contrat.devis?.referenceAffaire ? contrat.devis.referenceAffaire.replace(/^CI\.DEV/i, numeroPrefix) : '');
-
-    // En-tête
-    page.drawText('CI.DES AGREEMENT SERVICE CONTRACT', {
-      x: 50, y: height - 50, size: 14, font: boldFont, color: rgb(0,0,0)
-    });
-    page.drawText('Revision: 02', { x: 400, y: height - 50, size: 10, font, color: rgb(0,0,0) });
-    page.drawText('Code Number: ENR-CIDESA-RH 023', { x: 50, y: height - 70, size: 10, font, color: rgb(0,0,0) });
-    page.drawText('Creation Date: 29/07/2024', { x: 400, y: height - 70, size: 10, font, color: rgb(0,0,0) });
-
-    // Titre
-    let y = height - 120;
-    page.drawText('CONTRAT DE FORMATION PROFESSIONNELLE', {
-      x: (width - 300) / 2, y, size: 16, font: boldFont, color: rgb(0,0,0)
-    });
-    y -= 20;
-    if (displayNumero) {
-      page.drawText(`Numéro: ${displayNumero}`, { x: 50, y, size: 10, font, color: rgb(0,0,0) });
-    }
-    if (displayReference) {
-      page.drawText(`Référence: ${displayReference}`, { x: 300, y, size: 10, font, color: rgb(0,0,0) });
-    }
-    
-    y -= 40;
-    page.drawText('A. Organisme de Formation :', { x: 50, y, size: 12, font: boldFont, color: rgb(0,0,0) });
-    y -= 20;
-    page.drawText('CI.DES sasu, SIRET: 878407899 00011', { x: 70, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText('Chez Chagneau, 17270 Boresse et Martron France', { x: 70, y, size: 10, font, color: rgb(0,0,0) });
-
-    y -= 30;
-    page.drawText('B. Stagiaire :', { x: 50, y, size: 12, font: boldFont, color: rgb(0,0,0) });
-    y -= 20;
-    page.drawText(`Nom : ${contrat.nom}`, { x: 70, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText(`Prénom : ${contrat.prenom}`, { x: 70, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText(`Adresse : ${contrat.adresse}`, { x: 70, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText(`Email : ${contrat.user.email}`, { x: 70, y, size: 10, font, color: rgb(0,0,0) });
-    if (contrat.profession) {
-      y -= 15;
-      page.drawText(`Profession : ${contrat.profession}`, { x: 70, y, size: 10, font, color: rgb(0,0,0) });
-    }
-
-    y -= 30;
-    page.drawText('Formation :', { x: 50, y, size: 12, font: boldFont, color: rgb(0,0,0) });
-    y -= 20;
-    page.drawText(`Formation Cordiste IRATA - ${contrat.devis.demande.session}`, { x: 70, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText(`Montant : ${(contrat.devis.montant || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} € net`, { x: 70, y, size: 10, font, color: rgb(0,0,0) });
-    y -= 15;
-    page.drawText(`Date de formation : ${contrat.devis.dateFormation ? new Date(contrat.devis.dateFormation).toLocaleDateString('fr-FR') : 'Non définie'}`, { x: 70, y, size: 10, font, color: rgb(0,0,0) });
-
-    y -= 30;
-    page.drawText(`Date de signature : ${new Date(contrat.dateSignature).toLocaleDateString('fr-FR')}`, { x: 50, y, size: 10, font: boldFont, color: rgb(0,0,0) });
-    y -= 20;
-    page.drawText(`Statut : ${statusInfo.label}`, { x: 50, y, size: 10, font: boldFont, color: rgb(0,0,0) });
-
-    // Signature si disponible
-    if (contrat.signature && y > 100) {
-      y -= 30;
-      page.drawText('Signature du stagiaire :', { x: 50, y, size: 10, font: boldFont, color: rgb(0,0,0) });
-      try {
-        const pngBytes = await fetch(contrat.signature).then(res => res.arrayBuffer());
-        const pngImage = await pdfDoc.embedPng(pngBytes);
-        page.drawImage(pngImage, { x: 200, y: y-40, width: 120, height: 40 });
-      } catch (error) {
-        console.error('Erreur lors de l\'ajout de la signature:', error);
-        y -= 20;
-        page.drawText('Signature électronique disponible', { x: 200, y, size: 8, font, color: rgb(0.5,0.5,0.5) });
+    try {
+      const response = await fetch(`/api/admin/contrats/${contratId}/pdf`);
+      if (!response.ok) {
+        throw new Error('Erreur lors du téléchargement du contrat');
       }
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `contrat_${contrat.nom}_${contrat.prenom}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur:', error);
+      setError('Erreur lors du téléchargement du contrat');
     }
-
-    // Pied de page
-    page.drawText('CI.DES sasu - Capital 2 500 Euros', { x: 50, y: 60, size: 8, font, color: rgb(0,0,0) });
-    page.drawText('SIRET: 87840789900011 - VAT: FR71878407899', { x: 50, y: 45, size: 8, font, color: rgb(0,0,0) });
-
-    const pdfBytes = await pdfDoc.save();
-    // Copy into a fresh Uint8Array backed by ArrayBuffer (avoids ArrayBufferLike typing issues)
-    const safeBytes = new Uint8Array(pdfBytes.length);
-    safeBytes.set(pdfBytes);
-    const blob = new Blob([safeBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `contrat_${contrat.nom}_${contrat.prenom}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   const downloadDevis = async () => {
@@ -705,7 +617,6 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
               </div>
               <div className="flex flex-col items-center ml-4">
                 <img src="/logo.png" alt="logo cides" className="w-10 h-10 mb-1" />
-                <span className="text-[11px] text-gray-700">Page 2 sur 2</span>
               </div>
             </div>
           </footer>
