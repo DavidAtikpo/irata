@@ -94,6 +94,21 @@ export default function AdminCustomerSatisfactionPage() {
     }
   };
 
+  // Regrouper les réponses par utilisateur
+  const groupedResponses = useMemo(() => {
+    const grouped: Record<string, SatisfactionResponse[]> = {};
+    
+    responses.forEach(response => {
+      const userId = response.user?.email || 'unknown';
+      if (!grouped[userId]) {
+        grouped[userId] = [];
+      }
+      grouped[userId].push(response);
+    });
+    
+    return grouped;
+  }, [responses]);
+
   const filtered = useMemo(() => responses, [responses]);
 
   if (status === 'loading' || loading) {
@@ -155,146 +170,184 @@ export default function AdminCustomerSatisfactionPage() {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-gray-50">
-                <th className="text-left p-3 border">Date</th>
-                <th className="text-left p-3 border">Type</th>
-                <th className="text-left p-3 border">Nom du stagiaire</th>
                 <th className="text-left p-3 border">Utilisateur</th>
-                <th className="text-left p-3 border">Éléments</th>
-                <th className="text-left p-3 border">Signature</th>
+                <th className="text-left p-3 border">Nom du stagiaire</th>
+                <th className="text-left p-3 border">Session</th>
+                <th className="text-left p-3 border">Formulaires complétés</th>
+                <th className="text-left p-3 border">Statut signature</th>
+                <th className="text-left p-3 border">Dernière activité</th>
                 <th className="text-left p-3 border">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => (
-                <tr key={r.id} className="border-b align-top">
-                  <td className="p-3 border">{new Date(r.createdAt || r.date).toLocaleString('fr-FR')}</td>
-                  <td className="p-3 border">{typeLabels[r.type]}</td>
-                  <td className="p-3 border">{r.traineeName || '-'}</td>
-                  <td className="p-3 border">
-                    {r.user?.nom || r.user?.prenom ? (
-                      <span>{[r.user?.prenom, r.user?.nom].filter(Boolean).join(' ')} ({r.user?.email})</span>
-                    ) : (
-                      <span>{r.user?.email || '-'}</span>
-                    )}
-                  </td>
-                  <td className="p-3 border">{r.items?.length || 0}</td>
-                  <td className="p-3 border">
-                    {r.signature ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        ✓ Signé
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                        ⚠ Non signé
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-3 border">
-                    <button
-                      className="text-blue-600 hover:underline"
-                      onClick={() => setExpanded((e) => ({ ...e, [r.id]: !e[r.id] }))}
-                    >
-                      {expanded[r.id] ? 'Masquer' : 'Voir détail'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {Object.entries(groupedResponses).map(([userEmail, userResponses]) => {
+                const firstResponse = userResponses[0];
+                const completedForms = userResponses.length;
+                const hasSignature = userResponses.some(r => r.signature);
+                const lastActivity = userResponses.reduce((latest, current) => {
+                  const currentDate = new Date(current.createdAt || current.date);
+                  const latestDate = new Date(latest.createdAt || latest.date);
+                  return currentDate > latestDate ? current : latest;
+                });
+                
+                return (
+                  <tr key={userEmail} className="border-b align-top">
+                    <td className="p-3 border">
+                      {firstResponse.user?.nom || firstResponse.user?.prenom ? (
+                        <span>{[firstResponse.user?.prenom, firstResponse.user?.nom].filter(Boolean).join(' ')}</span>
+                      ) : (
+                        <span>{userEmail}</span>
+                      )}
+                      <div className="text-xs text-gray-500">{userEmail}</div>
+                    </td>
+                    <td className="p-3 border">{firstResponse.traineeName || '-'}</td>
+                    <td className="p-3 border">{firstResponse.session || '-'}</td>
+                    <td className="p-3 border">
+                      <div className="flex flex-wrap gap-1">
+                        {userResponses.map((response) => (
+                          <span
+                            key={response.id}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                          >
+                            {typeLabels[response.type]}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {completedForms}/3 formulaires
+                      </div>
+                    </td>
+                    <td className="p-3 border">
+                      {hasSignature ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          ✓ Signé
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          ⚠ Non signé
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 border">
+                      {new Date(lastActivity.createdAt || lastActivity.date).toLocaleString('fr-FR')}
+                    </td>
+                    <td className="p-3 border">
+                      <button
+                        className="text-blue-600 hover:underline"
+                        onClick={() => setExpanded((e) => ({ ...e, [userEmail]: !e[userEmail] }))}
+                      >
+                        {expanded[userEmail] ? 'Masquer' : 'Voir détail'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
-        {filtered.map((r) => (
-          <div key={r.id} className="mt-4">
-            {expanded[r.id] && (
+        {Object.entries(groupedResponses).map(([userEmail, userResponses]) => (
+          <div key={userEmail} className="mt-4">
+            {expanded[userEmail] && (
               <div className="bg-white shadow rounded-lg p-4">
-                {/* En-tête similaire aux formulaires user */}
-                <HeaderInfoTable
-                  title="CI.DES FORMULAIRE D'ENQUÊTE DE SATISFACTION CLIENT"
-                  codeNumberLabel="Numéro de code"
-                  codeNumber="ENR-CIFRA-QHSE 007"
-                  revisionLabel="Révision"
-                  revision="00"
-                  creationDateLabel="Date"
-                  creationDate={new Date(r.createdAt || r.date).toLocaleDateString('fr-FR')}
-                />
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  Détails complets - {userResponses[0].user?.nom || userResponses[0].user?.prenom ? 
+                    [userResponses[0].user?.prenom, userResponses[0].user?.nom].filter(Boolean).join(' ') : 
+                    userEmail}
+                </h2>
+                
+                {userResponses.map((r) => (
+                  <div key={r.id} className="mb-8 border-b border-gray-200 pb-6 last:border-b-0">
+                    {/* En-tête similaire aux formulaires user */}
+                    <HeaderInfoTable
+                      title={`CI.DES FORMULAIRE D'ENQUÊTE DE SATISFACTION CLIENT - ${typeLabels[r.type]}`}
+                      codeNumberLabel="Numéro de code"
+                      codeNumber="ENR-CIFRA-QHSE 007"
+                      revisionLabel="Révision"
+                      revision="00"
+                      creationDateLabel="Date"
+                      creationDate={new Date(r.createdAt || r.date).toLocaleDateString('fr-FR')}
+                    />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <div className="text-sm text-gray-700"><span className="font-medium">Nom du stagiaire:</span> {r.traineeName || '-'}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-700"><span className="font-medium">Session:</span> {r.session || '-'}</div>
-                  </div>
-                </div>
-
-                <h3 className="font-semibold mt-6 mb-3">Détails</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="text-left p-2 border">Élément</th>
-                        <th className="text-left p-2 border">Note</th>
-                        <th className="text-left p-2 border">Commentaire</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {r.items?.map((it, idx) => (
-                        <tr key={idx} className="border-b">
-                          <td className="p-2 border">{it.label}</td>
-                          <td className="p-2 border">{it.rating}</td>
-                          <td className="p-2 border">{it.comment || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {r.suggestions && (
-                  <div className="mt-3">
-                    <h4 className="font-medium">Suggestions</h4>
-                    <p className="text-gray-700 whitespace-pre-wrap">{r.suggestions}</p>
-                  </div>
-                )}
-
-                {/* Signature du stagiaire */}
-                {r.signature ? (
-                  <div className="mt-3">
-                    <h4 className="font-medium mb-2">Signature du stagiaire</h4>
-                    <div className="border border-gray-300 p-2 bg-gray-50 rounded">
-                      <img src={r.signature} alt="Signature du stagiaire" className="max-w-xs h-auto" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <div className="text-sm text-gray-700"><span className="font-medium">Nom du stagiaire:</span> {r.traineeName || '-'}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-700"><span className="font-medium">Session:</span> {r.session || '-'}</div>
+                      </div>
                     </div>
-                    <p className="text-sm text-green-600 mt-1">✓ Formulaire signé</p>
-                  </div>
-                ) : (
-                  <div className="mt-3">
-                    <h4 className="font-medium mb-2">Signature du stagiaire</h4>
-                    <div className="border border-gray-300 p-4 bg-gray-50 rounded text-center">
-                      <p className="text-gray-500 text-sm">Aucune signature</p>
-                    </div>
-                    <p className="text-sm text-orange-600 mt-1">⚠ Formulaire non signé</p>
-                  </div>
-                )}
 
-                {/* Commentaires Admin: deux lignes avec champs de saisie (longueur réduite) */}
-                <div className="mt-4 ml-130 ">
+                    <h3 className="font-semibold mt-6 mb-3">Détails - {typeLabels[r.type]}</h3>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="text-left p-2 border">Élément</th>
+                            <th className="text-left p-2 border">Note</th>
+                            <th className="text-left p-2 border">Commentaire</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {r.items?.map((it, idx) => (
+                            <tr key={idx} className="border-b">
+                              <td className="p-2 border">{it.label}</td>
+                              <td className="p-2 border">{it.rating}</td>
+                              <td className="p-2 border">{it.comment || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {r.suggestions && (
+                      <div className="mt-3">
+                        <h4 className="font-medium">Suggestions</h4>
+                        <p className="text-gray-700 whitespace-pre-wrap">{r.suggestions}</p>
+                      </div>
+                    )}
+
+                    {/* Signature du stagiaire */}
+                    {r.signature ? (
+                      <div className="mt-3">
+                        <h4 className="font-medium mb-2">Signature du stagiaire</h4>
+                        <div className="border border-gray-300 p-2 bg-gray-50 rounded">
+                          <img src={r.signature} alt="Signature du stagiaire" className="max-w-xs h-auto" />
+                        </div>
+                        <p className="text-sm text-green-600 mt-1">✓ Formulaire signé</p>
+                      </div>
+                    ) : (
+                      <div className="mt-3">
+                        <h4 className="font-medium mb-2">Signature du stagiaire</h4>
+                        <div className="border border-gray-300 p-4 bg-gray-50 rounded text-center">
+                          <p className="text-gray-500 text-sm">Aucune signature</p>
+                        </div>
+                        <p className="text-sm text-orange-600 mt-1">⚠ Formulaire non signé</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Commentaires Admin globaux pour l'utilisateur */}
+                <div className="mt-6 border-t border-gray-200 pt-4">
                   <h4 className="font-medium mb-3">Commentaires administrateur</h4>
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     <div className="max-w-xl">
-                      <label className="block text-sm text-gray-700 mb-1">Texte</label>
+                      <label className="block text-sm text-gray-700 mb-1">Note 1</label>
                       <input
                         type="text"
-                        className="w-full md:w-2/2 border-0 border-b border-gray-400 focus:border-gray-600 focus:outline-none px-0 py-1"
-                        value={adminNotes[r.id]?.note1 || ''}
-                        onChange={(e) => setAdminNotes((prev) => ({ ...prev, [r.id]: { ...(prev[r.id] || { note1: '', note2: '' }), note1: e.target.value } }))}
+                        className="w-full border-0 border-b border-gray-400 focus:border-gray-600 focus:outline-none px-0 py-1"
+                        value={adminNotes[userEmail]?.note1 || ''}
+                        onChange={(e) => setAdminNotes((prev) => ({ ...prev, [userEmail]: { ...(prev[userEmail] || { note1: '', note2: '' }), note1: e.target.value } }))}
                         placeholder="Écrire ici..."
                       />
                     </div>
                     <div className="max-w-xl">
-                      {/* <label className="block text-sm text-gray-700 mb-1">Ligne 2</label> */}
+                      <label className="block text-sm text-gray-700 mb-1">Note 2</label>
                       <input
                         type="text"
-                        className="w-full md:w-2/2 border-0 border-b border-gray-400 focus:border-gray-600 focus:outline-none px-0 py-0"
-                        value={adminNotes[r.id]?.note2 || ''}
-                        onChange={(e) => setAdminNotes((prev) => ({ ...prev, [r.id]: { ...(prev[r.id] || { note1: '', note2: '' }), note2: e.target.value } }))}
+                        className="w-full border-0 border-b border-gray-400 focus:border-gray-600 focus:outline-none px-0 py-1"
+                        value={adminNotes[userEmail]?.note2 || ''}
+                        onChange={(e) => setAdminNotes((prev) => ({ ...prev, [userEmail]: { ...(prev[userEmail] || { note1: '', note2: '' }), note2: e.target.value } }))}
                         placeholder="Écrire ici..."
                       />
                     </div>
@@ -302,14 +355,14 @@ export default function AdminCustomerSatisfactionPage() {
                 </div>
 
                 {/* Pied de page style devis */}
-                <footer className="mt-6 p-4 bg-white ">
+                <footer className="mt-6 p-4 bg-white">
                   <div className="flex justify-between items-center text-xs text-gray-600">
                     <div>
                       CI.DES - Satisfaction Client
                     </div>
                     <div className="text-center">
-                      <div>CI.DES sasu  Capital 2 500 Euros</div>
-                      <div>SIRET : 87840789900011  VAT : FR71878407899</div>
+                      <div>CI.DES sasu Capital 2 500 Euros</div>
+                      <div>SIRET : 87840789900011 VAT : FR71878407899</div>
                       <div>Page 1 sur 1</div>
                     </div>
                     <div>
