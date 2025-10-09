@@ -42,6 +42,8 @@ export default function AdminCustomerSatisfactionPage() {
   const [responses, setResponses] = useState<SatisfactionResponse[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<'all' | SatisfactionResponse['type']>('all');
+  const [filterSession, setFilterSession] = useState<string>('all');
+  const [availableSessions, setAvailableSessions] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [adminNotes, setAdminNotes] = useState<Record<string, { note1: string; note2: string }>>({});
 
@@ -56,13 +58,18 @@ export default function AdminCustomerSatisfactionPage() {
   useEffect(() => {
     if (session?.user?.role === 'ADMIN') {
       fetchResponses();
+      fetchAvailableSessions();
     }
-  }, [session, filterType]);
+  }, [session, filterType, filterSession]);
 
   const fetchResponses = async () => {
     try {
       setLoading(true);
-      const query = filterType === 'all' ? '' : `?type=${filterType}`;
+      const params = new URLSearchParams();
+      if (filterType !== 'all') params.append('type', filterType);
+      if (filterSession !== 'all') params.append('session', filterSession);
+      
+      const query = params.toString() ? `?${params.toString()}` : '';
       const res = await fetch(`/api/admin/customer-satisfaction${query}`);
       if (!res.ok) throw new Error('Erreur lors du chargement');
       const data = (await res.json()) as SatisfactionResponse[];
@@ -72,6 +79,18 @@ export default function AdminCustomerSatisfactionPage() {
       setError("Erreur lors de la récupération des réponses");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAvailableSessions = async () => {
+    try {
+      const res = await fetch('/api/admin/customer-satisfaction?sessions=true');
+      if (res.ok) {
+        const sessions = await res.json() as string[];
+        setAvailableSessions(sessions);
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement des sessions:', err);
     }
   };
 
@@ -112,10 +131,22 @@ export default function AdminCustomerSatisfactionPage() {
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as any)}
             >
-              <option value="all">Tous</option>
+              <option value="all">Tous les types</option>
               <option value="ENVIRONMENT_RECEPTION">Cadre & Accueil</option>
               <option value="EQUIPMENT">Équipements</option>
               <option value="TRAINING_PEDAGOGY">Pédagogie & Formation</option>
+            </select>
+            <select
+              className="border rounded px-3 py-2 text-sm"
+              value={filterSession}
+              onChange={(e) => setFilterSession(e.target.value)}
+            >
+              <option value="all">Toutes les sessions</option>
+              {availableSessions.map((session) => (
+                <option key={session} value={session}>
+                  {session}
+                </option>
+              ))}
             </select>
           </div>
         </div>

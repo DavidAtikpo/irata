@@ -16,10 +16,42 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
+    const sessionFilter = searchParams.get('session');
 
-    const where = type
-      ? { type: type as 'ENVIRONMENT_RECEPTION' | 'EQUIPMENT' | 'TRAINING_PEDAGOGY' }
-      : {};
+    const where: any = {};
+    
+    if (type) {
+      where.type = type as 'ENVIRONMENT_RECEPTION' | 'EQUIPMENT' | 'TRAINING_PEDAGOGY';
+    }
+    
+    if (sessionFilter) {
+      where.session = {
+        contains: sessionFilter,
+        mode: 'insensitive'
+      };
+    }
+
+    // Si on demande les sessions disponibles
+    if (searchParams.get('sessions') === 'true') {
+      const sessions = await prisma.customerSatisfactionResponse.findMany({
+        select: {
+          session: true,
+        },
+        where: {
+          session: {
+            not: null,
+          },
+        },
+        distinct: ['session'],
+        orderBy: {
+          session: 'asc',
+        },
+      });
+
+      return NextResponse.json(
+        sessions.map(s => s.session).filter(Boolean)
+      );
+    }
 
     const results = await prisma.customerSatisfactionResponse.findMany({
       where,
