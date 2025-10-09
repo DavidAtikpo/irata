@@ -138,7 +138,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
     try {
       const payloads: any[] = [];
       
-      // Ne soumettre que le formulaire TRAINING_PEDAGOGY avec sa signature
+      // Soumettre le formulaire TRAINING_PEDAGOGY avec sa signature
       payloads.push({
         type: 'TRAINING_PEDAGOGY' as const,
         traineeName: name || undefined,
@@ -150,8 +150,31 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
         session: sessionName || undefined,
         signature: signatureData,
       });
+
+      // Si on a les données des autres formulaires, les soumettre aussi avec la même signature
+      if (aggregated?.env) {
+        payloads.push({
+          type: 'ENVIRONMENT_RECEPTION' as const,
+          traineeName: aggregated.env.traineeName || name || undefined,
+          items: aggregated.env.items || [],
+          session: aggregated.env.session || sessionName || undefined,
+          signature: signatureData, // Même signature
+        });
+      }
+
+      if (aggregated?.equip) {
+        payloads.push({
+          type: 'EQUIPMENT' as const,
+          traineeName: aggregated.equip.traineeName || name || undefined,
+          items: aggregated.equip.items || [],
+          suggestions: aggregated.equip.suggestions || undefined,
+          session: aggregated.equip.session || sessionName || undefined,
+          signature: signatureData, // Même signature
+        });
+      }
       
-      console.log('Soumission TRAINING_PEDAGOGY avec signature:', signatureData ? 'Oui' : 'Non');
+      console.log('Soumission de tous les formulaires avec signature:', signatureData ? 'Oui' : 'Non');
+      console.log('Nombre de formulaires à soumettre:', payloads.length);
 
       // Submit all in parallel
       await Promise.all(
@@ -170,7 +193,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
       );
 
       await onSubmitAll?.(payloads);
-      alert('Merci, vos réponses ont été enregistrées.');
+      alert('Merci, tous vos formulaires ont été enregistrés et signés.');
       setRows(items.map((label) => ({ label, rating: null as null | string, comment: '' })));
       setSignatureData('');
     } catch (err: any) {
@@ -371,13 +394,16 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
       
       {/* Bouton de soumission responsive */}
       {!isAlreadySubmitted && (
-        <div className="mt-4 sm:mt-6 flex justify-center sm:justify-end">
+        <div className="mt-4 sm:mt-6 flex flex-col items-center sm:items-end gap-2">
+          <div className="text-sm text-gray-600 text-center sm:text-right">
+            En signant ce formulaire, vous signez automatiquement tous vos formulaires de satisfaction.
+          </div>
           <button
             type="submit"
             disabled={submitting}
             className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium text-sm sm:text-base"
           >
-            {submitting ? 'Envoi...' : 'Soumettre le questionnaire'}
+            {submitting ? 'Envoi...' : 'Signer et soumettre tous les formulaires'}
           </button>
         </div>
       )}

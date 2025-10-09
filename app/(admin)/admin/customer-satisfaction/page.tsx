@@ -46,6 +46,8 @@ export default function AdminCustomerSatisfactionPage() {
   const [availableSessions, setAvailableSessions] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [adminNotes, setAdminNotes] = useState<Record<string, { note1: string; note2: string }>>({});
+  const [downloadingPdf, setDownloadingPdf] = useState<Set<string>>(new Set());
+  const [downloadingAllPdfs, setDownloadingAllPdfs] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -91,6 +93,61 @@ export default function AdminCustomerSatisfactionPage() {
       }
     } catch (err) {
       console.error('Erreur lors du chargement des sessions:', err);
+    }
+  };
+
+  const downloadPdf = async (userEmail: string) => {
+    try {
+      setDownloadingPdf(prev => new Set(prev).add(userEmail));
+      
+      const response = await fetch('/api/admin/customer-satisfaction/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userEmail }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la génération du PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `satisfaction-client-${userEmail.replace('@', '-').replace('.', '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Erreur lors du téléchargement PDF:', error);
+      alert('Erreur lors de la génération du PDF');
+    } finally {
+      setDownloadingPdf(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userEmail);
+        return newSet;
+      });
+    }
+  };
+
+  const downloadAllPdfs = async () => {
+    try {
+      setDownloadingAllPdfs(true);
+      const userEmails = Object.keys(groupedResponses);
+      
+      for (const userEmail of userEmails) {
+        await downloadPdf(userEmail);
+        // Petite pause entre les téléchargements pour éviter de surcharger
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } catch (error) {
+      console.error('Erreur lors du téléchargement de tous les PDFs:', error);
+      alert('Erreur lors du téléchargement de certains PDFs');
+    } finally {
+      setDownloadingAllPdfs(false);
     }
   };
 
@@ -163,6 +220,13 @@ export default function AdminCustomerSatisfactionPage() {
                 </option>
               ))}
             </select>
+            <button
+              onClick={downloadAllPdfs}
+              disabled={downloadingAllPdfs || Object.keys(groupedResponses).length === 0}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              {downloadingAllPdfs ? 'Génération...' : 'Télécharger tous les PDFs'}
+            </button>
           </div>
         </div>
 
@@ -232,12 +296,21 @@ export default function AdminCustomerSatisfactionPage() {
                       {new Date(lastActivity.createdAt || lastActivity.date).toLocaleString('fr-FR')}
                     </td>
                     <td className="p-3 border">
-                      <button
-                        className="text-blue-600 hover:underline"
-                        onClick={() => setExpanded((e) => ({ ...e, [userEmail]: !e[userEmail] }))}
-                      >
-                        {expanded[userEmail] ? 'Masquer' : 'Voir détail'}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          className="text-blue-600 hover:underline text-sm"
+                          onClick={() => setExpanded((e) => ({ ...e, [userEmail]: !e[userEmail] }))}
+                        >
+                          {expanded[userEmail] ? 'Masquer' : 'Voir détail'}
+                        </button>
+                        <button
+                          className="text-green-600 hover:underline text-sm disabled:opacity-50"
+                          onClick={() => downloadPdf(userEmail)}
+                          disabled={downloadingPdf.has(userEmail)}
+                        >
+                          {downloadingPdf.has(userEmail) ? 'Génération...' : 'PDF'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
