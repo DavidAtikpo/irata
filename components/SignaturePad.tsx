@@ -28,24 +28,12 @@ export default function SignaturePad({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Configuration du canvas
+    // Configuration du canvas - version simplifiée pour mobile
     canvas.width = width;
     canvas.height = height;
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    // Améliorer la qualité de rendu sur les écrans haute résolution
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    
-    canvas.width = width * devicePixelRatio;
-    canvas.height = height * devicePixelRatio;
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
     
-    ctx.scale(devicePixelRatio, devicePixelRatio);
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
@@ -78,15 +66,14 @@ export default function SignaturePad({
     if (!ctx) return;
 
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
     
+    // Pour les événements tactiles, utiliser les coordonnées relatives à la taille d'affichage
     const x = 'touches' in e ? 
-      (e.touches[0].clientX - rect.left) * scaleX : 
-      (e.clientX - rect.left) * scaleX;
+      e.touches[0].clientX - rect.left : 
+      e.clientX - rect.left;
     const y = 'touches' in e ? 
-      (e.touches[0].clientY - rect.top) * scaleY : 
-      (e.clientY - rect.top) * scaleY;
+      e.touches[0].clientY - rect.top : 
+      e.clientY - rect.top;
 
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -107,15 +94,14 @@ export default function SignaturePad({
     if (!ctx) return;
 
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
     
+    // Pour les événements tactiles, utiliser les coordonnées relatives à la taille d'affichage
     const x = 'touches' in e ? 
-      (e.touches[0].clientX - rect.left) * scaleX : 
-      (e.clientX - rect.left) * scaleX;
+      e.touches[0].clientX - rect.left : 
+      e.clientX - rect.left;
     const y = 'touches' in e ? 
-      (e.touches[0].clientY - rect.top) * scaleY : 
-      (e.clientY - rect.top) * scaleY;
+      e.touches[0].clientY - rect.top : 
+      e.clientY - rect.top;
 
     ctx.lineTo(x, y);
     ctx.stroke();
