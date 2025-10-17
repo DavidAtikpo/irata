@@ -117,30 +117,28 @@ export async function POST(
       const isEntreprise = devis.demande?.typeInscription?.toLowerCase() === 'entreprise' || !!devis.demande?.entreprise;
       const prefix = isEntreprise ? 'CI.ICE' : 'CI.ICP';
 
-      const startOfYear = new Date(now.getFullYear(), 0, 1);
-      const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
+      // Compter les contrats qui ont déjà un numéro assigné pour cette année (pour le numéro)
       const yearCount = await prisma.contrat.count({
-        where: { createdAt: { gte: startOfYear, lt: endOfYear } },
+        where: { 
+          numero: {
+            startsWith: `${prefix} ${yy}`
+          }
+        },
       });
       
-      // Compter les contrats pour cette session spécifique
-      const sessionCount = await prisma.contrat.count({
-        where: {
-          devis: {
-            demande: {
-              session: devis.demande?.session
-            }
+      // Compter les contrats qui ont déjà une référence assignée pour ce mois (pour la référence)
+      const monthCount = await prisma.contrat.count({
+        where: { 
+          reference: {
+            startsWith: `CI.IFF ${yy}${mm}`
           }
-        }
+        },
       });
       
       const nthYear = String(yearCount + 1).padStart(3, '0');
-      const nthSession = String(sessionCount + 1).padStart(3, '0');
+      const nthMonth = String(monthCount + 1).padStart(3, '0');
       numeroComputed = `${prefix} ${yy}${mm}${nthYear}`;
-      referenceComputed = `${prefix} ${yy}${mm} ${nthSession}`;
+      referenceComputed = `CI.IFF ${yy}${mm} ${nthMonth}`;
     }
     console.log('Données pour contrat:', {
       devisId: id,
@@ -176,7 +174,9 @@ export async function POST(
     const city = (isEntreprise ? entrepriseVilleStr : villeStr) || '';
     const zip = (isEntreprise ? entrepriseCodePostalStr : codePostalStr) || '';
     const country = paysStr || '';
-    const fullAdresse = [baseAdresse, city].filter(Boolean).join(', ') + (zip ? ` ${zip}` : '') + (country ? `, ${country}` : '');
+    
+    // Si l'adresse de base est vide, construire une adresse complète
+    const finalAdresse = baseAdresse || [city, zip, country].filter(Boolean).join(', ');
 
     // Utiliser upsert pour créer ou mettre à jour le contrat
     const contrat = await prisma.contrat.upsert({
@@ -186,7 +186,7 @@ export async function POST(
       update: {
         nom: nom || (isEntreprise ? entrepriseNom || '' : ''),
         prenom: prenom || '',
-        adresse: fullAdresse.trim(),
+        adresse: finalAdresse.trim(),
         profession: profession || '',
         // Champs adresse personnels
         ville: villeStr,
@@ -210,7 +210,7 @@ export async function POST(
         userId: session.user.id,
         nom: nom || (isEntreprise ? entrepriseNom || '' : ''),
         prenom: prenom || '',
-        adresse: fullAdresse.trim(),
+        adresse: finalAdresse.trim(),
         profession: profession || '',
         // Champs adresse personnels
         ville: villeStr,

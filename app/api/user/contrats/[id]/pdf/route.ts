@@ -355,32 +355,22 @@ export async function GET(
 
         <div class="signature-section">
           <h2 class="section-title">Signatures</h2>
-          <div style="display:flex; gap: 20px;">
+          <div style="display:flex; gap: 5px;">
             <div style="flex:1;">
               <div class="info-label">Signature du stagiaire</div>
               <div class="signature-box">
-                ${contrat.signature ? `<img src="${contrat.signature}" alt="Signature stagiaire" style="max-width: 220px; max-height: 70px;" />` : 'Signature électronique'}
+                ${contrat.signature ? `<img src="${contrat.signature}" alt="Signature stagiaire" style="max-width: 120px; max-height: 30px;" />` : 'Signature électronique'}
               </div>
-              <div class="muted" style="margin-top:8px;">${(contrat as any).prenom} ${(contrat as any).nom}</div>
+              <div class="muted" style="margin-top:2px;">${(contrat as any).prenom} ${(contrat as any).nom}</div>
             </div>
             <div style="flex:1;">
               <div class="info-label">Signature de l'administrateur</div>
               <div class="signature-box">
-                ${contrat.adminSignature ? `<img src="${contrat.adminSignature}" alt="Signature admin" style="max-width: 220px; max-height: 70px;" />` : 'Non signée'}
+                ${contrat.adminSignature ? `<img src="${contrat.adminSignature}" alt="Signature admin" style="max-width: 120px; max-height: 30px;" />` : 'Non signée'}
               </div>
-              <div class="muted" style="margin-top:8px;">CI.DES</div>
+              <div class="muted" style="margin-top:2px;">CI.DES</div>
             </div>
           </div>
-        </div>
-
-        <div class="footer">
-          <div></div>
-          <div class="center">
-            <div><strong>CI.DES sasu</strong> - Capital 2 500 Euros</div>
-            <div>SIRET: 87840789900011 - VAT: FR71878407899</div>
-            <div>250501 CI.DES 2504SS03 11 Florent MIRBEAU ${isConvention ? 'Convention Formation Professionnelle' : 'Contrat Formation Professionnelle'}</div>
-          </div>
-          <div><img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="height:32px;width:32px"></div>
         </div>
         </div>
       </body>
@@ -454,27 +444,12 @@ export async function GET(
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '20mm',
+        top: '5mm',
         right: '15mm',
-        bottom: '30mm',
+        bottom: '10mm',
         left: '15mm'
       },
       displayHeaderFooter: true,
-      headerTemplate: `
-        <div style="font-size: 10px; color: #6b7280; text-align: center; width: 100%; padding: 5px 15mm; background-color: white; border-bottom: 1px solid #e5e7eb;">
-          <div style="display: flex; justify-content: space-between; align-items: center; width: 180mm; margin: 0 auto;">
-            <div style="flex: 1; font-weight: 600; color: #1e40af;">
-              CI.DES - Contrats
-            </div>
-            <div style="flex: 2; text-align: center; font-size: 9px;">
-              <div>${isConvention ? 'Convention' : 'Contrat'} de formation professionnelle</div>
-            </div>
-            <div style="flex: 1; text-align: right; font-size: 9px;">
-              ${new Date().toLocaleDateString('fr-FR')}
-            </div>
-          </div>
-        </div>
-      `,
       footerTemplate: `
         <div style="font-size: 9px; color: #6b7280; text-align: center; width: 100%; padding: 5px 15mm; background-color: white; border-top: 1px solid #e5e7eb;">
           <div style="display: flex; justify-content: space-between; align-items: center; width: 180mm; margin: 0 auto;">

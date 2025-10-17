@@ -577,4 +577,119 @@ export async function sendFormulaireCorrectionEmail(
   `;
 
   return sendEmail({ to, subject, html });
+}
+
+export async function sendAdminPaymentNotificationEmail(
+  adminEmail: string,
+  userName: string,
+  userEmail: string,
+  invoiceNumber: string,
+  paymentAmount: number,
+  totalAmount: number,
+  paymentStatus: string,
+  paymentDate: string,
+  paymentMethod: string = 'Stripe'
+) {
+  const subject = `💰 Nouveau paiement reçu - Facture ${invoiceNumber}`;
+  
+  const isFullyPaid = paymentStatus === 'PAID';
+  const statusText = isFullyPaid ? 'entièrement payée' : 'partiellement payée';
+  const statusColor = isFullyPaid ? '#10b981' : '#f59e0b';
+  
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 30px; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px;">💰 Nouveau Paiement Reçu</h1>
+        <p style="margin: 10px 0 0 0; font-size: 16px;">CI.DES - Centre de Formation Cordiste IRATA</p>
+      </div>
+      
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #333; margin-bottom: 20px;">Notification de paiement</h2>
+        
+        <p>Bonjour,</p>
+        
+        <p>Un nouveau paiement a été effectué sur votre plateforme de formation.</p>
+        
+        <div style="background: white; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid ${statusColor};">
+          <h3 style="color: #333; margin-top: 0; margin-bottom: 20px;">📋 Détails du paiement :</h3>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+              <strong style="color: #6b7280;">Client :</strong><br>
+              <span style="color: #333; font-size: 16px;">${userName}</span>
+            </div>
+            <div>
+              <strong style="color: #6b7280;">Email :</strong><br>
+              <span style="color: #333;">${userEmail}</span>
+            </div>
+            <div>
+              <strong style="color: #6b7280;">Numéro de facture :</strong><br>
+              <span style="color: #333; font-size: 16px;">${invoiceNumber}</span>
+            </div>
+            <div>
+              <strong style="color: #6b7280;">Date de paiement :</strong><br>
+              <span style="color: #333;">${new Date(paymentDate).toLocaleDateString('fr-FR')}</span>
+            </div>
+            <div>
+              <strong style="color: #6b7280;">Montant payé :</strong><br>
+              <span style="color: #10b981; font-size: 18px; font-weight: bold;">${paymentAmount.toLocaleString()}€</span>
+            </div>
+            <div>
+              <strong style="color: #6b7280;">Montant total :</strong><br>
+              <span style="color: #333; font-size: 16px;">${totalAmount.toLocaleString()}€</span>
+            </div>
+            <div>
+              <strong style="color: #6b7280;">Méthode de paiement :</strong><br>
+              <span style="color: #333;">${paymentMethod}</span>
+            </div>
+            <div>
+              <strong style="color: #6b7280;">Statut :</strong><br>
+              <span style="background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                ${statusText}
+              </span>
+            </div>
+          </div>
+          
+          <div style="background: ${isFullyPaid ? '#d1fae5' : '#fef3c7'}; padding: 15px; border-radius: 6px; border-left: 4px solid ${statusColor};">
+            <p style="margin: 0; color: ${isFullyPaid ? '#065f46' : '#92400e'}; font-weight: 500;">
+              ${isFullyPaid ? '✅' : '⚠️'} La facture est maintenant <strong>${statusText}</strong>
+              ${!isFullyPaid ? `<br>Reste à payer : <strong>${(totalAmount - paymentAmount).toLocaleString()}€</strong>` : ''}
+            </p>
+          </div>
+        </div>
+        
+        <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #2c5aa0; margin-top: 0;">📊 Actions recommandées :</h3>
+          <ul style="color: #374151;">
+            <li>Vérifier le paiement dans votre dashboard Stripe</li>
+            <li>Mettre à jour le statut de la formation si nécessaire</li>
+            <li>Envoyer les documents de formation au client</li>
+            <li>Planifier la session de formation si applicable</li>
+          </ul>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/admin" 
+             style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
+            📊 Accéder au Dashboard Admin
+          </a>
+        </div>
+        
+        <p style="color: #6b7280; font-size: 14px; margin-top: 25px;">
+          Cette notification a été envoyée automatiquement par le système de paiement.
+        </p>
+        
+        <p>Cordialement,<br>
+        <strong>Le système CI.DES</strong></p>
+      </div>
+      
+      <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
+        <p>CI.DES - Centre de Formation Cordiste IRATA<br>
+        17270 BORESSE-ET-MARTRON<br>
+        Tél: +33 6 24 67 13 65 | Email: ${process.env.SMTP_FROM_EMAIL}</p>
+      </div>
+    </div>
+  `;
+
+  return sendEmail({ to: adminEmail, subject, html });
 } 

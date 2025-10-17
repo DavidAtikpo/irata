@@ -208,12 +208,10 @@ export default function NouveauDevisPage() {
       }
       const data = await response.json();
       setNumero(data.numeroDevis);
-      // Harmoniser "Notre référence" pour commencer par CI.DEV si le numéro le fait
+      // Harmoniser "Notre référence" pour commencer par CI.IFF
       let ref = data.referenceSession as string;
-      if (typeof data.numeroDevis === 'string' && data.numeroDevis.startsWith('CI.DEV')) {
-        if (!/^CI\.DEV/i.test(ref)) {
-          ref = `CI.DEV ${ref?.replace(/^CI\.DEV\s*/i, '')}`.trim();
-        }
+      if (!/^CI\.IFF/i.test(ref)) {
+        ref = `CI.IFF ${ref?.replace(/^CI\.(DEV|IFF)\s*/i, '')}`.trim();
       }
       setReferenceAffaire(ref);
     } catch (error) {
