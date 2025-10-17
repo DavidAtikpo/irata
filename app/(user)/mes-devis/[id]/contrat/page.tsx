@@ -17,10 +17,6 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
   const [error, setError] = useState<string | null>(null);
   const [devisId, setDevisId] = useState<string>('');
   const [contratInfo, setContratInfo] = useState<any>(null);
-  const [pays, setPays] = useState('');
-  const [codePostal, setCodePostal] = useState('');
-  const [ville, setVille] = useState('');
-  const [telephone, setTelephone] = useState('');
 
 
   useEffect(() => {
@@ -78,13 +74,7 @@ export default function ContratPage({ params }: { params: Promise<{ id: string }
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...data,
-          pays,
-          codePostal,
-          ville,
-          telephone,
-        }),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {

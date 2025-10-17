@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { PrismaClient } from '@prisma/client';
-import { sendInvoicePaymentConfirmationEmail } from 'lib/email';
+import { sendInvoicePaymentConfirmationEmail, sendAdminPaymentNotificationEmail } from 'lib/email';
 
 const prisma = new PrismaClient();
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
         user.email,
         `${user.prenom} ${user.nom}`,
         updatedInvoice.invoiceNumber,
-        paymentAmount,
+        newPaidAmount, // Utiliser le montant total payé, pas seulement le dernier paiement
         updatedInvoice.amount,
         updatedInvoice.paymentStatus,
         new Date().toISOString()
@@ -88,6 +88,44 @@ export async function POST(request: NextRequest) {
       console.log('Email de confirmation de paiement envoyé à:', user.email);
     } catch (emailError) {
       console.error('Erreur lors de l\'envoi de l\'email de confirmation:', emailError);
+      // Ne pas faire échouer le paiement si l'email échoue
+    }
+
+    // Envoyer un email de notification aux admins
+    try {
+      // Récupérer les emails admin (support de plusieurs emails séparés par des virgules)
+      const adminEmails = process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || process.env.SMTP_FROM_EMAIL;
+      
+      if (adminEmails) {
+        const emailList = adminEmails.split(',').map(email => email.trim()).filter(email => email);
+        
+        // Envoyer l'email à tous les admins
+        const emailPromises = emailList.map(async (adminEmail) => {
+          try {
+            await sendAdminPaymentNotificationEmail(
+              adminEmail,
+              `${user.prenom} ${user.nom}`,
+              user.email,
+              updatedInvoice.invoiceNumber,
+              newPaidAmount, // Utiliser le montant total payé, pas seulement le dernier paiement
+              updatedInvoice.amount,
+              updatedInvoice.paymentStatus,
+              new Date().toISOString(),
+              'Stripe'
+            );
+            console.log('Email de notification de paiement envoyé à l\'admin:', adminEmail);
+          } catch (emailError) {
+            console.error(`Erreur envoi email à ${adminEmail}:`, emailError);
+          }
+        });
+        
+        await Promise.all(emailPromises);
+        console.log(`Emails de notification envoyés à ${emailList.length} admin(s)`);
+      } else {
+        console.warn('Aucun email admin configuré pour les notifications de paiement');
+      }
+    } catch (emailError) {
+      console.error('Erreur lors de l\'envoi des emails de notification admin:', emailError);
       // Ne pas faire échouer le paiement si l'email échoue
     }
 

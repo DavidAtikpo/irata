@@ -16,8 +16,8 @@ import InvoiceTemplate, { InvoiceData } from '../../components/InvoiceTemplate';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-// Charger Stripe avec la clé publique
-const stripePromise = loadStripe('pk_test_51S0KtgGOlwWHVuTebej5X9UXmlWZWYvwjEfOFXNotDT7rrYR0vhVAKQaRRRZiLuajzA2Igq5Ps6da8G2RrcVyOxK00KsBBNMR8');
+// Charger Stripe avec la clé publique (live)
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S0KtgGOlwWHVuTebej5X9UXmlWZWYvwjEfOFXNotDT7rrYR0vhVAKQaRRRZiLuajzA2Igq5Ps6da8G2RrcVyOxK00KsBBNMR8');
 
 interface Invoice {
   id: string;
@@ -365,7 +365,9 @@ export default function InvoicePage() {
         });
 
         if (!response.ok) {
-          throw new Error('Erreur lors de la création du paiement');
+          const errorData = await response.json();
+          console.error('Erreur serveur:', errorData);
+          throw new Error(errorData.details || errorData.error || 'Erreur lors de la création du paiement');
         }
 
         const { clientSecret, paymentIntentId } = await response.json();

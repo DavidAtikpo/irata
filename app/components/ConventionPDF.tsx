@@ -28,6 +28,13 @@ export function ConventionPDF({ devis, onSubmit }: ConventionPDFProps) {
     prenom: '',
     profession: '',
     statut: '',
+    telephone: '',
+    email: '',
+    dateNaissance: '',
+    lieuNaissance: '',
+    ville: '',
+    codePostal: '',
+    pays: '',
     dateSignature: new Date().toISOString().split('T')[0],
     signature: '',
   });
@@ -74,14 +81,80 @@ export function ConventionPDF({ devis, onSubmit }: ConventionPDFProps) {
         setFormData((prev: any) => ({ ...prev, signature: dataUrl }));
       }
 
-      // Basic validation for enterprise postal code and signature
+      // Validation complète des champs requis
       const cleaned = {
         ...formData,
+        entrepriseNom: (formData.entrepriseNom || '').toString().trim(),
+        entrepriseAdresse: (formData.entrepriseAdresse || '').toString().trim(),
         entrepriseCodePostal: (formData.entrepriseCodePostal || '').toString().trim(),
         entrepriseVille: (formData.entrepriseVille || '').toString().trim(),
+        entrepriseTelephone: (formData.entrepriseTelephone || '').toString().trim(),
+        nom: (formData.nom || '').toString().trim(),
+        prenom: (formData.prenom || '').toString().trim(),
+        profession: (formData.profession || '').toString().trim(),
+        statut: (formData.statut || '').toString().trim(),
+        telephone: (formData.telephone || '').toString().trim(),
+        email: (formData.email || '').toString().trim(),
+        dateNaissance: (formData.dateNaissance || '').toString().trim(),
+        lieuNaissance: (formData.lieuNaissance || '').toString().trim(),
+        ville: (formData.ville || '').toString().trim(),
+        codePostal: (formData.codePostal || '').toString().trim(),
+        pays: (formData.pays || '').toString().trim(),
       };
+      
+      // Validation des champs entreprise
+      if (!cleaned.entrepriseNom) {
+        throw new Error('Nom de l\'entreprise requis');
+      }
+      if (!cleaned.entrepriseAdresse) {
+        throw new Error('Adresse de l\'entreprise requise');
+      }
       if (!cleaned.entrepriseCodePostal) {
         throw new Error('Code postal de l\'entreprise requis');
+      }
+      if (!cleaned.entrepriseVille) {
+        throw new Error('Ville de l\'entreprise requise');
+      }
+      if (!cleaned.entrepriseTelephone) {
+        throw new Error('Téléphone de l\'entreprise requis');
+      }
+      
+      // Validation des champs signataire
+      if (!cleaned.nom) {
+        throw new Error('Nom du signataire requis');
+      }
+      if (!cleaned.prenom) {
+        throw new Error('Prénom du signataire requis');
+      }
+      if (!cleaned.profession) {
+        throw new Error('Profession du signataire requise');
+      }
+      if (!cleaned.statut) {
+        throw new Error('Statut du signataire requis');
+      }
+      if (!formData.dateSignature) {
+        throw new Error('Date de signature requise');
+      }
+      if (!cleaned.telephone) {
+        throw new Error('Téléphone du signataire requis');
+      }
+      if (!cleaned.email) {
+        throw new Error('Email du signataire requis');
+      }
+      if (!cleaned.dateNaissance) {
+        throw new Error('Date de naissance du signataire requise');
+      }
+      if (!cleaned.lieuNaissance) {
+        throw new Error('Lieu de naissance du signataire requis');
+      }
+      if (!cleaned.ville) {
+        throw new Error('Ville du signataire requise');
+      }
+      if (!cleaned.codePostal) {
+        throw new Error('Code postal du signataire requis');
+      }
+      if (!cleaned.pays) {
+        throw new Error('Pays du signataire requis');
       }
       if (!cleaned.signature || cleaned.signature.length < 50) {
         throw new Error('Signature requise');
@@ -207,24 +280,24 @@ export function ConventionPDF({ devis, onSubmit }: ConventionPDFProps) {
         <h3 className="text-lg font-semibold text-gray-900">B. Si Entreprise Cocontractante :</h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2 col-span-2">
-            <Label>Nom de l'entreprise</Label>
-            <Input name="entrepriseNom" value={formData.entrepriseNom} onChange={handleChange} className="text-black" />
+            <Label>Nom de l'entreprise *</Label>
+            <Input name="entrepriseNom" value={formData.entrepriseNom} onChange={handleChange} className="text-black" required />
           </div>
           <div className="space-y-2 col-span-2">
-            <Label>Adresse de l'entreprise</Label>
-            <Input name="entrepriseAdresse" value={formData.entrepriseAdresse} onChange={handleChange} className="text-black" />
+            <Label>Adresse de l'entreprise *</Label>
+            <Input name="entrepriseAdresse" value={formData.entrepriseAdresse} onChange={handleChange} className="text-black" required />
           </div>
           <div className="space-y-2">
-            <Label>Code postal</Label>
+            <Label>Code postal *</Label>
             <Input name="entrepriseCodePostal" value={formData.entrepriseCodePostal} onChange={handleChange} className="text-black" required />
           </div>
           <div className="space-y-2">
-            <Label>Ville</Label>
-            <Input name="entrepriseVille" value={formData.entrepriseVille} onChange={handleChange} className="text-black" />
+            <Label>Ville *</Label>
+            <Input name="entrepriseVille" value={formData.entrepriseVille} onChange={handleChange} className="text-black" required />
           </div>
           <div className="space-y-2 col-span-2">
-            <Label>Numéro de téléphone de l'entreprise</Label>
-            <Input name="entrepriseTelephone" value={formData.entrepriseTelephone} onChange={handleChange} className="text-black" />
+            <Label>Numéro de téléphone de l'entreprise *</Label>
+            <Input name="entrepriseTelephone" value={formData.entrepriseTelephone} onChange={handleChange} className="text-black" required />
           </div>
         </div>
       </div>
@@ -233,30 +306,58 @@ export function ConventionPDF({ devis, onSubmit }: ConventionPDFProps) {
         <h3 className="text-lg font-semibold text-gray-900">Signataire</h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>NOM</Label>
-            <Input name="nom" value={formData.nom} onChange={handleChange} className="text-black" />
+            <Label>NOM *</Label>
+            <Input name="nom" value={formData.nom} onChange={handleChange} className="text-black" required />
           </div>
           <div className="space-y-2">
-            <Label>Prénom</Label>
-            <Input name="prenom" value={formData.prenom} onChange={handleChange} className="text-black" />
+            <Label>Prénom *</Label>
+            <Input name="prenom" value={formData.prenom} onChange={handleChange} className="text-black" required />
           </div>
           <div className="space-y-2">
-            <Label>Profession</Label>
-            <Input name="profession" value={formData.profession} onChange={handleChange} className="text-black" />
+            <Label>Profession *</Label>
+            <Input name="profession" value={formData.profession} onChange={handleChange} className="text-black" required />
           </div>
           <div className="space-y-2">
-            <Label>Statut</Label>
-            <Input name="statut" value={formData.statut} onChange={handleChange} className="text-black" />
+            <Label>Statut *</Label>
+            <Input name="statut" value={formData.statut} onChange={handleChange} className="text-black" required />
           </div>
           <div className="space-y-2">
-            <Label>Date de signature</Label>
-            <Input type="date" name="dateSignature" value={formData.dateSignature} onChange={handleChange} className="text-black" />
+            <Label>Date de signature *</Label>
+            <Input type="date" name="dateSignature" value={formData.dateSignature} onChange={handleChange} className="text-black" required />
+          </div>
+          <div className="space-y-2">
+            <Label>Téléphone *</Label>
+            <Input name="telephone" value={formData.telephone} onChange={handleChange} className="text-black" required />
+          </div>
+          <div className="space-y-2">
+            <Label>Email *</Label>
+            <Input type="email" name="email" value={formData.email} onChange={handleChange} className="text-black" required />
+          </div>
+          <div className="space-y-2">
+            <Label>Date de naissance *</Label>
+            <Input type="date" name="dateNaissance" value={formData.dateNaissance} onChange={handleChange} className="text-black" required />
+          </div>
+          <div className="space-y-2">
+            <Label>Lieu de naissance *</Label>
+            <Input name="lieuNaissance" value={formData.lieuNaissance} onChange={handleChange} className="text-black" required />
+          </div>
+          <div className="space-y-2">
+            <Label>Ville *</Label>
+            <Input name="ville" value={formData.ville} onChange={handleChange} className="text-black" required />
+          </div>
+          <div className="space-y-2">
+            <Label>Code postal *</Label>
+            <Input name="codePostal" value={formData.codePostal} onChange={handleChange} className="text-black" required />
+          </div>
+          <div className="space-y-2">
+            <Label>Pays *</Label>
+            <Input name="pays" value={formData.pays} onChange={handleChange} className="text-black" required />
           </div>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label>Signature du signataire</Label>
+        <Label>Signature du signataire *</Label>
         <div className="p-2 bg-white w-fit">
           <SignatureCanvas
             ref={sigRef}

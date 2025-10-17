@@ -23,11 +23,83 @@ export function ContractForm({ devis, onSubmit }: ContractFormProps) {
     adresse: '',
     profession: '',
     statut: '',
+    telephone: '',
+    email: '',
+    dateNaissance: '',
+    lieuNaissance: '',
+    ville: '',
+    codePostal: '',
+    pays: '',
     dateSignature: new Date().toISOString().split('T')[0],
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation des champs requis
+    const cleaned = {
+      nom: (formData.nom || '').toString().trim(),
+      prenom: (formData.prenom || '').toString().trim(),
+      adresse: (formData.adresse || '').toString().trim(),
+      profession: (formData.profession || '').toString().trim(),
+      statut: (formData.statut || '').toString().trim(),
+      telephone: (formData.telephone || '').toString().trim(),
+      email: (formData.email || '').toString().trim(),
+      dateNaissance: (formData.dateNaissance || '').toString().trim(),
+      lieuNaissance: (formData.lieuNaissance || '').toString().trim(),
+      ville: (formData.ville || '').toString().trim(),
+      codePostal: (formData.codePostal || '').toString().trim(),
+      pays: (formData.pays || '').toString().trim(),
+    };
+    
+    if (!cleaned.nom) {
+      alert('Le nom est requis');
+      return;
+    }
+    if (!cleaned.prenom) {
+      alert('Le prénom est requis');
+      return;
+    }
+    if (!cleaned.adresse) {
+      alert('L\'adresse est requise');
+      return;
+    }
+    if (!cleaned.profession) {
+      alert('La profession est requise');
+      return;
+    }
+    if (!cleaned.statut) {
+      alert('Le statut est requis');
+      return;
+    }
+    if (!cleaned.telephone) {
+      alert('Le téléphone est requis');
+      return;
+    }
+    if (!cleaned.email) {
+      alert('L\'email est requis');
+      return;
+    }
+    if (!cleaned.dateNaissance) {
+      alert('La date de naissance est requise');
+      return;
+    }
+    if (!cleaned.lieuNaissance) {
+      alert('Le lieu de naissance est requis');
+      return;
+    }
+    if (!cleaned.ville) {
+      alert('La ville est requise');
+      return;
+    }
+    if (!cleaned.codePostal) {
+      alert('Le code postal est requis');
+      return;
+    }
+    if (!cleaned.pays) {
+      alert('Le pays est requis');
+      return;
+    }
     if (!signature) {
       alert('Veuillez signer le contrat');
       return;
@@ -36,7 +108,8 @@ export function ContractForm({ devis, onSubmit }: ContractFormProps) {
     setLoading(true);
     try {
       await onSubmit({
-        ...formData,
+        ...cleaned,
+        dateSignature: formData.dateSignature,
         signature,
         devisId: devis.id,
       });
@@ -71,7 +144,7 @@ export function ContractForm({ devis, onSubmit }: ContractFormProps) {
           <h3 className="text-lg font-semibold text-gray-900">B. Si Particulier Cocontractant :</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="nom" className="text-gray-700">NOM</Label>
+              <Label htmlFor="nom" className="text-gray-700">NOM *</Label>
               <Input
                 id="nom"
                 value={formData.nom}
@@ -81,7 +154,7 @@ export function ContractForm({ devis, onSubmit }: ContractFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="prenom" className="text-gray-700">Prénom</Label>
+              <Label htmlFor="prenom" className="text-gray-700">Prénom *</Label>
               <Input
                 id="prenom"
                 value={formData.prenom}
@@ -91,7 +164,7 @@ export function ContractForm({ devis, onSubmit }: ContractFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="adresse" className="text-gray-700">Adresse</Label>
+              <Label htmlFor="adresse" className="text-gray-700">Adresse *</Label>
               <Input
                 id="adresse"
                 value={formData.adresse}
@@ -101,20 +174,94 @@ export function ContractForm({ devis, onSubmit }: ContractFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="profession" className="text-gray-700">Profession</Label>
+              <Label htmlFor="profession" className="text-gray-700">Profession *</Label>
               <Input
                 id="profession"
                 value={formData.profession}
                 onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
+                required
                 className="text-gray-900"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="statut" className="text-gray-700">Statut</Label>
+              <Label htmlFor="statut" className="text-gray-700">Statut *</Label>
               <Input
                 id="statut"
                 value={formData.statut}
                 onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
+                required
+                className="text-gray-900"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="telephone" className="text-gray-700">Téléphone *</Label>
+              <Input
+                id="telephone"
+                value={formData.telephone}
+                onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                required
+                className="text-gray-900"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-gray-700">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+                className="text-gray-900"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dateNaissance" className="text-gray-700">Date de naissance *</Label>
+              <Input
+                id="dateNaissance"
+                type="date"
+                value={formData.dateNaissance}
+                onChange={(e) => setFormData({ ...formData, dateNaissance: e.target.value })}
+                required
+                className="text-gray-900"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lieuNaissance" className="text-gray-700">Lieu de naissance *</Label>
+              <Input
+                id="lieuNaissance"
+                value={formData.lieuNaissance}
+                onChange={(e) => setFormData({ ...formData, lieuNaissance: e.target.value })}
+                required
+                className="text-gray-900"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ville" className="text-gray-700">Ville *</Label>
+              <Input
+                id="ville"
+                value={formData.ville}
+                onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
+                required
+                className="text-gray-900"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="codePostal" className="text-gray-700">Code postal *</Label>
+              <Input
+                id="codePostal"
+                value={formData.codePostal}
+                onChange={(e) => setFormData({ ...formData, codePostal: e.target.value })}
+                required
+                className="text-gray-900"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pays" className="text-gray-700">Pays *</Label>
+              <Input
+                id="pays"
+                value={formData.pays}
+                onChange={(e) => setFormData({ ...formData, pays: e.target.value })}
+                required
                 className="text-gray-900"
               />
             </div>

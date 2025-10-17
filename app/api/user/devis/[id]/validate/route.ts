@@ -115,7 +115,7 @@ export async function POST(
 
     // Envoyer l'email à l'admin
     try {
-      const adminEmail = 'atikpododzi4@gmail.com'; // Email admin par défaut
+      const adminEmail = 'pmcides@gmail.com,pm@cides.tf'; // Email admin par défaut
       
       await sendEmail({
         to: adminEmail,
