@@ -117,28 +117,56 @@ export async function POST(
       const isEntreprise = devis.demande?.typeInscription?.toLowerCase() === 'entreprise' || !!devis.demande?.entreprise;
       const prefix = isEntreprise ? 'CI.ICE' : 'CI.ICP';
 
-      // Compter les contrats qui ont déjà un numéro assigné pour cette année (pour le numéro)
-      const yearCount = await prisma.contrat.count({
-        where: { 
-          numero: {
-            startsWith: `${prefix} ${yy}`
-          }
-        },
-      });
+      // Générer un numéro unique avec retry en cas de conflit
+      let attempts = 0;
+      const maxAttempts = 10;
       
-      // Compter les contrats qui ont déjà une référence assignée pour ce mois (pour la référence)
-      const monthCount = await prisma.contrat.count({
-        where: { 
-          reference: {
-            startsWith: `CI.IFF ${yy}${mm}`
-          }
-        },
-      });
+      do {
+        attempts++;
+        
+        // Compter les contrats qui ont déjà un numéro assigné pour cette année (pour le numéro)
+        const yearCount = await prisma.contrat.count({
+          where: { 
+            numero: {
+              startsWith: `${prefix} ${yy}`
+            }
+          },
+        });
+        
+        // Compter les contrats qui ont déjà une référence assignée pour ce mois (pour la référence)
+        const monthCount = await prisma.contrat.count({
+          where: { 
+            reference: {
+              startsWith: `CI.IFF ${yy}${mm}`
+            }
+          },
+        });
+        
+        const nthYear = String(yearCount + attempts).padStart(3, '0');
+        const nthMonth = String(monthCount + attempts).padStart(3, '0');
+        numeroComputed = `${prefix} ${yy}${mm}${nthYear}`;
+        referenceComputed = `CI.IFF ${yy}${mm} ${nthMonth}`;
+        
+        // Vérifier si ce numéro existe déjà
+        const existingWithNumber = await prisma.contrat.findFirst({
+          where: { numero: numeroComputed }
+        });
+        
+        if (!existingWithNumber) {
+          break; // Numéro unique trouvé
+        }
+        
+        console.log(`Tentative ${attempts}: Numéro ${numeroComputed} existe déjà, essai suivant...`);
+        
+      } while (attempts < maxAttempts);
       
-      const nthYear = String(yearCount + 1).padStart(3, '0');
-      const nthMonth = String(monthCount + 1).padStart(3, '0');
-      numeroComputed = `${prefix} ${yy}${mm}${nthYear}`;
-      referenceComputed = `CI.IFF ${yy}${mm} ${nthMonth}`;
+      if (attempts >= maxAttempts) {
+        // En dernier recours, utiliser un timestamp
+        const timestamp = Date.now().toString().slice(-6);
+        numeroComputed = `${prefix} ${yy}${mm}${timestamp}`;
+        referenceComputed = `CI.IFF ${yy}${mm} ${timestamp}`;
+        console.log(`Utilisation du timestamp comme fallback: ${numeroComputed}`);
+      }
     }
     console.log('Données pour contrat:', {
       devisId: id,
