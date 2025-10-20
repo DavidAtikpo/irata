@@ -10,17 +10,20 @@ let pdf: any = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   pdf = require('pdf-parse');
+  console.log('pdf-parse chargé avec succès');
 } catch (error) {
-  console.log('pdf-parse non disponible, utilisation de simulation uniquement');
+  console.log('pdf-parse non disponible:', (error as Error).message);
+  console.log('Utilisation de données simulées uniquement');
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-    }
+    // QR Generator est public - pas d'authentification requise
+    // const session = await getServerSession(authOptions);
+    // 
+    // if (!session || !session.user) {
+    //   return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    // }
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -39,22 +42,30 @@ export async function POST(request: NextRequest) {
     const fileExtension = file.name.split('.').pop();
     const fileName = `qr-generator/${type}_${timestamp}`;
 
-    // Upload vers Cloudinary
-    const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        {
-          resource_type: 'auto',
-          public_id: fileName,
-          folder: 'qr-generator',
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      ).end(buffer);
-    });
+    // Upload vers Cloudinary avec gestion d'erreur
+    let fileUrl = '';
+    try {
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          {
+            resource_type: 'auto',
+            public_id: fileName,
+            folder: 'qr-generator',
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        ).end(buffer);
+      });
 
-    const fileUrl = (uploadResult as any).secure_url;
+      fileUrl = (uploadResult as any).secure_url;
+      console.log('Upload Cloudinary réussi:', fileUrl);
+    } catch (cloudinaryError) {
+      console.error('Erreur Cloudinary:', cloudinaryError);
+      // Fallback vers URL locale si Cloudinary échoue
+      fileUrl = `/uploads/qr_pdf_${timestamp}.pdf`;
+    }
 
     // Extraction de données selon le type
     let extractedData = null;

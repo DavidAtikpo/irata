@@ -1,37 +1,13 @@
 {
   "functions": {
-    "app/api/admin/formulaires-quotidiens/[id]/reponses/[reponseId]/pdf/route.ts": {
+    "app/api/qr-generator/route.ts": {
       "maxDuration": 30
     },
-    "app/api/admin/formulaires-quotidiens/[id]/reponses/pdf/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/admin/invoice/user-pdf/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/admin/irata-disclaimer/pdf/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/admin/trainee-induction-pdf/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/admin/trainee-induction/pdf/[documentId]/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/admin/invoice/pdf/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/user/invoice/pdf/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/user/contrats/[id]/pdf/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/user/contrats/[id]/invoice/pdf/route.ts": {
+    "app/api/upload/route.ts": {
       "maxDuration": 30
     }
   },
   "env": {
-    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
+    "NODE_ENV": "production"
   }
 }

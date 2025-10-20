@@ -38,10 +38,12 @@ export default function QRGeneratorPage() {
         setExtractedData(data.extractedData);
         setSuccess('PDF analysé avec succès !');
       } else {
-        throw new Error('Erreur lors de l\'analyse du PDF');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de l\'analyse du PDF');
       }
     } catch (error) {
-      setError('Erreur lors de l\'upload du PDF');
+      console.error('Erreur upload PDF:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload du PDF');
     } finally {
       setIsUploading(false);
     }
