@@ -1,0 +1,84 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session || session.user?.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const forms = await prisma.formBuilder.findMany({
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: {
+            formSubmissions: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return NextResponse.json(forms);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des formulaires:', error);
+    return NextResponse.json(
+      { error: 'Erreur lors de la récupération des formulaires' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session || session.user?.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    
+    const form = await prisma.formBuilder.create({
+      data: {
+        name: body.name,
+        description: body.description,
+        title: body.title,
+        formData: body.formData,
+        settings: body.settings || {},
+        createdById: session.user.id,
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(form, { status: 201 });
+  } catch (error) {
+    console.error('Erreur lors de la création du formulaire:', error);
+    return NextResponse.json(
+      { error: 'Erreur lors de la création du formulaire' },
+      { status: 500 }
+    );
+  }
+}

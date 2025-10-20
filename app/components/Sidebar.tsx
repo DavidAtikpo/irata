@@ -44,6 +44,8 @@ const navigation = [
   { name: 'Irata-disclaimer', href: '/admin/irata-disclaimer', icon: ClipboardDocumentCheckIcon, showCount: false },
   { name: 'Questionnaires', href: '/admin/formulaires-quotidiens', icon: ClipboardDocumentIcon, showCount: false },
   { name: 'Inspections', href: '/admin/inspections', icon: ClipboardDocumentCheckIcon, showCount: false },
+  { name: 'Inspections Équipement', href: '/admin/equipment-detailed-inspections', icon: ClipboardDocumentCheckIcon, showCount: false },
+  { name: 'Constructeur de Formulaires', href: '/admin/form-builder', icon: ClipboardDocumentCheckIcon, showCount: false },
   { name: 'Déclaration Médicale', href: '/admin/medical-declaration', icon: ClipboardDocumentCheckIcon, showCount: false },
   { name: 'Non-conformités', href: '/admin/non-conformites', icon: ExclamationCircleIcon, showCount: false },
   { name: 'Actions correctives', href: '/admin/actions-correctives', icon: CheckCircleIcon, showCount: false },

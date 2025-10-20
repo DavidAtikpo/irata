@@ -40,6 +40,10 @@ model User {
   documentActions               DocumentAction[]
   assessorInspections           EquipmentInspection[]          @relation("AssessorInspections")
   inspections                   EquipmentInspection[]
+  equipmentDetailedInspections  EquipmentDetailedInspection[]  @relation("EquipmentDetailedInspectionCreatedBy")
+  formBuilders                  FormBuilder[]                  @relation("FormBuilderCreatedBy")
+  formTemplates                 FormTemplate[]                 @relation("FormTemplateCreatedBy")
+  formSubmissions               FormSubmission[]               @relation("FormSubmissionSubmittedBy")
   formulairesCrees              FormulairesQuotidiens[]        @relation("AdminFormulaires")
   invoices                      Invoice[]
   IrataDisclaimerSubmission     IrataDisclaimerSubmission[]
@@ -307,6 +311,122 @@ model EquipmentInspection {
   assessorId                   String?
   assessor                     User?            @relation("AssessorInspections", fields: [assessorId], references: [id])
   technician                   User             @relation(fields: [technicianId], references: [id])
+
+  @@schema("webirata")
+}
+
+model EquipmentDetailedInspection {
+  id                           String           @id @default(cuid())
+  
+  // Identification équipement
+  referenceInterne             String
+  typeEquipement               String
+  numeroSerie                  String?
+  dateFabrication              String?
+  dateAchat                    String?
+  dateMiseEnService            String?
+  dateInspectionDetaillee      String?
+  numeroKit                    String?
+  taille                       String?
+  longueur                     String?
+  normesCertificat             String?
+  documentsReference           String?
+  consommation                 String?
+  attribution                  String?
+  commentaire                  String?
+  photo                        String?
+  qrCode                       String?
+  pdfUrl                       String?
+  dateAchatImage               String?
+  etat                         String           @default("OK")
+  
+  // Vie de l'équipement - Points d'inspection
+  antecedentProduit            Json?            // Structure pour les points d'antécédent
+  observationsPrelables        Json?            // Structure pour les observations
+  calotteExterieurInterieur    Json?            // Structure pour la calotte
+  calotin                      Json?            // Structure pour le calotin
+  coiffe                       Json?            // Structure pour la coiffe
+  tourDeTete                   Json?            // Structure pour le tour de tête
+  systemeReglage               Json?            // Structure pour le système de réglage
+  jugulaire                    Json?            // Structure pour la jugulaire
+  mousseConfort                Json?            // Structure pour la mousse de confort
+  crochetsLampe                Json?            // Structure pour les crochets de lampe
+  accessoires                  Json?            // Structure pour les accessoires
+  
+  // Signature
+  verificateurSignature        String?
+  verificateurSignaturePdf     String?
+  verificateurNom              String?
+  
+  // Métadonnées
+  status                       InspectionStatus @default(DRAFT)
+  createdAt                    DateTime         @default(now())
+  updatedAt                    DateTime         @updatedAt
+  createdById                  String
+  createdBy                    User             @relation("EquipmentDetailedInspectionCreatedBy", fields: [createdById], references: [id])
+
+  @@schema("webirata")
+}
+
+// Système de formulaires dynamiques (FormBuilder)
+model FormBuilder {
+  id                    String           @id @default(cuid())
+  name                  String
+  description           String?
+  title                 String
+  isActive              Boolean          @default(true)
+  formData              Json             // Structure complète du formulaire avec blocs
+  settings              Json?            // Paramètres du formulaire
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  createdById           String
+  createdBy             User             @relation("FormBuilderCreatedBy", fields: [createdById], references: [id])
+  
+  // Relations
+  formSubmissions       FormSubmission[]
+  formTemplates         FormTemplate[]
+
+  @@schema("webirata")
+}
+
+model FormTemplate {
+  id                    String           @id @default(cuid())
+  name                  String
+  description           String?
+  templateData          Json             // Structure du template
+  category              String?          // Type d'équipement, inspection, etc.
+  isPublic              Boolean          @default(false)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  createdById           String
+  formBuilderId         String?
+  formBuilder           FormBuilder?     @relation(fields: [formBuilderId], references: [id])
+  createdBy             User             @relation("FormTemplateCreatedBy", fields: [createdById], references: [id])
+
+  @@schema("webirata")
+}
+
+model FormSubmission {
+  id                    String           @id @default(cuid())
+  formData              Json             // Données soumises
+  status                FormSubmissionStatus @default(DRAFT)
+  submittedAt           DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  formBuilderId         String
+  formBuilder           FormBuilder      @relation(fields: [formBuilderId], references: [id])
+  submittedById         String
+  submittedBy           User             @relation("FormSubmissionSubmittedBy", fields: [submittedById], references: [id])
+
+  @@schema("webirata")
+}
+
+enum FormSubmissionStatus {
+  DRAFT
+  SUBMITTED
+  REVIEWED
+  APPROVED
+  REJECTED
 
   @@schema("webirata")
 }
