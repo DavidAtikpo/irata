@@ -645,6 +645,34 @@ export default function UserDocumentsPage() {
           </div>
         </div>
 
+        {/* Ressource vidéo YouTube: Techniques et meilleures pratiques du corde */}
+        <div className="mb-3 sm:mb-4 bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-gray-200">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Techniques et meilleures pratiques du corde</h2>
+            <p className="text-xs sm:text-sm text-gray-600">Vidéo de démonstration (YouTube)</p>
+          </div>
+          <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
+            <iframe
+              className="absolute inset-0 w-full h-full"
+              src="https://www.youtube.com/embed/cQ0eZ3c-8I4"
+              title="Techniques et meilleures pratiques du corde"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          </div>
+          <div className="px-3 sm:px-4 py-2 sm:py-3 border-t border-gray-100">
+            <a
+              href="https://www.youtube.com/watch?v=cQ0eZ3c-8I4"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700 underline"
+            >
+              Ouvrir la vidéo sur YouTube
+            </a>
+          </div>
+        </div>
+
         {error && (
           <div className="mb-3 sm:mb-4 rounded-md bg-red-50 p-3 sm:p-4">
             <div className="text-xs sm:text-sm text-red-800">{error}</div>

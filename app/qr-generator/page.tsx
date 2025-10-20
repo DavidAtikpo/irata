@@ -103,7 +103,7 @@ export default function QRGeneratorPage() {
       setQrCodeData(qrDataString);
 
       // Générer le QR code avec une API en ligne (ou utiliser une librairie)
-      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrDataString)}`;
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(qrDataString)}`;
       setQrCodeImage(qrCodeUrl);
 
       setSuccess('QR code généré avec succès !');
@@ -332,7 +332,7 @@ export default function QRGeneratorPage() {
                   <img
                     src={qrCodeImage}
                     alt="QR Code"
-                    className="mx-auto mb-4 border border-gray-200 rounded-lg"
+                    className="mx-auto mb-4 border border-gray-200 rounded-lg w-72 sm:w-80 md:w-96 h-auto"
                   />
                   
                   <div className="space-y-3">
