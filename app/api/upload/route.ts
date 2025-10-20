@@ -349,8 +349,13 @@ export async function POST(request: NextRequest) {
         const numeroSerie = numeroSerieMatch ? numeroSerieMatch[1] : 'Numéro non détecté';
         
         // Rechercher la référence interne
-        const referenceInterneMatch = extractedText.match(/Référence interne:\s*(CI\.CA\s*[A-Z0-9\s]+)/i);
-        const referenceInterne = referenceInterneMatch ? referenceInterneMatch[1].trim() : 'CI.CA 24 000';
+        const referenceInterneMatch = extractedText.match(/Référence interne:\s*(CI\.CA\s*[A-Z0-9\s]+?)(?=\s*Type|$)/i);
+        let referenceInterne = referenceInterneMatch ? referenceInterneMatch[1].trim() : 'CI.CA 24 000';
+        
+        // Concaténer le numéro de série à la référence interne si les deux sont détectés
+        if (numeroSerie !== 'Numéro non détecté') {
+          referenceInterne = `${referenceInterne} ${numeroSerie}`;
+        }
         
         // Rechercher le type d'équipement
         const typeEquipementMatch = extractedText.match(/Type d'équipement:\s*([A-Za-z\s]+)/i);

@@ -35,6 +35,7 @@ export default function QRGeneratorPage() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Données extraites du serveur:', data.extractedData);
         setExtractedData(data.extractedData);
         setSuccess('PDF analysé avec succès !');
       } else {
@@ -247,6 +248,14 @@ export default function QRGeneratorPage() {
                   <div className="flex justify-between">
                     <span className="font-medium text-gray-700">Signataire:</span>
                     <span className="text-gray-900">{extractedData.signataire || 'Non détecté'}</span>
+                  </div>
+                  
+                  {/* Texte brut pour débogage */}
+                  <div className="mt-4 p-3 bg-gray-100 rounded">
+                    <h4 className="font-medium text-gray-700 mb-2">Texte brut extrait (pour débogage):</h4>
+                    <pre className="text-xs text-gray-600 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      {extractedData.rawText || 'Aucun texte brut disponible'}
+                    </pre>
                   </div>
                 </div>
 
