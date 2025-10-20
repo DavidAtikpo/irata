@@ -17,6 +17,8 @@ export function ConventionPDF({ devis, onSubmit }: ConventionPDFProps) {
   const sigRef = useRef<SignatureCanvas | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [canvasDims, setCanvasDims] = useState<{ width: number; height: number }>({ width: 300, height: 120 });
+  const [isSigning, setIsSigning] = useState(false);
 
   const [formData, setFormData] = useState<any>({
     entrepriseNom: '',
@@ -50,6 +52,19 @@ export function ConventionPDF({ devis, onSubmit }: ConventionPDFProps) {
       prenom,
     }));
   }, [devis, session]);
+
+  // Fix canvas size once per mount to avoid clears on mobile resize/keyboard
+  useEffect(() => {
+    try {
+      const maxWidth = 600;
+      const padding = 32; // some horizontal padding
+      const calculatedWidth = Math.min(Math.max(280, (typeof window !== 'undefined' ? window.innerWidth : 320) - padding), maxWidth);
+      const calculatedHeight = 140;
+      setCanvasDims({ width: calculatedWidth, height: calculatedHeight });
+    } catch {}
+    // Do not update on resize to avoid canvas clearing
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -362,15 +377,26 @@ export function ConventionPDF({ devis, onSubmit }: ConventionPDFProps) {
           <SignatureCanvas
             ref={sigRef}
             canvasProps={{
-              width: 300,
-              height: 100,
+              width: canvasDims.width,
+              height: canvasDims.height,
               className: 'border rounded bg-white',
               style: { touchAction: 'none' },
             }}
+            clearOnResize={false}
+            backgroundColor="#ffffff"
+            penColor="#000000"
+            minWidth={0.8}
+            maxWidth={2.5}
+            throttle={16}
+            onBegin={() => setIsSigning(true)}
             onEnd={() => {
               if (sigRef.current) {
                 const dataUrl = sigRef.current.getCanvas().toDataURL('image/png');
-                setFormData((prev: any) => ({ ...prev, signature: dataUrl }));
+                // Defer state update slightly to avoid immediate rerender during touch
+                setTimeout(() => {
+                  setFormData((prev: any) => ({ ...prev, signature: dataUrl }));
+                  setIsSigning(false);
+                }, 0);
               }
             }}
           />

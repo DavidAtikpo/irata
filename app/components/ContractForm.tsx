@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -17,6 +17,8 @@ export function ContractForm({ devis, onSubmit }: ContractFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [signature, setSignature] = useState<string | null>(null);
+  const sigRef = useRef<any>(null);
+  const [canvasDims, setCanvasDims] = useState<{ width: number; height: number }>({ width: 300, height: 192 });
   const [formData, setFormData] = useState({
     nom: '',
     prenom: '',
@@ -120,6 +122,18 @@ export function ContractForm({ devis, onSubmit }: ContractFormProps) {
       setLoading(false);
     }
   };
+
+  // Fix canvas size once per mount to avoid clears on mobile resize/keyboard
+  useEffect(() => {
+    try {
+      const maxWidth = 700;
+      const padding = 48;
+      const calculatedWidth = Math.min(Math.max(300, (typeof window !== 'undefined' ? window.innerWidth : 360) - padding), maxWidth);
+      const calculatedHeight = 200;
+      setCanvasDims({ width: calculatedWidth, height: calculatedHeight });
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Card className="p-6 max-w-4xl mx-auto bg-white">
@@ -332,13 +346,23 @@ export function ContractForm({ devis, onSubmit }: ContractFormProps) {
               <p className="font-medium mb-2 text-gray-700">Signature du stagiaire :</p>
               <div className="border rounded-lg p-4 bg-white">
                 <SignaturePad
+                  ref={sigRef}
                   canvasProps={{
-                    className: 'signature-canvas w-full h-48 border rounded bg-white',
+                    width: canvasDims.width,
+                    height: canvasDims.height,
+                    className: 'border rounded bg-white',
+                    style: { touchAction: 'none' },
                   }}
+                  clearOnResize={false}
+                  backgroundColor="#ffffff"
+                  penColor="#000000"
+                  minWidth={0.8}
+                  maxWidth={2.5}
+                  throttle={16}
                   onEnd={() => {
-                    const signaturePad = document.querySelector('.signature-canvas') as HTMLCanvasElement;
-                    if (signaturePad) {
-                      setSignature(signaturePad.toDataURL());
+                    if (sigRef.current) {
+                      const dataUrl = sigRef.current.getCanvas().toDataURL('image/png');
+                      setTimeout(() => setSignature(dataUrl), 0);
                     }
                   }}
                 />
@@ -347,13 +371,9 @@ export function ContractForm({ devis, onSubmit }: ContractFormProps) {
                   variant="outline"
                   className="mt-2"
                   onClick={() => {
-                    const signaturePad = document.querySelector('.signature-canvas') as HTMLCanvasElement;
-                    if (signaturePad) {
-                      const context = signaturePad.getContext('2d');
-                      if (context) {
-                        context.clearRect(0, 0, signaturePad.width, signaturePad.height);
-                        setSignature(null);
-                      }
+                    if (sigRef.current) {
+                      sigRef.current.clear();
+                      setSignature(null);
                     }
                   }}
                 >
