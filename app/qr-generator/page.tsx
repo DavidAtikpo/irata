@@ -8,17 +8,27 @@ export default function QRGeneratorPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [extractedData, setExtractedData] = useState<any>(null);
   const [qrCodeData, setQrCodeData] = useState<string>('');
   const [qrCodeImage, setQrCodeImage] = useState<string>('');
 
-  // Fonction pour uploader et extraire les données du PDF
-  const handlePDFUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Fonction pour uploader et extraire les données du fichier (PDF ou image)
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setPdfFile(file);
+    // Vérifier le type de fichier
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension || '');
+    const isPdf = fileExtension === 'pdf';
+    
+    if (!isImage && !isPdf) {
+      setError('Format de fichier non supporté. Veuillez uploader un PDF ou une image (JPG, PNG, etc.)');
+      return;
+    }
+
+    setUploadedFile(file);
     setIsUploading(true);
     setError('');
     setSuccess('');
@@ -26,7 +36,7 @@ export default function QRGeneratorPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('type', 'pdf');
+      formData.append('type', isPdf ? 'pdf' : 'image');
 
             const response = await fetch('/api/qr-generator', {
               method: 'POST',
@@ -37,14 +47,14 @@ export default function QRGeneratorPage() {
         const data = await response.json();
         console.log('Données extraites du serveur:', data.extractedData);
         setExtractedData(data.extractedData);
-        setSuccess('PDF analysé avec succès !');
+        setSuccess(`${isPdf ? 'PDF' : 'Image'} analysé avec succès !`);
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur lors de l\'analyse du PDF');
+        throw new Error(errorData.error || `Erreur lors de l'analyse du ${isPdf ? 'PDF' : 'fichier'}`);
       }
     } catch (error) {
-      console.error('Erreur upload PDF:', error);
-      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload du PDF');
+      console.error('Erreur upload fichier:', error);
+      setError(error instanceof Error ? error.message : `Erreur lors de l'upload du ${isPdf ? 'PDF' : 'fichier'}`);
     } finally {
       setIsUploading(false);
     }
@@ -169,30 +179,30 @@ export default function QRGeneratorPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Colonne gauche - Upload et données */}
           <div className="space-y-6">
-            {/* Upload PDF */}
+            {/* Upload fichier */}
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                1. Upload du PDF
+                1. Upload du fichier
               </h2>
               
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 <input
                   type="file"
-                  accept=".pdf"
-                  onChange={handlePDFUpload}
+                  accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.webp"
+                  onChange={handleFileUpload}
                   className="hidden"
-                  id="pdf-upload"
+                  id="file-upload"
                 />
                 <label
-                  htmlFor="pdf-upload"
+                  htmlFor="file-upload"
                   className="cursor-pointer flex flex-col items-center"
                 >
                   <CloudArrowUpIcon className="h-12 w-12 text-gray-400 mb-4" />
                   <span className="text-lg font-medium text-gray-900">
-                    {pdfFile ? pdfFile.name : 'Cliquez pour sélectionner un PDF'}
+                    {uploadedFile ? uploadedFile.name : 'Cliquez pour sélectionner un fichier'}
                   </span>
                   <span className="text-sm text-gray-500 mt-2">
-                    Formats acceptés: PDF
+                    Formats acceptés: PDF, JPG, PNG, GIF, BMP, WEBP
                   </span>
                 </label>
               </div>
