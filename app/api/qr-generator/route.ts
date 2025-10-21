@@ -408,7 +408,7 @@ export async function POST(request: NextRequest) {
               const ocrData = ocrResult.ocr.adv_ocr.data;
               console.log('ocrData trouvé, type:', typeof ocrData, 'isArray:', Array.isArray(ocrData));
               if (Array.isArray(ocrData)) {
-                extractedText = ocrData.map(page => page.text || '').join(' ');
+              extractedText = ocrData.map(page => page.text || '').join(' ');
                 console.log('✅ Texte extrait via ocrData (longueur):', extractedText.length);
                 console.log('Premier aperçu ocrData:', extractedText.substring(0, 200));
               } else {

@@ -348,28 +348,18 @@ export async function GET(
             <div style="flex:1;">
               <div class="info-label">Signature du stagiaire</div>
               <div class="signature-box">
-                ${contrat.signature ? `<img src="${contrat.signature}" alt="Signature stagiaire" style="max-width: 220px; max-height: 70px;" />` : 'Signature électronique'}
+                ${contrat.signature ? `<img src="${contrat.signature}" alt="Signature stagiaire" style="max-width: 120px; max-height: 30px;" />` : 'Signature électronique'}
               </div>
               <div class="muted" style="margin-top:8px;">${contrat.prenom} ${contrat.nom}</div>
             </div>
             <div style="flex:1;">
               <div class="info-label">Signature de l'administrateur</div>
               <div class="signature-box">
-                ${contrat.adminSignature ? `<img src="${contrat.adminSignature}" alt="Signature admin" style="max-width: 220px; max-height: 70px;" />` : 'Non signée'}
+                ${contrat.adminSignature ? `<img src="${contrat.adminSignature}" alt="Signature admin" style="max-width: 120px; max-height: 30px;" />` : 'Non signée'}
               </div>
               <div class="muted" style="margin-top:8px;">CI.DES</div>
             </div>
           </div>
-        </div>
-
-        <div class="footer">
-          <div></div>
-          <div class="center">
-            <div><strong>CI.DES sasu</strong> - Capital 2 500 Euros</div>
-            <div>SIRET: 87840789900011 - VAT: FR71878407899</div>
-            <div>250501 CI.DES 2504SS03 11 Florent MIRBEAU ${isConvention ? 'Convention Formation Professionnelle' : 'Contrat Formation Professionnelle'}</div>
-          </div>
-          <div><img src="${process.env.NEXTAUTH_URL || 'https://www.a-finpart.com'}/logo.png" alt="CI.DES Logo" style="height:32px;width:32px"></div>
         </div>
         </div>
       </body>
@@ -432,7 +422,7 @@ export async function GET(
       margin: {
         top: '20mm',
         right: '15mm',
-        bottom: '30mm',
+        bottom: '20mm',
         left: '15mm'
       },
       displayHeaderFooter: true,

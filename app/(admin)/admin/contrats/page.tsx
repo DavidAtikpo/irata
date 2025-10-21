@@ -17,7 +17,8 @@ import {
   EnvelopeIcon,
   CurrencyEuroIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 
 interface User {
@@ -97,6 +98,9 @@ export default function AdminContratsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [activeTypeTab, setActiveTypeTab] = useState<'all' | 'contrats' | 'conventions'>('all');
+  
+  // État pour le téléchargement
+  const [downloadingContract, setDownloadingContract] = useState<string | null>(null);
 
   // Statistiques
   const [stats, setStats] = useState({
@@ -169,6 +173,31 @@ export default function AdminContratsPage() {
     } catch (error) {
       console.error('Erreur:', error);
       setError(error instanceof Error ? error.message : 'Erreur lors de la mise à jour du statut');
+    }
+  };
+
+  const handleDownloadContract = async (contratId: string) => {
+    try {
+      setDownloadingContract(contratId);
+      const response = await fetch(`/api/admin/contrats/${contratId}/pdf`);
+      if (!response.ok) {
+        throw new Error('Erreur lors du téléchargement du contrat');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `contrat-${contratId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors du téléchargement du contrat');
+    } finally {
+      setDownloadingContract(null);
     }
   };
 
@@ -649,20 +678,43 @@ export default function AdminContratsPage() {
                             <option value="ANNULE">Annulé</option>
                           </select>
 
-                          <button
-                            onClick={() => router.push(`/admin/contrats/${contrat.id}`)}
-                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                          >
-                            <DocumentTextIcon className="h-4 w-4 mr-2" />
-                            {(() => {
-                              const isConvention = Boolean(
-                                contrat.entrepriseNom ||
-                                contrat.devis?.demande?.entreprise ||
-                                ((contrat.devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise')
-                              );
-                              return isConvention ? 'Voir la convention' : 'Voir le contrat';
-                            })()}
-                          </button>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => router.push(`/admin/contrats/${contrat.id}`)}
+                              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                              <DocumentTextIcon className="h-4 w-4 mr-2" />
+                              {(() => {
+                                const isConvention = Boolean(
+                                  contrat.entrepriseNom ||
+                                  contrat.devis?.demande?.entreprise ||
+                                  ((contrat.devis?.demande?.typeInscription || '').toLowerCase() === 'entreprise')
+                                );
+                                return isConvention ? 'Voir la convention' : 'Voir le contrat';
+                              })()}
+                            </button>
+
+                            {contrat.statut === 'VALIDE' && (
+                              <button
+                                onClick={() => handleDownloadContract(contrat.id)}
+                                disabled={downloadingContract === contrat.id}
+                                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Télécharger le contrat PDF"
+                              >
+                                {downloadingContract === contrat.id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                                    Téléchargement...
+                                  </>
+                                ) : (
+                                  <>
+                                    <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+                                    Télécharger
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </li>

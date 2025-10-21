@@ -444,9 +444,9 @@ export async function GET(
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '5mm',
+        top: '20mm',
         right: '15mm',
-        bottom: '10mm',
+        bottom: '20mm',
         left: '15mm'
       },
       displayHeaderFooter: true,
