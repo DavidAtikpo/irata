@@ -31,6 +31,7 @@ interface Contrat {
     numero: string;
     montant: number;
     dateFormation?: string;
+    statutPaiement?: string;
     demande: {
       session: string;
       entreprise?: string | null;
@@ -66,9 +67,9 @@ export default function MonContratPage() {
       const validated = (data || []).filter((c: Contrat) => c.statut === 'VALIDE' && c.adminSignature);
       setContrats(validated);
       
-      // Vérifier si un contrat est validé pour afficher le popup
-      const hasValidatedContract = data.some((contrat: Contrat) => contrat.statut === 'VALIDE');
-      if (hasValidatedContract) {
+      // Vérifier le statut de paiement des factures associées
+      const hasValidatedUnpaidContract = await checkPaymentStatus(data);
+      if (hasValidatedUnpaidContract) {
         setShowInvoicePopup(true);
       }
     } catch (error) {
@@ -76,6 +77,44 @@ export default function MonContratPage() {
       console.error('Erreur:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkPaymentStatus = async (contrats: Contrat[]) => {
+    try {
+      // Récupérer les factures pour vérifier leur statut de paiement
+      const invoiceResponse = await fetch('/api/user/invoice');
+      if (!invoiceResponse.ok) {
+        console.log('Impossible de récupérer les factures, on considère comme non payé');
+        return true; // Si on ne peut pas vérifier, on affiche la popup par sécurité
+      }
+      
+      const invoiceData = await invoiceResponse.json();
+      const invoices = invoiceData.invoices || [];
+      
+      // Vérifier si tous les contrats validés ont des factures payées
+      const validatedContrats = contrats.filter(c => c.statut === 'VALIDE');
+      
+      for (const contrat of validatedContrats) {
+        // Chercher une facture associée à ce contrat
+        const associatedInvoice = invoices.find((inv: any) => 
+          inv.devisNumber === contrat.devis.numero || 
+          inv.devisNumber === contrat.devis.numero
+        );
+        
+        // Si pas de facture trouvée ou facture non payée, afficher la popup
+        if (!associatedInvoice || 
+            (associatedInvoice.paymentStatus !== 'PAID' && associatedInvoice.paymentStatus !== 'PARTIAL')) {
+          console.log(`Contrat ${contrat.id} - Facture non payée ou inexistante`);
+          return true;
+        }
+      }
+      
+      console.log('Tous les contrats validés ont des factures payées');
+      return false;
+    } catch (error) {
+      console.error('Erreur lors de la vérification du statut de paiement:', error);
+      return true; // En cas d'erreur, on affiche la popup par sécurité
     }
   };
 
@@ -263,13 +302,22 @@ export default function MonContratPage() {
                           {statusConfig.label}
                         </span>
                         {contrat.statut === 'VALIDE' && (
-                          <button
-                            onClick={() => downloadContrat(contrat.id, contrat.devis.numero)}
-                            className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-2 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                          >
-                            <ArrowDownTrayIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                            Télécharger
-                          </button>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => router.push(`/admin/contrats/${contrat.id}`)}
+                              className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-2 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                              <DocumentTextIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              Voir le contrat
+                            </button>
+                            <button
+                              onClick={() => downloadContrat(contrat.id, contrat.devis.numero)}
+                              className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-2 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            >
+                              <ArrowDownTrayIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              Télécharger
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
