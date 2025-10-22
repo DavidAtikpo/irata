@@ -5,17 +5,20 @@ import cloudinary from '@/lib/cloudinary';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { PrismaClient } from '@prisma/client';
+import { nanoid } from 'nanoid';
 
 // pdf-parse sera chargé dynamiquement
+const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
-    // QR Generator est public - pas d'authentification requise
-    // const session = await getServerSession(authOptions);
-    // 
-    // if (!session || !session.user) {
-    //   return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-    // }
+    // Authentification requise pour stocker en DB
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -618,6 +621,58 @@ export async function POST(request: NextRequest) {
           rawText: 'Erreur lors de l\'extraction',
           confidence: 0,
         };
+      }
+    }
+
+    // Stocker les données en base de données avec un code QR unique
+    let qrCode = '';
+    let equipmentQR = null;
+    
+    if (extractedData && fileUrl && session?.user?.id) {
+      try {
+        // Générer un code QR unique
+        qrCode = nanoid(12); // Code de 12 caractères
+        
+        // TODO: Exécuter la migration Prisma avant d'activer cette fonctionnalité
+        // npx prisma migrate dev --name add_diplome_and_equipment_qr_models
+        
+        // Stocker dans la base de données
+        equipmentQR = await (prisma as any).equipmentQR.create({
+          data: {
+            qrCode,
+            produit: extractedData.produit || null,
+            referenceInterne: extractedData.reference || null,
+            numeroSerie: extractedData.numeroSerie || null,
+            normes: extractedData.normes || null,
+            fabricant: extractedData.fabricant || null,
+            dateControle: extractedData.date || null,
+            signataire: extractedData.signataire || null,
+            pdfUrl: fileUrl,
+            cloudinaryPublicId: fileName,
+            createdById: session.user.id
+          }
+        });
+        
+        console.log('✅ Données d\'équipement stockées en DB avec QR code:', qrCode);
+        
+        // Générer l'URL complète pour le QR code
+        const baseUrl = process.env.NEXTAUTH_URL || 'https://www.a-finpart.com';
+        const equipmentUrl = `${baseUrl}/equipment/${qrCode}`;
+        
+        return NextResponse.json({
+          url: fileUrl,
+          extractedData: {
+            ...extractedData,
+            qrCode,
+            equipmentUrl,
+            equipmentId: equipmentQR.id
+          },
+          message: 'Fichier analysé et QR code généré avec succès'
+        });
+        
+      } catch (dbError) {
+        console.error('Erreur lors du stockage en DB:', dbError);
+        // Continuer même si le stockage en DB échoue
       }
     }
 

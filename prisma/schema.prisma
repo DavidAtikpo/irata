@@ -63,6 +63,9 @@ model User {
   reviews                       reviews[]
   trainingSessions              TrainingSession[]              @relation("TrainingSessionTrainees")
   toolboxTalkRecordSignatures   ToolboxTalkRecordSignature[]
+  diplomesStagiaire             Diplome[]                      @relation("DiplomasStagiaire")
+  diplomesGeneres               Diplome[]                      @relation("DiplomasGeneratedBy")
+  equipmentQRs                  EquipmentQR[]                  @relation("EquipmentQRCreatedBy")
 
   @@schema("webirata")
 }
@@ -1298,5 +1301,57 @@ enum ProjectStatus {
   COMPLETED
   CANCELLED
 
+  @@schema("webirata")
+}
+
+// Modèle pour les diplômes IRATA
+model Diplome {
+  id              String   @id @default(cuid())
+  qrCode          String   @unique // Code unique pour le QR
+  stagiaireId     String
+  stagiaire       User     @relation("DiplomasStagiaire", fields: [stagiaireId], references: [id])
+  
+  // Informations du diplôme
+  nom             String
+  prenom          String
+  formation       String   // Ex: "IRATA Niveau 1", "IRATA Niveau 2"
+  session         String   // Ex: "10. 2025 / octobre: du 06 au 10"
+  dateObtention   DateTime
+  photoUrl        String?  // URL de la photo du stagiaire
+  pdfUrl          String?  // URL du PDF du diplôme généré
+  
+  // Métadonnées
+  genereParId     String
+  generePar       User     @relation("DiplomasGeneratedBy", fields: [genereParId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@schema("webirata")
+}
+
+// Modèle pour les équipements avec QR code
+model EquipmentQR {
+  id                  String   @id @default(cuid())
+  qrCode              String   @unique // Code unique pour le QR
+  
+  // Données extraites du PDF
+  produit             String?
+  referenceInterne    String?
+  numeroSerie         String?
+  normes              String?
+  fabricant           String?
+  dateControle        String?
+  signataire          String?
+  
+  // Fichier PDF original
+  pdfUrl              String   // URL Cloudinary du PDF
+  cloudinaryPublicId  String   // ID Cloudinary pour récupération
+  
+  // Métadonnées
+  createdById         String
+  createdBy           User     @relation("EquipmentQRCreatedBy", fields: [createdById], references: [id])
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
   @@schema("webirata")
 }

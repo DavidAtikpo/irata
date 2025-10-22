@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircleIcon, XMarkIcon, PhotoIcon, QrCodeIcon, DocumentIcon } from '@heroicons/react/24/outline';
 
 interface InspectionPoint {
@@ -54,12 +54,14 @@ interface InspectionData {
 export default function NouvelleInspectionPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingPDF, setIsUploadingPDF] = useState(false);
   const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
   const [isUploadingDateAchat, setIsUploadingDateAchat] = useState(false);
+  const [prefillLoading, setPrefillLoading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const qrInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -146,6 +148,51 @@ export default function NouvelleInspectionPage() {
     verificateurSignature: '',
     verificateurNom: '',
   });
+
+  // Charger les données du QR code si présent dans l'URL
+  useEffect(() => {
+    const qrCode = searchParams.get('qrCode');
+    const prefill = searchParams.get('prefill');
+    
+    if (qrCode && prefill === 'true' && !prefillLoading) {
+      fetchEquipmentData(qrCode);
+    }
+  }, [searchParams]);
+
+  const fetchEquipmentData = async (qrCode: string) => {
+    setPrefillLoading(true);
+    try {
+      const response = await fetch(`/api/equipment/${qrCode}`);
+      
+      if (!response.ok) {
+        console.error('Équipement non trouvé');
+        return;
+      }
+
+      const equipmentData = await response.json();
+      
+      // Pré-remplir le formulaire avec les données de l'équipement
+      setFormData(prev => ({
+        ...prev,
+        referenceInterne: equipmentData.referenceInterne || '',
+        numeroSerie: equipmentData.numeroSerie || '',
+        normesCertificat: equipmentData.normes || '',
+        fabricant: equipmentData.fabricant || '',
+        date: equipmentData.dateControle || '',
+        signataire: equipmentData.signataire || '',
+        pdfUrl: equipmentData.pdfUrl || '',
+        nature: 'Déclaration UE de conformité',
+        reference: equipmentData.referenceInterne || '',
+        normes: equipmentData.normes || '',
+      }));
+
+      console.log('✅ Formulaire pré-rempli avec les données du QR code:', qrCode);
+    } catch (error) {
+      console.error('Erreur lors du chargement des données de l\'équipement:', error);
+    } finally {
+      setPrefillLoading(false);
+    }
+  };
 
   if (status === 'unauthenticated') {
     router.push('/login');
@@ -637,10 +684,27 @@ export default function NouvelleInspectionPage() {
               <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
                 {error}
               </div>
-              )}
+            )}
 
-              {isUploading && (
-                <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded">
+            {prefillLoading && (
+              <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded flex items-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700 mr-3"></div>
+                <span>Chargement des données de l'équipement depuis le QR code...</span>
+              </div>
+            )}
+
+            {searchParams.get('prefill') === 'true' && !prefillLoading && formData.referenceInterne && (
+              <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded flex items-center">
+                <CheckCircleIcon className="h-5 w-5 mr-3" />
+                <div>
+                  <strong>Formulaire pré-rempli !</strong>
+                  <p className="text-sm mt-1">Les données de l'équipement ont été chargées automatiquement depuis le QR code.</p>
+                </div>
+              </div>
+            )}
+
+            {isUploading && (
+              <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded">
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                     Upload en cours...

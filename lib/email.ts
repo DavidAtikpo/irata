@@ -692,4 +692,81 @@ export async function sendAdminPaymentNotificationEmail(
   `;
 
   return sendEmail({ to: adminEmail, subject, html });
+}
+
+// Fonction pour envoyer un email avec le QR code du diplôme
+export async function sendDiplomeEmail(
+  to: string,
+  stagiaireNom: string,
+  formation: string,
+  session: string,
+  diplomeUrl: string,
+  qrCode: string
+) {
+  const subject = `🎓 Votre diplôme ${formation} est disponible`;
+  
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #f9fafb;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #2563eb; margin: 0; font-size: 24px;">🎓 Félicitations !</h1>
+        <p style="color: #6b7280; margin: 5px 0;">CI.DES Formations</p>
+      </div>
+      
+      <div style="background-color: white; padding: 25px; border-radius: 8px; border-left: 4px solid #2563eb;">
+        <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 20px;">Bonjour ${stagiaireNom},</h2>
+        
+        <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+          Nous avons le plaisir de vous informer que votre diplôme <strong>${formation}</strong> est maintenant disponible !
+        </p>
+        
+        <div style="background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #0c4a6e; margin: 0 0 15px 0; font-size: 18px;">📋 Informations de votre diplôme</h3>
+          <div style="color: #374151;">
+            <p style="margin: 8px 0;"><strong>Formation :</strong> ${formation}</p>
+            <p style="margin: 8px 0;"><strong>Session :</strong> ${session}</p>
+            <p style="margin: 8px 0;"><strong>Code de vérification :</strong> <span style="font-family: monospace; background-color: white; padding: 4px 8px; border-radius: 4px;">${qrCode}</span></p>
+          </div>
+        </div>
+        
+        <div style="background-color: #dcfce7; border: 1px solid #16a34a; border-radius: 6px; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #166534; margin: 0 0 15px 0; font-size: 18px;">📱 Comment accéder à votre diplôme ?</h3>
+          <ol style="color: #374151; margin: 0; padding-left: 20px; line-height: 1.8;">
+            <li>Cliquez sur le bouton ci-dessous pour accéder à votre diplôme</li>
+            <li>Scannez le QR code que vous recevrez pour un accès rapide depuis votre mobile</li>
+            <li>Téléchargez le PDF de votre diplôme pour vos archives</li>
+          </ol>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${diplomeUrl}" 
+             style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
+            🎓 Voir mon diplôme
+          </a>
+        </div>
+        
+        <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 15px; margin: 20px 0;">
+          <p style="color: #92400e; margin: 0; font-size: 14px;">
+            💡 <strong>Astuce :</strong> Ajoutez cette page à vos favoris pour y accéder facilement plus tard. 
+            Vous pouvez aussi partager votre diplôme avec des employeurs potentiels !
+          </p>
+        </div>
+        
+        <p style="color: #6b7280; font-size: 14px; margin-top: 25px;">
+          Si vous avez des questions concernant votre diplôme, n'hésitez pas à nous contacter. 
+          Nous vous souhaitons beaucoup de succès dans votre carrière de cordiste !
+        </p>
+      </div>
+      
+      <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <p style="color: #6b7280; font-size: 12px; margin: 0;">
+          CI.DES - Centre de Formation Cordiste IRATA<br>
+          17270 BORESSE-ET-MARTRON<br>
+          Tél: +33 6 24 67 13 65 | Email: ${process.env.SMTP_FROM_EMAIL}<br><br>
+          Cet email a été envoyé automatiquement par le système CI.DES
+        </p>
+      </div>
+    </div>
+  `;
+
+  return sendEmail({ to, subject, html });
 } 
