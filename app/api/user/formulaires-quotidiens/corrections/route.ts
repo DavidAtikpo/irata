@@ -51,77 +51,57 @@ export async function GET(request: NextRequest) {
       const questions = (correction.reponse.formulaire.questions as any[]) ?? [];
       const reponses = (correction.reponse.reponses as any[]) ?? [];
       
-      // Calculer le scoring côté serveur pour chaque réponse
-      const reponsesCorrigees = (Array.isArray(reponses) ? reponses : []).map((reponse: any) => {
-        const question = questions.find((q: any) => q.id === reponse.questionId);
-        if (!question) return reponse;
+      // Calculer le scoring côté serveur pour chaque réponse (même logique que l'API admin)
+      const reponsesCorrigees = (Array.isArray(reponses) ? reponses : []).map((reponseQuestion: any) => {
+        const question = questions.find((q: any) => q.id === reponseQuestion.questionId);
+        if (!question) return reponseQuestion;
 
+        const pointsMaxQuestion = question.points || 1;
         let pointsObtenus = 0;
         let correcte = false;
 
-        // Normaliser le type et décider si on score même si scoringEnabled est absent
-        const rawType = (question.type || '').toString();
-        const normalizedType = rawType.toLowerCase();
-        const isRadio = normalizedType === 'radio' || normalizedType === 'select';
-        const isCheckbox = normalizedType === 'checkbox' || normalizedType === 'choix_multiple'.toLowerCase();
-        const isText = normalizedType === 'text' || normalizedType === 'textarea' || normalizedType === 'texte_libre'.toLowerCase();
-        const isVraiFaux = normalizedType === 'vrai_faux' || normalizedType === 'boolean' || normalizedType === 'truefalse';
-
-        const pointsValue = Number(question.points);
-        const hasPoints = !Number.isNaN(pointsValue);
-        const correctAnswers = question.correctAnswers || [];
-        const hasCorrectAnswers = Array.isArray(correctAnswers) && correctAnswers.length > 0;
-        const scoringEnabled = question.scoringEnabled !== false; // par défaut true
-
-        if (scoringEnabled && (hasPoints || hasCorrectAnswers)) {
-          const userResponse = getSimpleResponse(reponse.reponse);
-
-          if (isRadio) {
-            const userAnswer = Array.isArray(userResponse) ? userResponse[0] : userResponse;
-            const correctAnswer = correctAnswers[0];
-            correcte = userAnswer?.toLowerCase().trim() === correctAnswer?.toLowerCase().trim();
-            pointsObtenus = correcte ? pointsValue : 0;
-          } else if (isCheckbox) {
-            const userAnswers = Array.isArray(userResponse) ? userResponse : [userResponse];
-            const normalizedUserAnswers = userAnswers.map((a: string) => a?.toLowerCase().trim()).filter(Boolean);
-            const normalizedCorrectAnswers = correctAnswers.map((a: string) => a?.toLowerCase().trim()).filter(Boolean);
-            
-            const toutesBonnesReponsesSelectionnees = normalizedCorrectAnswers.every((correctAnswer: string) => 
-              normalizedUserAnswers.includes(correctAnswer)
-            );
-            const aucuneMauvaiseReponse = normalizedUserAnswers.every((userAnswer: string) => 
-              normalizedCorrectAnswers.includes(userAnswer)
-            );
-            
-            correcte = toutesBonnesReponsesSelectionnees && aucuneMauvaiseReponse;
-            pointsObtenus = correcte ? pointsValue : 0;
-          } else if (isText) {
-            const userAnswer = Array.isArray(userResponse) ? userResponse[0] : userResponse;
-            const correctAnswer = correctAnswers[0];
-            correcte = userAnswer?.toLowerCase().trim() === correctAnswer?.toLowerCase().trim();
-            pointsObtenus = correcte ? pointsValue : 0;
-          } else if (normalizedType === 'number') {
-            const userAnswer = parseFloat(Array.isArray(userResponse) ? userResponse[0] : userResponse);
-            const correctAnswer = parseFloat(correctAnswers[0]);
-            const tolerance = 0.01;
-            correcte = !isNaN(userAnswer) && !isNaN(correctAnswer) && Math.abs(userAnswer - correctAnswer) <= tolerance;
-            pointsObtenus = correcte ? pointsValue : 0;
-          } else if (isVraiFaux) {
-            const userAnswer = (Array.isArray(userResponse) ? userResponse[0] : userResponse)?.toString().toLowerCase().trim();
-            const correctAnswer = (correctAnswers[0])?.toString().toLowerCase().trim();
-            const normalizeBool = (v: string | undefined) => {
-              if (v === undefined) return undefined;
-              if (v === 'true' || v === 'vrai' || v === 'oui') return 'true';
-              if (v === 'false' || v === 'faux' || v === 'non') return 'false';
-              return v;
-            };
-            correcte = normalizeBool(userAnswer) === normalizeBool(correctAnswer);
-            pointsObtenus = correcte ? pointsValue : 0;
-          }
+        if (question.type === 'number') {
+          // Pour les questions numériques
+          const reponseNormalisee = parseFloat(reponseQuestion.reponse);
+          const bonneReponseNormalisee = parseFloat(question.correctAnswers[0] || '');
+          const tolerance = 0.01;
+          correcte = !isNaN(reponseNormalisee) && !isNaN(bonneReponseNormalisee) && Math.abs(reponseNormalisee - bonneReponseNormalisee) <= tolerance;
+          pointsObtenus = correcte ? pointsMaxQuestion : 0;
+        } else if (question.type === 'text' || question.type === 'textarea') {
+          // Pour les questions texte
+          const reponseNormalisee = reponseQuestion.reponse.toLowerCase().trim();
+          const bonneReponseNormalisee = (question.correctAnswers[0] || '').toLowerCase().trim();
+          correcte = reponseNormalisee === bonneReponseNormalisee;
+          pointsObtenus = correcte ? pointsMaxQuestion : 0;
+        } else if (question.type === 'radio' || question.type === 'select') {
+          // Pour les questions à choix unique
+          const reponseNormalisee = reponseQuestion.reponse.toLowerCase().trim();
+          const bonneReponseNormalisee = (question.correctAnswers[0] || '').toLowerCase().trim();
+          correcte = reponseNormalisee === bonneReponseNormalisee;
+          pointsObtenus = correcte ? pointsMaxQuestion : 0;
+        } else if (question.type === 'checkbox') {
+          // Pour les questions à choix multiples
+          const reponsesUtilisateur = Array.isArray(reponseQuestion.reponse) 
+            ? reponseQuestion.reponse 
+            : [reponseQuestion.reponse];
+          
+          const reponsesUtilisateurNormalisees = reponsesUtilisateur.map((r: any) => r.toLowerCase().trim());
+          const bonnesReponsesNormalisees = question.correctAnswers.map((r: any) => r.toLowerCase().trim());
+          
+          // Vérifier que toutes les bonnes réponses sont sélectionnées et qu'il n'y a pas de mauvaises réponses
+          const toutesBonnesReponsesSelectionnees = bonnesReponsesNormalisees.every((r: any) => 
+            reponsesUtilisateurNormalisees.includes(r)
+          );
+          const aucuneMauvaiseReponse = reponsesUtilisateurNormalisees.every((r: any) => 
+            bonnesReponsesNormalisees.includes(r)
+          );
+          
+          correcte = toutesBonnesReponsesSelectionnees && aucuneMauvaiseReponse;
+          pointsObtenus = correcte ? pointsMaxQuestion : 0;
         }
 
         return {
-          ...reponse,
+          ...reponseQuestion,
           pointsObtenus,
           correcte
         };
@@ -136,65 +116,55 @@ export async function GET(request: NextRequest) {
       let reponsesApresCorrigees: any[] | null = null;
       if (derniereVersion && Array.isArray((derniereVersion as any).reponses)) {
         const reponsesApres = (derniereVersion as any).reponses as any[];
-        reponsesApresCorrigees = reponsesApres.map((reponse: any) => {
-          const question = questions.find((q: any) => q.id === reponse.questionId);
-          if (!question) return reponse;
+        reponsesApresCorrigees = reponsesApres.map((reponseQuestion: any) => {
+          const question = questions.find((q: any) => q.id === reponseQuestion.questionId);
+          if (!question) return reponseQuestion;
 
+          const pointsMaxQuestion = question.points || 1;
           let pointsObtenus = 0;
           let correcte = false;
 
-          const rawType = (question.type || '').toString();
-          const normalizedType = rawType.toLowerCase();
-          const isRadio = normalizedType === 'radio' || normalizedType === 'select';
-          const isCheckbox = normalizedType === 'checkbox' || normalizedType === 'choix_multiple'.toLowerCase();
-          const isText = normalizedType === 'text' || normalizedType === 'textarea' || normalizedType === 'texte_libre'.toLowerCase();
-          const isVraiFaux = normalizedType === 'vrai_faux' || normalizedType === 'boolean' || normalizedType === 'truefalse';
-
-          const pointsValue = Number(question.points);
-          const correctAnswers = question.correctAnswers || [];
-          const scoringEnabled = question.scoringEnabled !== false;
-
-          if (scoringEnabled && (!Number.isNaN(pointsValue) || (Array.isArray(correctAnswers) && correctAnswers.length > 0))) {
-            const userResponse = getSimpleResponse(reponse.reponse);
-            if (isRadio) {
-              const userAnswer = Array.isArray(userResponse) ? userResponse[0] : userResponse;
-              const correctAnswer = correctAnswers[0];
-              correcte = userAnswer?.toLowerCase().trim() === correctAnswer?.toLowerCase().trim();
-              pointsObtenus = correcte ? pointsValue : 0;
-            } else if (isCheckbox) {
-              const userAnswers = Array.isArray(userResponse) ? userResponse : [userResponse];
-              const normalizedUserAnswers = userAnswers.map((a: string) => a?.toLowerCase().trim()).filter(Boolean);
-              const normalizedCorrectAnswers = correctAnswers.map((a: string) => a?.toLowerCase().trim()).filter(Boolean);
-              const toutesBonnes = normalizedCorrectAnswers.every((c: string) => normalizedUserAnswers.includes(c));
-              const aucuneMauvaise = normalizedUserAnswers.every((u: string) => normalizedCorrectAnswers.includes(u));
-              correcte = toutesBonnes && aucuneMauvaise;
-              pointsObtenus = correcte ? pointsValue : 0;
-            } else if (isText) {
-              const userAnswer = Array.isArray(userResponse) ? userResponse[0] : userResponse;
-              const correctAnswer = correctAnswers[0];
-              correcte = userAnswer?.toLowerCase().trim() === correctAnswer?.toLowerCase().trim();
-              pointsObtenus = correcte ? pointsValue : 0;
-            } else if (normalizedType === 'number') {
-              const userAnswer = parseFloat(Array.isArray(userResponse) ? userResponse[0] : userResponse);
-              const correctAnswer = parseFloat(correctAnswers[0]);
-              const tolerance = 0.01;
-              correcte = !isNaN(userAnswer) && !isNaN(correctAnswer) && Math.abs(userAnswer - correctAnswer) <= tolerance;
-              pointsObtenus = correcte ? pointsValue : 0;
-            } else if (isVraiFaux) {
-              const userAnswer = (Array.isArray(userResponse) ? userResponse[0] : userResponse)?.toString().toLowerCase().trim();
-              const correctAnswer = (correctAnswers[0])?.toString().toLowerCase().trim();
-              const normalizeBool = (v: string | undefined) => {
-                if (v === undefined) return undefined;
-                if (v === 'true' || v === 'vrai' || v === 'oui') return 'true';
-                if (v === 'false' || v === 'faux' || v === 'non') return 'false';
-                return v;
-              };
-              correcte = normalizeBool(userAnswer) === normalizeBool(correctAnswer);
-              pointsObtenus = correcte ? pointsValue : 0;
-            }
+          if (question.type === 'number') {
+            // Pour les questions numériques
+            const reponseNormalisee = parseFloat(reponseQuestion.reponse);
+            const bonneReponseNormalisee = parseFloat(question.correctAnswers[0] || '');
+            const tolerance = 0.01;
+            correcte = !isNaN(reponseNormalisee) && !isNaN(bonneReponseNormalisee) && Math.abs(reponseNormalisee - bonneReponseNormalisee) <= tolerance;
+            pointsObtenus = correcte ? pointsMaxQuestion : 0;
+          } else if (question.type === 'text' || question.type === 'textarea') {
+            // Pour les questions texte
+            const reponseNormalisee = reponseQuestion.reponse.toLowerCase().trim();
+            const bonneReponseNormalisee = (question.correctAnswers[0] || '').toLowerCase().trim();
+            correcte = reponseNormalisee === bonneReponseNormalisee;
+            pointsObtenus = correcte ? pointsMaxQuestion : 0;
+          } else if (question.type === 'radio' || question.type === 'select') {
+            // Pour les questions à choix unique
+            const reponseNormalisee = reponseQuestion.reponse.toLowerCase().trim();
+            const bonneReponseNormalisee = (question.correctAnswers[0] || '').toLowerCase().trim();
+            correcte = reponseNormalisee === bonneReponseNormalisee;
+            pointsObtenus = correcte ? pointsMaxQuestion : 0;
+          } else if (question.type === 'checkbox') {
+            // Pour les questions à choix multiples
+            const reponsesUtilisateur = Array.isArray(reponseQuestion.reponse) 
+              ? reponseQuestion.reponse 
+              : [reponseQuestion.reponse];
+            
+            const reponsesUtilisateurNormalisees = reponsesUtilisateur.map((r: any) => r.toLowerCase().trim());
+            const bonnesReponsesNormalisees = question.correctAnswers.map((r: any) => r.toLowerCase().trim());
+            
+            // Vérifier que toutes les bonnes réponses sont sélectionnées et qu'il n'y a pas de mauvaises réponses
+            const toutesBonnesReponsesSelectionnees = bonnesReponsesNormalisees.every((r: any) => 
+              reponsesUtilisateurNormalisees.includes(r)
+            );
+            const aucuneMauvaiseReponse = reponsesUtilisateurNormalisees.every((r: any) => 
+              bonnesReponsesNormalisees.includes(r)
+            );
+            
+            correcte = toutesBonnesReponsesSelectionnees && aucuneMauvaiseReponse;
+            pointsObtenus = correcte ? pointsMaxQuestion : 0;
           }
 
-          return { ...reponse, pointsObtenus, correcte };
+          return { ...reponseQuestion, pointsObtenus, correcte };
         });
       }
 
@@ -238,28 +208,4 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Fonction helper pour extraire la réponse simple
-function getSimpleResponse(response: any): any {
-  if (typeof response === 'string') {
-    return response;
-  }
-  
-  if (Array.isArray(response)) {
-    return response;
-  }
-  
-  if (typeof response === 'object' && response !== null) {
-    if (response.reponse !== undefined) {
-      return response.reponse;
-    }
-    if (response.value !== undefined) {
-      return response.value;
-    }
-    if (response.answer !== undefined) {
-      return response.answer;
-    }
-  }
-  
-  return response;
-}
 

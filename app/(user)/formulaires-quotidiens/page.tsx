@@ -712,15 +712,45 @@ export default function FormulairesQuotidiensPage() {
                     </div>
                   )}
 
+                  {/* Avertissement en mode correction */}
+                  {correctionMode && correctionData && (
+                    <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-yellow-800">Mode correction</h3>
+                          <div className="mt-1 text-sm text-yellow-700">
+                            <p>Seules les questions incorrectes sont affichées. Concentrez-vous sur vos erreurs et corrigez-les.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Questions */}
                   <div className="space-y-3 sm:space-y-4">
-                    {selectedFormulaire.questions.map((question, index) => (
+                    {selectedFormulaire.questions
+                      .filter((question) => {
+                        // En mode correction, afficher seulement les questions incorrectes
+                        if (correctionMode && reponseOriginale) {
+                          const reponseQuestion = reponseOriginale.reponses.find((r: any) => r.questionId === question.id);
+                          return reponseQuestion && !reponseQuestion.correcte;
+                        }
+                        // Sinon, afficher toutes les questions
+                        return true;
+                      })
+                      .map((question, filteredIndex) => {
+                        // Utiliser l'index original de la question pour la numérotation
+                        const originalIndex = selectedFormulaire.questions.findIndex(q => q.id === question.id);
+                        return (
                       <div key={question.id} className="border border-gray-200 rounded-lg p-2 sm:p-3 bg-gray-50">
                         <div className="mb-2">
                           <label className="block text-xs sm:text-sm font-medium text-gray-900 mb-2">
                             <span className="inline-flex items-center">
                               <span className="bg-indigo-600 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs font-medium mr-2">
-                                {index + 1}
+                                {originalIndex + 1}
                               </span>
                               {question.question}
                               {question.required && <span className="text-red-500 ml-1">*</span>}
@@ -731,7 +761,8 @@ export default function FormulairesQuotidiensPage() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                        );
+                      })}
                   </div>
 
                   {/* Affichage des commentaires de correction */}

@@ -486,9 +486,32 @@ export default function CorrectionsFormulairesPage() {
                     </div>
                   )}
 
-                  {/* Questions et réponses */}
+                  {/* Questions et réponses - Toutes les questions avec statut */}
                   <div className="bg-white border border-gray-200 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-4">Questions et réponses</h4>
+                    <h4 className="text-sm font-medium text-gray-900 mb-4">
+                      Questions et réponses ({selectedCorrection.questions?.length || 0})
+                    </h4>
+                    <div className="mb-4 grid grid-cols-2 gap-4">
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="text-sm font-medium text-green-800">
+                          ✅ Correctes : {selectedCorrection.questions?.filter((q: any) => {
+                            const response = selectedCorrection.reponses?.find((r: any) => r.questionId === q.id);
+                            return response && response.correcte;
+                          }).length || 0}
+                        </div>
+                      </div>
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <div className="text-sm font-medium text-red-800">
+                          ❌ Incorrectes : {selectedCorrection.questions?.filter((q: any) => {
+                            const response = selectedCorrection.reponses?.find((r: any) => r.questionId === q.id);
+                            return response && !response.correcte;
+                          }).length || 0}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Consultez vos réponses et concentrez-vous sur les questions incorrectes pour votre prochaine soumission :
+                    </p>
                     <div className="space-y-4">
                       {selectedCorrection.questions && selectedCorrection.questions.map((question: any, index: number) => 
                         renderQuestionResponse(question, index)
