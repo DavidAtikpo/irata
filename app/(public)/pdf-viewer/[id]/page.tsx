@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { DocumentIcon, ArrowDownTrayIcon, ExternalLinkIcon } from '@heroicons/react/24/outline';
+import { DocumentIcon, ArrowDownTrayIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 
 interface PDFData {
   id: string;
@@ -128,7 +128,7 @@ export default function PDFViewerPage() {
                 onClick={openInNewTab}
                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                <ExternalLinkIcon className="h-4 w-4 mr-2" />
+                <ArrowTopRightOnSquareIcon className="h-4 w-4 mr-2" />
                 Ouvrir dans un nouvel onglet
               </button>
             </div>

@@ -3,10 +3,10 @@ import cloudinary from '@/lib/cloudinary';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const pdfId = params.id;
+    const { id: pdfId } = await params;
     
     if (!pdfId) {
       return NextResponse.json({ error: 'ID du PDF requis' }, { status: 400 });
