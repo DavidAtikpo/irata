@@ -4,12 +4,12 @@
  * Documentation: https://cloud.google.com/vision/docs/ocr
  */
 
-import vision from '@google-cloud/vision';
+import vision, { ImageAnnotatorClient } from '@google-cloud/vision';
 
 // Configuration du client
-let visionClient: vision.ImageAnnotatorClient | null = null;
+let visionClient: ImageAnnotatorClient | null = null;
 
-function getVisionClient(): vision.ImageAnnotatorClient | null {
+function getVisionClient(): ImageAnnotatorClient | null {
   // Vérifier si les credentials sont configurés
   if (!process.env.GOOGLE_CLOUD_CREDENTIALS && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     console.warn('⚠️ Google Cloud Vision non configuré. Variables manquantes: GOOGLE_CLOUD_CREDENTIALS ou GOOGLE_APPLICATION_CREDENTIALS');
@@ -21,11 +21,11 @@ function getVisionClient(): vision.ImageAnnotatorClient | null {
       // Si GOOGLE_CLOUD_CREDENTIALS est un JSON string
       if (process.env.GOOGLE_CLOUD_CREDENTIALS) {
         const credentials = JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS);
-        visionClient = new vision.ImageAnnotatorClient({ credentials });
+        visionClient = new ImageAnnotatorClient({ credentials });
         console.log('✅ Google Cloud Vision initialisé avec GOOGLE_CLOUD_CREDENTIALS');
       } else {
         // Sinon utiliser GOOGLE_APPLICATION_CREDENTIALS (chemin vers fichier JSON)
-        visionClient = new vision.ImageAnnotatorClient();
+        visionClient = new ImageAnnotatorClient();
         console.log('✅ Google Cloud Vision initialisé avec GOOGLE_APPLICATION_CREDENTIALS');
       }
     } catch (error) {

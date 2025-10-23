@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import HeaderInfoTable from '@/app/components/HeaderInfoTable';
 import Image from 'next/image';
 
@@ -105,7 +106,9 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
   }, []);
 
   const setRowRating = (index: number, rating: string) => {
-    setRows((prev) => prev.map((r, i) => (i === index ? { ...r, rating } : r)));
+    flushSync(() => {
+      setRows((prev) => prev.map((r, i) => (i === index ? { ...r, rating } : r)));
+    });
   };
   
   const setRowComment = (index: number, comment: string) => {
@@ -253,9 +256,10 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
                       <input
                         name={`row-${idx}`}
                         type="radio"
-                        className="h-4 w-4 text-blue-600"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         checked={row.rating === opt}
                         onChange={() => setRowRating(idx, opt)}
+                        value={opt}
                       />
                       <span className="text-xs text-gray-700">{opt}</span>
                     </label>
@@ -292,16 +296,21 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
             </thead>
             <tbody>
               {rows.map((row, idx) => (
-                <tr key={row.label}>
+                <tr key={`${row.label}-${idx}`}>
                   <td className="border p-2 text-sm">{row.label}</td>
                   {ratingOptions.map((opt) => (
                     <td key={opt} className="border p-2 text-center align-middle">
                       <input
                         name={`row-${idx}`}
                         type="radio"
-                        className="h-4 w-4"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer"
                         checked={row.rating === opt}
-                        onChange={() => setRowRating(idx, opt)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setRowRating(idx, opt);
+                          }
+                        }}
+                        value={opt}
                       />
                     </td>
                   ))}
