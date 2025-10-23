@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Générer un nom de fichier unique pour Cloudinary
     const timestamp = Date.now();
     const fileExtension = file.name.split('.').pop();
-    const fileName = `qr-generator/${type}_${timestamp}`;
+    const fileName = `${type}_${timestamp}`; // Sans le préfixe qr-generator (déjà dans folder)
 
     // Vérifier la taille du fichier
     const fileSizeMB = buffer.length / (1024 * 1024);
@@ -75,6 +75,9 @@ export async function POST(request: NextRequest) {
             resource_type: 'auto',
             public_id: fileName,
             folder: 'qr-generator',
+            type: 'upload', // Type d'upload (par défaut, mais explicite)
+            access_mode: 'public', // ✅ IMPORTANT : Rendre le fichier public
+            invalidate: true, // Invalider le cache CDN
           },
           (error, result) => {
             if (error) reject(error);
@@ -83,9 +86,28 @@ export async function POST(request: NextRequest) {
         ).end(buffer);
       });
 
-      fileUrl = (uploadResult as any).secure_url;
       cloudinaryPublicId = (uploadResult as any).public_id;
-      console.log('✅ Upload Cloudinary réussi:', fileUrl);
+      
+      // Pour les PDFs, utiliser une URL avec transformation pour forcer l'affichage
+      const isPdfFile = type === 'pdf' || file.name.toLowerCase().endsWith('.pdf');
+      if (isPdfFile) {
+        // Générer une URL avec fl_attachment pour forcer le téléchargement
+        // ou sans transformation pour un affichage direct
+        fileUrl = cloudinary.url(cloudinaryPublicId, {
+          resource_type: 'image', // Cloudinary traite les PDFs comme des images
+          type: 'upload',
+          secure: true,
+          sign_url: false, // Pas de signature requise pour les fichiers publics
+        });
+        console.log('✅ Upload PDF Cloudinary réussi');
+        console.log('📋 Public ID:', cloudinaryPublicId);
+        console.log('📄 URL PDF:', fileUrl);
+      } else {
+        fileUrl = (uploadResult as any).secure_url;
+        console.log('✅ Upload Cloudinary réussi:', fileUrl);
+        console.log('📋 Public ID:', cloudinaryPublicId);
+      }
+      console.log('🔓 Access mode: public');
     } catch (cloudinaryError: any) {
       console.error('❌ Erreur Cloudinary upload:', cloudinaryError);
       
