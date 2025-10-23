@@ -106,41 +106,58 @@ export async function POST(request: NextRequest) {
       console.log('Taille:', buffer.length, 'bytes');
       
       try {
-        // Uploader l'image avec OCR directement
-        const ocrUploadResult = await new Promise((resolve, reject) => {
+        // D'abord uploader l'image sans OCR (pour compatibilité plan gratuit)
+        const uploadResult = await new Promise((resolve, reject) => {
           cloudinary.uploader.upload_stream(
             {
               resource_type: 'image',
               public_id: `equipment-inspections/ocr/qr_image_${timestamp}`,
               folder: 'equipment-inspections/ocr',
-              ocr: 'adv_ocr',
               quality: 'auto'
             },
             (error, result) => {
               if (error) {
-                console.log('❌ Erreur upload OCR:', error);
+                console.log('❌ Erreur upload image:', error);
                 reject(error);
               } else {
-                console.log('✅ Image uploadée avec OCR');
+                console.log('✅ Image uploadée');
                 resolve(result);
               }
             }
           ).end(buffer);
         });
+        
+        console.log('Image uploadée:', (uploadResult as any).public_id);
+        
+        // Essayer l'OCR Cloudinary si disponible
+        let ocrUploadResult = uploadResult;
+        try {
+          console.log('Tentative OCR Cloudinary...');
+          const ocrResult = await cloudinary.uploader.explicit(
+            (uploadResult as any).public_id,
+            {
+              type: 'upload',
+              ocr: 'adv_ocr'
+            }
+          );
+          ocrUploadResult = ocrResult;
+          console.log('✅ OCR Cloudinary réussi');
+        } catch (ocrError: any) {
+          console.warn('⚠️ OCR Cloudinary non disponible:', ocrError.message);
+          console.log('💡 Astuce: L\'OCR avancé nécessite un plan Cloudinary payant');
+          // Continuer sans OCR
+        }
 
-        console.log('Image uploadée avec OCR:', (ocrUploadResult as any).public_id);
         const ocrResult = ocrUploadResult as any;
-
-        console.log('Résultat OCR complet:', JSON.stringify(ocrResult, null, 2));
         
         // Extraire le texte de la structure OCR
         let extractedText = '';
+        let ocrAvailable = false;
+        
         console.log('=== DEBUG STRUCTURE OCR ===');
         console.log('ocrResult.ocr existe:', !!ocrResult.ocr);
         console.log('ocrResult.ocr.adv_ocr existe:', !!ocrResult.ocr?.adv_ocr);
         console.log('ocrResult.ocr.adv_ocr.data existe:', !!ocrResult.ocr?.adv_ocr?.data);
-        console.log('ocrResult.ocr.adv_ocr.text existe:', !!ocrResult.ocr?.adv_ocr?.text);
-        console.log('ocrResult.text existe:', !!ocrResult.text);
         
         if (ocrResult.ocr?.adv_ocr?.data) {
           const ocrData = ocrResult.ocr.adv_ocr.data;
@@ -207,8 +224,19 @@ export async function POST(request: NextRequest) {
           }
           
           if (!extractedText || extractedText.length < 10) {
-            console.log('❌ Aucun texte trouvé dans l\'OCR');
-            extractedText = 'Erreur - Aucun texte extrait de l\'image';
+            console.error('❌ OCR ÉCHEC: Aucun texte trouvé');
+            console.log('💡 Solution: L\'OCR avancé Cloudinary nécessite un plan payant');
+            console.log('💡 Alternative: Uploadez un PDF au lieu d\'une image');
+            
+            // Retourner une erreur explicite au client
+            return NextResponse.json({
+              error: 'OCR non disponible',
+              message: 'L\'extraction de texte depuis les images nécessite un plan Cloudinary avec OCR avancé activé.',
+              suggestion: 'Veuillez uploader un fichier PDF au lieu d\'une image, ou activer l\'OCR avancé dans votre compte Cloudinary (plan payant).',
+              imageUrl: (uploadResult as any).secure_url,
+              code: 'OCR_NOT_AVAILABLE',
+              helpLink: 'https://cloudinary.com/documentation/cloudinary_ai_content_analysis_addon#ai_based_image_captioning'
+            }, { status: 402 }); // 402 Payment Required
           }
         }
         
@@ -320,30 +348,39 @@ export async function POST(request: NextRequest) {
           try {
             console.log('=== TENTATIVE PDF-PARSE ===');
             console.log('Taille du buffer:', buffer.length, 'bytes');
+            console.log('Environnement:', process.env.NODE_ENV);
             console.log('Tentative d\'extraction réelle avec pdf-parse...');
             
             // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
             const pdfParse = require('pdf-parse') as any;
-            console.log('pdf-parse chargé, type:', typeof pdfParse);
+            console.log('✅ pdf-parse chargé, type:', typeof pdfParse);
             
-            const pdfData = await pdfParse(buffer);
-            console.log('pdfData reçu, type:', typeof pdfData);
+            const pdfData = await pdfParse(buffer, {
+              // Options pour améliorer la compatibilité
+              max: 0, // Pas de limite de pages
+            });
+            console.log('✅ pdfData reçu, type:', typeof pdfData);
             console.log('pdfData.text existe:', !!pdfData.text);
             console.log('pdfData.text type:', typeof pdfData.text);
+            console.log('pdfData.numpages:', pdfData.numpages);
+            console.log('pdfData.info:', pdfData.info);
             
             extractedText = pdfData.text || '';
             console.log('Texte PDF extrait (longueur):', extractedText.length);
-            console.log('Premier aperçu du texte:', extractedText.substring(0, 500));
+            console.log('Premier aperçu du texte (500 chars):', extractedText.substring(0, 500));
             
             if (!extractedText || extractedText.length < 10) {
-              console.log('pdf-parse n\'a pas extrait de texte, tentative Cloudinary OCR...');
-              throw new Error('pdf-parse n\'a pas extrait de texte');
+              console.warn('⚠️ pdf-parse n\'a pas extrait de texte (PDF scanné ou images)');
+              console.log('💡 Solution: Le PDF contient probablement des images scannées');
+              throw new Error('pdf-parse n\'a pas extrait de texte - PDF probablement scanné');
             } else {
               console.log('✅ pdf-parse a réussi à extraire du texte');
             }
-          } catch (pdfError) {
-            console.log('❌ Erreur pdf-parse:', pdfError);
-            console.log('Tentative Cloudinary OCR...');
+          } catch (pdfError: any) {
+            console.error('❌ Erreur pdf-parse:', pdfError.message || pdfError);
+            console.log('Cause probable:', pdfError.message?.includes('Invalid PDF') ? 'PDF corrompu ou invalide' : 'PDF scanné (images)');
+            console.log('💡 Pour les PDFs scannés, l\'OCR Cloudinary est nécessaire (plan payant)');
+            // Continue vers Cloudinary OCR
           }
         } else if (isImage) {
           console.log('=== FICHIER IMAGE DÉTECTÉ ===');
@@ -539,10 +576,23 @@ export async function POST(request: NextRequest) {
 
         // Vérifier si du texte a été extrait
         if (!extractedText || extractedText.length < 10) {
-          console.log('Aucun texte extrait - échec de l\'extraction');
+          console.error('❌ ÉCHEC EXTRACTION: Aucun texte extrait');
           console.log('extractedText actuel:', extractedText);
           console.log('Longueur:', extractedText ? extractedText.length : 0);
-          extractedText = 'Aucun texte extrait du PDF';
+          console.log('💡 Causes possibles:');
+          console.log('   1. PDF scanné (images) - nécessite OCR');
+          console.log('   2. PDF protégé ou corrompu');
+          console.log('   3. OCR Cloudinary non disponible (plan gratuit)');
+          
+          // Retourner une erreur explicite
+          return NextResponse.json({
+            error: 'Extraction impossible',
+            message: 'Impossible d\'extraire le texte du PDF. Le document contient probablement des images scannées.',
+            suggestion: 'Pour extraire le texte des PDFs scannés, vous devez activer l\'OCR avancé Cloudinary (plan payant) ou utiliser un PDF avec du texte natif (non scanné).',
+            fileUrl: localFileUrl,
+            code: 'PDF_SCANNED_OCR_REQUIRED',
+            helpLink: 'https://cloudinary.com/documentation/cloudinary_ai_content_analysis_addon#ai_based_image_captioning'
+          }, { status: 422 }); // 422 Unprocessable Entity
         }
 
         // --- Nettoyage du texte extrait ---

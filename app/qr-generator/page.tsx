@@ -88,6 +88,16 @@ export default function QRGeneratorPage() {
         setSuccess(`${isPdf ? 'PDF' : 'Image'} analysé avec succès !`);
       } else {
         const errorData = await response.json();
+        
+        // Gérer spécifiquement l'erreur OCR non disponible
+        if (errorData.code === 'OCR_NOT_AVAILABLE' || errorData.code === 'PDF_SCANNED_OCR_REQUIRED') {
+          throw new Error(
+            `⚠️ ${errorData.message}\n\n` +
+            `💡 ${errorData.suggestion}\n\n` +
+            `${errorData.helpLink ? `📖 En savoir plus: ${errorData.helpLink}` : ''}`
+          );
+        }
+        
         throw new Error(errorData.error || `Erreur lors de l'analyse du ${isPdf ? 'PDF' : 'fichier'}`);
       }
     } catch (error: any) {
