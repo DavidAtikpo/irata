@@ -17,38 +17,28 @@ export async function GET(
     // Reconstruire le public_id complet (avec le dossier qr-generator/)
     const fullPublicId = `qr-generator/${pdfId}`;
     
-    // Générer l'URL Cloudinary pour le PDF
-    const cloudinaryUrl = cloudinary.url(fullPublicId, {
-      resource_type: 'image', // PDFs sont traités comme des images sur Cloudinary
-      type: 'upload',
-      secure: true,
-      sign_url: false,
-    });
-
     console.log('📋 Public ID complet:', fullPublicId);
-    console.log('☁️ URL Cloudinary générée:', cloudinaryUrl);
 
     // Vérifier que le fichier existe sur Cloudinary
     try {
       const resource = await cloudinary.api.resource(fullPublicId, {
-        resource_type: 'image',
+        resource_type: 'raw', // PDFs sont des raw files, pas des images
         type: 'upload',
       });
 
       console.log('✅ Fichier trouvé sur Cloudinary:', resource.public_id);
       console.log('📊 Taille:', resource.bytes, 'bytes');
       console.log('📅 Créé le:', resource.created_at);
+      console.log('🔗 URL:', resource.secure_url);
 
-      // Retourner les métadonnées du PDF
+      // Retourner les métadonnées du PDF avec l'URL secure_url directe
       return NextResponse.json({
         id: pdfId,
-        url: cloudinaryUrl,
+        url: resource.secure_url, // Utiliser secure_url directement
         title: `Document ${pdfId}`,
         fileSize: resource.bytes,
         uploadedAt: resource.created_at,
         format: resource.format,
-        width: resource.width,
-        height: resource.height,
         publicId: resource.public_id,
       });
 
