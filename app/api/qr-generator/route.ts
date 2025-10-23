@@ -88,20 +88,25 @@ export async function POST(request: NextRequest) {
 
       cloudinaryPublicId = (uploadResult as any).public_id;
       
-      // Pour les PDFs, utiliser une URL avec transformation pour forcer l'affichage
+      // Pour les PDFs, utiliser l'URL de votre site au lieu de Cloudinary direct
       const isPdfFile = type === 'pdf' || file.name.toLowerCase().endsWith('.pdf');
       if (isPdfFile) {
-        // Générer une URL avec fl_attachment pour forcer le téléchargement
-        // ou sans transformation pour un affichage direct
-        fileUrl = cloudinary.url(cloudinaryPublicId, {
-          resource_type: 'image', // Cloudinary traite les PDFs comme des images
+        // Générer l'URL Cloudinary pour le stockage interne
+        const cloudinaryUrl = cloudinary.url(cloudinaryPublicId, {
+          resource_type: 'image',
           type: 'upload',
           secure: true,
-          sign_url: false, // Pas de signature requise pour les fichiers publics
+          sign_url: false,
         });
+        
+        // Mais retourner l'URL de votre site pour l'affichage
+        const baseUrl = process.env.NEXTAUTH_URL || 'https://www.a-finpart.com';
+        fileUrl = `${baseUrl}/pdf-viewer/${cloudinaryPublicId}`;
+        
         console.log('✅ Upload PDF Cloudinary réussi');
         console.log('📋 Public ID:', cloudinaryPublicId);
-        console.log('📄 URL PDF:', fileUrl);
+        console.log('☁️ URL Cloudinary (interne):', cloudinaryUrl);
+        console.log('🌐 URL Site (public):', fileUrl);
       } else {
         fileUrl = (uploadResult as any).secure_url;
         console.log('✅ Upload Cloudinary réussi:', fileUrl);
