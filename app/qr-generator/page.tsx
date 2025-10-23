@@ -424,7 +424,8 @@ export default function QRGeneratorPage() {
                                 if (!pdfUrl.endsWith('.pdf')) {
                                   pdfUrl = `${pdfUrl}.pdf`;
                                 }
-                                pdfUrl = pdfUrl.replace('/upload/', '/upload/fl_attachment:inline/');
+                                // Format correct: /upload/fl_attachment:inline/version/folder/file.pdf
+                                pdfUrl = pdfUrl.replace('/upload/v', '/upload/fl_attachment:inline/v');
                                 window.open(pdfUrl, '_blank');
                               }}
                               className="text-green-600 hover:text-green-900"

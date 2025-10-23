@@ -40,8 +40,8 @@ export async function GET(
       }
       
       // Ajouter le flag fl_attachment:inline pour forcer l'affichage dans le navigateur
-      // au lieu du téléchargement
-      pdfUrl = pdfUrl.replace('/upload/', '/upload/fl_attachment:inline/');
+      // Format correct: /upload/fl_attachment:inline/version/folder/file.pdf
+      pdfUrl = pdfUrl.replace('/upload/v', '/upload/fl_attachment:inline/v');
       
       console.log('🔗 URL finale avec flags:', pdfUrl);
 
