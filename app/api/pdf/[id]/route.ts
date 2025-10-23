@@ -29,12 +29,26 @@ export async function GET(
       console.log('✅ Fichier trouvé sur Cloudinary:', resource.public_id);
       console.log('📊 Taille:', resource.bytes, 'bytes');
       console.log('📅 Créé le:', resource.created_at);
-      console.log('🔗 URL:', resource.secure_url);
+      console.log('🔗 URL brute:', resource.secure_url);
 
-      // Retourner les métadonnées du PDF avec l'URL secure_url directe
+      // Générer une URL avec flags pour forcer l'affichage inline et ajouter .pdf
+      let pdfUrl = resource.secure_url;
+      
+      // Ajouter .pdf à la fin si ce n'est pas déjà présent
+      if (!pdfUrl.endsWith('.pdf')) {
+        pdfUrl = `${pdfUrl}.pdf`;
+      }
+      
+      // Ajouter le flag fl_attachment:inline pour forcer l'affichage dans le navigateur
+      // au lieu du téléchargement
+      pdfUrl = pdfUrl.replace('/upload/', '/upload/fl_attachment:inline/');
+      
+      console.log('🔗 URL finale avec flags:', pdfUrl);
+
+      // Retourner les métadonnées du PDF avec l'URL modifiée
       return NextResponse.json({
         id: pdfId,
-        url: resource.secure_url, // Utiliser secure_url directement
+        url: pdfUrl, // URL avec flags pour affichage inline
         title: `Document ${pdfId}`,
         fileSize: resource.bytes,
         uploadedAt: resource.created_at,

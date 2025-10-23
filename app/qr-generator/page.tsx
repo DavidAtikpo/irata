@@ -418,7 +418,15 @@ export default function QRGeneratorPage() {
                               Voir détails
                             </button>
                             <button
-                              onClick={() => window.open(item.pdfUrl, '_blank')}
+                              onClick={() => {
+                                // Ajouter .pdf et fl_attachment:inline pour forcer l'affichage
+                                let pdfUrl = item.pdfUrl;
+                                if (!pdfUrl.endsWith('.pdf')) {
+                                  pdfUrl = `${pdfUrl}.pdf`;
+                                }
+                                pdfUrl = pdfUrl.replace('/upload/', '/upload/fl_attachment:inline/');
+                                window.open(pdfUrl, '_blank');
+                              }}
                               className="text-green-600 hover:text-green-900"
                             >
                               Voir PDF
