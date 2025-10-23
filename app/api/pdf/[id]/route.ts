@@ -31,19 +31,13 @@ export async function GET(
       console.log('📅 Créé le:', resource.created_at);
       console.log('🔗 URL brute:', resource.secure_url);
 
-      // Générer une URL avec flags pour forcer l'affichage inline et ajouter .pdf
+      // Utiliser l'URL Cloudinary originale sans modifications
       let pdfUrl = resource.secure_url;
       
-      // Ajouter .pdf à la fin si ce n'est pas déjà présent
-      if (!pdfUrl.endsWith('.pdf')) {
-        pdfUrl = `${pdfUrl}.pdf`;
-      }
+      console.log('🔗 URL Cloudinary originale:', pdfUrl);
       
-      // Ajouter le flag fl_attachment:inline pour forcer l'affichage dans le navigateur
-      // Format correct: /upload/fl_attachment:inline/version/folder/file.pdf
-      pdfUrl = pdfUrl.replace('/upload/v', '/upload/fl_attachment:inline/v');
-      
-      console.log('🔗 URL finale avec flags:', pdfUrl);
+      // Pour les PDFs, on peut essayer d'ajouter des transformations Cloudinary
+      // mais d'abord testons avec l'URL originale
 
       // Retourner les métadonnées du PDF avec l'URL modifiée
       return NextResponse.json({

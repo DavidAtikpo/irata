@@ -419,14 +419,8 @@ export default function QRGeneratorPage() {
                             </button>
                             <button
                               onClick={() => {
-                                // Ajouter .pdf et fl_attachment:inline pour forcer l'affichage
-                                let pdfUrl = item.pdfUrl;
-                                if (!pdfUrl.endsWith('.pdf')) {
-                                  pdfUrl = `${pdfUrl}.pdf`;
-                                }
-                                // Format correct: /upload/fl_attachment:inline/version/folder/file.pdf
-                                pdfUrl = pdfUrl.replace('/upload/v', '/upload/fl_attachment:inline/v');
-                                window.open(pdfUrl, '_blank');
+                                // Utiliser l'URL Cloudinary originale directement
+                                window.open(item.pdfUrl, '_blank');
                               }}
                               className="text-green-600 hover:text-green-900"
                             >
