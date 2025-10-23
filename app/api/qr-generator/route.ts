@@ -100,11 +100,14 @@ export async function POST(request: NextRequest) {
         });
         
         // Mais retourner l'URL de votre site pour l'affichage
+        // Extraire juste le nom du fichier (sans le dossier qr-generator/)
+        const pdfFileName = cloudinaryPublicId.split('/').pop() || cloudinaryPublicId;
         const baseUrl = process.env.NEXTAUTH_URL || 'https://www.a-finpart.com';
-        fileUrl = `${baseUrl}/pdf-viewer/${cloudinaryPublicId}`;
+        fileUrl = `${baseUrl}/pdf-viewer/${pdfFileName}`;
         
         console.log('✅ Upload PDF Cloudinary réussi');
         console.log('📋 Public ID:', cloudinaryPublicId);
+        console.log('📄 Nom du fichier:', pdfFileName);
         console.log('☁️ URL Cloudinary (interne):', cloudinaryUrl);
         console.log('🌐 URL Site (public):', fileUrl);
       } else {

@@ -14,19 +14,23 @@ export async function GET(
 
     console.log('🔍 Récupération des données PDF pour ID:', pdfId);
 
+    // Reconstruire le public_id complet (avec le dossier qr-generator/)
+    const fullPublicId = `qr-generator/${pdfId}`;
+    
     // Générer l'URL Cloudinary pour le PDF
-    const cloudinaryUrl = cloudinary.url(pdfId, {
+    const cloudinaryUrl = cloudinary.url(fullPublicId, {
       resource_type: 'image', // PDFs sont traités comme des images sur Cloudinary
       type: 'upload',
       secure: true,
       sign_url: false,
     });
 
+    console.log('📋 Public ID complet:', fullPublicId);
     console.log('☁️ URL Cloudinary générée:', cloudinaryUrl);
 
     // Vérifier que le fichier existe sur Cloudinary
     try {
-      const resource = await cloudinary.api.resource(pdfId, {
+      const resource = await cloudinary.api.resource(fullPublicId, {
         resource_type: 'image',
         type: 'upload',
       });
