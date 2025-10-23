@@ -335,14 +335,56 @@ export default function NouvelleInspectionPage() {
               const result = await QrScanner.scanImage(img);
               console.log('QR Code - Données extraites côté client:', result);
               
-              // Parser les données JSON du QR code
+              // Vérifier si c'est une URL vers /equipment/[code]
               let qrData: any = {};
-              try {
-                qrData = JSON.parse(result);
-                console.log('QR Code - JSON parsé:', qrData);
-              } catch (parseError) {
-                console.log('QR Code - Pas de JSON, utilisation du texte brut');
-                qrData = { rawText: result };
+              
+              if (result.includes('/equipment/')) {
+                // Nouveau système : URL vers la page équipement
+                console.log('QR Code - URL détectée, extraction du code équipement');
+                const codeMatch = result.match(/\/equipment\/([a-zA-Z0-9_-]+)/);
+                if (codeMatch && codeMatch[1]) {
+                  const equipmentCode = codeMatch[1];
+                  console.log('Code équipement extrait:', equipmentCode);
+                  
+                  // Charger les données depuis l'API
+                  try {
+                    const response = await fetch(`/api/equipment/${equipmentCode}`);
+                    if (response.ok) {
+                      const equipmentData = await response.json();
+                      console.log('Données équipement chargées depuis l\'API:', equipmentData);
+                      
+                      // Mapper les données de l'API au format attendu
+                      qrData = {
+                        referenceInterne: equipmentData.referenceInterne,
+                        numeroSerie: equipmentData.numeroSerie,
+                        fabricant: equipmentData.fabricant,
+                        normes: equipmentData.normes,
+                        date: equipmentData.dateControle,
+                        signataire: equipmentData.signataire,
+                        produit: equipmentData.produit,
+                        nature: 'Déclaration UE de conformité',
+                        pdfUrl: equipmentData.pdfUrl
+                      };
+                    } else {
+                      console.error('Erreur lors du chargement des données équipement');
+                      setError('Impossible de charger les données de l\'équipement depuis le QR code');
+                      return;
+                    }
+                  } catch (apiError) {
+                    console.error('Erreur API:', apiError);
+                    setError('Erreur lors de la récupération des données de l\'équipement');
+                    return;
+                  }
+                }
+              } else {
+                // Ancien système : JSON dans le QR code
+                try {
+                  qrData = JSON.parse(result);
+                  console.log('QR Code - JSON parsé (ancien système):', qrData);
+                } catch (parseError) {
+                  console.log('QR Code - Pas de JSON, utilisation du texte brut');
+                  qrData = { rawText: result };
+                }
               }
               
               // Auto-remplissage basé sur le QR code
@@ -353,17 +395,17 @@ export default function NouvelleInspectionPage() {
                 qrCode: data.url,
                 
                 // Champs d'inspection existants
-                referenceInterne: qrData.reference || qrData.referenceInterne || prev.referenceInterne,
+                referenceInterne: qrData.referenceInterne || qrData.reference || prev.referenceInterne,
                 numeroSerie: qrData.numeroSerie || prev.numeroSerie,
-                dateFabrication: qrData.dateFabrication || prev.dateFabrication,
+                dateFabrication: qrData.dateFabrication || qrData.date || prev.dateFabrication,
                 typeEquipement: qrData.produit || qrData.typeEquipement || prev.typeEquipement,
                 dateInspectionDetaillee: nextInspectionDate,
                 
                 // Nouveaux champs du QR generator
                 fabricant: qrData.fabricant || prev.fabricant,
-                nature: qrData.nature || prev.nature,
-                reference: qrData.reference || prev.reference,
-                type: qrData.type || prev.type,
+                nature: qrData.nature || 'Déclaration UE de conformité',
+                reference: qrData.referenceInterne || qrData.reference || prev.reference,
+                type: qrData.type || 'Équipement de protection individuelle (EPI)',
                 normes: qrData.normes || prev.normes,
                 date: qrData.date || prev.date,
                 signataire: qrData.signataire || prev.signataire,
@@ -372,6 +414,7 @@ export default function NouvelleInspectionPage() {
                 normesCertificat: qrData.normes || prev.normesCertificat,
                 documentsReference: prev.documentsReference, // Ne pas écraser documentsReference
                 dateAchat: qrData.date || prev.dateAchat,
+                pdfUrl: qrData.pdfUrl || prev.pdfUrl, // URL du PDF depuis l'équipement
               }));
               
               // Mettre à jour l'état basé sur la nouvelle date d'inspection

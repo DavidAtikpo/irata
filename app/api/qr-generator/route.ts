@@ -41,8 +41,30 @@ export async function POST(request: NextRequest) {
     const fileExtension = file.name.split('.').pop();
     const fileName = `qr-generator/${type}_${timestamp}`;
 
+    // Vérifier la taille du fichier
+    const fileSizeMB = buffer.length / (1024 * 1024);
+    const maxSizeMB = 10; // Limite Cloudinary gratuit
+    
+    console.log(`Taille du fichier: ${fileSizeMB.toFixed(2)} MB`);
+
     // Upload vers Cloudinary avec gestion d'erreur
     let fileUrl = '';
+    let cloudinaryPublicId = '';
+    
+    if (fileSizeMB > maxSizeMB) {
+      console.warn(`⚠️ Fichier trop gros (${fileSizeMB.toFixed(2)} MB > ${maxSizeMB} MB). Cloudinary gratuit limité à ${maxSizeMB} MB.`);
+      console.log('💡 Solution: Compressez le PDF ou upgradez votre plan Cloudinary.');
+      
+      // Pour l'instant, retourner une erreur explicite
+      return NextResponse.json(
+        { 
+          error: `Fichier trop volumineux (${fileSizeMB.toFixed(2)} MB). La limite est de ${maxSizeMB} MB. Veuillez compresser le PDF ou utiliser un fichier plus petit.`,
+          suggestion: 'Utilisez un outil comme https://www.ilovepdf.com/compress_pdf pour réduire la taille du fichier.'
+        },
+        { status: 413 } // 413 Payload Too Large
+      );
+    }
+    
     try {
       const uploadResult = await new Promise((resolve, reject) => {
         cloudinary.uploader.upload_stream(
@@ -59,11 +81,19 @@ export async function POST(request: NextRequest) {
       });
 
       fileUrl = (uploadResult as any).secure_url;
-      console.log('Upload Cloudinary réussi:', fileUrl);
-    } catch (cloudinaryError) {
-      console.error('Erreur Cloudinary:', cloudinaryError);
-      // Fallback vers URL locale si Cloudinary échoue
-      fileUrl = `/uploads/qr_pdf_${timestamp}.pdf`;
+      cloudinaryPublicId = (uploadResult as any).public_id;
+      console.log('✅ Upload Cloudinary réussi:', fileUrl);
+    } catch (cloudinaryError: any) {
+      console.error('❌ Erreur Cloudinary upload:', cloudinaryError);
+      
+      // Retourner une erreur explicite
+      return NextResponse.json(
+        { 
+          error: `Erreur lors de l'upload vers Cloudinary: ${cloudinaryError.message || 'Erreur inconnue'}`,
+          details: cloudinaryError
+        },
+        { status: 500 }
+      );
     }
 
     // Extraction de données selon le type
@@ -647,8 +677,8 @@ export async function POST(request: NextRequest) {
             fabricant: extractedData.fabricant || null,
             dateControle: extractedData.date || null,
             signataire: extractedData.signataire || null,
-            pdfUrl: fileUrl,
-            cloudinaryPublicId: fileName,
+            pdfUrl: fileUrl, // URL Cloudinary
+            cloudinaryPublicId: cloudinaryPublicId || fileName, // ID Cloudinary pour récupération
             createdById: session.user.id
           }
         });

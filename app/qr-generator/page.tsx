@@ -90,9 +90,15 @@ export default function QRGeneratorPage() {
         const errorData = await response.json();
         throw new Error(errorData.error || `Erreur lors de l'analyse du ${isPdf ? 'PDF' : 'fichier'}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur upload fichier:', error);
-      setError(error instanceof Error ? error.message : `Erreur lors de l'upload du ${isPdf ? 'PDF' : 'fichier'}`);
+      
+      // Gérer les erreurs spécifiques
+      if (error.message && error.message.includes('trop volumineux')) {
+        setError(`${error.message}\n\n💡 ${error.suggestion || 'Compressez le PDF avant de l\'uploader.'}`);
+      } else {
+        setError(error instanceof Error ? error.message : `Erreur lors de l'upload du ${isPdf ? 'PDF' : 'fichier'}`);
+      }
     } finally {
       setIsUploading(false);
     }
@@ -129,45 +135,39 @@ export default function QRGeneratorPage() {
     setError('');
 
     try {
-      // Préparer les données pour le QR code optimisées pour l'inspection
-      const qrData = {
-        // Données principales pour l'inspection d'équipement
-        referenceInterne: extractedData.reference || 'A010CA00',
-        numeroSerie: extractedData.numeroSerie || 'Non détecté',
-        dateFabrication: extractedData.date || '2019',
-        typeEquipement: extractedData.produit || 'Casque Petzl VERTEX VENT',
-        normesCertificat: extractedData.normes || 'EN 397, EN 50365',
-        documentsReference: extractedData.documentsReference || 'Notice / Procédure',
-        dateAchat: extractedData.dateAchat || 'Non détecté',
+      // Vérifier si on a un code QR et une URL d'équipement depuis l'API
+      if (extractedData.qrCode && extractedData.equipmentUrl) {
+        // Utiliser l'URL de l'équipement générée par l'API
+        const equipmentUrl = extractedData.equipmentUrl;
         
-        // Données complémentaires de la déclaration UE
-        nature: extractedData.nature || 'Déclaration UE de conformité',
-        produit: extractedData.produit || 'Casque Petzl VERTEX VENT',
-        reference: extractedData.reference || 'A010CA00',
-        type: extractedData.type || 'Équipement de protection individuelle (EPI)',
-        fabricant: extractedData.fabricant || 'Petzl Distribution, Crolles (France)',
-        date: extractedData.date || '28/03/2019',
-        signataire: extractedData.signataire || 'Bernard Bressoux, Product Risk Director',
+        // Générer l'image du QR code via service externe
+        const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(equipmentUrl)}`;
         
-        // URLs et métadonnées
-        pdfUrl: extractedData.pdfUrl || '',
-        cloudinaryUrl: extractedData.cloudinaryUrl || '',
-        timestamp: new Date().toISOString(),
+        setQrCodeImage(qrCodeImageUrl);
+        setQrCodeUrl(equipmentUrl);
+        setSuccess(`QR code généré ! Code: ${extractedData.qrCode}`);
+      } else {
+        // Fallback: ancien système avec données JSON (si la migration Prisma n'est pas faite)
+        const qrData = {
+          referenceInterne: extractedData.reference || 'Non détecté',
+          numeroSerie: extractedData.numeroSerie || 'Non détecté',
+          dateFabrication: extractedData.date || 'Non détecté',
+          typeEquipement: extractedData.produit || 'Non détecté',
+          normesCertificat: extractedData.normes || 'Non détecté',
+          fabricant: extractedData.fabricant || 'Non détecté',
+          date: extractedData.date || 'Non détecté',
+          signataire: extractedData.signataire || 'Non détecté',
+          pdfUrl: extractedData.pdfUrl || '',
+          timestamp: new Date().toISOString(),
+        };
+
+        const qrDataString = JSON.stringify(qrData);
+        const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrDataString)}`;
         
-        // Version pour compatibilité
-        version: '1.0',
-        source: 'qr-generator'
-      };
-
-      // Convertir en JSON string
-      const qrDataString = JSON.stringify(qrData);
-
-      // Utiliser le service QR Code Generator avec les données JSON
-      const qrCodeUrl = `https://app.qr-code-generator.com/?data=${encodeURIComponent(qrDataString)}&size=600x600`;
-      setQrCodeImage(qrCodeUrl);
-      setQrCodeUrl(qrDataString);
-
-      setSuccess('QR code d\'inspection généré avec succès !');
+        setQrCodeImage(qrCodeImageUrl);
+        setQrCodeUrl(qrDataString);
+        setSuccess('QR code généré (mode fallback - exécutez la migration Prisma pour le mode complet)');
+      }
     } catch (error) {
       setError('Erreur lors de la génération du QR code');
     } finally {
@@ -423,7 +423,17 @@ export default function QRGeneratorPage() {
                     <span className="text-sm text-gray-500 mt-2">
                       Formats acceptés: PDF, JPG, PNG, GIF, BMP, WEBP
                     </span>
+                    <span className="text-xs text-orange-600 mt-2 font-medium">
+                      ⚠️ Taille max: 10 MB (plan Cloudinary gratuit)
+                    </span>
                   </label>
+                </div>
+                
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                  <strong>💡 Astuce:</strong> Si votre PDF est trop volumineux, compressez-le sur{' '}
+                  <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="underline font-medium">
+                    ilovepdf.com
+                  </a>
                 </div>
 
                 {isUploading && (
@@ -479,13 +489,26 @@ export default function QRGeneratorPage() {
                       <span className="text-gray-900">{extractedData.signataire || 'Non détecté'}</span>
                     </div>
                     
+                    {/* URL de l'équipement si disponible */}
+                    {extractedData.equipmentUrl && (
+                      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                        <h4 className="font-medium text-green-800 mb-2">✅ Équipement enregistré !</h4>
+                        <p className="text-xs text-green-700 mb-1">Code QR: <span className="font-mono font-bold">{extractedData.qrCode}</span></p>
+                        <p className="text-xs text-green-700">URL: <a href={extractedData.equipmentUrl} target="_blank" rel="noopener noreferrer" className="underline">{extractedData.equipmentUrl}</a></p>
+                      </div>
+                    )}
+                    
                     {/* Texte brut pour débogage */}
-                    <div className="mt-4 p-3 bg-gray-100 rounded">
-                      <h4 className="font-medium text-gray-700 mb-2">Texte brut extrait (pour débogage):</h4>
-                      <pre className="text-xs text-gray-600 whitespace-pre-wrap max-h-32 overflow-y-auto">
-                        {extractedData.rawText || 'Aucun texte brut disponible'}
-                      </pre>
-                    </div>
+                    <details className="mt-4">
+                      <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+                        Voir le texte brut extrait (débogage)
+                      </summary>
+                      <div className="mt-2 p-3 bg-gray-100 rounded">
+                        <pre className="text-xs text-gray-600 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                          {extractedData.rawText || 'Aucun texte brut disponible'}
+                        </pre>
+                      </div>
+                    </details>
                   </div>
 
                   <button
@@ -578,24 +601,45 @@ export default function QRGeneratorPage() {
               {/* Instructions d'utilisation */}
               <div className="bg-blue-50 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-blue-900 mb-3">
-                  Comment utiliser ce QR Code ?
+                  📱 Comment utiliser ce QR Code ?
                 </h3>
                 <ol className="text-sm text-blue-800 space-y-2">
-                  <li>1. Téléchargez le QR Code généré</li>
-                  <li>2. Imprimez-le et collez-le sur l'équipement</li>
-                  <li>3. Dans l'application d'inspection, scannez ce QR Code</li>
-                  <li>4. Les champs suivants seront automatiquement remplis :</li>
-                  <ul className="ml-4 mt-2 space-y-1 text-xs">
-                    <li>• Référence interne</li>
-                    <li>• Numéro de série</li>
-                    <li>• Date de fabrication</li>
-                    <li>• Type d'équipement</li>
-                    <li>• Normes et certificat de conformité</li>
-                    <li>• Documents de référence</li>
-                    <li>• Date d'achat</li>
-                  </ul>
-                  <li>5. Le PDF original sera accessible via le lien dans le QR Code</li>
+                  <li><strong>1.</strong> Téléchargez le QR Code généré ci-dessus</li>
+                  <li><strong>2.</strong> Imprimez-le et collez-le sur l'équipement</li>
+                  <li><strong>3.</strong> Scannez le QR Code avec un smartphone</li>
+                  <li><strong>4.</strong> Vous serez redirigé vers la page de l'équipement avec :
+                    <ul className="ml-4 mt-1 space-y-1 text-xs">
+                      <li>✓ Toutes les données de l'équipement</li>
+                      <li>✓ Accès au PDF original</li>
+                      <li>✓ Bouton "Remplir formulaire d'inspection"</li>
+                    </ul>
+                  </li>
+                  <li><strong>5.</strong> Cliquez sur "Remplir formulaire d'inspection"</li>
+                  <li><strong>6.</strong> Le formulaire se pré-remplit automatiquement avec :
+                    <ul className="ml-4 mt-1 space-y-1 text-xs">
+                      <li>• Référence interne</li>
+                      <li>• Numéro de série</li>
+                      <li>• Normes et certificat</li>
+                      <li>• Fabricant</li>
+                      <li>• Date de contrôle</li>
+                      <li>• Signataire</li>
+                    </ul>
+                  </li>
                 </ol>
+                
+                {extractedData?.equipmentUrl && (
+                  <div className="mt-4 p-3 bg-white rounded border border-blue-200">
+                    <p className="text-xs text-blue-900 font-medium mb-1">🔗 URL de test :</p>
+                    <a 
+                      href={extractedData.equipmentUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-800 underline break-all"
+                    >
+                      {extractedData.equipmentUrl}
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>
