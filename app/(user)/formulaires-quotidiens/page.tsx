@@ -174,6 +174,47 @@ export default function FormulairesQuotidiensPage() {
     setShowForm(true);
   };
 
+  // Fonction pour normaliser une réponse textuelle (enlever accents, espaces, symboles)
+  const normalizeText = (text: string): string => {
+    if (!text) return '';
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      // Enlever les accents
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      // Enlever les symboles courants (°, %, €, etc.)
+      .replace(/[°%€$£¥]/g, '')
+      // Enlever les espaces multiples
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  // Fonction pour vérifier si deux réponses textuelles sont équivalentes
+  const areTextAnswersEquivalent = (userAnswer: string, correctAnswer: string): boolean => {
+    const normalizedUser = normalizeText(userAnswer);
+    const normalizedCorrect = normalizeText(correctAnswer);
+    
+    // Comparaison exacte après normalisation
+    if (normalizedUser === normalizedCorrect) {
+      return true;
+    }
+    
+    // Vérifier si la réponse utilisateur contient la réponse correcte (ou vice-versa)
+    // Utile pour "90" vs "90 degrés" ou "90°"
+    if (normalizedUser.includes(normalizedCorrect) || normalizedCorrect.includes(normalizedUser)) {
+      // Vérifier que ce n'est pas une sous-chaîne accidentelle
+      const lengthDiff = Math.abs(normalizedUser.length - normalizedCorrect.length);
+      // Accepter si la différence est petite (< 5 caractères)
+      if (lengthDiff <= 5) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
   // Function to calculate score for scored questions
   const calculateScore = (questions: Question[], userResponses: { [questionId: string]: any }) => {
     let totalScore = 0;
@@ -198,6 +239,15 @@ export default function FormulairesQuotidiensPage() {
             const userAnswersSet = new Set(userAnswersArray);
             if (correctAnswersSet.size === userAnswersSet.size &&
                 [...correctAnswersSet].every(answer => userAnswersSet.has(answer))) {
+              totalScore += points;
+            }
+          } else if (question.type === 'text' || question.type === 'textarea') {
+            // Comparaison flexible pour les réponses textuelles
+            const userAnswerStr = String(userAnswer);
+            const isCorrect = question.correctAnswers.some(correctAnswer => 
+              areTextAnswersEquivalent(userAnswerStr, correctAnswer)
+            );
+            if (isCorrect) {
               totalScore += points;
             }
           }

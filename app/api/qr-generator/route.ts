@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import cloudinary from '@/lib/cloudinary';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
+import { extractPDFText } from '@/lib/pdf-text-extractor';
 import { existsSync } from 'fs';
 import { PrismaClient } from '@prisma/client';
 import { nanoid } from 'nanoid';
@@ -343,41 +344,28 @@ export async function POST(request: NextRequest) {
         console.log('Est une image:', isImage);
         console.log('Est un PDF:', isPdf);
         
-        // Essayer d'abord pdf-parse SEULEMENT pour les PDFs
+        // Essayer d'abord l'extraction PDF avec pdfjs-dist / pdf-parse
         if (isPdf) {
           try {
-            console.log('=== TENTATIVE PDF-PARSE ===');
+            console.log('=== TENTATIVE EXTRACTION PDF ===');
             console.log('Taille du buffer:', buffer.length, 'bytes');
             console.log('Environnement:', process.env.NODE_ENV);
-            console.log('Tentative d\'extraction réelle avec pdf-parse...');
             
-            // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
-            const pdfParse = require('pdf-parse') as any;
-            console.log('✅ pdf-parse chargé, type:', typeof pdfParse);
+            // Utiliser la nouvelle fonction d'extraction avec fallback automatique
+            extractedText = await extractPDFText(buffer);
             
-            const pdfData = await pdfParse(buffer, {
-              // Options pour améliorer la compatibilité
-              max: 0, // Pas de limite de pages
-            });
-            console.log('✅ pdfData reçu, type:', typeof pdfData);
-            console.log('pdfData.text existe:', !!pdfData.text);
-            console.log('pdfData.text type:', typeof pdfData.text);
-            console.log('pdfData.numpages:', pdfData.numpages);
-            console.log('pdfData.info:', pdfData.info);
-            
-            extractedText = pdfData.text || '';
-            console.log('Texte PDF extrait (longueur):', extractedText.length);
+            console.log('✅ Texte PDF extrait (longueur):', extractedText.length);
             console.log('Premier aperçu du texte (500 chars):', extractedText.substring(0, 500));
             
             if (!extractedText || extractedText.length < 10) {
-              console.warn('⚠️ pdf-parse n\'a pas extrait de texte (PDF scanné ou images)');
+              console.warn('⚠️ Aucun texte extrait (PDF scanné ou images)');
               console.log('💡 Solution: Le PDF contient probablement des images scannées');
-              throw new Error('pdf-parse n\'a pas extrait de texte - PDF probablement scanné');
+              throw new Error('Aucun texte extrait - PDF probablement scanné');
             } else {
-              console.log('✅ pdf-parse a réussi à extraire du texte');
+              console.log('✅ Extraction PDF réussie');
             }
           } catch (pdfError: any) {
-            console.error('❌ Erreur pdf-parse:', pdfError.message || pdfError);
+            console.error('❌ Erreur extraction PDF:', pdfError.message || pdfError);
             console.log('Cause probable:', pdfError.message?.includes('Invalid PDF') ? 'PDF corrompu ou invalide' : 'PDF scanné (images)');
             console.log('💡 Pour les PDFs scannés, l\'OCR Cloudinary est nécessaire (plan payant)');
             // Continue vers Cloudinary OCR

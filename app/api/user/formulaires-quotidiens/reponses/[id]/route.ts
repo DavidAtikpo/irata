@@ -5,6 +5,47 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Fonction pour normaliser une réponse textuelle (enlever accents, espaces, symboles)
+function normalizeText(text: string): string {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    // Enlever les accents
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    // Enlever les symboles courants (°, %, €, etc.)
+    .replace(/[°%€$£¥]/g, '')
+    // Enlever les espaces multiples
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Fonction pour vérifier si deux réponses textuelles sont équivalentes
+function areTextAnswersEquivalent(userAnswer: string, correctAnswer: string): boolean {
+  const normalizedUser = normalizeText(userAnswer);
+  const normalizedCorrect = normalizeText(correctAnswer);
+  
+  // Comparaison exacte après normalisation
+  if (normalizedUser === normalizedCorrect) {
+    return true;
+  }
+  
+  // Vérifier si la réponse utilisateur contient la réponse correcte (ou vice-versa)
+  // Utile pour "90" vs "90 degrés" ou "90°"
+  if (normalizedUser.includes(normalizedCorrect) || normalizedCorrect.includes(normalizedUser)) {
+    // Vérifier que ce n'est pas une sous-chaîne accidentelle
+    const lengthDiff = Math.abs(normalizedUser.length - normalizedCorrect.length);
+    // Accepter si la différence est petite (< 5 caractères)
+    if (lengthDiff <= 5) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -65,9 +106,11 @@ export async function GET(
         correcte = !isNaN(reponseNormalisee) && !isNaN(bonneReponseNormalisee) && Math.abs(reponseNormalisee - bonneReponseNormalisee) <= tolerance;
         pointsObtenus = correcte ? pointsMaxQuestion : 0;
       } else if (question.type === 'text' || question.type === 'textarea') {
-        const reponseNormalisee = reponseQuestion.reponse.toLowerCase().trim();
-        const bonneReponseNormalisee = (question.correctAnswers[0] || '').toLowerCase().trim();
-        correcte = reponseNormalisee === bonneReponseNormalisee;
+        // Utiliser la comparaison flexible pour les réponses textuelles
+        const userAnswerStr = String(reponseQuestion.reponse || '');
+        correcte = question.correctAnswers && question.correctAnswers.some((correctAnswer: string) => 
+          areTextAnswersEquivalent(userAnswerStr, correctAnswer)
+        );
         pointsObtenus = correcte ? pointsMaxQuestion : 0;
       } else if (question.type === 'radio' || question.type === 'select') {
         const reponseNormalisee = reponseQuestion.reponse.toLowerCase().trim();

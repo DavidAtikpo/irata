@@ -147,6 +147,34 @@ Pour les PDFs trop volumineux (> 10 MB) :
 | Google Vision | Gratuit + usage | Excellent | Moyen | ✅ Oui |
 | Tesseract.js | Gratuit | Moyen | Difficile | ⚠️ Limité |
 
+## 🔄 Mise à jour: Nouvelle solution d'extraction PDF
+
+### Problème identifié
+`pdf-parse` ne fonctionne pas sur Vercel à cause des dépendances binaires natives.
+
+### Solution implémentée
+Installation et utilisation de `pdfjs-dist` qui est compatible avec les environnements serverless:
+
+```typescript
+// lib/pdf-text-extractor.ts
+export async function extractPDFText(buffer: Buffer): Promise<string> {
+  // 1. Essayer pdfjs-dist (meilleur pour Vercel)
+  // 2. Fallback vers pdf-parse (local)
+  // 3. Retourner une erreur si les deux échouent
+}
+```
+
+### Avantages de pdfjs-dist
+- ✅ Compatible avec Vercel et environnements serverless
+- ✅ Pas de dépendances binaires natives
+- ✅ Utilisé par Firefox et Chrome (très fiable)
+- ✅ Supporte les PDFs complexes
+
+### Installation
+```bash
+npm install pdfjs-dist canvas
+```
+
 ## 🔧 Tests en production
 
 ### Test 1 : PDF avec texte natif
