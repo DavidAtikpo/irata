@@ -69,14 +69,18 @@ export async function POST(request: NextRequest) {
     }
     
     try {
+      // Déterminer le type de ressource en fonction de l'extension du fichier
+      const isPdfFile = type === 'pdf' || file.name.toLowerCase().endsWith('.pdf');
+      const resourceType = isPdfFile ? 'raw' : 'auto'; // PDFs = raw, autres = auto
+      
       const uploadResult = await new Promise((resolve, reject) => {
         cloudinary.uploader.upload_stream(
           {
-            resource_type: 'auto',
+            resource_type: resourceType, // 'raw' pour PDFs, 'auto' pour images
             public_id: fileName,
             folder: 'qr-generator',
-            type: 'upload', // Type d'upload (par défaut, mais explicite)
-            access_mode: 'public', // ✅ IMPORTANT : Rendre le fichier public
+            type: 'upload',
+            access_mode: 'public', // ✅ Rendre le fichier public
             invalidate: true, // Invalider le cache CDN
           },
           (error, result) => {
