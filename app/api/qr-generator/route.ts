@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import cloudinary from '@/lib/cloudinary';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { extractPDFText } from '@/lib/pdf-text-extractor';
-import { existsSync } from 'fs';
 import { PrismaClient } from '@prisma/client';
 import { nanoid } from 'nanoid';
 
@@ -14,19 +11,24 @@ const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('\n🚀 ========== DÉBUT QR GENERATOR API ==========');
+    
     // Authentification requise pour stocker en DB
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user) {
+      console.log('❌ Authentification échouée');
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
+
+    console.log('✅ Utilisateur authentifié:', session.user.email);
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const type = formData.get('type') as string;
 
-    console.log('Fichier reçu:', file ? `${file.name} (${file.size} bytes)` : 'Aucun fichier');
-    console.log('Type:', type);
+    console.log('📄 Fichier reçu:', file ? `${file.name} (${file.size} bytes)` : 'Aucun fichier');
+    console.log('📝 Type:', type);
 
     if (!file) {
       return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 });
@@ -319,16 +321,11 @@ export async function POST(request: NextRequest) {
       }
     } else if (type === 'pdf') {
       try {
-        const uploadsDir = join(process.cwd(), 'public', 'uploads');
-        if (!existsSync(uploadsDir)) {
-          await mkdir(uploadsDir, { recursive: true });
-        }
-
-        const localFileName = `qr_pdf_${timestamp}.pdf`;
-        const localFilePath = join(uploadsDir, localFileName);
-        await writeFile(localFilePath, buffer);
-        const localFileUrl = `/uploads/${localFileName}`;
-
+        console.log('📄 ========== TRAITEMENT PDF ==========');
+        
+        // ⚠️ NE PAS SAUVEGARDER LE FICHIER LOCALEMENT SUR VERCEL (read-only file system)
+        // On travaille directement avec le buffer en mémoire
+        
         let extractedText = '';
         console.log('=== INITIALISATION ===');
         console.log('extractedText initial:', extractedText);
@@ -577,7 +574,7 @@ export async function POST(request: NextRequest) {
             error: 'Extraction impossible',
             message: 'Impossible d\'extraire le texte du PDF. Le document contient probablement des images scannées.',
             suggestion: 'Pour extraire le texte des PDFs scannés, vous devez activer l\'OCR avancé Cloudinary (plan payant) ou utiliser un PDF avec du texte natif (non scanné).',
-            fileUrl: localFileUrl,
+            fileUrl: fileUrl,
             code: 'PDF_SCANNED_OCR_REQUIRED',
             helpLink: 'https://cloudinary.com/documentation/cloudinary_ai_content_analysis_addon#ai_based_image_captioning'
           }, { status: 422 }); // 422 Unprocessable Entity
@@ -662,7 +659,7 @@ export async function POST(request: NextRequest) {
           date,
           signataire,
           normes,
-          pdfUrl: localFileUrl,
+          pdfUrl: fileUrl, // URL Cloudinary (pas de stockage local)
           cloudinaryUrl: fileUrl,
           confidence: 98,
           rawText: extractedText,
