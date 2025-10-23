@@ -12,6 +12,15 @@ interface Document {
   createdAt: string;
 }
 
+interface EquipmentHistory {
+  id: string;
+  qrCode: string;
+  produit: string;
+  referenceInterne: string;
+  pdfUrl: string;
+  createdAt: string;
+}
+
 export default function QRGeneratorPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -21,17 +30,39 @@ export default function QRGeneratorPage() {
   const [success, setSuccess] = useState('');
   const [qrCodeImage, setQrCodeImage] = useState<string>('');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'documents' | 'inspection'>('documents');
+  const [activeTab, setActiveTab] = useState<'documents' | 'inspection' | 'history'>('documents');
   
   // États pour l'inspection d'équipement
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [extractedData, setExtractedData] = useState<any>(null);
+  
+  // États pour l'historique
+  const [equipmentHistory, setEquipmentHistory] = useState<EquipmentHistory[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
-  // Charger les documents disponibles
+  // Charger les documents disponibles et l'historique
   useEffect(() => {
     fetchDocuments();
+    fetchEquipmentHistory();
   }, []);
+
+  const fetchEquipmentHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const response = await fetch('/api/equipment/history');
+      if (response.ok) {
+        const data = await response.json();
+        setEquipmentHistory(data);
+      } else {
+        console.error('Erreur lors du chargement de l\'historique');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const fetchDocuments = async () => {
     setIsLoading(true);
@@ -86,6 +117,9 @@ export default function QRGeneratorPage() {
         console.log('Données extraites du serveur:', data.extractedData);
         setExtractedData(data.extractedData);
         setSuccess(`${isPdf ? 'PDF' : 'Image'} analysé avec succès !`);
+        
+        // Rafraîchir l'historique après un upload réussi
+        fetchEquipmentHistory();
       } else {
         const errorData = await response.json();
         
@@ -284,6 +318,16 @@ export default function QRGeneratorPage() {
               >
                 Inspection d'équipement
               </button>
+              <button
+                onClick={() => setActiveTab('history')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'history'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Historique ({equipmentHistory.length})
+              </button>
             </nav>
           </div>
         </div>
@@ -302,7 +346,105 @@ export default function QRGeneratorPage() {
         )}
 
         {/* Contenu selon l'onglet actif */}
-        {activeTab === 'documents' ? (
+        {activeTab === 'history' ? (
+          /* Onglet Historique */
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Historique des équipements ({equipmentHistory.length})
+              </h2>
+              
+              {loadingHistory ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                  <p className="mt-2 text-sm text-gray-600">Chargement de l'historique...</p>
+                </div>
+              ) : equipmentHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <DocumentIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">Aucun équipement dans l'historique</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Les équipements que vous uploadez apparaîtront ici
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Produit
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Référence
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Code QR
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {equipmentHistory.map((item) => (
+                        <tr key={item.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {item.produit || 'Non détecté'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-500">
+                              {item.referenceInterne || 'Non détecté'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <code className="text-xs bg-gray-100 px-2 py-1 rounded">
+                              {item.qrCode}
+                            </code>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(item.createdAt).toLocaleDateString('fr-FR')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <button
+                              onClick={() => window.open(`/equipment/${item.qrCode}`, '_blank')}
+                              className="text-indigo-600 hover:text-indigo-900"
+                            >
+                              Voir détails
+                            </button>
+                            <button
+                              onClick={() => window.open(item.pdfUrl, '_blank')}
+                              className="text-green-600 hover:text-green-900"
+                            >
+                              Voir PDF
+                            </button>
+                            <button
+                              onClick={() => {
+                                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(`${window.location.origin}/equipment/${item.qrCode}`)}`;
+                                const link = document.createElement('a');
+                                link.href = qrUrl;
+                                link.download = `qr-${item.qrCode}.png`;
+                                link.click();
+                              }}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              Télécharger QR
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : activeTab === 'documents' ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Colonne gauche - Liste des documents */}
             <div className="space-y-6">
