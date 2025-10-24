@@ -118,8 +118,13 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
   }, []);
   
   const setRowRating = (index: number, rating: string) => {
+    // Force la mise à jour immédiate avec flushSync
     flushSync(() => {
-      setRows((prev) => prev.map((r, i) => (i === index ? { ...r, rating } : r)));
+      setRows((prev) => {
+        const newRows = [...prev];
+        newRows[index] = { ...newRows[index], rating };
+        return newRows;
+      });
     });
   };
   
@@ -277,7 +282,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
                       <input
                         name={`row-${idx}`}
                         type="radio"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all duration-150"
                         checked={row.rating === opt}
                         onChange={() => setRowRating(idx, opt)}
                         value={opt}
@@ -326,7 +331,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
                       <input
                         name={`row-${idx}`}
                         type="radio"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer transition-all duration-150"
                         checked={row.rating === opt}
                         onChange={(e) => {
                           if (e.target.checked) {
