@@ -262,3 +262,4 @@ Score: 19/20 (95%)
 
 **Résumé** : Le système de scoring est maintenant **plus intelligent** et **plus flexible**, tout en restant **précis** et **équitable** ! 🎉
 
+

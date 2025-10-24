@@ -178,3 +178,4 @@ Texte extrait: 1234 caractères
 
 **Prochaine étape** : Suivez le guide `GOOGLE_VISION_SETUP.md` pour activer l'OCR gratuit en 5 minutes ! 🚀
 
+

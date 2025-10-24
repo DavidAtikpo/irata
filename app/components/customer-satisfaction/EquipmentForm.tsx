@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { flushSync } from 'react-dom';
 import HeaderInfoTable from '@/app/components/HeaderInfoTable';
 import Image from 'next/image';
 
@@ -43,6 +42,7 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
   const [submitting, setSubmitting] = useState(false);
   const [sessionName, setSessionName] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
   const ratingOptions = ['Très satisfaisant', 'Satisfaisant', 'Insatisfaisant', 'Très insatisfaisant'];
   
   useEffect(() => {
@@ -113,13 +113,10 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
   }, []);
 
   const setRowRating = (index: number, rating: string) => {
-    // Force la mise à jour immédiate avec flushSync
-    flushSync(() => {
-      setRows((prev) => {
-        const newRows = [...prev];
-        newRows[index] = { ...newRows[index], rating };
-        return newRows;
-      });
+    setRows((prev) => {
+      const newRows = [...prev];
+      newRows[index] = { ...newRows[index], rating };
+      return newRows;
     });
   };
   
@@ -129,31 +126,53 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
 
   // Sauvegarde automatique des données
   useEffect(() => {
-    if (!isLoaded || rows.every(r => !r.rating)) return;
+    if (!isLoaded) return;
     
-    const autoSave = async () => {
+    // Attendre un délai avant de sauvegarder pour éviter trop de requêtes
+    const timeoutId = setTimeout(async () => {
       try {
-        await fetch('/api/user/customer-satisfaction', {
+        setIsAutoSaving(true);
+        console.log('🔄 Sauvegarde automatique EQUIPMENT en cours...', { 
+          rowsCount: rows.length, 
+          hasRatings: rows.some(r => r.rating),
+          name,
+          sessionName 
+        });
+        
+        // Sauvegarder toutes les lignes, même celles sans rating
+        const itemsToSave = rows.map((r) => ({
+          label: r.label,
+          rating: r.rating || '',
+          ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
+        }));
+
+        console.log('📦 Données EQUIPMENT à sauvegarder:', itemsToSave);
+
+        const response = await fetch('/api/user/customer-satisfaction', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'EQUIPMENT',
             traineeName: name || undefined,
             session: sessionName || undefined,
-            items: rows.map((r) => ({
-              label: r.label,
-              rating: r.rating as string,
-              ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
-            })),
+            items: itemsToSave,
             suggestions: suggestions.trim() || undefined,
           }),
         });
+        
+        if (response.ok) {
+          console.log('✅ Sauvegarde automatique EQUIPMENT réussie');
+        } else {
+          const errorText = await response.text();
+          console.error('❌ Erreur sauvegarde automatique EQUIPMENT:', errorText);
+        }
       } catch (error) {
-        console.error('Erreur lors de la sauvegarde automatique:', error);
+        console.error('❌ Erreur lors de la sauvegarde automatique EQUIPMENT:', error);
+      } finally {
+        setIsAutoSaving(false);
       }
-    };
+    }, 2000); // Délai de 2 secondes
 
-    const timeoutId = setTimeout(autoSave, 1000); // Sauvegarde après 1 seconde d'inactivité
     return () => clearTimeout(timeoutId);
   }, [rows, name, sessionName, suggestions, isLoaded]);
   
@@ -222,7 +241,12 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
       <fieldset className="border p-3 sm:p-4 rounded mt-4 sm:mt-6">
         <legend className="font-semibold text-base sm:text-lg px-2">
           Équipements d'entraînement
-          {isLoaded && rows.some(r => r.rating) && (
+          {isAutoSaving && (
+            <span className="ml-2 text-sm text-blue-600 font-normal">
+              💾 Sauvegarde en cours...
+            </span>
+          )}
+          {!isAutoSaving && isLoaded && rows.some(r => r.rating) && (
             <span className="ml-2 text-sm text-green-600 font-normal">
               ✓ Réponses sauvegardées
             </span>
@@ -250,6 +274,53 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
               placeholder="Session inscrite"
             />
           </div>
+        </div>
+
+        {/* Bouton de test pour la sauvegarde */}
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+          <button
+            type="button"
+            onClick={async () => {
+              console.log('🧪 Test de sauvegarde EQUIPMENT...');
+              try {
+                const itemsToSave = rows.map((r) => ({
+                  label: r.label,
+                  rating: r.rating || '',
+                  ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
+                }));
+
+                const response = await fetch('/api/user/customer-satisfaction', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    type: 'EQUIPMENT',
+                    traineeName: name || undefined,
+                    session: sessionName || undefined,
+                    items: itemsToSave,
+                    suggestions: suggestions.trim() || undefined,
+                  }),
+                });
+
+                if (response.ok) {
+                  console.log('✅ Test de sauvegarde EQUIPMENT réussi');
+                  alert('Test de sauvegarde EQUIPMENT réussi ! Vérifiez la console.');
+                } else {
+                  const errorText = await response.text();
+                  console.error('❌ Test de sauvegarde EQUIPMENT échoué:', errorText);
+                  alert('Test de sauvegarde EQUIPMENT échoué. Vérifiez la console.');
+                }
+              } catch (error) {
+                console.error('❌ Erreur test de sauvegarde EQUIPMENT:', error);
+                alert('Erreur lors du test de sauvegarde EQUIPMENT. Vérifiez la console.');
+              }
+            }}
+            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+          >
+            🧪 Tester la sauvegarde EQUIPMENT
+          </button>
+          <p className="text-xs text-gray-600 mt-1">
+            Cliquez sur ce bouton pour tester si la sauvegarde EQUIPMENT fonctionne. Vérifiez la console (F12) pour voir les logs.
+          </p>
         </div>
 
         {/* Version mobile : Cartes empilées */}

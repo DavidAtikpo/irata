@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { flushSync } from 'react-dom';
 import HeaderInfoTable from '@/app/components/HeaderInfoTable';
 import SignaturePad from '../../../components/SignaturePad';
 import Image from 'next/image';
@@ -37,6 +36,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
   const [signatureData, setSignatureData] = useState<string>('');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
   
   // Log pour déboguer la signature
   useEffect(() => {
@@ -118,19 +118,67 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
   }, []);
   
   const setRowRating = (index: number, rating: string) => {
-    // Force la mise à jour immédiate avec flushSync
-    flushSync(() => {
-      setRows((prev) => {
-        const newRows = [...prev];
-        newRows[index] = { ...newRows[index], rating };
-        return newRows;
-      });
+    setRows((prev) => {
+      const newRows = [...prev];
+      newRows[index] = { ...newRows[index], rating };
+      return newRows;
     });
   };
   
   const setRowComment = (index: number, comment: string) => {
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, comment } : r)));
   };
+
+  // Sauvegarde automatique des données
+  useEffect(() => {
+    if (!isLoaded) return;
+    
+    // Attendre un délai avant de sauvegarder pour éviter trop de requêtes
+    const timeoutId = setTimeout(async () => {
+      try {
+        setIsAutoSaving(true);
+        console.log('🔄 Sauvegarde automatique TRAINING_PEDAGOGY en cours...', { 
+          rowsCount: rows.length, 
+          hasRatings: rows.some(r => r.rating),
+          name,
+          sessionName 
+        });
+        
+        // Sauvegarder toutes les lignes, même celles sans rating
+        const itemsToSave = rows.map((r) => ({
+          label: r.label,
+          rating: r.rating || '',
+          ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
+        }));
+
+        console.log('📦 Données TRAINING_PEDAGOGY à sauvegarder:', itemsToSave);
+
+        const response = await fetch('/api/user/customer-satisfaction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'TRAINING_PEDAGOGY',
+            traineeName: name || undefined,
+            session: sessionName || undefined,
+            items: itemsToSave,
+          }),
+        });
+        
+        if (response.ok) {
+          console.log('✅ Sauvegarde automatique TRAINING_PEDAGOGY réussie');
+        } else {
+          const errorText = await response.text();
+          console.error('❌ Erreur sauvegarde automatique TRAINING_PEDAGOGY:', errorText);
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la sauvegarde automatique TRAINING_PEDAGOGY:', error);
+      } finally {
+        setIsAutoSaving(false);
+      }
+    }, 2000); // Délai de 2 secondes
+
+    return () => clearTimeout(timeoutId);
+  }, [rows, name, sessionName, isLoaded]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -233,7 +281,12 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
       <fieldset className="border p-3 sm:p-4 rounded mt-4 sm:mt-6">
         <legend className="font-semibold text-base sm:text-lg px-2">
           Équipe pédagogique et programme
-          {isLoaded && rows.some(r => r.rating) && (
+          {isAutoSaving && (
+            <span className="ml-2 text-sm text-blue-600 font-normal">
+              💾 Sauvegarde en cours...
+            </span>
+          )}
+          {!isAutoSaving && isLoaded && rows.some(r => r.rating) && (
             <span className="ml-2 text-sm text-green-600 font-normal">
               ✓ Réponses sauvegardées
             </span>
@@ -264,6 +317,54 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
             />
           </div>
         </div>
+
+        {/* Bouton de test pour la sauvegarde */}
+        {!isAlreadySubmitted && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+            <button
+              type="button"
+              onClick={async () => {
+                console.log('🧪 Test de sauvegarde TRAINING_PEDAGOGY...');
+                try {
+                  const itemsToSave = rows.map((r) => ({
+                    label: r.label,
+                    rating: r.rating || '',
+                    ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
+                  }));
+
+                  const response = await fetch('/api/user/customer-satisfaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      type: 'TRAINING_PEDAGOGY',
+                      traineeName: name || undefined,
+                      session: sessionName || undefined,
+                      items: itemsToSave,
+                    }),
+                  });
+
+                  if (response.ok) {
+                    console.log('✅ Test de sauvegarde TRAINING_PEDAGOGY réussi');
+                    alert('Test de sauvegarde TRAINING_PEDAGOGY réussi ! Vérifiez la console.');
+                  } else {
+                    const errorText = await response.text();
+                    console.error('❌ Test de sauvegarde TRAINING_PEDAGOGY échoué:', errorText);
+                    alert('Test de sauvegarde TRAINING_PEDAGOGY échoué. Vérifiez la console.');
+                  }
+                } catch (error) {
+                  console.error('❌ Erreur test de sauvegarde TRAINING_PEDAGOGY:', error);
+                  alert('Erreur lors du test de sauvegarde TRAINING_PEDAGOGY. Vérifiez la console.');
+                }
+              }}
+              className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+            >
+              🧪 Tester la sauvegarde TRAINING_PEDAGOGY
+            </button>
+            <p className="text-xs text-gray-600 mt-1">
+              Cliquez sur ce bouton pour tester si la sauvegarde TRAINING_PEDAGOGY fonctionne. Vérifiez la console (F12) pour voir les logs.
+            </p>
+          </div>
+        )}
 
         {/* Version mobile : Cartes empilées */}
         <div className="block sm:hidden space-y-4">
