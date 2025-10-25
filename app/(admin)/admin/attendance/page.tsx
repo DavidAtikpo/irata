@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import jsPDF from 'jspdf';
 
 interface AttendanceSignature {
   userId: string;
@@ -167,6 +168,271 @@ export default function AdminAttendancePage() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const exportSessionToCSV = (sessionName: string, usersInSession: UserAttendanceData[]) => {
+    const headers = ['Utilisateur', 'Email', 'Session'];
+    daysOfWeek.forEach(day => {
+      headers.push(`${day} Matin`, `${day} Soir`);
+    });
+    
+    const csvData = [headers.join(',')];
+    
+    usersInSession.forEach(user => {
+      const row = [user.userName, user.userEmail, user.sessionName || ''];
+      
+      daysOfWeek.forEach(day => {
+        periods.forEach(period => {
+          const key = `${day}-${period}`;
+          const hasSignature = user.signatures[key] ? 'Présent' : 'Absent';
+          row.push(hasSignature);
+        });
+      });
+      
+      csvData.push(row.join(','));
+    });
+    
+    const blob = new Blob([csvData.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `attendance_${sessionName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportSessionToPDF = (sessionName: string, usersInSession: UserAttendanceData[]) => {
+    // Créer un PDF en mode paysage (landscape)
+    const doc = new jsPDF('landscape', 'mm', 'a4');
+    
+    // Définir les marges
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const rightMargin = 20; // Marge droite
+    
+    // Configuration des couleurs
+    const primaryColor = [41, 128, 185]; // Bleu
+    const headerColor = [52, 73, 94]; // Gris foncé
+    const presentColor = [46, 204, 113]; // Vert
+    const absentColor = [231, 76, 60]; // Rouge
+    
+    // En-tête exactement comme HeaderInfoTable
+    const headerY = 20;
+    const logoSize = 16; // 64px = 16mm
+    
+    // Logo (rectangle gris avec bordure)
+    doc.setFillColor(229, 231, 235); // bg-gray-200
+    doc.setDrawColor(156, 163, 175); // border-gray-400
+    doc.rect(20, headerY, logoSize, logoSize, 'FD'); // Filled + Drawn
+    
+    // Logo (si disponible)
+    try {
+      doc.addImage('/logo.png', 'PNG', 20, headerY, logoSize, logoSize);
+    } catch (error) {
+      // Texte IRATA si logo non disponible
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(8);
+      doc.text('IRATA', 20 + logoSize/2 - 8, headerY + logoSize/2 + 2);
+    }
+    // Tableau d'informations (version desktop comme dans HeaderInfoTable)
+    const infoTableY = headerY; // Aligné avec le logo
+    const tableStartX = 20 + logoSize + 10;
+    const tableWidth = 200;
+    const infoCellHeight = 8;
+    
+    // Ligne 1 du tableau (4 colonnes)
+    doc.setFillColor(255, 255, 255); // Fond blanc
+    doc.setDrawColor(0, 0, 0); // Bordure noire
+    doc.rect(tableStartX, infoTableY, tableWidth/4, infoCellHeight, 'FD');
+    doc.rect(tableStartX + tableWidth/4, infoTableY, tableWidth/4, infoCellHeight, 'FD');
+    doc.rect(tableStartX + tableWidth/2, infoTableY, tableWidth/4, infoCellHeight, 'FD');
+    doc.rect(tableStartX + (tableWidth * 3/4), infoTableY, tableWidth/4, infoCellHeight, 'FD');
+    
+    // Contenu ligne 1
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0); // Texte noir
+    doc.text('Titre', tableStartX + 2, infoTableY + 5);
+    doc.text('Numéro de code', tableStartX + tableWidth/4 + 2, infoTableY + 5);
+    doc.text('Revision', tableStartX + tableWidth/2 + 2, infoTableY + 5);
+    doc.text('Date de création', tableStartX + (tableWidth * 3/4) + 2, infoTableY + 5);
+   
+    // Ligne 2 du tableau (4 colonnes)
+    doc.setFillColor(255, 255, 255); // Fond blanc
+    doc.setDrawColor(0, 0, 0); // Bordure noire
+    doc.rect(tableStartX, infoTableY + infoCellHeight, tableWidth/4, infoCellHeight, 'FD');
+    doc.rect(tableStartX + tableWidth/4, infoTableY + infoCellHeight, tableWidth/4, infoCellHeight, 'FD');
+    doc.rect(tableStartX + tableWidth/2, infoTableY + infoCellHeight, tableWidth/4, infoCellHeight, 'FD');
+    doc.rect(tableStartX + (tableWidth * 3/4), infoTableY + infoCellHeight, tableWidth/4, infoCellHeight, 'FD');
+    
+    // Contenu ligne 2
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0); // Texte noir
+    doc.text('FICHE DE PRÉSENCE', tableStartX + 2, infoTableY + infoCellHeight + 5);
+    doc.text('ATT-' + new Date().getFullYear(), tableStartX + tableWidth/4 + 2, infoTableY + infoCellHeight + 5);
+    doc.text('00', tableStartX + tableWidth/2 + 2, infoTableY + infoCellHeight + 5);
+    doc.text(new Date().toLocaleDateString('fr-FR'), tableStartX + (tableWidth * 3/4) + 2, infoTableY + infoCellHeight + 5);
+    
+    // Calculer les dimensions du tableau
+    const cellWidth = 25;
+    const cellHeight = 8;
+    const startX = 20;
+    const startY = infoTableY + (infoCellHeight * 2) + 15; // Positionner après l'en-tête
+    const nameColumnWidth = 60;
+    
+    // Calculer la largeur totale disponible (en tenant compte des marges)
+    const totalAvailableWidth = pageWidth - startX - rightMargin;
+    const totalColumnsWidth = (daysOfWeek.length * periods.length * cellWidth) + nameColumnWidth;
+    
+    // Ajuster la largeur des cellules si nécessaire
+    const adjustedCellWidth = totalColumnsWidth > totalAvailableWidth 
+      ? (totalAvailableWidth - nameColumnWidth) / (daysOfWeek.length * periods.length)
+      : cellWidth;
+    
+    // En-têtes du tableau
+    doc.setFillColor(headerColor[0], headerColor[1], headerColor[2]);
+    doc.rect(startX, startY, nameColumnWidth, cellHeight, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.text('Stagiaire', startX + 2, startY + 5);
+    
+    // En-têtes des jours
+    let currentX = startX + nameColumnWidth;
+    daysOfWeek.forEach(day => {
+      periods.forEach(period => {
+        doc.setFillColor(headerColor[0], headerColor[1], headerColor[2]);
+        doc.rect(currentX, startY, adjustedCellWidth, cellHeight, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.text(day.slice(0, 3), currentX + 1, startY + 3);
+        doc.text(period === 'matin' ? 'M' : 'S', currentX + 1, startY + 6);
+        currentX += adjustedCellWidth;
+      });
+    });
+    
+    // Lignes des stagiaires
+    let currentY = startY + cellHeight;
+    usersInSession.forEach((user, index) => {
+      // Alternance des couleurs de fond
+      if (index % 2 === 0) {
+        doc.setFillColor(248, 249, 250);
+        doc.rect(startX, currentY, nameColumnWidth + (daysOfWeek.length * periods.length * adjustedCellWidth), cellHeight, 'F');
+      }
+      
+      // Nom du stagiaire
+      doc.setFillColor(255, 255, 255);
+      doc.rect(startX, currentY, nameColumnWidth, cellHeight, 'F');
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(9);
+      doc.text(user.userName.length > 20 ? user.userName.substring(0, 20) + '...' : user.userName, startX + 2, currentY + 5);
+      
+      // Présences/Absences
+      currentX = startX + nameColumnWidth;
+      daysOfWeek.forEach(day => {
+        periods.forEach(period => {
+          const key = `${day}-${period}`;
+          const hasSignature = user.signatures[key];
+          
+          if (hasSignature) {
+            // Fond blanc pour la signature
+            doc.setFillColor(255, 255, 255);
+            doc.rect(currentX, currentY, adjustedCellWidth, cellHeight, 'F');
+            // Bordure verte
+            doc.setDrawColor(presentColor[0], presentColor[1], presentColor[2]);
+            doc.rect(currentX, currentY, adjustedCellWidth, cellHeight, 'S');
+            
+            // Afficher la signature directement
+            try {
+              // Calculer les dimensions pour s'adapter dans la case
+              const maxWidth = adjustedCellWidth - 2;
+              const maxHeight = cellHeight - 2;
+              
+              // Ajouter l'image directement avec les dimensions calculées
+              doc.addImage(hasSignature.signatureData, 'PNG', 
+                currentX + 1, currentY + 1, maxWidth, maxHeight);
+            } catch (error) {
+              // En cas d'erreur, afficher un P vert
+              doc.setTextColor(presentColor[0], presentColor[1], presentColor[2]);
+              doc.setFontSize(12);
+              doc.text('P', currentX + adjustedCellWidth/2 - 1, currentY + 5);
+            }
+          } else {
+            // Case vide pour absent
+            doc.setFillColor(255, 255, 255);
+            doc.rect(currentX, currentY, adjustedCellWidth, cellHeight, 'F');
+            // Bordure grise
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(currentX, currentY, adjustedCellWidth, cellHeight, 'S');
+            // Laisser vide
+          }
+          
+          currentX += adjustedCellWidth;
+        });
+      });
+      
+      currentY += cellHeight;
+    });
+    
+    // Informations de session en bas
+    const sessionInfoY = currentY + 10;
+    doc.setFontSize(12);
+    doc.setTextColor(headerColor[0], headerColor[1], headerColor[2]);
+    // doc.text('INFORMATIONS DE SESSION', 20, sessionInfoY);
+    
+    // Tableau d'informations de session
+    const sessionTableY = sessionInfoY + 8;
+    const sessionTableHeight = 15;
+    
+    // Fond du tableau de session
+    doc.setFillColor(248, 249, 250);
+    doc.rect(20, sessionTableY, 200, sessionTableHeight, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(20, sessionTableY, 200, sessionTableHeight, 'S');
+    
+    // Contenu du tableau de session
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Session: ${sessionName}`, 22, sessionTableY + 5);
+    doc.text(`Date de génération: ${new Date().toLocaleDateString('fr-FR')}`, 22, sessionTableY + 10);
+    doc.text(`Nombre de stagiaires: ${usersInSession.length}`, 22, sessionTableY + 15);
+    
+    // Légende
+    const legendY = sessionTableY + sessionTableHeight + 10;
+    doc.setFontSize(10);
+    doc.setTextColor(headerColor[0], headerColor[1], headerColor[2]);
+    doc.text('Légende:', 20, legendY);
+    
+    // Case avec signature (Présent)
+    doc.setFillColor(255, 255, 255);
+    doc.rect(20, legendY + 5, 8, 6, 'F');
+    doc.setDrawColor(presentColor[0], presentColor[1], presentColor[2]);
+    doc.rect(20, legendY + 5, 8, 6, 'S');
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(6);
+    doc.text('Signature', 20, legendY + 9);
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(8);
+    doc.text('Présent', 30, legendY + 9);
+    
+    // Case vide (Absent)
+    doc.setFillColor(255, 255, 255);
+    doc.rect(60, legendY + 5, 8, 6, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(60, legendY + 5, 8, 6, 'S');
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(8);
+    doc.text('Absent', 70, legendY + 9);
+    
+    // Informations supplémentaires
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('M = Matin (4h) | S = Soir/Après-midi (4h)', 20, legendY + 20);
+    // doc.text('Généré automatiquement par le système IRATA', 20, legendY + 25);
+    
+    // Sauvegarder le PDF
+    const fileName = `attendance_${sessionName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
   };
 
   if (loading) {
@@ -336,9 +602,37 @@ export default function AdminAttendancePage() {
                               </p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-3xl font-bold">{sessionPercentage}%</div>
-                            <div className="text-blue-100 text-sm">Taux de présence</div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                exportSessionToCSV(sessionName, usersInSession);
+                              }}
+                              className="px-3 py-1 bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-sm rounded transition-colors flex items-center gap-1"
+                              title="Télécharger en CSV"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              CSV
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                exportSessionToPDF(sessionName, usersInSession);
+                              }}
+                              className="px-3 py-1 bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-sm rounded transition-colors flex items-center gap-1 border border-white border-opacity-30"
+                              title="Télécharger en PDF"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                              <span className="font-medium">PDF</span>
+                            </button>
+                            <div className="text-right">
+                              <div className="text-3xl font-bold">{sessionPercentage}%</div>
+                              <div className="text-blue-100 text-sm">Taux de présence</div>
+                            </div>
                           </div>
                         </div>
                       </div>
