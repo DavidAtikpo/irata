@@ -105,7 +105,12 @@ export default function AdminAttendancePage() {
         const monthNum = monthNames[month.toLowerCase() as keyof typeof monthNames] || 0;
         return new Date(parseInt(year), monthNum - 1, parseInt(startDay));
       }
-      return new Date(0); // Date par défaut si le format ne correspond pas
+      // Si le format ne correspond pas, essayer de détecter une date dans le nom
+      const dateMatch = sessionName.match(/(\d{4})/);
+      if (dateMatch) {
+        return new Date(parseInt(dateMatch[1]), 0, 1); // Utiliser l'année trouvée
+      }
+      return new Date(0); // Date par défaut si aucune date n'est trouvée
     };
     
     // Trier par date de début (récentes en premier)
@@ -239,7 +244,7 @@ export default function AdminAttendancePage() {
     // Tableau d'informations (version desktop comme dans HeaderInfoTable)
     const infoTableY = headerY; // Aligné avec le logo
     const tableStartX = 20 + logoSize + 10;
-    const tableWidth = 200;
+    const tableWidth = 230;
     const infoCellHeight = 8;
     
     // Ligne 1 du tableau (4 colonnes)
@@ -270,15 +275,27 @@ export default function AdminAttendancePage() {
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0); // Texte noir
     doc.text('FICHE DE PRÉSENCE', tableStartX + 2, infoTableY + infoCellHeight + 5);
-    doc.text('ATT-' + new Date().getFullYear(), tableStartX + tableWidth/4 + 2, infoTableY + infoCellHeight + 5);
+    doc.text('ENR-CIFRA-COMP 00X' + new Date().getFullYear(), tableStartX + tableWidth/4 + 2, infoTableY + infoCellHeight + 5);
     doc.text('00', tableStartX + tableWidth/2 + 2, infoTableY + infoCellHeight + 5);
     doc.text(new Date().toLocaleDateString('fr-FR'), tableStartX + (tableWidth * 3/4) + 2, infoTableY + infoCellHeight + 5);
+    
+    // Informations de session après l'en-tête
+    const sessionInfoY = infoTableY + (infoCellHeight * 2) + 2;
+    doc.setFontSize(12);
+    doc.setTextColor(headerColor[0], headerColor[1], headerColor[2]);
+    
+    // Informations de session (texte simple)
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Session: ${sessionName}`, 20, sessionInfoY + 5);
+    doc.text(`Date de génération: ${new Date().toLocaleDateString('fr-FR')}`, 20, sessionInfoY + 10);
+    doc.text(`Nombre de stagiaires: ${usersInSession.length}`, 20, sessionInfoY + 15);
     
     // Calculer les dimensions du tableau
     const cellWidth = 25;
     const cellHeight = 8;
     const startX = 20;
-    const startY = infoTableY + (infoCellHeight * 2) + 15; // Positionner après l'en-tête
+    const startY = sessionInfoY + 25; // Positionner après les informations de session
     const nameColumnWidth = 60;
     
     // Calculer la largeur totale disponible (en tenant compte des marges)
@@ -374,31 +391,8 @@ export default function AdminAttendancePage() {
       currentY += cellHeight;
     });
     
-    // Informations de session en bas
-    const sessionInfoY = currentY + 10;
-    doc.setFontSize(12);
-    doc.setTextColor(headerColor[0], headerColor[1], headerColor[2]);
-    // doc.text('INFORMATIONS DE SESSION', 20, sessionInfoY);
-    
-    // Tableau d'informations de session
-    const sessionTableY = sessionInfoY + 8;
-    const sessionTableHeight = 15;
-    
-    // Fond du tableau de session
-    doc.setFillColor(248, 249, 250);
-    doc.rect(20, sessionTableY, 200, sessionTableHeight, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(20, sessionTableY, 200, sessionTableHeight, 'S');
-    
-    // Contenu du tableau de session
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Session: ${sessionName}`, 22, sessionTableY + 5);
-    doc.text(`Date de génération: ${new Date().toLocaleDateString('fr-FR')}`, 22, sessionTableY + 10);
-    doc.text(`Nombre de stagiaires: ${usersInSession.length}`, 22, sessionTableY + 15);
-    
     // Légende
-    const legendY = sessionTableY + sessionTableHeight + 10;
+    const legendY = currentY + 5;
     doc.setFontSize(10);
     doc.setTextColor(headerColor[0], headerColor[1], headerColor[2]);
     doc.text('Légende:', 20, legendY);
@@ -608,7 +602,7 @@ export default function AdminAttendancePage() {
                                 e.stopPropagation();
                                 exportSessionToCSV(sessionName, usersInSession);
                               }}
-                              className="px-3 py-1 bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-sm rounded transition-colors flex items-center gap-1"
+                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors flex items-center gap-1"
                               title="Télécharger en CSV"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -621,7 +615,7 @@ export default function AdminAttendancePage() {
                                 e.stopPropagation();
                                 exportSessionToPDF(sessionName, usersInSession);
                               }}
-                              className="px-3 py-1 bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-sm rounded transition-colors flex items-center gap-1 border border-white border-opacity-30"
+                              className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors flex items-center gap-1"
                               title="Télécharger en PDF"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
