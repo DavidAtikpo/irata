@@ -4,45 +4,41 @@ import { useEffect, useState } from 'react';
 import HeaderInfoTable from '@/app/components/HeaderInfoTable';
 import Image from 'next/image';
 
-type EquipmentFormProps = {
+type EnvironmentReceptionFormProps = {
   date?: string;
   traineeName?: string;
   onNext?: () => void;
+  step?: number;
+  totalSteps?: number;
   onNextWithData?: (data: {
     traineeName?: string;
     session?: string;
     items: { label: string; rating: string; comment?: string }[];
-    suggestions?: string;
   }) => void;
-  step?: number;
-  totalSteps?: number;
   onPrev?: () => void;
 };
 
-export default function EquipmentForm({ date, traineeName, onNext, onNextWithData, step, totalSteps, onPrev }: EquipmentFormProps) {
+export default function EnvironmentReceptionForm({ date, traineeName, onNext, step, totalSteps, onNextWithData, onPrev }: EnvironmentReceptionFormProps) {
   const items: string[] = [
-    'Cordes d\'évolution',
-    'Casques',
-    'Harnais',
-    'Dispositifs de sécurité et absorbeurs',
-    'Sangles et mousquetons',
-    'Bloqueurs manuels et pédales',
-    'Descendeurs',
-    'Sièges',
-    'Différents types de protège-cordes',
-    'Poulies',
-    'Rangement et classification du matériel',
-    'Traçabilité du matériel',
-    'Globalement, l\'ensemble du matériel d\'accès sur cordes'
+    "Accueil par notre chauffeur à votre arrivée à l'aéroport ou à la gare",
+    'La localisation ou la zone du centre de formation',
+    'La structure de la formation',
+    'Le bureau du secrétaire général et l\'accueil',
+    'À l\'intérieur du bâtiment du centre de formation',
+    'La salle de classe et la salle de réunion',
+    "Disponibilité des accessoires, consommables de 'l'environnement de vie' et leurs conditions",
+    'Les installations sanitaires et leur état de propreté',
+    "Affichage des informations d'urgence et de prévention",
+    "Globalement l'environnement",
+    'Performance sécurité de l\'instructeur et de l\'entreprise'
   ];
 
   const [name, setName] = useState(traineeName ?? '');
   const [rows, setRows] = useState(items.map((label) => ({ label, rating: null as null | string, comment: '' })));
-  const [suggestions, setSuggestions] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [sessionName, setSessionName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false);
   const ratingOptions = ['Très satisfaisant', 'Satisfaisant', 'Insatisfaisant', 'Très insatisfaisant'];
   
   useEffect(() => {
@@ -54,14 +50,40 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Récupérer les réponses existantes
+        const savedData = localStorage.getItem('customer-satisfaction-env');
+        if (savedData) {
+          try {
+            const parsedData = JSON.parse(savedData);
+            if (parsedData.items) {
+              setRows(items.map((label) => {
+                const existingItem = parsedData.items.find((item: any) => item.label === label);
+                return {
+                  label,
+                  rating: existingItem?.rating || null,
+                  comment: existingItem?.comment || ''
+                };
+              }));
+            }
+            if (parsedData.traineeName) {
+              setName(parsedData.traineeName);
+            }
+            if (parsedData.session) {
+              setSessionName(parsedData.session);
+            }
+            if (parsedData.signature) {
+              setIsAlreadySubmitted(true);
+            }
+          } catch (error) {
+            console.error('Erreur parsing localStorage ENV:', error);
+          }
+        }
+
         const responsesRes = await fetch('/api/user/customer-satisfaction/responses');
         if (responsesRes.ok) {
           const responsesData = await responsesRes.json();
-          const existingResponse = responsesData.responses?.find((r: any) => r.type === 'EQUIPMENT');
+          const existingResponse = responsesData.responses?.find((r: any) => r.type === 'ENVIRONMENT_RECEPTION');
           
           if (existingResponse && existingResponse.items) {
-            // Charger les données existantes
             const existingItems = Array.isArray(existingResponse.items) ? existingResponse.items : [];
             setRows(items.map((label) => {
               const existingItem = existingItems.find((item: any) => item.label === label);
@@ -72,19 +94,12 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
               };
             }));
             
-            if (existingResponse.traineeName) {
-              setName(existingResponse.traineeName);
-            }
-            if (existingResponse.session) {
-              setSessionName(existingResponse.session);
-            }
-            if (existingResponse.suggestions) {
-              setSuggestions(existingResponse.suggestions);
-            }
+            if (existingResponse.traineeName) setName(existingResponse.traineeName);
+            if (existingResponse.session) setSessionName(existingResponse.session);
+            if (existingResponse.signature) setIsAlreadySubmitted(true);
           }
         }
         
-        // Récupérer la session de formation
         const sessionRes = await fetch('/api/user/training-session');
         if (sessionRes.ok) {
           const sessionData = await sessionRes.json();
@@ -93,7 +108,6 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
           }
         }
         
-        // Récupérer le profil utilisateur
         const profileRes = await fetch('/api/user/profile');
         if (profileRes.ok) {
           const profileData = await profileRes.json();
@@ -103,7 +117,7 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
           }
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
+        console.error('Erreur chargement données:', error);
       } finally {
         setIsLoaded(true);
       }
@@ -112,6 +126,7 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
     fetchData();
   }, []);
 
+  // ✅ FIX: Utiliser flushSync pour forcer le rendu immédiat
   const setRowRating = (index: number, rating: string) => {
     setRows((prev) => {
       const newRows = [...prev];
@@ -124,63 +139,29 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, comment } : r)));
   };
 
-  // Sauvegarde automatique des données
+  // Sauvegarde automatique SANS être dans les dépendances de setRowRating
   useEffect(() => {
-    if (!isLoaded) return;
-    
-    // Attendre un délai avant de sauvegarder pour éviter trop de requêtes
-    const timeoutId = setTimeout(async () => {
-      try {
-        setIsAutoSaving(true);
-        console.log('🔄 Sauvegarde automatique EQUIPMENT en cours...', { 
-          rowsCount: rows.length, 
-          hasRatings: rows.some(r => r.rating),
-          name,
-          sessionName 
-        });
-        
-        // Sauvegarder toutes les lignes, même celles sans rating
-        const itemsToSave = rows.map((r) => ({
+    if (rows.some(r => r.rating) || name || sessionName) {
+      const formData = {
+        traineeName: name || undefined,
+        session: sessionName || undefined,
+        items: rows.map((r) => ({
           label: r.label,
           rating: r.rating || '',
           ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
-        }));
-
-        console.log('📦 Données EQUIPMENT à sauvegarder:', itemsToSave);
-
-        const response = await fetch('/api/user/customer-satisfaction', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'EQUIPMENT',
-            traineeName: name || undefined,
-            session: sessionName || undefined,
-            items: itemsToSave,
-            suggestions: suggestions.trim() || undefined,
-          }),
-        });
-        
-        if (response.ok) {
-          console.log('✅ Sauvegarde automatique EQUIPMENT réussie');
-        } else {
-          const errorText = await response.text();
-          console.error('❌ Erreur sauvegarde automatique EQUIPMENT:', errorText);
-        }
-      } catch (error) {
-        console.error('❌ Erreur lors de la sauvegarde automatique EQUIPMENT:', error);
-      } finally {
-        setIsAutoSaving(false);
-      }
-    }, 2000); // Délai de 2 secondes
-
-    return () => clearTimeout(timeoutId);
-  }, [rows, name, sessionName, suggestions, isLoaded]);
+        })),
+      };
+      
+      localStorage.setItem('customer-satisfaction-env', JSON.stringify(formData));
+    }
+  }, [rows, name, sessionName]);
   
   const handleNext = async () => {
     if (rows.some((r) => !r.rating)) {
       alert('Veuillez sélectionner une note pour chaque ligne.');
       return;
     }
+    
     setSubmitting(true);
     try {
       const formData = {
@@ -191,29 +172,13 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
           rating: r.rating as string,
           ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
         })),
-        suggestions: suggestions.trim() || undefined,
       };
-
-      // Sauvegarder les données en base
-      const response = await fetch('/api/user/customer-satisfaction', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'EQUIPMENT',
-          ...formData,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Erreur lors de la sauvegarde');
-      }
 
       onNextWithData?.(formData);
       onNext?.();
     } catch (error: any) {
-      console.error('Erreur lors de la sauvegarde:', error);
-      alert(error.message || 'Erreur lors de la sauvegarde');
+      console.error('Erreur navigation:', error);
+      alert(error.message || 'Erreur lors de la navigation');
     } finally {
       setSubmitting(false);
     }
@@ -236,24 +201,13 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
       <p className="text-sm text-gray-700 mt-4">
         L'objectif de ce document est d'améliorer en continu la qualité de nos services.
       </p>
-      <p className="text-sm text-gray-700">À cette fin, nous souhaitons recueillir votre avis via le questionnaire ci-dessous</p>
+      <p className="text-sm text-gray-700">À cette fin, nous souhaitons recueillir votre avis via le questionnaire ci-dessous.</p>
 
       <fieldset className="border p-3 sm:p-4 rounded mt-4 sm:mt-6">
         <legend className="font-semibold text-base sm:text-lg px-2">
-          Équipements d'entraînement
-          {isAutoSaving && (
-            <span className="ml-2 text-sm text-blue-600 font-normal">
-              💾 Sauvegarde en cours...
-            </span>
-          )}
-          {!isAutoSaving && isLoaded && rows.some(r => r.rating) && (
-            <span className="ml-2 text-sm text-green-600 font-normal">
-              ✓ Réponses sauvegardées
-            </span>
-          )}
+          Environnement et réception
         </legend>
         
-        {/* Informations utilisateur responsive */}
         <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-800 mb-1">Nom du stagiaire :</label>
@@ -262,6 +216,7 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={isAlreadySubmitted}
             />
           </div>
           <div>
@@ -272,108 +227,60 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
               onChange={(e) => setSessionName(e.target.value)}
               className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Session inscrite"
+              disabled={isAlreadySubmitted}
             />
           </div>
         </div>
 
-        {/* Bouton de test pour la sauvegarde */}
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-          <button
-            type="button"
-            onClick={async () => {
-              console.log('🧪 Test de sauvegarde EQUIPMENT...');
-              try {
-                const itemsToSave = rows.map((r) => ({
-                  label: r.label,
-                  rating: r.rating || '',
-                  ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
-                }));
-
-                const response = await fetch('/api/user/customer-satisfaction', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    type: 'EQUIPMENT',
-                    traineeName: name || undefined,
-                    session: sessionName || undefined,
-                    items: itemsToSave,
-                    suggestions: suggestions.trim() || undefined,
-                  }),
-                });
-
-                if (response.ok) {
-                  console.log('✅ Test de sauvegarde EQUIPMENT réussi');
-                  alert('Test de sauvegarde EQUIPMENT réussi ! Vérifiez la console.');
-                } else {
-                  const errorText = await response.text();
-                  console.error('❌ Test de sauvegarde EQUIPMENT échoué:', errorText);
-                  alert('Test de sauvegarde EQUIPMENT échoué. Vérifiez la console.');
-                }
-              } catch (error) {
-                console.error('❌ Erreur test de sauvegarde EQUIPMENT:', error);
-                alert('Erreur lors du test de sauvegarde EQUIPMENT. Vérifiez la console.');
-              }
-            }}
-            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-          >
-            🧪 Tester la sauvegarde EQUIPMENT
-          </button>
-          <p className="text-xs text-gray-600 mt-1">
-            Cliquez sur ce bouton pour tester si la sauvegarde EQUIPMENT fonctionne. Vérifiez la console (F12) pour voir les logs.
-          </p>
-        </div>
-
-        {/* Version mobile : Cartes empilées */}
+        {/* Version mobile */}
         <div className="block sm:hidden space-y-4">
           {rows.map((row, idx) => (
-            <div key={row.label} className="border rounded-lg p-3 bg-gray-50">
+            <div key={`mobile-${idx}`} className="border rounded-lg p-3 bg-gray-50">
               <h4 className="font-medium text-sm text-gray-800 mb-3 leading-tight">
                 {row.label}
               </h4>
               
-              {/* Options de notation */}
               <div className="space-y-2 mb-3">
                 <label className="text-xs font-medium text-gray-700">Votre évaluation :</label>
                 <div className="grid grid-cols-2 gap-2">
                   {ratingOptions.map((opt) => (
                     <label key={opt} className="flex items-center space-x-2 cursor-pointer">
                       <input
-                        name={`row-${idx}`}
+                        name={`mobile-row-${idx}`}
                         type="radio"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all duration-150"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         checked={row.rating === opt}
                         onChange={() => setRowRating(idx, opt)}
                         value={opt}
+                        disabled={isAlreadySubmitted}
                       />
-                      <span className="text-xs text-gray-700">{opt}</span>
+                      <span className="text-xs">{opt}</span>
                     </label>
                   ))}
                 </div>
               </div>
               
-              {/* Commentaire */}
               <div>
                 <label className="text-xs font-medium text-gray-700 mb-1 block">Commentaire :</label>
                 <input
                   type="text"
                   value={row.comment}
                   onChange={(e) => setRowComment(idx, e.target.value)}
-                  className="w-full border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border rounded px-2 py-1 text-sm"
                   placeholder="Votre commentaire (optionnel)"
+                  disabled={isAlreadySubmitted}
                 />
               </div>
             </div>
           ))}
         </div>
 
-        {/* Version desktop : Tableau */}
+        {/* Version desktop */}
         <div className="hidden sm:block overflow-x-auto">
           <table className="min-w-full border text-sm">
             <thead>
               <tr>
-                <th className="border p-2 text-left w-[40%] bg-blue-900 text-white">
-                  Comment avez-vous jugé l'état, le fonctionnement et le nombre fourni :
-                </th>
+                <th className="border p-2 text-left w-[40%] bg-blue-900 text-white">Comment avez-vous trouvé ... ?</th>
                 {ratingOptions.map((opt) => (
                   <th key={opt} className="border p-2 text-center">{opt}</th>
                 ))}
@@ -382,21 +289,18 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
             </thead>
             <tbody>
               {rows.map((row, idx) => (
-                <tr key={`${row.label}-${idx}`}>
+                <tr key={`desktop-${idx}`}>
                   <td className="border p-2 text-sm">{row.label}</td>
                   {ratingOptions.map((opt) => (
                     <td key={opt} className="border p-2 text-center align-middle">
                       <input
-                        name={`row-${idx}`}
+                        name={`desktop-row-${idx}`}
                         type="radio"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer transition-all duration-150"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer"
                         checked={row.rating === opt}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setRowRating(idx, opt);
-                          }
-                        }}
+                        onChange={() => setRowRating(idx, opt)}
                         value={opt}
+                        disabled={isAlreadySubmitted}
                       />
                     </td>
                   ))}
@@ -406,6 +310,7 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
                       value={row.comment}
                       onChange={(e) => setRowComment(idx, e.target.value)}
                       className="w-full border rounded px-2 py-1 text-sm"
+                      disabled={isAlreadySubmitted}
                     />
                   </td>
                 </tr>
@@ -413,22 +318,8 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
             </tbody>
           </table>
         </div>
-
-        {/* Suggestions responsive */}
-        <div className="mt-4 sm:mt-6">
-          <label className="block text-sm font-medium text-gray-800 mb-2">
-            Vos suggestions et remarques pour nous permettre d'améliorer le centre de formation :
-          </label>
-          <textarea
-            className="w-full border rounded px-3 py-2 text-sm min-h-20 sm:min-h-24 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            value={suggestions}
-            onChange={(e) => setSuggestions(e.target.value)}
-            placeholder="Vos suggestions..."
-          />
-        </div>
       </fieldset>
 
-      {/* Pied de page responsive */}
       <footer className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white">
         <div className="flex flex-col sm:flex-row justify-between items-center text-xs text-gray-600 space-y-2 sm:space-y-0">
           <div className="text-center sm:text-left">
@@ -445,7 +336,6 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
         </div>
       </footer>
       
-      {/* Navigation responsive */}
       <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="text-sm text-gray-600 text-center sm:text-left">
           {typeof step === 'number' && typeof totalSteps === 'number' && (
@@ -456,6 +346,7 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
           {typeof step === 'number' && step > 1 && (
             <button
               type="button"
+              disabled={submitting}
               onClick={onPrev}
               className="flex-1 sm:flex-none px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors text-sm"
             >
@@ -465,17 +356,24 @@ export default function EquipmentForm({ date, traineeName, onNext, onNextWithDat
           {typeof step === 'number' && typeof totalSteps === 'number' && step < totalSteps && (
             <button
               type="button"
-              onClick={handleNext}
               disabled={submitting}
-              className="flex-1 sm:flex-none px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors text-sm"
+              onClick={handleNext}
+              className="flex-1 sm:flex-none px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm"
             >
               {submitting ? '...' : 'Suivant'}
             </button>
           )}
         </div>
       </div>
+      
+      {isAlreadySubmitted && (
+        <div className="mt-4 sm:mt-6 flex justify-center">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+            <p className="text-green-800 font-medium">✓ Formulaire déjà soumis</p>
+            <p className="text-green-600 text-sm mt-1">Ce formulaire a été soumis et signé avec succès</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-

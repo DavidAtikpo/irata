@@ -233,3 +233,4 @@ curl -X POST https://www.a-finpart.com/api/qr-generator \
 **Note** : Une fois configuré, le système utilisera automatiquement Google Vision pour les PDFs scannés, avec un fallback vers Cloudinary OCR si disponible.
 
 
+

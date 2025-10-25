@@ -12,10 +12,11 @@ type TrainingPedagogyFormProps = {
     env: { traineeName?: string; session?: string; items: any[] } | null;
     equip: { traineeName?: string; session?: string; items: any[]; suggestions?: string } | null;
   };
+  onDataChange?: (data: any) => void;
   onSubmitAll?: (payloads: any[]) => Promise<void> | void;
 };
 
-export default function TrainingPedagogyForm({ date, traineeName, aggregated, onSubmitAll }: TrainingPedagogyFormProps) {
+export default function TrainingPedagogyForm({ date, traineeName, aggregated, onDataChange, onSubmitAll }: TrainingPedagogyFormProps) {
   const items: string[] = [
     'Accueil, explication des cours par le(s) formateur(s)',
     "Disponibilité de l'équipe encadrante, démonstration des exercices pratiques",
@@ -36,7 +37,6 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
   const [signatureData, setSignatureData] = useState<string>('');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false);
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
   
   // Log pour déboguer la signature
   useEffect(() => {
@@ -53,7 +53,36 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Récupérer les réponses existantes
+        // D'abord, essayer de charger les données depuis localStorage
+        const savedData = localStorage.getItem('customer-satisfaction-training');
+        if (savedData) {
+          try {
+            const parsedData = JSON.parse(savedData);
+            if (parsedData.items) {
+              setRows(items.map((label) => {
+                const existingItem = parsedData.items.find((item: any) => item.label === label);
+                return {
+                  label,
+                  rating: existingItem?.rating || null,
+                  comment: existingItem?.comment || ''
+                };
+              }));
+            }
+            if (parsedData.traineeName) {
+              setName(parsedData.traineeName);
+            }
+            if (parsedData.session) {
+              setSessionName(parsedData.session);
+            }
+            if (parsedData.signature) {
+              setSignatureData(parsedData.signature);
+            }
+          } catch (error) {
+            console.error('Erreur lors du parsing des données localStorage:', error);
+          }
+        }
+
+        // Récupérer les réponses existantes depuis la base de données
         const responsesRes = await fetch('/api/user/customer-satisfaction/responses');
         if (responsesRes.ok) {
           const responsesData = await responsesRes.json();
@@ -118,6 +147,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
   }, []);
   
   const setRowRating = (index: number, rating: string) => {
+    // Force la mise à jour immédiate pour éviter le délai visuel
     setRows((prev) => {
       const newRows = [...prev];
       newRows[index] = { ...newRows[index], rating };
@@ -129,63 +159,60 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, comment } : r)));
   };
 
-  // Sauvegarde automatique des données
+  // Sauvegarde locale des données du troisième formulaire
   useEffect(() => {
-    if (!isLoaded) return;
-    
-    // Attendre un délai avant de sauvegarder pour éviter trop de requêtes
-    const timeoutId = setTimeout(async () => {
-      try {
-        setIsAutoSaving(true);
-        console.log('🔄 Sauvegarde automatique TRAINING_PEDAGOGY en cours...', { 
-          rowsCount: rows.length, 
-          hasRatings: rows.some(r => r.rating),
-          name,
-          sessionName 
-        });
-        
-        // Sauvegarder toutes les lignes, même celles sans rating
-        const itemsToSave = rows.map((r) => ({
+    if (rows.some(r => r.rating) || signatureData) {
+      const formData = {
+        traineeName: name || undefined,
+        session: sessionName || undefined,
+        items: rows.map((r) => ({
           label: r.label,
           rating: r.rating || '',
           ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
-        }));
-
-        console.log('📦 Données TRAINING_PEDAGOGY à sauvegarder:', itemsToSave);
-
-        const response = await fetch('/api/user/customer-satisfaction', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'TRAINING_PEDAGOGY',
-            traineeName: name || undefined,
-            session: sessionName || undefined,
-            items: itemsToSave,
-          }),
-        });
-        
-        if (response.ok) {
-          console.log('✅ Sauvegarde automatique TRAINING_PEDAGOGY réussie');
-        } else {
-          const errorText = await response.text();
-          console.error('❌ Erreur sauvegarde automatique TRAINING_PEDAGOGY:', errorText);
-        }
-      } catch (error) {
-        console.error('❌ Erreur lors de la sauvegarde automatique TRAINING_PEDAGOGY:', error);
-      } finally {
-        setIsAutoSaving(false);
+        })),
+        signature: signatureData || undefined,
+      };
+      
+      // Sauvegarder dans localStorage
+      localStorage.setItem('customer-satisfaction-training', JSON.stringify(formData));
+      
+      // Notifier le parent (sans inclure onDataChange dans les dépendances)
+      if (onDataChange) {
+        onDataChange(formData);
       }
-    }, 2000); // Délai de 2 secondes
-
-    return () => clearTimeout(timeoutId);
-  }, [rows, name, sessionName, isLoaded]);
+    }
+  }, [rows, name, sessionName, signatureData]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (rows.some((r) => !r.rating)) {
-      alert('Veuillez sélectionner une note pour chaque ligne.');
+    
+    // Validation que tous les formulaires sont complétés
+    if (!aggregated?.env) {
+      alert('Veuillez d\'abord compléter le formulaire "Environnement et réception".');
       return;
     }
+    
+    if (!aggregated?.equip) {
+      alert('Veuillez d\'abord compléter le formulaire "Équipements d\'entraînement".');
+      return;
+    }
+    
+    // Validation que tous les items des formulaires précédents ont des ratings
+    if (aggregated.env.items.some((item: any) => !item.rating)) {
+      alert('Veuillez sélectionner une note pour chaque ligne du formulaire "Environnement et réception".');
+      return;
+    }
+    
+    if (aggregated.equip.items.some((item: any) => !item.rating)) {
+      alert('Veuillez sélectionner une note pour chaque ligne du formulaire "Équipements d\'entraînement".');
+      return;
+    }
+    
+    if (rows.some((r) => !r.rating)) {
+      alert('Veuillez sélectionner une note pour chaque ligne du formulaire "Équipe pédagogique et programme".');
+      return;
+    }
+    
     if (!signatureData) {
       alert('Veuillez signer avant de soumettre.');
       return;
@@ -278,19 +305,51 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
       </p>
       <p className="text-sm text-gray-700">À cette fin, nous souhaitons recueillir votre avis via le questionnaire ci-dessous</p>
 
+      {/* Indicateur de progression des formulaires */}
+      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <h3 className="text-sm font-semibold text-blue-800 mb-2">État des formulaires :</h3>
+        <div className="space-y-1 text-sm">
+          <div className="flex items-center gap-2">
+            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-xs ${
+              aggregated?.env ? 'bg-green-500 text-white' : 'bg-gray-300'
+            }`}>
+              {aggregated?.env ? '✓' : '○'}
+            </span>
+            <span className={aggregated?.env ? 'text-green-700' : 'text-gray-500'}>
+              Environnement et réception {aggregated?.env ? '(Complété)' : '(Non complété)'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-xs ${
+              aggregated?.equip ? 'bg-green-500 text-white' : 'bg-gray-300'
+            }`}>
+              {aggregated?.equip ? '✓' : '○'}
+            </span>
+            <span className={aggregated?.equip ? 'text-green-700' : 'text-gray-500'}>
+              Équipements d'entraînement {aggregated?.equip ? '(Complété)' : '(Non complété)'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-xs ${
+              rows.every(r => r.rating) ? 'bg-green-500 text-white' : 'bg-gray-300'
+            }`}>
+              {rows.every(r => r.rating) ? '✓' : '○'}
+            </span>
+            <span className={rows.every(r => r.rating) ? 'text-green-700' : 'text-gray-500'}>
+              Équipe pédagogique et programme {rows.every(r => r.rating) ? '(Complété)' : '(Non complété)'}
+            </span>
+          </div>
+        </div>
+        {(!aggregated?.env || !aggregated?.equip) && (
+          <p className="text-xs text-orange-600 mt-2">
+            ⚠️ Vous devez compléter tous les formulaires précédents avant de pouvoir soumettre.
+          </p>
+        )}
+      </div>
+
       <fieldset className="border p-3 sm:p-4 rounded mt-4 sm:mt-6">
         <legend className="font-semibold text-base sm:text-lg px-2">
           Équipe pédagogique et programme
-          {isAutoSaving && (
-            <span className="ml-2 text-sm text-blue-600 font-normal">
-              💾 Sauvegarde en cours...
-            </span>
-          )}
-          {!isAutoSaving && isLoaded && rows.some(r => r.rating) && (
-            <span className="ml-2 text-sm text-green-600 font-normal">
-              ✓ Réponses sauvegardées
-            </span>
-          )}
         </legend>
         
         {/* Informations utilisateur responsive */}
@@ -318,53 +377,6 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
           </div>
         </div>
 
-        {/* Bouton de test pour la sauvegarde */}
-        {!isAlreadySubmitted && (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-            <button
-              type="button"
-              onClick={async () => {
-                console.log('🧪 Test de sauvegarde TRAINING_PEDAGOGY...');
-                try {
-                  const itemsToSave = rows.map((r) => ({
-                    label: r.label,
-                    rating: r.rating || '',
-                    ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
-                  }));
-
-                  const response = await fetch('/api/user/customer-satisfaction', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      type: 'TRAINING_PEDAGOGY',
-                      traineeName: name || undefined,
-                      session: sessionName || undefined,
-                      items: itemsToSave,
-                    }),
-                  });
-
-                  if (response.ok) {
-                    console.log('✅ Test de sauvegarde TRAINING_PEDAGOGY réussi');
-                    alert('Test de sauvegarde TRAINING_PEDAGOGY réussi ! Vérifiez la console.');
-                  } else {
-                    const errorText = await response.text();
-                    console.error('❌ Test de sauvegarde TRAINING_PEDAGOGY échoué:', errorText);
-                    alert('Test de sauvegarde TRAINING_PEDAGOGY échoué. Vérifiez la console.');
-                  }
-                } catch (error) {
-                  console.error('❌ Erreur test de sauvegarde TRAINING_PEDAGOGY:', error);
-                  alert('Erreur lors du test de sauvegarde TRAINING_PEDAGOGY. Vérifiez la console.');
-                }
-              }}
-              className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-            >
-              🧪 Tester la sauvegarde TRAINING_PEDAGOGY
-            </button>
-            <p className="text-xs text-gray-600 mt-1">
-              Cliquez sur ce bouton pour tester si la sauvegarde TRAINING_PEDAGOGY fonctionne. Vérifiez la console (F12) pour voir les logs.
-            </p>
-          </div>
-        )}
 
         {/* Version mobile : Cartes empilées */}
         <div className="block sm:hidden space-y-4">
@@ -383,13 +395,24 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
                       <input
                         name={`row-${idx}`}
                         type="radio"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all duration-150"
+                        className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all duration-75 ${
+                          row.rating === opt 
+                            ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-500' 
+                            : 'border-gray-300'
+                        }`}
+                        style={{
+                          accentColor: row.rating === opt ? '#3b82f6' : '#d1d5db',
+                          transform: row.rating === opt ? 'scale(1.1)' : 'scale(1)',
+                          transition: 'all 0.1s ease-in-out'
+                        }}
                         checked={row.rating === opt}
                         onChange={() => setRowRating(idx, opt)}
                         value={opt}
                         disabled={isAlreadySubmitted}
                       />
-                      <span className="text-xs text-gray-700">{opt}</span>
+                      <span className={`text-xs transition-colors duration-150 ${
+                        row.rating === opt ? 'text-blue-700 font-medium' : 'text-gray-700'
+                      }`}>{opt}</span>
                     </label>
                   ))}
                 </div>
@@ -428,11 +451,20 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
                 <tr key={`${row.label}-${idx}`}>
                   <td className="border p-2 text-sm">{row.label}</td>
                   {ratingOptions.map((opt) => (
-                    <td key={opt} className="border p-2 text-center align-middle">
+                    <td key={opt} className={`border p-2 text-center align-middle transition-colors duration-150 ${
+                      row.rating === opt ? 'bg-blue-50' : ''
+                    }`}>
                       <input
                         name={`row-${idx}`}
                         type="radio"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer transition-all duration-150"
+                        className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer transition-all duration-75 ${
+                          row.rating === opt ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300'
+                        }`}
+                        style={{
+                          accentColor: row.rating === opt ? '#3b82f6' : '#d1d5db',
+                          transform: row.rating === opt ? 'scale(1.1)' : 'scale(1)',
+                          transition: 'all 0.1s ease-in-out'
+                        }}
                         checked={row.rating === opt}
                         onChange={(e) => {
                           if (e.target.checked) {
@@ -515,11 +547,23 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
           </div>
           <button
             type="submit"
-            disabled={submitting}
-            className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium text-sm sm:text-base"
+            disabled={submitting || !aggregated?.env || !aggregated?.equip || !rows.every(r => r.rating) || !signatureData}
+            className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm sm:text-base"
           >
             {submitting ? 'Envoi...' : 'Signer et soumettre tous les formulaires'}
           </button>
+          {(!aggregated?.env || !aggregated?.equip || !rows.every(r => r.rating) || !signatureData) && (
+            <p className="text-xs text-red-600 text-center">
+              {!aggregated?.env || !aggregated?.equip 
+                ? 'Complétez d\'abord tous les formulaires précédents'
+                : !rows.every(r => r.rating)
+                ? 'Complétez tous les champs de ce formulaire'
+                : !signatureData
+                ? 'Ajoutez votre signature'
+                : ''
+              }
+            </p>
+          )}
         </div>
       )}
       

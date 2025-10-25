@@ -38,19 +38,57 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
   const [sessionName, setSessionName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false);
   const ratingOptions = ['Très satisfaisant', 'Satisfaisant', 'Insatisfaisant', 'Très insatisfaisant'];
   
   useEffect(() => {
     if (traineeName && traineeName !== name) {
       setName(traineeName);
     }
-  }, [traineeName]);
+  }, [traineeName, name]);
   
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Récupérer les réponses existantes
+        // D'abord, essayer de charger les données depuis localStorage
+        const savedData = localStorage.getItem('customer-satisfaction-env');
+        console.log('📥 Données ENV trouvées dans localStorage:', savedData);
+        if (savedData) {
+          try {
+            const parsedData = JSON.parse(savedData);
+            console.log('📦 Données ENV parsées:', parsedData);
+            if (parsedData.items) {
+              setRows(items.map((label) => {
+                const existingItem = parsedData.items.find((item: any) => item.label === label);
+                return {
+                  label,
+                  rating: existingItem?.rating || null,
+                  comment: existingItem?.comment || ''
+                };
+              }));
+              console.log('✅ ENV items chargés depuis localStorage');
+            }
+            if (parsedData.traineeName) {
+              setName(parsedData.traineeName);
+              console.log('✅ ENV nom chargé:', parsedData.traineeName);
+            }
+            if (parsedData.session) {
+              setSessionName(parsedData.session);
+              console.log('✅ ENV session chargée:', parsedData.session);
+            }
+            // Vérifier si le formulaire a été soumis (avec signature)
+            if (parsedData.signature) {
+              setIsAlreadySubmitted(true);
+              console.log('✅ ENV formulaire déjà soumis et verrouillé');
+            }
+          } catch (error) {
+            console.error('❌ Erreur lors du parsing des données localStorage ENV:', error);
+          }
+        } else {
+          console.log('❌ Aucune donnée ENV trouvée dans localStorage');
+        }
+
+        // Récupérer les réponses existantes depuis la base de données
         const responsesRes = await fetch('/api/user/customer-satisfaction/responses');
         if (responsesRes.ok) {
           const responsesData = await responsesRes.json();
@@ -73,6 +111,11 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
             }
             if (existingResponse.session) {
               setSessionName(existingResponse.session);
+            }
+            // Vérifier si le formulaire a été soumis (avec signature)
+            if (existingResponse.signature) {
+              setIsAlreadySubmitted(true);
+              console.log('✅ ENV formulaire déjà soumis depuis la base de données');
             }
           }
         }
@@ -106,6 +149,7 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
   }, []);
 
   const setRowRating = (index: number, rating: string) => {
+    // Force la mise à jour immédiate pour éviter le délai visuel
     setRows((prev) => {
       const newRows = [...prev];
       newRows[index] = { ...newRows[index], rating };
@@ -117,56 +161,25 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, comment } : r)));
   };
 
-  // Sauvegarde automatique des données
+  // Sauvegarde automatique dans localStorage (comme le 3ème formulaire)
   useEffect(() => {
-    if (!isLoaded) return;
-    
-    // Attendre un délai avant de sauvegarder pour éviter trop de requêtes
-    const timeoutId = setTimeout(async () => {
-      try {
-        setIsAutoSaving(true);
-        console.log('🔄 Sauvegarde automatique en cours...', { 
-          rowsCount: rows.length, 
-          hasRatings: rows.some(r => r.rating),
-          name,
-          sessionName 
-        });
-        
-        // Sauvegarder toutes les lignes, même celles sans rating
-        const itemsToSave = rows.map((r) => ({
+    if (rows.some(r => r.rating) || name || sessionName) {
+      const formData = {
+        traineeName: name || undefined,
+        session: sessionName || undefined,
+        items: rows.map((r) => ({
           label: r.label,
           rating: r.rating || '',
           ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
-        }));
-
-        console.log('📦 Données à sauvegarder:', itemsToSave);
-
-        const response = await fetch('/api/user/customer-satisfaction', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'ENVIRONMENT_RECEPTION',
-            traineeName: name || undefined,
-            session: sessionName || undefined,
-            items: itemsToSave,
-          }),
-        });
-        
-        if (response.ok) {
-          console.log('✅ Sauvegarde automatique réussie');
-        } else {
-          const errorText = await response.text();
-          console.error('❌ Erreur sauvegarde automatique:', errorText);
-        }
-      } catch (error) {
-        console.error('❌ Erreur lors de la sauvegarde automatique:', error);
-      } finally {
-        setIsAutoSaving(false);
-      }
-    }, 1000); // Délai de 1 seconde pour de meilleures performances
-
-    return () => clearTimeout(timeoutId);
-  }, [rows, name, sessionName, isLoaded]);
+        })),
+      };
+      
+      console.log('🔄 Sauvegarde ENV dans localStorage:', formData);
+      // Sauvegarder dans localStorage
+      localStorage.setItem('customer-satisfaction-env', JSON.stringify(formData));
+      console.log('✅ ENV sauvegardé dans localStorage');
+    }
+  }, [rows, name, sessionName]);
   
   const handleNext = async () => {
     if (rows.some((r) => !r.rating)) {
@@ -186,26 +199,12 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
         })),
       };
 
-      // Sauvegarder les données en base
-      const response = await fetch('/api/user/customer-satisfaction', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'ENVIRONMENT_RECEPTION',
-          ...formData,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Erreur lors de la sauvegarde');
-      }
-
+      // Ne plus sauvegarder en base - juste passer les données au formulaire suivant
       onNextWithData?.(formData);
       onNext?.();
     } catch (error: any) {
-      console.error('Erreur lors de la sauvegarde:', error);
-      alert(error.message || 'Erreur lors de la sauvegarde');
+      console.error('Erreur lors de la navigation:', error);
+      alert(error.message || 'Erreur lors de la navigation');
     } finally {
       setSubmitting(false);
     }
@@ -233,16 +232,6 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
       <fieldset className="border p-3 sm:p-4 rounded mt-4 sm:mt-6">
         <legend className="font-semibold text-base sm:text-lg px-2">
           Environnement et réception
-          {isAutoSaving && (
-            <span className="ml-2 text-sm text-blue-600 font-normal">
-              💾 Sauvegarde en cours...
-            </span>
-          )}
-          {!isAutoSaving && isLoaded && rows.some(r => r.rating) && (
-            <span className="ml-2 text-sm text-green-600 font-normal">
-              ✓ Réponses sauvegardées
-            </span>
-          )}
         </legend>
         
         {/* Informations utilisateur responsive */}
@@ -254,6 +243,7 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={isAlreadySubmitted}
             />
           </div>
           <div>
@@ -264,55 +254,11 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
               onChange={(e) => setSessionName(e.target.value)}
               className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Session inscrite"
+              disabled={isAlreadySubmitted}
             />
           </div>
         </div>
 
-        {/* Bouton de test pour la sauvegarde */}
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-          <button
-            type="button"
-            onClick={async () => {
-              console.log('🧪 Test de sauvegarde manuelle...');
-              try {
-                const itemsToSave = rows.map((r) => ({
-                  label: r.label,
-                  rating: r.rating || '',
-                  ...(r.comment.trim() ? { comment: r.comment.trim() } : {}),
-                }));
-
-                const response = await fetch('/api/user/customer-satisfaction', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    type: 'ENVIRONMENT_RECEPTION',
-                    traineeName: name || undefined,
-                    session: sessionName || undefined,
-                    items: itemsToSave,
-                  }),
-                });
-
-                if (response.ok) {
-                  console.log('✅ Test de sauvegarde réussi');
-                  alert('Test de sauvegarde réussi ! Vérifiez la console.');
-                } else {
-                  const errorText = await response.text();
-                  console.error('❌ Test de sauvegarde échoué:', errorText);
-                  alert('Test de sauvegarde échoué. Vérifiez la console.');
-                }
-              } catch (error) {
-                console.error('❌ Erreur test de sauvegarde:', error);
-                alert('Erreur lors du test de sauvegarde. Vérifiez la console.');
-              }
-            }}
-            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-          >
-            🧪 Tester la sauvegarde
-          </button>
-          <p className="text-xs text-gray-600 mt-1">
-            Cliquez sur ce bouton pour tester si la sauvegarde fonctionne. Vérifiez la console (F12) pour voir les logs.
-          </p>
-        </div>
 
         {/* Version mobile : Cartes empilées */}
         <div className="block sm:hidden space-y-4">
@@ -331,12 +277,13 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
                       <input
                         name={`row-${idx}`}
                         type="radio"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all duration-150"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         checked={row.rating === opt}
                         onChange={() => setRowRating(idx, opt)}
                         value={opt}
+                        disabled={isAlreadySubmitted}
                       />
-                      <span className="text-xs text-gray-700">{opt}</span>
+                      <span className="text-xs">{opt}</span>
                     </label>
                   ))}
                 </div>
@@ -351,6 +298,7 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
                   onChange={(e) => setRowComment(idx, e.target.value)}
                   className="w-full border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Votre commentaire (optionnel)"
+                  disabled={isAlreadySubmitted}
                 />
               </div>
             </div>
@@ -378,7 +326,7 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
                       <input
                         name={`row-${idx}`}
                         type="radio"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer transition-all duration-150"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer"
                         checked={row.rating === opt}
                         onChange={(e) => {
                           if (e.target.checked) {
@@ -386,6 +334,7 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
                           }
                         }}
                         value={opt}
+                        disabled={isAlreadySubmitted}
                       />
                     </td>
                   ))}
@@ -395,6 +344,7 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
                       value={row.comment}
                       onChange={(e) => setRowComment(idx, e.target.value)}
                       className="w-full border rounded px-2 py-1 text-sm"
+                      disabled={isAlreadySubmitted}
                     />
                   </td>
                 </tr>
@@ -451,8 +401,16 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
           )}
         </div>
       </div>
+      
+      {/* Message si déjà soumis */}
+      {isAlreadySubmitted && (
+        <div className="mt-4 sm:mt-6 flex justify-center">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+            <p className="text-green-800 font-medium">✓ Formulaire déjà soumis</p>
+            <p className="text-green-600 text-sm mt-1">Ce formulaire a été soumis et signé avec succès</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
@@ -19,6 +19,7 @@ export default function CustomerSatisfactionPage() {
   const [sharedSignature, setSharedSignature] = useState<string>('');
   const [envData, setEnvData] = useState<any>(null);
   const [equipData, setEquipData] = useState<any>(null);
+  const [trainingData, setTrainingData] = useState<any>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -49,8 +50,39 @@ export default function CustomerSatisfactionPage() {
     }
   }, [status]);
 
+  // Charger les données persistées depuis localStorage
+  useEffect(() => {
+    const loadPersistedData = () => {
+      try {
+        const savedEnvData = localStorage.getItem('customer-satisfaction-env');
+        const savedEquipData = localStorage.getItem('customer-satisfaction-equip');
+        const savedTrainingData = localStorage.getItem('customer-satisfaction-training');
+        
+        if (savedEnvData) {
+          setEnvData(JSON.parse(savedEnvData));
+        }
+        if (savedEquipData) {
+          setEquipData(JSON.parse(savedEquipData));
+        }
+        if (savedTrainingData) {
+          setTrainingData(JSON.parse(savedTrainingData));
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des données persistées:', error);
+      }
+    };
+
+    loadPersistedData();
+  }, []);
+
   const today = new Date().toLocaleDateString('fr-FR');
   const [traineeName, setTraineeName] = useState('');
+
+  // Callback stable pour onDataChange
+  const handleTrainingDataChange = useCallback((data: any) => {
+    setTrainingData(data);
+    localStorage.setItem('customer-satisfaction-training', JSON.stringify(data));
+  }, []);
 
   // Récupérer le nom de l'utilisateur depuis le profil
   useEffect(() => {
@@ -125,7 +157,10 @@ export default function CustomerSatisfactionPage() {
                     setSelected('EQUIPMENT');
                     setStep(2);
                   }}
-                  onNextWithData={(data) => setEnvData(data)}
+                  onNextWithData={(data) => {
+                    setEnvData(data);
+                    localStorage.setItem('customer-satisfaction-env', JSON.stringify(data));
+                  }}
                   onPrev={() => {
                     // at step 1, prev does nothing
                   }}
@@ -155,7 +190,10 @@ export default function CustomerSatisfactionPage() {
                     setSelected('TRAINING_PEDAGOGY');
                     setStep(3);
                   }}
-                  onNextWithData={(data) => setEquipData(data)}
+                  onNextWithData={(data) => {
+                    setEquipData(data);
+                    localStorage.setItem('customer-satisfaction-equip', JSON.stringify(data));
+                  }}
                 />
               </div>
             </div>
@@ -173,6 +211,7 @@ export default function CustomerSatisfactionPage() {
                   date={today}
                   traineeName={traineeName}
                   aggregated={{ env: envData, equip: equipData }}
+                  onDataChange={handleTrainingDataChange}
                   onSubmitAll={() => {
                     // After all three submissions success
                     setIsSubmitted(true);
@@ -180,6 +219,11 @@ export default function CustomerSatisfactionPage() {
                     setStep(1);
                     setEnvData(null);
                     setEquipData(null);
+                    setTrainingData(null);
+                    // Nettoyer le localStorage après soumission
+                    localStorage.removeItem('customer-satisfaction-env');
+                    localStorage.removeItem('customer-satisfaction-equip');
+                    localStorage.removeItem('customer-satisfaction-training');
                   }}
                 />
               </div>
