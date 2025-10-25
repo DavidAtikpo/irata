@@ -45,18 +45,16 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
     if (traineeName && traineeName !== name) {
       setName(traineeName);
     }
-  }, [traineeName, name]);
+  }, [traineeName]);
   
   useEffect(() => {
     const fetchData = async () => {
       try {
         // D'abord, essayer de charger les données depuis localStorage
         const savedData = localStorage.getItem('customer-satisfaction-env');
-        console.log('📥 Données ENV trouvées dans localStorage:', savedData);
         if (savedData) {
           try {
             const parsedData = JSON.parse(savedData);
-            console.log('📦 Données ENV parsées:', parsedData);
             if (parsedData.items) {
               setRows(items.map((label) => {
                 const existingItem = parsedData.items.find((item: any) => item.label === label);
@@ -66,26 +64,20 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
                   comment: existingItem?.comment || ''
                 };
               }));
-              console.log('✅ ENV items chargés depuis localStorage');
             }
             if (parsedData.traineeName) {
               setName(parsedData.traineeName);
-              console.log('✅ ENV nom chargé:', parsedData.traineeName);
             }
             if (parsedData.session) {
               setSessionName(parsedData.session);
-              console.log('✅ ENV session chargée:', parsedData.session);
             }
             // Vérifier si le formulaire a été soumis (avec signature)
             if (parsedData.signature) {
               setIsAlreadySubmitted(true);
-              console.log('✅ ENV formulaire déjà soumis et verrouillé');
             }
           } catch (error) {
-            console.error('❌ Erreur lors du parsing des données localStorage ENV:', error);
+            console.error('Erreur lors du parsing des données localStorage:', error);
           }
-        } else {
-          console.log('❌ Aucune donnée ENV trouvée dans localStorage');
         }
 
         // Récupérer les réponses existantes depuis la base de données
@@ -115,7 +107,6 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
             // Vérifier si le formulaire a été soumis (avec signature)
             if (existingResponse.signature) {
               setIsAlreadySubmitted(true);
-              console.log('✅ ENV formulaire déjà soumis depuis la base de données');
             }
           }
         }
@@ -149,7 +140,6 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
   }, []);
 
   const setRowRating = (index: number, rating: string) => {
-    // Force la mise à jour immédiate pour éviter le délai visuel
     setRows((prev) => {
       const newRows = [...prev];
       newRows[index] = { ...newRows[index], rating };
@@ -174,10 +164,8 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
         })),
       };
       
-      console.log('🔄 Sauvegarde ENV dans localStorage:', formData);
       // Sauvegarder dans localStorage
       localStorage.setItem('customer-satisfaction-env', JSON.stringify(formData));
-      console.log('✅ ENV sauvegardé dans localStorage');
     }
   }, [rows, name, sessionName]);
   
@@ -275,7 +263,7 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
                   {ratingOptions.map((opt) => (
                     <label key={opt} className="flex items-center space-x-2 cursor-pointer">
                       <input
-                        name={`row-${idx}`}
+                        name={`mobile-row-${idx}`}
                         type="radio"
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         checked={row.rating === opt}
@@ -324,7 +312,7 @@ export default function EnvironmentReceptionForm({ date, traineeName, onNext, st
                   {ratingOptions.map((opt) => (
                     <td key={opt} className="border p-2 text-center align-middle">
                       <input
-                        name={`row-${idx}`}
+                        name={`desktop-row-${idx}`}
                         type="radio"
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer"
                         checked={row.rating === opt}
