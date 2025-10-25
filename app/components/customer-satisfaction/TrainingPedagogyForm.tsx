@@ -38,10 +38,6 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
   const [isLoaded, setIsLoaded] = useState(false);
   const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false);
   
-  // Log pour déboguer la signature
-  useEffect(() => {
-    console.log('Signature data changée:', signatureData ? 'Signature présente' : 'Aucune signature');
-  }, [signatureData]);
   const ratingOptions = ['Très satisfaisant', 'Satisfaisant', 'Insatisfaisant', 'Très insatisfaisant'];
   
   useEffect(() => {
@@ -86,9 +82,7 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
         const responsesRes = await fetch('/api/user/customer-satisfaction/responses');
         if (responsesRes.ok) {
           const responsesData = await responsesRes.json();
-          console.log('Toutes les réponses récupérées:', responsesData.responses);
           const existingResponse = responsesData.responses?.find((r: any) => r.type === 'TRAINING_PEDAGOGY');
-          console.log('Réponse TRAINING_PEDAGOGY trouvée:', existingResponse);
           
           if (existingResponse && existingResponse.items) {
             // Charger les données existantes
@@ -109,11 +103,8 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
               setSessionName(existingResponse.session);
             }
             if (existingResponse.signature) {
-              console.log('Signature trouvée:', existingResponse.signature);
               setSignatureData(existingResponse.signature);
               setIsAlreadySubmitted(true); // Formulaire déjà soumis et signé
-            } else {
-              console.log('Aucune signature trouvée pour TRAINING_PEDAGOGY');
             }
           }
         }
@@ -147,7 +138,6 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
   }, []);
   
   const setRowRating = (index: number, rating: string) => {
-    // Force la mise à jour immédiate pour éviter le délai visuel
     setRows((prev) => {
       const newRows = [...prev];
       newRows[index] = { ...newRows[index], rating };
@@ -256,8 +246,6 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
         });
       }
       
-      console.log('Soumission de tous les formulaires avec signature:', signatureData ? 'Oui' : 'Non');
-      console.log('Nombre de formulaires à soumettre:', payloads.length);
 
       // Submit all in parallel
       await Promise.all(
@@ -393,26 +381,15 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
                   {ratingOptions.map((opt) => (
                     <label key={opt} className="flex items-center space-x-2 cursor-pointer">
                       <input
-                        name={`row-${idx}`}
+                        name={`mobile-row-${idx}`}
                         type="radio"
-                        className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 transition-all duration-75 ${
-                          row.rating === opt 
-                            ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-500' 
-                            : 'border-gray-300'
-                        }`}
-                        style={{
-                          accentColor: row.rating === opt ? '#3b82f6' : '#d1d5db',
-                          transform: row.rating === opt ? 'scale(1.1)' : 'scale(1)',
-                          transition: 'all 0.1s ease-in-out'
-                        }}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         checked={row.rating === opt}
                         onChange={() => setRowRating(idx, opt)}
                         value={opt}
                         disabled={isAlreadySubmitted}
                       />
-                      <span className={`text-xs transition-colors duration-150 ${
-                        row.rating === opt ? 'text-blue-700 font-medium' : 'text-gray-700'
-                      }`}>{opt}</span>
+                      <span className="text-xs">{opt}</span>
                     </label>
                   ))}
                 </div>
@@ -451,20 +428,11 @@ export default function TrainingPedagogyForm({ date, traineeName, aggregated, on
                 <tr key={`${row.label}-${idx}`}>
                   <td className="border p-2 text-sm">{row.label}</td>
                   {ratingOptions.map((opt) => (
-                    <td key={opt} className={`border p-2 text-center align-middle transition-colors duration-150 ${
-                      row.rating === opt ? 'bg-blue-50' : ''
-                    }`}>
+                    <td key={opt} className="border p-2 text-center align-middle">
                       <input
-                        name={`row-${idx}`}
+                        name={`desktop-row-${idx}`}
                         type="radio"
-                        className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer transition-all duration-75 ${
-                          row.rating === opt ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300'
-                        }`}
-                        style={{
-                          accentColor: row.rating === opt ? '#3b82f6' : '#d1d5db',
-                          transform: row.rating === opt ? 'scale(1.1)' : 'scale(1)',
-                          transition: 'all 0.1s ease-in-out'
-                        }}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer"
                         checked={row.rating === opt}
                         onChange={(e) => {
                           if (e.target.checked) {
