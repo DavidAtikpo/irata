@@ -875,6 +875,25 @@ model AdminAttendanceSession {
   @@schema("webirata")
 }
 
+model Equipment {
+  id               String   @id @default(cuid())
+  qrCode           String   @unique
+  produit          String?
+  referenceInterne String?
+  numeroSerie      String?
+  typeEquipement   String?
+  normesCertificat String?
+  fabricant        String?
+  dateControle     String?
+  signataire       String?
+  pdfUrl           String?
+  rawText          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@schema("webirata")
+}
+
 model CorrectionFormulaire {
   id             String            @id @default(cuid())
   reponseId      String            @unique
