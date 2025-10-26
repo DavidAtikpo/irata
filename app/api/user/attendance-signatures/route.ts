@@ -41,6 +41,60 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Fonction pour récupérer les signatures par session
+async function getSignaturesBySession(sessionName: string, userId: string) {
+  console.log('Récupération des signatures pour la session:', sessionName);
+
+  // Récupérer les signatures pour cette session spécifique
+  console.log('🔍 Recherche des signatures pour userId:', userId, 'sessionName:', sessionName);
+  const sessionSignatures = await (prisma as any).adminAttendanceSession.findMany({
+    where: {
+      userId: userId,
+      sessionName: sessionName
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          nom: true,
+          prenom: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+
+  console.log('Signatures trouvées pour la session:', sessionSignatures.length);
+  console.log('Détail des signatures trouvées:', sessionSignatures.map((s: any) => s.signatureKey));
+
+  // Récupérer les données de signature correspondantes
+  const signaturesObject: Record<string, string> = {};
+  
+  for (const sessionSig of sessionSignatures) {
+    const signatureData = await prisma.attendanceSignature.findUnique({
+      where: {
+        userId_signatureKey: {
+          userId: userId,
+          signatureKey: sessionSig.signatureKey
+        }
+      }
+    });
+    
+    if (signatureData) {
+      signaturesObject[sessionSig.signatureKey] = signatureData.signatureData;
+      console.log(`✅ Signature ${sessionSig.signatureKey} trouvée pour la session ${sessionName}`);
+    } else {
+      console.log(`⚠️ Signature ${sessionSig.signatureKey} non trouvée dans AttendanceSignature`);
+    }
+  }
+
+  console.log('Signatures récupérées:', Object.keys(signaturesObject));
+  console.log('Total signatures retournées:', Object.keys(signaturesObject).length);
+  return signaturesObject;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -49,7 +103,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    const { signatureKey, signatureData, userId } = await request.json();
+    const body = await request.json();
+    const { signatureKey, signatureData, userId, sessionName } = body;
+
+    // Si sessionName est fourni sans signatureKey, c'est une demande de récupération
+    if (sessionName && !signatureKey) {
+      const signatures = await getSignaturesBySession(sessionName, session.user.id);
+      return NextResponse.json({ 
+        signatures: signatures,
+        count: Object.keys(signatures).length,
+        sessionName: sessionName
+      });
+    }
 
     if (!signatureKey || !signatureData) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 });
@@ -78,6 +143,33 @@ export async function POST(request: NextRequest) {
         signatureData: signatureData
       }
     });
+
+    // Si c'est un admin et qu'une session est fournie, créer une entrée dans une table d'association
+    if (sessionName && session.user.role === 'ADMIN') {
+      try {
+        // Créer une entrée dans une table d'association admin-session
+        await (prisma as any).adminAttendanceSession.upsert({
+          where: {
+            userId_signatureKey: {
+              userId: session.user.id,
+              signatureKey: signatureKey
+            }
+          },
+          update: {
+            sessionName: sessionName,
+            updatedAt: new Date()
+          },
+          create: {
+            userId: session.user.id,
+            signatureKey: signatureKey,
+            sessionName: sessionName
+          }
+        });
+        console.log(`Session ${sessionName} associée à l'admin ${session.user.id} pour la signature ${signatureKey}`);
+      } catch (error) {
+        console.error('Erreur lors de l\'association admin-session:', error);
+      }
+    }
 
     return NextResponse.json({ 
       message: 'Signature d\'attendance sauvegardée avec succès',

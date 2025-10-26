@@ -13,6 +13,8 @@ export default function AttendanceForm() {
   const [signatures, setSignatures] = useState<Record<string, string>>({});
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [currentSignatureKey, setCurrentSignatureKey] = useState('');
+  const [availableSessions, setAvailableSessions] = useState<string[]>([]);
+  const [selectedSession, setSelectedSession] = useState('');
   
   const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
   
@@ -21,6 +23,35 @@ export default function AttendanceForm() {
     level: "",
     name: "",
   });
+
+  const fetchExistingSignatures = async (sessionToFetch?: string) => {
+    try {
+      const sessionToUse = sessionToFetch || selectedSession || sessionName;
+      if (!sessionToUse) {
+        return;
+      }
+      
+      const response = await fetch('/api/user/attendance-signatures', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionName: sessionToUse
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSignatures({});
+        setSignatures(data.signatures || {});
+      } else {
+        setSignatures({});
+      }
+    } catch (error) {
+      setSignatures({});
+    }
+  };
 
   useEffect(() => {
     // Rediriger l'admin vers la page de gestion des présences
@@ -71,28 +102,58 @@ export default function AttendanceForm() {
         const r = await fetch('/api/user/training-session');
         if (r.ok) {
           const data = await r.json();
-          if (data?.name) setSessionName(data.name);
+          if (data?.name) {
+            setSessionName(data.name);
+            setSelectedSession(data.name);
+          }
         }
       } catch (error) {
         console.error('Erreur lors du chargement de la session:', error);
       }
     };
 
-    const fetchExistingSignatures = async () => {
+    const fetchAvailableSessions = async () => {
       try {
-        const response = await fetch('/api/user/attendance-signatures');
-        if (response.ok) {
-          const data = await response.json();
-          setSignatures(data.signatures || {});
+        const r = await fetch('/api/admin/training-sessions');
+        if (r.ok) {
+          const data = await r.json();
+          const sessions = data.map((s: any) => s.name);
+          setAvailableSessions(sessions);
+          
+          // Si c'est un admin et qu'il n'a pas de session, sélectionner automatiquement la session du mois actuel
+          if (session?.user?.role === 'ADMIN' && !sessionName && sessions.length > 0) {
+            const currentMonth = new Date().toLocaleDateString('fr-FR', { month: 'long' });
+            const currentYear = new Date().getFullYear();
+            
+            // Chercher une session du mois actuel avec le format "2025 octobre du 20 au 24 (Examen 25)"
+            const currentMonthSession = sessions.find((sessionName: string) => 
+              sessionName.includes(currentYear.toString()) && 
+              sessionName.toLowerCase().includes(currentMonth.toLowerCase())
+            );
+            
+            if (currentMonthSession) {
+              setSelectedSession(currentMonthSession);
+              setSessionName(currentMonthSession);
+              // Récupérer les signatures pour la session sélectionnée
+              fetchExistingSignatures(currentMonthSession);
+            } else {
+              // Si aucune session du mois actuel, prendre la première disponible
+              setSelectedSession(sessions[0]);
+              setSessionName(sessions[0]);
+              // Récupérer les signatures pour la première session
+              fetchExistingSignatures(sessions[0]);
+            }
+          }
         }
       } catch (error) {
-        console.error('Erreur lors de la récupération des signatures:', error);
+        console.error('Erreur lors du chargement des sessions disponibles:', error);
       }
     };
-    
+
     fetchUserProfile();
     fetchSession();
-    fetchExistingSignatures();
+    fetchAvailableSessions();
+    // fetchExistingSignatures(); // Sera appelé après la sélection de session
   }, [session, router]);
 
   const handleSignatureClick = (day: string, period: string) => {
@@ -121,7 +182,8 @@ export default function AttendanceForm() {
         body: JSON.stringify({
           signatureKey: currentSignatureKey,
           signatureData: signatureData,
-          userId: session?.user?.id
+          userId: session?.user?.id,
+          sessionName: selectedSession // Ajouter la session sélectionnée pour l'admin
         }),
       });
       
@@ -203,30 +265,14 @@ export default function AttendanceForm() {
     }
   };
 
-  // Si c'est un admin, afficher un message de redirection
-  if (session?.user?.role === 'ADMIN') {
-    return (
-      <div style={{ padding: "20px", fontFamily: "Arial, sans-serif", textAlign: "center" }}>
-        <div style={{ 
-          backgroundColor: "#fef3c7", 
-          border: "1px solid #f59e0b", 
-          borderRadius: "8px", 
-          padding: "20px", 
-          margin: "20px 0" 
-        }}>
-          <h2 style={{ color: "#92400e", marginBottom: "10px" }}>
-            Redirection en cours...
-          </h2>
-          <p style={{ color: "#92400e" }}>
-            En tant qu'administrateur, vous êtes redirigé vers la page de gestion des présences.
-          </p>
-          <p style={{ color: "#92400e", fontSize: "14px", marginTop: "10px" }}>
-            Si la redirection ne fonctionne pas, <a href="/admin/liste-presence" style={{ color: "#1d4ed8" }}>cliquez ici</a>.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Fonction pour gérer le changement de session
+  const handleSessionChange = async (newSession: string) => {
+    setSelectedSession(newSession);
+    setSessionName(newSession);
+    
+    // Récupérer les signatures pour la nouvelle session
+    await fetchExistingSignatures(newSession);
+  };
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
@@ -376,7 +422,29 @@ export default function AttendanceForm() {
             <div className="mobile-info-grid">
               <div className="mobile-info-item">
                 <div className="mobile-info-label">Formation</div>
-                <div className="mobile-info-value">{sessionName || 'Chargement...'}</div>
+                {session?.user?.role === 'ADMIN' ? (
+                  <select 
+                    value={selectedSession} 
+                    onChange={(e) => handleSessionChange(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      marginTop: '4px'
+                    }}
+                  >
+                    <option value="">Sélectionner une session</option>
+                    {availableSessions.map((sessionName) => (
+                      <option key={sessionName} value={sessionName}>
+                        {sessionName}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="mobile-info-value">{sessionName || 'Chargement...'}</div>
+                )}
               </div>
               <div className="mobile-info-item">
                 <div className="mobile-info-label">Site</div>
@@ -571,7 +639,30 @@ export default function AttendanceForm() {
           <thead>
             <tr>
               <th>Formation:</th>
-              <th colSpan={2}>{sessionName}</th>
+              <th colSpan={2}>
+                {session?.user?.role === 'ADMIN' ? (
+                  <select 
+                    value={selectedSession} 
+                    onChange={(e) => handleSessionChange(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '4px',
+                      border: '1px solid #ddd',
+                      borderRadius: '2px',
+                      fontSize: '12px'
+                    }}
+                  >
+                    <option value="">Sélectionner une session</option>
+                    {availableSessions.map((sessionName) => (
+                      <option key={sessionName} value={sessionName}>
+                        {sessionName}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  sessionName
+                )}
+              </th>
               <th>Site:</th>
               <th colSpan={2}>Centre CI.DES</th>
               <th>Mois:</th>

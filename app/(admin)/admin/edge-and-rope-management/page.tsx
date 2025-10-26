@@ -534,12 +534,12 @@ export default function EdgeAndRopeManagement() {
                                   {downloadingPdf === `${record.id}-${signature.userId}` ? 'Génération...' : ''}
                                 </button> */}
                                 <button
-                                  onClick={() => downloadCompleteDocument(record.id, signature.userId, signature.userName)}
-                                  disabled={downloadingPdf === `complete-${record.id}-${signature.userId}`}
+                                  onClick={() => downloadUserPdf(record.id, signature.userId, signature.userName)}
+                                  disabled={downloadingPdf === `${record.id}-${signature.userId}`}
                                   className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                                  title="Télécharger le document complet (15 pages + Toolbox Talk)"
+                                  title="Télécharger le Toolbox Talk"
                                 >
-                                  {downloadingPdf === `complete-${record.id}-${signature.userId}` ? 'Génération...' : '📄 PDF Complet'}
+                                  {downloadingPdf === `${record.id}-${signature.userId}` ? 'Génération...' : '📄 Toolbox Talk'}
                                 </button>
                               </div>
                             </td>

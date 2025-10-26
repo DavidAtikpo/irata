@@ -16,6 +16,7 @@ interface UserProfile {
   prenom?: string;
   nom?: string;
   email: string;
+  role?: string;
 }
 
 interface TrainingSession {
@@ -42,7 +43,8 @@ async function getUserProfiles(): Promise<UserProfile[]> {
         id: true,
         email: true,
         nom: true,
-        prenom: true
+        prenom: true,
+        role: true
       }
     });
 
@@ -50,7 +52,8 @@ async function getUserProfiles(): Promise<UserProfile[]> {
       id: user.id,
       prenom: user.prenom || undefined,
       nom: user.nom || undefined,
-      email: user.email
+      email: user.email,
+      role: (user as any).role
     }));
   } catch (error) {
     console.error('Erreur lors de la récupération des profils utilisateurs:', error);
@@ -124,6 +127,66 @@ export async function GET(request: NextRequest) {
     // Récupérer les profils utilisateurs et sessions
     const userProfiles = await getUserProfiles();
     const userSessions = await getUserSessions();
+    
+    // Récupérer les demandes pour associer les admins aux sessions
+    const demandes = await prisma.demande.findMany({
+      where: {
+        statut: { in: ['EN_ATTENTE', 'VALIDE'] }
+      },
+      select: {
+        userId: true,
+        session: true,
+        statut: true
+      }
+    });
+    // Récupérer les signatures d'admin avec leur session associée
+    const adminSignatures = await prisma.attendanceSignature.findMany({
+      where: {
+        user: {
+          role: 'ADMIN'
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+            email: true,
+            role: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    
+
+    // Récupérer les associations admin-session depuis la nouvelle table
+    const adminSessionAssociations = await (prisma as any).adminAttendanceSession.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+            email: true,
+            role: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    // Créer une map des sessions d'admin basée sur les associations
+    const adminSessionMap = new Map<string, string>();
+    adminSessionAssociations.forEach((association: any) => {
+      if (association.user.role === 'ADMIN') {
+        adminSessionMap.set(association.userId, association.sessionName);
+      }
+    });
 
     // Organiser les données par utilisateur
     const userAttendanceMap = new Map<string, UserAttendanceData>();
@@ -133,11 +196,23 @@ export async function GET(request: NextRequest) {
       const session = userSessions.find(s => s.userId === profile.id);
       const userName = [profile.prenom, profile.nom].filter(Boolean).join(' ').trim() || profile.email;
       
+      // Ajouter un indicateur pour l'admin
+      const displayName = profile.role === 'ADMIN' ? `[ADMIN] ${userName}` : userName;
+      
+      // Pour les admins, utiliser la session de leur demande
+      let sessionName = session?.name;
+      if (profile.role === 'ADMIN') {
+        const adminSession = adminSessionMap.get(profile.id);
+        if (adminSession) {
+          sessionName = adminSession;
+        }
+      }
+      
       userAttendanceMap.set(profile.id, {
         userId: profile.id,
-        userName,
+        userName: displayName,
         userEmail: profile.email,
-        sessionName: session?.name,
+        sessionName: sessionName,
         signatures: {}
       });
     });
@@ -171,6 +246,7 @@ export async function GET(request: NextRequest) {
     // Convertir en array et trier par nom
     const attendanceData = Array.from(userAttendanceMap.values())
       .sort((a, b) => a.userName.localeCompare(b.userName));
+
 
     // Calculer quelques statistiques
     const totalUsers = attendanceData.length;

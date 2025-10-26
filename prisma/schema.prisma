@@ -30,6 +30,7 @@ model User {
   actionsCorrectivesResponsable ActionCorrective[]             @relation("ActionCorrectiveResponsable")
   actionCorrectiveCommentaires  ActionCorrectiveCommentaire[]  @relation("ActionCorrectiveCommentaireUser")
   attendanceSignatures          AttendanceSignature[]          @relation("AttendanceSignatures")
+  adminAttendanceSessions       AdminAttendanceSession[]       @relation("AdminAttendanceSessions")
   contrats                      Contrat[]
   contributions                 Contribution[]
   corrections                   CorrectionFormulaire[]
@@ -858,6 +859,19 @@ model AttendanceUnlock {
   createdAt   DateTime @default(now())
 
   @@unique([sessionName, day, period])
+  @@schema("webirata")
+}
+
+model AdminAttendanceSession {
+  id           String   @id @default(cuid())
+  userId       String
+  signatureKey String
+  sessionName  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation("AdminAttendanceSessions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, signatureKey])
   @@schema("webirata")
 }
 

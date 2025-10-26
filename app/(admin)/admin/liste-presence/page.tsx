@@ -26,6 +26,35 @@ export default function AttendanceForm() {
     name: "",
   });
 
+  const fetchExistingSignatures = async (sessionToFetch?: string) => {
+    try {
+      const sessionToUse = sessionToFetch || selectedSessionForUnlock;
+      if (!sessionToUse) {
+        return;
+      }
+      
+      const response = await fetch('/api/user/attendance-signatures', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionName: sessionToUse
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSignatures({});
+        setSignatures(data.signatures || {});
+      } else {
+        setSignatures({});
+      }
+    } catch (error) {
+      setSignatures({});
+    }
+  };
+
   useEffect(() => {
     if (session?.user?.role !== 'ADMIN') {
       router.push('/');
@@ -114,6 +143,8 @@ export default function AttendanceForm() {
           if (selectedSession) {
             setSelectedSessionForUnlock(selectedSession);
             console.log('🎯 Session finale sélectionnée:', selectedSession);
+            // Récupérer les signatures pour la session sélectionnée
+            fetchExistingSignatures(selectedSession);
           } else {
             console.log('⚠️ Aucune session trouvée pour la sélection par défaut');
           }
@@ -125,22 +156,11 @@ export default function AttendanceForm() {
       }
     };
 
-    const fetchExistingSignatures = async () => {
-      try {
-        const response = await fetch('/api/user/attendance-signatures');
-        if (response.ok) {
-          const data = await response.json();
-          setSignatures(data.signatures || {});
-        }
-      } catch (error) {
-        console.error('Erreur lors de la récupération des signatures:', error);
-      }
-    };
     
     fetchUserProfile();
     fetchSession();
     fetchAvailableSessions();
-    fetchExistingSignatures();
+    // fetchExistingSignatures(); // Sera appelé après la sélection de session
   }, [session, router]);
 
   const handleSignatureClick = (day: string, period: string) => {
@@ -169,7 +189,8 @@ export default function AttendanceForm() {
         body: JSON.stringify({
           signatureKey: currentSignatureKey,
           signatureData: signatureData,
-          userId: session?.user?.id
+          userId: session?.user?.id,
+          sessionName: selectedSessionForUnlock // Ajouter la session sélectionnée
         }),
       });
       
@@ -297,7 +318,12 @@ export default function AttendanceForm() {
             </label>
             <select
               value={selectedSessionForUnlock}
-              onChange={(e) => setSelectedSessionForUnlock(e.target.value)}
+              onChange={async (e) => {
+                const newSession = e.target.value;
+                setSelectedSessionForUnlock(newSession);
+                // Récupérer les signatures pour la nouvelle session
+                await fetchExistingSignatures(newSession);
+              }}
               style={{
                 padding: "8px",
                 borderRadius: "4px",

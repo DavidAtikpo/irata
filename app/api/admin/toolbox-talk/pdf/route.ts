@@ -66,111 +66,116 @@ export async function POST(req: NextRequest) {
           body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             background: white;
             color: #333;
-            line-height: 1.4;
+            line-height: 1.2;
+            font-size: 11px;
           }
           .header {
             text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #2563eb;
-            padding-bottom: 20px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #2563eb;
+            padding-bottom: 10px;
           }
           .header h1 {
             color: #1e40af;
-            margin: 0 0 10px 0;
-            font-size: 24px;
+            margin: 0 0 5px 0;
+            font-size: 16px;
           }
           .header p {
             margin: 0;
             color: #6b7280;
-            font-size: 14px;
+            font-size: 10px;
           }
           .form-section {
-            margin-bottom: 30px;
+            margin-bottom: 15px;
           }
           .form-title {
-            font-size: 18px;
+            font-size: 12px;
             font-weight: bold;
             color: #1e40af;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
             border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 5px;
+            padding-bottom: 3px;
           }
           .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin-bottom: 10px;
           }
           .form-field {
-            margin-bottom: 15px;
+            margin-bottom: 8px;
           }
           .form-field label {
             display: block;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
             color: #374151;
+            font-size: 10px;
           }
           .form-field .value {
-            padding: 8px 12px;
+            padding: 4px 6px;
             border: 1px solid #d1d5db;
-            border-radius: 4px;
+            border-radius: 2px;
             background: #f9fafb;
-            min-height: 20px;
+            min-height: 15px;
+            font-size: 10px;
           }
           .matters-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 10px 0;
+            font-size: 10px;
           }
           .matters-table th,
           .matters-table td {
             border: 1px solid #d1d5db;
-            padding: 12px;
+            padding: 6px;
             text-align: left;
           }
           .matters-table th {
             background: #f3f4f6;
             font-weight: bold;
+            font-size: 10px;
           }
           .signature-section {
-            margin: 30px 0;
-            padding: 20px;
+            margin: 15px 0;
+            padding: 10px;
             border: 1px solid #d1d5db;
-            border-radius: 8px;
+            border-radius: 4px;
             background: #f9fafb;
           }
           .signature-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 15px;
+            gap: 10px;
+            margin-top: 8px;
           }
           .signature-box {
             text-align: center;
-            padding: 15px;
+            padding: 8px;
             border: 1px solid #d1d5db;
-            border-radius: 4px;
+            border-radius: 2px;
             background: white;
-            min-height: 80px;
+            min-height: 50px;
             display: flex;
             flex-direction: column;
             justify-content: center;
           }
           .signature-img {
-            max-width: 200px;
-            max-height: 60px;
+            max-width: 120px;
+            max-height: 40px;
             margin: 0 auto;
           }
           .footer {
-            margin-top: 40px;
+            margin-top: 15px;
             text-align: center;
-            font-size: 12px;
+            font-size: 9px;
             color: #6b7280;
             border-top: 1px solid #e5e7eb;
-            padding-top: 20px;
+            padding-top: 8px;
           }
         </style>
       </head>
@@ -323,37 +328,37 @@ export async function POST(req: NextRequest) {
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '20mm',
-        right: '15mm',
-        bottom: '20mm',
-        left: '15mm'
+        top: '10mm',
+        right: '10mm',
+        bottom: '10mm',
+        left: '10mm'
       },
       displayHeaderFooter: true,
       headerTemplate: `
-        <div style="font-size: 10px; color: #6b7280; text-align: center; width: 100%; padding: 5px 15mm; background-color: white; border-bottom: 1px solid #e5e7eb;">
+        <div style="font-size: 8px; color: #6b7280; text-align: center; width: 100%; padding: 3px 10mm; background-color: white; border-bottom: 1px solid #e5e7eb;">
           <div style="display: flex; justify-content: space-between; align-items: center; width: 180mm; margin: 0 auto;">
             <div style="flex: 1; font-weight: 600; color: #1e40af;">
               CI.DES - Toolbox Talk
             </div>
-            <div style="flex: 2; text-align: center; font-size: 9px;">
+            <div style="flex: 2; text-align: center; font-size: 8px;">
               <div>Toolbox Talk Record Form</div>
             </div>
-            <div style="flex: 1; text-align: right; font-size: 9px;">
+            <div style="flex: 1; text-align: right; font-size: 8px;">
               ${new Date().toLocaleDateString('fr-FR')}
             </div>
           </div>
         </div>
       `,
       footerTemplate: `
-        <div style="font-size: 9px; color: #6b7280; text-align: center; width: 100%; padding: 5px 15mm; background-color: white; border-top: 1px solid #e5e7eb;">
+        <div style="font-size: 7px; color: #6b7280; text-align: center; width: 100%; padding: 3px 10mm; background-color: white; border-top: 1px solid #e5e7eb;">
           <div style="display: flex; justify-content: space-between; align-items: center; width: 180mm; margin: 0 auto;">
             <div style="flex: 1; font-weight: 500;">
               CI.DES - Toolbox Talk
             </div>
             <div style="flex: 2; text-align: center;">
-              <div style="margin: 1px 0;">CI.DES sasu · Capital 2 500 Euros</div>
-              <div style="margin: 1px 0;">SIRET : 87840789900011 · VAT : FR71878407899</div>
-              <div style="margin: 1px 0;">Page <span class="pageNumber"></span> sur <span class="totalPages"></span></div>
+              <div style="margin: 0;">CI.DES sasu · Capital 2 500 Euros</div>
+              <div style="margin: 0;">SIRET : 87840789900011 · VAT : FR71878407899</div>
+              <div style="margin: 0;">Page <span class="pageNumber"></span> sur <span class="totalPages"></span></div>
             </div>
             <div style="flex: 1; text-align: right; display: flex; align-items: center; justify-content: flex-end;">
               <span>© 2025 CI.DES</span>
