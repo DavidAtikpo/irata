@@ -35,7 +35,7 @@ export default function EquipmentPage() {
 
   const fetchEquipmentData = async () => {
     try {
-      const response = await fetch(`/api/equipment/${qrCode}`);
+      const response = await fetch(`/api/qr-equipment/${qrCode}`);
       if (response.ok) {
         const data = await response.json();
         setEquipment(data);
@@ -215,3 +215,4 @@ export default function EquipmentPage() {
     </div>
   );
 }
+

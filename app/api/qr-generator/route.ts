@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         await saveEquipmentToDatabase(extractedData, qrCode, uploadResult.secure_url);
 
         // Générer l'URL de l'équipement
-        const equipmentUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/equipment/${qrCode}`;
+        const equipmentUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/qr-equipment/${qrCode}`;
         extractedData.equipmentUrl = equipmentUrl;
 
       } catch (ocrError) {
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
         await saveEquipmentToDatabase(extractedData, qrCode, uploadResult.secure_url);
 
-        const equipmentUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/equipment/${qrCode}`;
+        const equipmentUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/qr-equipment/${qrCode}`;
         extractedData.equipmentUrl = equipmentUrl;
 
       } catch (ocrError) {
