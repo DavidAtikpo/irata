@@ -11,9 +11,20 @@ cloudinary.config({
 });
 
 // Configuration Google Vision API
-const vision = new ImageAnnotatorClient({
-  credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || '{}'),
-});
+let vision: ImageAnnotatorClient | null = null;
+
+try {
+  const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+  if (credentialsJson) {
+    vision = new ImageAnnotatorClient({
+      credentials: JSON.parse(credentialsJson),
+    });
+  } else {
+    console.warn('GOOGLE_APPLICATION_CREDENTIALS_JSON not found in environment variables');
+  }
+} catch (error) {
+  console.error('Error initializing Google Vision API:', error);
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,6 +62,38 @@ export async function POST(request: NextRequest) {
 
     if (type === 'pdf') {
       // Pour les PDFs, utiliser Google Vision API pour l'OCR
+      if (!vision) {
+        // Mode fallback sans OCR - créer un équipement avec des données par défaut
+        console.log('Mode fallback: création d\'équipement sans OCR');
+        
+        const qrCode = generateQRCode();
+        extractedData = {
+          produit: 'Équipement (PDF)',
+          reference: 'REF-' + Date.now(),
+          numeroSerie: 'S/N-' + Date.now(),
+          type: 'Type non détecté',
+          normes: 'Normes non détectées',
+          fabricant: 'Fabricant non détecté',
+          date: new Date().toLocaleDateString('fr-FR'),
+          signataire: 'Signataire non détecté',
+          rawText: 'Texte non extrait (mode fallback)',
+          pdfUrl: uploadResult.secure_url,
+          qrCode: qrCode
+        };
+
+        await saveEquipmentToDatabase(extractedData, qrCode, uploadResult.secure_url);
+        
+        const equipmentUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/qr-equipment/${qrCode}`;
+        extractedData.equipmentUrl = equipmentUrl;
+
+        return NextResponse.json({
+          success: true,
+          extractedData,
+          message: 'PDF uploadé en mode fallback (sans OCR)',
+          warning: 'Service OCR non configuré - données par défaut utilisées'
+        });
+      }
+
       try {
         const [result] = await vision.textDetection({
           image: {
@@ -86,12 +129,45 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           error: 'Erreur lors de l\'extraction OCR du PDF',
           suggestion: 'Vérifiez que le PDF contient du texte lisible et non des images scannées',
-          code: 'OCR_ERROR'
+          code: 'OCR_ERROR',
+          details: ocrError instanceof Error ? ocrError.message : 'Unknown error'
         }, { status: 500 });
       }
 
     } else {
       // Pour les images, utiliser Google Vision API directement
+      if (!vision) {
+        // Mode fallback sans OCR - créer un équipement avec des données par défaut
+        console.log('Mode fallback: création d\'équipement sans OCR');
+        
+        const qrCode = generateQRCode();
+        extractedData = {
+          produit: 'Équipement (Image)',
+          reference: 'REF-' + Date.now(),
+          numeroSerie: 'S/N-' + Date.now(),
+          type: 'Type non détecté',
+          normes: 'Normes non détectées',
+          fabricant: 'Fabricant non détecté',
+          date: new Date().toLocaleDateString('fr-FR'),
+          signataire: 'Signataire non détecté',
+          rawText: 'Texte non extrait (mode fallback)',
+          pdfUrl: uploadResult.secure_url,
+          qrCode: qrCode
+        };
+
+        await saveEquipmentToDatabase(extractedData, qrCode, uploadResult.secure_url);
+        
+        const equipmentUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/qr-equipment/${qrCode}`;
+        extractedData.equipmentUrl = equipmentUrl;
+
+        return NextResponse.json({
+          success: true,
+          extractedData,
+          message: 'Image uploadée en mode fallback (sans OCR)',
+          warning: 'Service OCR non configuré - données par défaut utilisées'
+        });
+      }
+
       try {
         const [result] = await vision.textDetection({
           image: {
@@ -121,7 +197,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           error: 'Erreur lors de l\'extraction OCR de l\'image',
           suggestion: 'Vérifiez que l\'image contient du texte lisible',
-          code: 'OCR_ERROR'
+          code: 'OCR_ERROR',
+          details: ocrError instanceof Error ? ocrError.message : 'Unknown error'
         }, { status: 500 });
       }
     }
