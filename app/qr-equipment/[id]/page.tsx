@@ -167,7 +167,7 @@ export default function EquipmentPage() {
                 
                 {equipment.pdfUrl && (
                   <a
-                    href={equipment.pdfUrl}
+                    href={`/api/qr-equipment/${equipment.qrCode}/pdf`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 flex items-center justify-center"
@@ -189,7 +189,7 @@ export default function EquipmentPage() {
               
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <iframe
-                  src={equipment.pdfUrl}
+                  src={`/api/qr-equipment/${equipment.qrCode}/pdf`}
                   className="w-full h-96"
                   title="PDF Viewer"
                 />

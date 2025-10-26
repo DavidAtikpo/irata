@@ -50,10 +50,16 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(buffer).toString('base64');
     const dataUri = `data:${file.type};base64,${base64}`;
 
+    // Déterminer le type de ressource selon le type de fichier
+    const resourceType = type === 'pdf' ? 'raw' : 'auto';
+    
     const uploadResult = await cloudinary.uploader.upload(dataUri, {
-      resource_type: 'auto',
+      resource_type: resourceType,
       folder: 'irata-equipment',
       public_id: `equipment-${Date.now()}`,
+      access_mode: 'public',
+      use_filename: true,
+      unique_filename: true,
     });
 
     console.log('Fichier uploadé sur Cloudinary:', uploadResult.secure_url);
