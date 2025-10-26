@@ -157,13 +157,13 @@ export default function EquipmentPage() {
               </h2>
               
               <div className="space-y-3">
-                <button
+                {/* <button
                   onClick={handleInspectionForm}
                   className="w-full bg-indigo-600 text-white py-3 px-4 rounded-md hover:bg-indigo-700 flex items-center justify-center"
                 >
                   <ClipboardDocumentListIcon className="h-5 w-5 mr-2" />
                   Remplir Formulaire d'Inspection
-                </button>
+                </button> */}
                 
                 {equipment.pdfUrl && (
                   <a
@@ -205,7 +205,7 @@ export default function EquipmentPage() {
           </h3>
           <ul className="text-sm text-blue-800 space-y-2">
             <li><strong>1.</strong> Consultez les informations de l'équipement ci-dessus</li>
-            <li><strong>2.</strong> Cliquez sur "Remplir Formulaire d'Inspection" pour créer une nouvelle inspection</li>
+            {/* <li><strong>2.</strong> Cliquez sur "Remplir Formulaire d'Inspection" pour créer une nouvelle inspection</li> */}
             <li><strong>3.</strong> Le formulaire se pré-remplira automatiquement avec les données de l'équipement</li>
             <li><strong>4.</strong> Complétez l'inspection et sauvegardez les résultats</li>
             <li><strong>5.</strong> Consultez le PDF original si nécessaire</li>

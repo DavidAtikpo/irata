@@ -262,9 +262,6 @@ function generateQRCode(): string {
 // Fonction pour sauvegarder l'équipement en base de données
 async function saveEquipmentToDatabase(data: any, qrCode: string, pdfUrl: string) {
   try {
-    console.log('Tentative de sauvegarde de l\'équipement:', qrCode);
-    console.log('Données à sauvegarder:', data);
-    
     const equipment = await prisma.equipment.create({
       data: {
         qrCode,
@@ -281,11 +278,10 @@ async function saveEquipmentToDatabase(data: any, qrCode: string, pdfUrl: string
         createdAt: new Date(),
       }
     });
-    console.log('✅ Équipement sauvegardé en base avec succès:', qrCode);
-    console.log('ID de l\'équipement:', equipment.id);
+    console.log('Équipement sauvegardé en base:', qrCode);
     return equipment;
   } catch (error) {
-    console.error('❌ Erreur lors de la sauvegarde:', error);
+    console.error('Erreur lors de la sauvegarde:', error);
     throw error;
   }
 }

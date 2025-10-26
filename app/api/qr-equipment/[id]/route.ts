@@ -8,8 +8,6 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const qrCode = resolvedParams.id;
-    
-    console.log('Recherche de l\'équipement avec le QR Code:', qrCode);
 
     const equipment = await prisma.equipment.findUnique({
       where: {
@@ -17,10 +15,7 @@ export async function GET(
       }
     });
 
-    console.log('Équipement trouvé:', equipment ? 'Oui' : 'Non');
-
     if (!equipment) {
-      console.log('Aucun équipement trouvé pour le QR Code:', qrCode);
       return NextResponse.json(
         { error: 'Équipement non trouvé' },
         { status: 404 }

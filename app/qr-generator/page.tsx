@@ -412,7 +412,7 @@ export default function QRGeneratorPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                             <button
-                              onClick={() => window.open(`/equipment/${item.qrCode}`, '_blank')}
+                              onClick={() => window.open(`/qr-equipment/${item.qrCode}`, '_blank')}
                               className="text-indigo-600 hover:text-indigo-900"
                             >
                               Voir détails
@@ -428,7 +428,7 @@ export default function QRGeneratorPage() {
                             </button>
                             <button
                               onClick={() => {
-                                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(`${window.location.origin}/equipment/${item.qrCode}`)}`;
+                                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(`${window.location.origin}/qr-equipment/${item.qrCode}`)}`;
                                 const link = document.createElement('a');
                                 link.href = qrUrl;
                                 link.download = `qr-${item.qrCode}.png`;
@@ -649,7 +649,16 @@ export default function QRGeneratorPage() {
                       <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
                         <h4 className="font-medium text-green-800 mb-2">✅ Équipement enregistré !</h4>
                         <p className="text-xs text-green-700 mb-1">Code QR: <span className="font-mono font-bold">{extractedData.qrCode}</span></p>
-                        <p className="text-xs text-green-700">URL: <a href={extractedData.equipmentUrl} target="_blank" rel="noopener noreferrer" className="underline">{extractedData.equipmentUrl}</a></p>
+                        <p className="text-xs text-green-700 mb-2">URL: <a href={extractedData.equipmentUrl} target="_blank" rel="noopener noreferrer" className="underline">{extractedData.equipmentUrl}</a></p>
+                        
+                        {/* Avertissement si données par défaut */}
+                        {(extractedData.produit === 'Équipement (PDF)' || extractedData.produit === 'Équipement (Image)') && (
+                          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-300 rounded">
+                            <p className="text-xs text-yellow-800">
+                              ⚠️ <strong>Mode fallback activé:</strong> Le service OCR n'est pas configuré. Les données par défaut sont utilisées. Pour extraire automatiquement les données du PDF, configurez Google Vision API.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                     
