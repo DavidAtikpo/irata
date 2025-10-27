@@ -707,7 +707,7 @@ export default function QRGeneratorPage() {
                   
                   <div className="border border-gray-200 rounded-lg overflow-hidden">
                     <iframe
-                      src={extractedData.pdfUrl}
+                      src={extractedData.qrCode ? `/api/qr-equipment/${extractedData.qrCode}/pdf` : extractedData.pdfUrl}
                       className="w-full h-96"
                       title="PDF Viewer"
                     />
@@ -715,7 +715,7 @@ export default function QRGeneratorPage() {
                   
                   <div className="mt-4 text-center">
                     <a
-                      href={extractedData.pdfUrl}
+                      href={`/api/qr-equipment/${extractedData.qrCode}/pdf`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"

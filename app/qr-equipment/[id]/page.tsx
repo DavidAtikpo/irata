@@ -99,9 +99,9 @@ export default function EquipmentPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Fiche d'Équipement
           </h1>
-          <p className="text-lg text-gray-600">
+          {/* <p className="text-lg text-gray-600">
             Code QR: <span className="font-mono font-bold text-indigo-600">{equipment.qrCode}</span>
-          </p>
+          </p> */}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -122,10 +122,10 @@ export default function EquipmentPage() {
                     <label className="block text-sm font-medium text-gray-700">Référence Interne</label>
                     <p className="mt-1 text-sm text-gray-900">{equipment.referenceInterne || 'Non spécifié'}</p>
                   </div>
-                  <div>
+                  {/* <div>
                     <label className="block text-sm font-medium text-gray-700">Numéro de Série</label>
                     <p className="mt-1 text-sm text-gray-900">{equipment.numeroSerie || 'Non spécifié'}</p>
-                  </div>
+                  </div> */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Type d'Équipement</label>
                     <p className="mt-1 text-sm text-gray-900">{equipment.typeEquipement || 'Non spécifié'}</p>
@@ -206,8 +206,8 @@ export default function EquipmentPage() {
           <ul className="text-sm text-blue-800 space-y-2">
             <li><strong>1.</strong> Consultez les informations de l'équipement ci-dessus</li>
             {/* <li><strong>2.</strong> Cliquez sur "Remplir Formulaire d'Inspection" pour créer une nouvelle inspection</li> */}
-            <li><strong>3.</strong> Le formulaire se pré-remplira automatiquement avec les données de l'équipement</li>
-            <li><strong>4.</strong> Complétez l'inspection et sauvegardez les résultats</li>
+            {/* <li><strong>3.</strong> Le formulaire se pré-remplira automatiquement avec les données de l'équipement</li>
+            <li><strong>4.</strong> Complétez l'inspection et sauvegardez les résultats</li> */}
             <li><strong>5.</strong> Consultez le PDF original si nécessaire</li>
           </ul>
         </div>
