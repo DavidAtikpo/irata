@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { v2 as cloudinary } from 'cloudinary';
 import { prisma } from 'lib/prisma';
+const pdf = require('pdf-parse');
 
 // Configuration Cloudinary
 cloudinary.config({
@@ -19,11 +20,12 @@ try {
     vision = new ImageAnnotatorClient({
       credentials: JSON.parse(credentialsJson),
     });
+    console.log('✅ Google Vision initialisé avec succès');
   } else {
-    console.warn('GOOGLE_APPLICATION_CREDENTIALS_JSON not found in environment variables');
+    console.warn('⚠️ GOOGLE_APPLICATION_CREDENTIALS_JSON non trouvé');
   }
 } catch (error) {
-  console.error('Error initializing Google Vision API:', error);
+  console.error('❌ Erreur initialisation Google Vision:', error);
 }
 
 export async function POST(request: NextRequest) {
@@ -36,7 +38,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 });
     }
 
-    // Vérifier la taille du fichier (limite Cloudinary gratuite: 10MB)
     if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json({
         error: 'Fichier trop volumineux',
@@ -46,15 +47,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload du fichier vers Cloudinary
-    const buffer = await file.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString('base64');
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = buffer.toString('base64');
     const dataUri = `data:${file.type};base64,${base64}`;
 
-    // Déterminer le type de ressource selon le type de fichier
-    const resourceType = type === 'pdf' ? 'raw' : 'auto';
-    
     const uploadResult = await cloudinary.uploader.upload(dataUri, {
-      resource_type: resourceType,
+      resource_type: 'raw',
       folder: 'irata-equipment',
       public_id: `equipment-${Date.now()}`,
       access_mode: 'public',
@@ -66,160 +65,59 @@ export async function POST(request: NextRequest) {
 
     let extractedData: any = {};
 
+    // Extraction OCR pour les PDFs
+    let fullText = '';
     if (type === 'pdf') {
-      // Pour les PDFs, utiliser Google Vision API pour l'OCR
-      if (!vision) {
-        // Mode fallback sans OCR - créer un équipement avec des données par défaut
-        console.log('Mode fallback: création d\'équipement sans OCR');
-        
-        const qrCode = generateQRCode();
-        extractedData = {
-          produit: 'Équipement (PDF)',
-          reference: 'REF-' + Date.now(),
-          numeroSerie: 'S/N-' + Date.now(),
-          type: 'Type non détecté',
-          normes: 'Normes non détectées',
-          fabricant: 'Fabricant non détecté',
-          date: new Date().toLocaleDateString('fr-FR'),
-          signataire: 'Signataire non détecté',
-          rawText: 'Texte non extrait (mode fallback)',
-          pdfUrl: uploadResult.secure_url,
-          qrCode: qrCode
-        };
-
-        await saveEquipmentToDatabase(extractedData, qrCode, uploadResult.secure_url);
-        
-        const equipmentUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/qr-equipment/${qrCode}`;
-        extractedData.equipmentUrl = equipmentUrl;
-
-        return NextResponse.json({
-          success: true,
-          extractedData,
-          message: 'PDF uploadé en mode fallback (sans OCR)',
-          warning: 'Service OCR non configuré - données par défaut utilisées'
-        });
-      }
-
       try {
-        const [result] = await vision.textDetection({
-          image: {
-            source: {
-              imageUri: uploadResult.secure_url
-            }
-          }
-        });
-
-        const detections = result.textAnnotations;
-        const fullText = detections?.[0]?.description || '';
-
-        console.log('Texte extrait par OCR:', fullText);
-
-        // Parser les données extraites
-        extractedData = parseEquipmentData(fullText);
-        extractedData.rawText = fullText;
-        extractedData.pdfUrl = uploadResult.secure_url;
-
-        // Générer un code QR unique
-        const qrCode = generateQRCode();
-        extractedData.qrCode = qrCode;
-
-        // Sauvegarder en base de données
-        await saveEquipmentToDatabase(extractedData, qrCode, uploadResult.secure_url);
-
-        // Générer l'URL de l'équipement
-        const equipmentUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/qr-equipment/${qrCode}`;
-        extractedData.equipmentUrl = equipmentUrl;
-
-      } catch (ocrError) {
-        console.error('Erreur OCR:', ocrError);
-        return NextResponse.json({
-          error: 'Erreur lors de l\'extraction OCR du PDF',
-          suggestion: 'Vérifiez que le PDF contient du texte lisible et non des images scannées',
-          code: 'OCR_ERROR',
-          details: ocrError instanceof Error ? ocrError.message : 'Unknown error'
-        }, { status: 500 });
-      }
-
-    } else {
-      // Pour les images, utiliser Google Vision API directement
-      if (!vision) {
-        // Mode fallback sans OCR - créer un équipement avec des données par défaut
-        console.log('Mode fallback: création d\'équipement sans OCR');
-        
-        const qrCode = generateQRCode();
-        extractedData = {
-          produit: 'Équipement (Image)',
-          reference: 'REF-' + Date.now(),
-          numeroSerie: 'S/N-' + Date.now(),
-          type: 'Type non détecté',
-          normes: 'Normes non détectées',
-          fabricant: 'Fabricant non détecté',
-          date: new Date().toLocaleDateString('fr-FR'),
-          signataire: 'Signataire non détecté',
-          rawText: 'Texte non extrait (mode fallback)',
-          pdfUrl: uploadResult.secure_url,
-          qrCode: qrCode
-        };
-
-        await saveEquipmentToDatabase(extractedData, qrCode, uploadResult.secure_url);
-        
-        const equipmentUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/qr-equipment/${qrCode}`;
-        extractedData.equipmentUrl = equipmentUrl;
-
-        return NextResponse.json({
-          success: true,
-          extractedData,
-          message: 'Image uploadée en mode fallback (sans OCR)',
-          warning: 'Service OCR non configuré - données par défaut utilisées'
-        });
-      }
-
-      try {
-        const [result] = await vision.textDetection({
-          image: {
-            source: {
-              imageUri: uploadResult.secure_url
-            }
-          }
-        });
-
-        const detections = result.textAnnotations;
-        const fullText = detections?.[0]?.description || '';
-
-        extractedData = parseEquipmentData(fullText);
-        extractedData.rawText = fullText;
-        extractedData.pdfUrl = uploadResult.secure_url;
-
-        const qrCode = generateQRCode();
-        extractedData.qrCode = qrCode;
-
-        await saveEquipmentToDatabase(extractedData, qrCode, uploadResult.secure_url);
-
-        const equipmentUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/qr-equipment/${qrCode}`;
-        extractedData.equipmentUrl = equipmentUrl;
-
-      } catch (ocrError) {
-        console.error('Erreur OCR:', ocrError);
-        return NextResponse.json({
-          error: 'Erreur lors de l\'extraction OCR de l\'image',
-          suggestion: 'Vérifiez que l\'image contient du texte lisible',
-          code: 'OCR_ERROR',
-          details: ocrError instanceof Error ? ocrError.message : 'Unknown error'
-        }, { status: 500 });
+        console.log('🧾 Extraction OCR du PDF...');
+        const pdfData = await pdf(buffer);
+        fullText = pdfData.text;
+        console.log('Texte extrait:', fullText.length, 'caractères');
+      } catch (pdfError) {
+        console.error('Erreur extraction PDF:', pdfError);
       }
     }
+
+    // Parser les données extraites
+    if (fullText) {
+      extractedData = parseEquipmentData(fullText);
+      extractedData.rawText = fullText;
+    } else {
+      // Mode fallback si pas d'extraction
+      console.log('Mode fallback: création d\'équipement avec données de base');
+      extractedData = {
+        produit: 'Équipement',
+        reference: 'REF-' + Date.now(),
+        numeroSerie: 'S/N-' + Date.now(),
+        type: 'Type à définir',
+        normes: 'Normes à définir',
+        fabricant: 'Fabricant à définir',
+        date: new Date().toLocaleDateString('fr-FR'),
+        signataire: 'Signataire à définir',
+        rawText: 'Les données doivent être saisies manuellement',
+      };
+    }
+    
+    const qrCode = generateQRCode();
+    extractedData.pdfUrl = uploadResult.secure_url;
+    extractedData.qrCode = qrCode;
+
+    await saveEquipmentToDatabase(extractedData, qrCode, uploadResult.secure_url);
+    
+    const equipmentUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/qr-equipment/${qrCode}`;
+    extractedData.equipmentUrl = equipmentUrl;
 
     return NextResponse.json({
       success: true,
       extractedData,
-      message: `${type === 'pdf' ? 'PDF' : 'Image'} analysé avec succès !`
+      message: `${type === 'pdf' ? 'PDF' : 'Image'} uploadé avec succès !`
     });
 
   } catch (error) {
     console.error('Erreur lors du traitement du fichier:', error);
     return NextResponse.json({
       error: 'Erreur interne du serveur',
-      suggestion: 'Vérifiez la configuration des services Google Vision et Cloudinary'
+      suggestion: 'Vérifiez la configuration des services Cloudinary et Prisma'
     }, { status: 500 });
   }
 }
@@ -228,27 +126,26 @@ export async function POST(request: NextRequest) {
 function parseEquipmentData(text: string) {
   const data: any = {};
 
-  // Patterns de recherche pour différents champs
   const patterns = {
     nature: /nature[:\s]*([^\n\r]+)/i,
-    produit: /produit[:\s]*([^\n\r]+)/i,
-    reference: /référence[:\s]*([^\n\r]+)|ref[:\s]*([^\n\r]+)/i,
-    numeroSerie: /numéro\s+de\s+série[:\s]*([^\n\r]+)|n°\s+série[:\s]*([^\n\r]+)/i,
+    produit: /product:\s*([^\n\r]+)|product[:\s]*([^\n\r]+)/i,
+    reference: /reference:\s*([^\n\r]+)|reference[:\s]*([^\n\r]+)/i,
+    numeroSerie: /numéro\s+de\s+série[:\s]*([^\n\r]+)|n°\s+série[:\s]*([^\n\r]+)|serial number[:\s]*([^\n\r]+)/i,
     type: /type[:\s]*([^\n\r]+)/i,
-    normes: /normes?[:\s]*([^\n\r]+)|certificat[:\s]*([^\n\r]+)/i,
-    fabricant: /fabricant[:\s]*([^\n\r]+)|manufacturer[:\s]*([^\n\r]+)/i,
+    normes: /normes?[:\s]*([^\n\r]+)|certificat[:\s]*([^\n\r]+)|applicable standards?[:\s]*([^\n\r]+)/i,
+    fabricant: /manufacturer:\s*([^\n\r]+)|manufacturer[:\s]*([^\n\r]+)/i,
     date: /date[:\s]*([^\n\r]+)|contrôle[:\s]*([^\n\r]+)/i,
-    signataire: /signataire[:\s]*([^\n\r]+)|signé\s+par[:\s]*([^\n\r]+)/i,
+    signataire: /signataire[:\s]*([^\n\r]+)|signé\s+par[:\s]*([^\n\r]+)|declares[:\s]*([^\n\r]+)/i,
   };
 
-  // Extraire les données avec les patterns
   Object.entries(patterns).forEach(([key, pattern]) => {
     const match = text.match(pattern);
     if (match) {
-      data[key] = match[1] || match[2] || match[3] || '';
+      data[key] = (match[1] || match[2] || match[3] || '').trim();
     }
   });
 
+  console.log('📋 Données parsées:', data);
   return data;
 }
 
@@ -262,7 +159,7 @@ function generateQRCode(): string {
 // Fonction pour sauvegarder l'équipement en base de données
 async function saveEquipmentToDatabase(data: any, qrCode: string, pdfUrl: string) {
   try {
-    const equipment = await prisma.equipment.create({
+    await prisma.equipment.create({
       data: {
         qrCode,
         produit: data.produit || 'Non détecté',
@@ -279,7 +176,6 @@ async function saveEquipmentToDatabase(data: any, qrCode: string, pdfUrl: string
       }
     });
     console.log('Équipement sauvegardé en base:', qrCode);
-    return equipment;
   } catch (error) {
     console.error('Erreur lors de la sauvegarde:', error);
     throw error;
