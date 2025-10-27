@@ -20,19 +20,19 @@ export async function GET(req: NextRequest) {
       try {
         const sessions = await prisma.toolboxTalkRecord.findMany({
           select: {
-            site: true,
+            session: true,
           },
           where: {
             isPublished: true,
           },
-          distinct: ['site'],
+          distinct: ['session'],
           orderBy: {
-            site: 'asc',
+            session: 'asc',
           },
         });
 
         return NextResponse.json(
-          sessions.map(s => s.site).filter(Boolean)
+          sessions.map(s => s.session).filter(Boolean)
         );
       } catch (dbError) {
         console.error('Erreur de base de données pour les sessions:', dbError);
@@ -48,8 +48,8 @@ export async function GET(req: NextRequest) {
       };
 
       if (sessionFilter) {
-        where.site = {
-          contains: sessionFilter,
+        where.session = {
+          equals: sessionFilter,
           mode: 'insensitive'
         };
       }
@@ -84,6 +84,7 @@ export async function GET(req: NextRequest) {
     const formattedData = toolboxTalks.map((record: any) => ({
       id: record.id,
       site: record.site,
+      session: record.session,
       date: record.date,
       topic: record.topic,
       reason: record.reason,

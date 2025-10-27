@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
       reason,
       startTime,
       finishTime,
+      session: toolboxSession,
       mattersRaised,
       comments,
       adminName,
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Validation des champs requis
-    if (!site || !date || !reason || !startTime || !finishTime || !adminName || !adminSignature) {
+    if (!site || !date || !reason || !startTime || !finishTime || !toolboxSession || !adminName || !adminSignature) {
       return NextResponse.json(
         { message: 'Tous les champs requis doivent être remplis' },
         { status: 400 }
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
     const toolboxTalkRecord = await prisma.toolboxTalkRecord.create({
       data: {
         site,
+        session: toolboxSession,
         date: new Date(date),
         reason,
         startTime,

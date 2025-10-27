@@ -31,8 +31,15 @@ export default function EdgeAndRopeManagement() {
       try {
         const response = await fetch('/api/user/toolbox-talk');
         if (response.ok) {
-          const data = await response.json();
+          const responseData = await response.json();
+          // Gérer le nouveau format de réponse
+          const data = responseData.data || responseData;
           setToolboxTalks(data);
+          
+          // Afficher un message d'information si l'utilisateur n'a pas de session
+          if (responseData.message) {
+            console.log(responseData.message);
+          }
         }
       } catch (error) {
         console.error('Erreur lors de la récupération des Toolbox Talks:', error);
@@ -484,6 +491,9 @@ export default function EdgeAndRopeManagement() {
                         <div className="text-sm text-gray-600">
                           <p>Vous pouvez signer ce toolbox talk pour confirmer votre participation.</p>
                           <div className="mt-2 grid grid-cols-2 gap-4">
+                            <div>
+                              <strong>Session:</strong> <span className="font-semibold text-blue-700">{record.toolboxSessionName || record.session || 'N/A'}</span>
+                            </div>
                             <div>
                               <strong>Utilisateur:</strong> {record.userSession?.userName || fullUserName}
                             </div>

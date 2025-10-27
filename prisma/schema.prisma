@@ -362,6 +362,7 @@ model EquipmentDetailedInspection {
   verificateurSignature        String?
   verificateurSignaturePdf     String?
   verificateurNom              String?
+  dateSignature                DateTime?
   
   // Métadonnées
   status                       InspectionStatus @default(DRAFT)
@@ -939,6 +940,7 @@ model EdgeAndRopeManagementValidation {
 model ToolboxTalkRecord {
   id                    String                      @id @default(cuid())
   site                  String
+  session               String?
   date                  DateTime
   topic                 String                      @default("Toolbox Talk: Edge Management")
   reason                String

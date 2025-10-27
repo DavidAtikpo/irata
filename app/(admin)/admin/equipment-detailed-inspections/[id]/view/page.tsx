@@ -68,6 +68,8 @@ export default function ViewInspectionPage() {
         const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}`);
         if (response.ok) {
           const data = await response.json();
+          console.log('Données inspection:', data);
+          console.log('Date signature:', data.dateSignature);
           setInspection(data);
         } else {
           setError('Erreur lors du chargement de l\'inspection');
@@ -603,27 +605,50 @@ export default function ViewInspectionPage() {
                 <div className="pt-4 bg-gray-100 p-2">
                   <div className="text-center">
                     <div className="text-sm font-medium text-gray-700 mb-4">Signature Vérificateur / signature</div>
+                    
+                    {/* Premier cadre : Certificat de contrôleur (PDF) */}
                     <div className="border-2 border-gray-300 rounded-lg p-8 h-24 flex items-center justify-center">
                       {inspection.verificateurSignaturePdf ? (
                         <div className="text-center">
                           <DocumentIcon className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                          <div className="text-sm text-gray-600">Signature PDF</div>
+                          <button
+                            onClick={() => window.open(`/api/inspection-pdf?url=${encodeURIComponent(inspection.verificateurSignaturePdf)}`, '_blank')}
+                            className="text-orange-600 hover:text-orange-800 underline text-xs"
+                          >
+                          Certificat de controleur
+                          </button>
                         </div>
                       ) : (
-                        <div className="text-gray-400 text-sm">Signature</div>
+                        <div className="text-gray-400 text-sm">Certificat de controleur</div>
                       )}
                     </div>
+                    
                     <div className="flex items-center justify-center gap-2 mt-2">
                       <div className="text-xs text-gray-500">Original Signé {inspection.verificateurNom || 'LA'}</div>
-                      {inspection.verificateurSignaturePdf && (
-                        <button
-                          onClick={() => window.open(`/api/inspection-pdf?url=${encodeURIComponent(inspection.verificateurSignaturePdf)}`, '_blank')}
-                          className="text-blue-600 hover:text-blue-800 underline text-xs"
-                        >
-                          Voir PDF
-                        </button>
+                      {inspection.dateSignature && (
+                        <div className="text-xs text-gray-500">
+                          le {formatDate(inspection.dateSignature)}
+                        </div>
                       )}
                     </div>
+                    
+                    {/* Deuxième cadre : Signature digitale */}
+                    {inspection.verificateurSignaturePdf && inspection.verificateurSignaturePdf.startsWith('data:image') && (
+                      <div>
+                        <div className="border-2 border-gray-300 rounded-lg p-8 h-32 flex items-center justify-center mt-4">
+                          <img 
+                            src={inspection.verificateurSignaturePdf} 
+                            alt="Signature digitale" 
+                            className="max-w-full max-h-24 object-contain" 
+                          />
+                        </div>
+                        <div className="flex items-center justify-center gap-2 mt-2">
+                          <div className="text-xs text-gray-500">
+                            {inspection.dateSignature ? `Signé le ${formatDate(inspection.dateSignature)}` : 'Signature digitale'}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

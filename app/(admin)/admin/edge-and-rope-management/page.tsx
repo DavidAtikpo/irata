@@ -22,6 +22,7 @@ export default function EdgeAndRopeManagement() {
     reason: '',
     startTime: '',
     finishTime: '',
+    session: '', // Session sélectionnée
     mattersRaised: [
       { matter: '', action: '' },
       { matter: '', action: '' },
@@ -39,6 +40,8 @@ export default function EdgeAndRopeManagement() {
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
   const [sessionFilter, setSessionFilter] = useState<string>('');
   const [availableSessions, setAvailableSessions] = useState<string[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [showImages, setShowImages] = useState(false); // Pour afficher/cacher les images
 
   // Récupérer le nom de l'admin et le statut de validation
   useEffect(() => {
@@ -129,6 +132,60 @@ export default function EdgeAndRopeManagement() {
     }));
   };
 
+  // Fonction spéciale pour gérer le changement de session
+  const handleSessionChange = async (sessionValue: string) => {
+    // Réinitialiser la signature admin et les données liées si on change de session
+    setAdminSignature('');
+    setExistingToolboxData(null);
+    setToolboxRecordId(null);
+    setIsValidated(false);
+    
+    // Mettre à jour la session dans toolboxData
+    handleToolboxDataChange('session', sessionValue);
+    
+    // Si une session est sélectionnée, charger les données existantes pour cette session
+    if (sessionValue) {
+      try {
+        const response = await fetch('/api/admin/toolbox-talk');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            // Chercher un Toolbox Talk pour cette session spécifique
+            const sessionRecord = data.find((record: any) => record.session === sessionValue);
+            if (sessionRecord) {
+              setExistingToolboxData(sessionRecord);
+              setToolboxRecordId(sessionRecord.id);
+              
+              // Pré-remplir les champs avec les données existantes
+              setToolboxData({
+                site: sessionRecord.site || toolboxData.site,
+                date: sessionRecord.date ? new Date(sessionRecord.date).toISOString().split('T')[0] : toolboxData.date,
+                reason: sessionRecord.reason || toolboxData.reason,
+                startTime: sessionRecord.startTime || toolboxData.startTime,
+                finishTime: sessionRecord.finishTime || toolboxData.finishTime,
+                session: sessionValue,
+                mattersRaised: sessionRecord.mattersRaised && Array.isArray(sessionRecord.mattersRaised) 
+                  ? sessionRecord.mattersRaised.map((matter: any) => ({
+                      matter: matter.matter || '',
+                      action: matter.action || ''
+                    }))
+                  : toolboxData.mattersRaised,
+                comments: sessionRecord.comments || toolboxData.comments
+              });
+              
+              // Pré-remplir la signature admin si elle existe
+              if (sessionRecord.adminSignature) {
+                setAdminSignature(sessionRecord.adminSignature);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données pour la session:', error);
+      }
+    }
+  };
+
   const handleMatterChange = (index: number, field: 'matter' | 'action', value: string) => {
     setToolboxData(prev => ({
       ...prev,
@@ -141,6 +198,11 @@ export default function EdgeAndRopeManagement() {
   const saveToolboxTalk = async () => {
     if (!toolboxData.site || !toolboxData.date || !toolboxData.reason || !toolboxData.startTime || !toolboxData.finishTime) {
       alert('Veuillez remplir tous les champs requis du formulaire Toolbox Talk.');
+      return;
+    }
+
+    if (!toolboxData.session) {
+      alert('Veuillez sélectionner une session avant de sauvegarder le Toolbox Talk.');
       return;
     }
 
@@ -166,6 +228,10 @@ export default function EdgeAndRopeManagement() {
       if (response.ok) {
         const result = await response.json();
         setToolboxRecordId(result.id);
+        // Mettre à jour le filtre de session et recharger les signatures
+        setSessionFilter(toolboxData.session);
+        // Recharger les signatures après la sauvegarde
+        await fetchUserSignatures();
         alert('Toolbox Talk enregistré avec succès !');
       } else {
         throw new Error('Erreur lors de l\'enregistrement');
@@ -220,6 +286,7 @@ export default function EdgeAndRopeManagement() {
             reason: latestRecord.reason || '',
             startTime: latestRecord.startTime || '',
             finishTime: latestRecord.finishTime || '',
+            session: latestRecord.session || '',
             mattersRaised: latestRecord.mattersRaised && Array.isArray(latestRecord.mattersRaised) 
               ? latestRecord.mattersRaised.map((matter: any) => ({
                   matter: matter.matter || '',
@@ -232,6 +299,11 @@ export default function EdgeAndRopeManagement() {
                 ],
             comments: latestRecord.comments || ''
           });
+          
+          // Mettre à jour le filtre de session si une session existe
+          if (latestRecord.session) {
+            setSessionFilter(latestRecord.session);
+          }
           
           // Pré-remplir la signature admin si elle existe
           if (latestRecord.adminSignature) {
@@ -246,14 +318,41 @@ export default function EdgeAndRopeManagement() {
 
   // Fonction pour récupérer les sessions disponibles
   const fetchAvailableSessions = async () => {
+    setLoadingSessions(true);
     try {
-      const response = await fetch('/api/admin/toolbox-talk/signatures?sessions=true');
+      // Récupérer les sessions depuis l'API admin (même source que liste-presence)
+      const response = await fetch('/api/admin/sessions');
       if (response.ok) {
-        const sessions = await response.json();
-        setAvailableSessions(sessions);
+        const data = await response.json();
+        console.log('Sessions data:', data); // Debug
+        
+        // Combiner les sessions de TrainingSession et les sessions générales
+        const trainingSessionsNames = data.trainingSessions?.map((s: any) => s.name) || [];
+        const generalSessions = data.sessions || [];
+        
+        // Combiner et supprimer les doublons
+        const allSessions = [...trainingSessionsNames, ...generalSessions];
+        const uniqueSessions = Array.from(new Set(allSessions)).filter(Boolean);
+        
+        console.log('Available sessions:', uniqueSessions); // Debug
+        setAvailableSessions(uniqueSessions);
+      } else {
+        console.error('Erreur API sessions:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Erreur lors de la récupération des sessions:', error);
+      // Fallback: récupérer les sessions depuis toolbox-talk
+      try {
+        const fallbackResponse = await fetch('/api/admin/toolbox-talk/signatures?sessions=true');
+        if (fallbackResponse.ok) {
+          const sessions = await fallbackResponse.json();
+          setAvailableSessions(sessions);
+        }
+      } catch (fallbackError) {
+        console.error('Erreur lors du fallback:', fallbackError);
+      }
+    } finally {
+      setLoadingSessions(false);
     }
   };
 
@@ -438,9 +537,17 @@ export default function EdgeAndRopeManagement() {
 
   return (
     <main className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">
-        Edge and Rope Management - Document Complet
-      </h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">
+          Edge and Rope Management - Document Complet
+        </h1>
+        <button
+          onClick={() => setShowImages(!showImages)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        >
+          {showImages ? 'Masquer les images' : 'Afficher les images'}
+        </button>
+      </div>
 
       {/* Section des signatures utilisateurs */}
       <div className="mb-8 bg-white rounded-lg shadow-lg p-6">
@@ -452,9 +559,12 @@ export default function EdgeAndRopeManagement() {
             <select
               value={sessionFilter}
               onChange={(e) => setSessionFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              disabled={loadingSessions}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:opacity-50"
             >
-              <option value="">Toutes les sessions</option>
+              <option value="">
+                {loadingSessions ? 'Chargement des sessions...' : 'Toutes les sessions'}
+              </option>
               {availableSessions.map((session) => (
                 <option key={session} value={session}>
                   {session}
@@ -490,6 +600,7 @@ export default function EdgeAndRopeManagement() {
                       {record.topic} - {record.site}
                     </h3>
                     <p className="text-sm text-gray-600">
+                      Session: <span className="font-semibold text-blue-700">{record.session || 'N/A'}</span> | 
                       Date: {new Date(record.date).toLocaleDateString('fr-FR')} | 
                       Publié le: {new Date(record.publishedAt).toLocaleDateString('fr-FR')}
                     </p>
@@ -559,8 +670,9 @@ export default function EdgeAndRopeManagement() {
         )}
       </div>
       
-      <div className="space-y-8">
-        {/* Paire 1: Page 1 + Page 2 */}
+      {showImages && (
+        <div className="space-y-8 mb-8">
+          {/* Paire 1: Page 1 + Page 2 */}
         <div className="space-y-0">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="p-4">
@@ -783,8 +895,11 @@ export default function EdgeAndRopeManagement() {
             </div>
           </div>
         </div>
+      </div>
+      )}
 
-        {/* Page 15: Formulaire interactif TOOLBOX TALK */}
+      {/* Page 15: Formulaire interactif TOOLBOX TALK */}
+      <div className="space-y-8">
         <div className="space-y-0">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="p-6">
@@ -826,6 +941,25 @@ export default function EdgeAndRopeManagement() {
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Topic(s) for discussion:</label>
                   <input type="text" value="Toolbox Talk: Edge Management" readOnly className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Session *:</label>
+                  <select
+                    value={toolboxData.session}
+                    onChange={(e) => handleSessionChange(e.target.value)}
+                    disabled={loadingSessions}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                    required
+                  >
+                    <option value="">
+                      {loadingSessions ? 'Chargement des sessions...' : 'Sélectionnez une session'}
+                    </option>
+                    {availableSessions.map((session) => (
+                      <option key={session} value={session}>
+                        {session}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Reason for talk:</label>
@@ -928,7 +1062,7 @@ export default function EdgeAndRopeManagement() {
                 <h3 className="text-lg font-semibold text-center mb-2">Validation Administrateur</h3>
                 <p className="text-sm text-center text-gray-600 mb-4">Je confirme avoir validé ce document et l'avoir mis à disposition des utilisateurs</p>
                 
-                {isValidated || existingToolboxData ? (
+                {isValidated || (existingToolboxData && existingToolboxData.session === toolboxData.session) ? (
                   <div className="border border-green-300 rounded-md overflow-hidden bg-green-50">
                     <div className="bg-green-100 grid grid-cols-3 p-3 font-medium text-sm">
                       <div>Nom de l'administrateur</div>

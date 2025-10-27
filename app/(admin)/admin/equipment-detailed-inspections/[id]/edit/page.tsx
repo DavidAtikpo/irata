@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { CheckCircleIcon, XMarkIcon, PhotoIcon, QrCodeIcon, DocumentIcon } from '@heroicons/react/24/outline';
+import SignaturePad from '../../../../../../components/SignaturePad';
 
 interface InspectionPoint {
   status: 'V' | 'NA' | 'X';
@@ -61,6 +62,8 @@ export default function EditInspectionPage() {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [digitalSignature, setDigitalSignature] = useState('');
   const photoInputRef = useRef<HTMLInputElement>(null);
   const qrInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -89,6 +92,7 @@ export default function EditInspectionPage() {
     pdfUrl: '',
     dateAchatImage: '',
     verificateurSignaturePdf: '',
+    dateSignature: '',
     etat: 'OK',
     
     // Nouveaux champs pour QR code
@@ -238,6 +242,30 @@ export default function EditInspectionPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Si c'est la date d'inspection détaillée, mettre à jour tous les fichiers
+    if (name === 'dateInspectionDetaillee' && value) {
+      updateAllFilesInspectionDate(value);
+    }
+  };
+
+  // Fonction pour mettre à jour tous les fichiers avec la nouvelle date d'inspection
+  const updateAllFilesInspectionDate = async (newDate: string) => {
+    try {
+      const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}/update-inspection-date`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ dateInspectionDetaillee: newDate }),
+      });
+
+      if (!response.ok) {
+        console.error('Erreur lors de la mise à jour des fichiers');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des fichiers:', error);
+    }
   };
 
   const handleInspectionChange = (section: keyof InspectionData, field: string, status: 'V' | 'NA' | 'X', comment?: string) => {
@@ -438,6 +466,47 @@ export default function EditInspectionPage() {
     }
   };
 
+  // Fonction pour gérer la signature digitale
+  const handleDigitalSignature = async (signature: string) => {
+    setDigitalSignature(signature);
+    setShowSignatureModal(false);
+    
+    // Enregistrer la signature directement dans formData avec la date actuelle
+    const currentDate = new Date().toISOString();
+    setFormData(prev => ({ 
+      ...prev, 
+      verificateurSignaturePdf: signature,
+      dateSignature: currentDate
+    }));
+    
+    // Mettre à jour tous les équipements de même type avec cette signature
+    await updateAllEquipmentSignatures(signature, currentDate);
+  };
+
+  // Fonction pour mettre à jour tous les équipements de même type
+  const updateAllEquipmentSignatures = async (signature: string, date: string) => {
+    try {
+      const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}/update-all-signatures`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          signature, 
+          dateSignature: date 
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Erreur lors de la mise à jour des signatures');
+      } else {
+        console.log('Tous les équipements ont été signés');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des signatures:', error);
+    }
+  };
+
   // Fonction pour rendre les normes cliquables avec liens PDF
   const renderClickableNormes = (text: string) => {
     if (!text || !formData.pdfUrl) return text;
@@ -454,12 +523,7 @@ export default function EditInspectionPage() {
     setError('');
 
     try {
-      const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const submitData = {
           ...formData,
           antecedentProduit: formData.inspectionData.antecedentProduit,
           observationsPrelables: formData.inspectionData.observationsPrelables,
@@ -472,7 +536,17 @@ export default function EditInspectionPage() {
           mousseConfort: formData.inspectionData.mousseConfort,
           crochetsLampe: formData.inspectionData.crochetsLampe,
           accessoires: formData.inspectionData.accessoires,
-        }),
+          dateSignature: formData.dateSignature || null,
+        };
+      
+      console.log('Envoi dateSignature:', submitData.dateSignature);
+      
+      const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submitData),
       });
 
       if (response.ok) {
@@ -821,7 +895,11 @@ export default function EditInspectionPage() {
                            />
                            <button
                              type="button"
-                             onClick={() => setFormData(prev => ({ ...prev, dateInspectionDetaillee: calculateNextInspectionDate() }))}
+                             onClick={() => {
+                               const newDate = calculateNextInspectionDate();
+                               setFormData(prev => ({ ...prev, dateInspectionDetaillee: newDate }));
+                               updateAllFilesInspectionDate(newDate);
+                             }}
                              className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                              title="Calculer automatiquement (6 mois)"
                            >
@@ -1301,17 +1379,23 @@ export default function EditInspectionPage() {
                             </label>
                             <div className="mt-1 flex space-x-2">
                               <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                                {formData.verificateurSignaturePdf ? (
+                                {formData.verificateurSignaturePdf || digitalSignature ? (
                                   <div className="text-green-600 text-sm">
                                     <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
-                                    <div>Signature PDF uploadée</div>
-                                    <a 
-                                      href={formData.verificateurSignaturePdf} 
-                                      target="_blank" 
-                                      className="text-blue-600 hover:text-blue-800 underline text-xs"
-                                    >
-                                      Voir le PDF
-                                    </a>
+                                    {formData.verificateurSignaturePdf ? (
+                                      <a 
+                                        href={formData.verificateurSignaturePdf} 
+                                        target="_blank" 
+                                        className="text-blue-600 hover:text-blue-800 underline text-xs"
+                                      >
+                                        <div>Certificat du controleur</div>
+                                      </a>
+                                    ) : (
+                                      <div className="text-gray-600">
+                                        <img src={digitalSignature} alt="Signature digitale" className="h-16 mx-auto object-contain" />
+                                        <div className="text-xs mt-2">Signature digitale enregistrée</div>
+                                      </div>
+                                    )}
                                   </div>
                                 ) : (
                                   <div className="text-gray-400 text-sm">
@@ -1320,14 +1404,24 @@ export default function EditInspectionPage() {
                                   </div>
                                 )}
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => signatureInputRef.current?.click()}
-                                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                title="Uploader une signature PDF"
-                              >
-                                <DocumentIcon className="h-4 w-4" />
-                              </button>
+                              <div className="flex flex-col space-y-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setShowSignatureModal(true)}
+                                  className="inline-flex items-center px-3 py-2 border border-indigo-300 rounded-md text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
+                                  title="Signature digitale"
+                                >
+                                  ✍️ Signer
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => signatureInputRef.current?.click()}
+                                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                  title="Uploader une signature PDF"
+                                >
+                                  <DocumentIcon className="h-4 w-4" />
+                                </button>
+                              </div>
                             </div>
                             <input
                               ref={signatureInputRef}
@@ -1337,7 +1431,12 @@ export default function EditInspectionPage() {
                               className="hidden"
                             />
                             <p className="mt-1 text-xs text-gray-500">
-                              Uploader un PDF de signature
+                              Cliquez sur <span 
+                                className="text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
+                                onClick={() => setShowSignatureModal(true)}
+                              >
+                                "Uploader un PDF de signature Original" 
+                              </span> ou signez digitalement
                             </p>
                           </div>
                         </div>
@@ -1368,6 +1467,31 @@ export default function EditInspectionPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de signature digitale */}
+      {showSignatureModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">Signature digitale</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Signez ci-dessous avec votre curseur ou votre doigt
+            </p>
+            <SignaturePad
+              onSave={handleDigitalSignature}
+              width={400}
+              height={200}
+            />
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setShowSignatureModal(false)}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

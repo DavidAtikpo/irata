@@ -57,6 +57,8 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
     
+    console.log('API reçoit dateSignature:', body.dateSignature);
+    
     // Remove fields that are not updatable or not part of the database schema
     const { 
       inspectionData, 
