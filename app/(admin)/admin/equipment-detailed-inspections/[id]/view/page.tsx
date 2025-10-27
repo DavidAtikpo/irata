@@ -161,7 +161,7 @@ export default function ViewInspectionPage() {
     const normePattern = /(EN\s*\d+(?::\d{4})?(?:\s*\+\s*[A-Z]\d+(?::\d{4})?)?)/gi;
     
     return text.replace(normePattern, (match) => {
-      return `<a href="${inspection.pdfUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF">${match}</a>`;
+      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(inspection.pdfUrl)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF">${match}</a>`;
     });
   };
 
@@ -173,7 +173,7 @@ export default function ViewInspectionPage() {
     const referencePattern = /(notice|procédure|manuel|guide|instruction|référence|document)/gi;
     
     return text.replace(referencePattern, (match) => {
-      return `<a href="${inspection.referenceUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF">${match}</a>`;
+      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(inspection.referenceUrl)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF">${match}</a>`;
     });
   };
 
@@ -181,7 +181,7 @@ export default function ViewInspectionPage() {
   const renderClickableDateAchat = (text: string) => {
     if (!text || !inspection.dateAchatUrl) return text;
     
-    return `<a href="${inspection.dateAchatUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF">${text}</a>`;
+    return `<a href="/api/inspection-pdf?url=${encodeURIComponent(inspection.dateAchatUrl)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF">${text}</a>`;
   };
 
   return (

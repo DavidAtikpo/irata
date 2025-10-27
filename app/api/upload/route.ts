@@ -43,10 +43,13 @@ export async function POST(request: NextRequest) {
     const fileName = `equipment-inspections/${type}_${timestamp}`;
 
     // Upload vers Cloudinary
+    // Utiliser 'raw' pour les PDFs, 'auto' pour les autres types
+    const resourceType = (type === 'signature' || type === 'dateAchat') ? 'raw' : 'auto';
+    
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
-          resource_type: 'auto',
+          resource_type: resourceType,
           public_id: fileName,
           access_mode: 'public',
         },
