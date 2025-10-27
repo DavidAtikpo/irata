@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         {
           resource_type: 'auto',
           public_id: fileName,
-          folder: 'equipment-inspections',
+          access_mode: 'public',
         },
         (error, result) => {
           if (error) reject(error);
@@ -157,6 +157,7 @@ export async function POST(request: NextRequest) {
                 resource_type: 'raw',
                 public_id: `equipment-inspections/pdf/${type}_${timestamp}`,
                 folder: 'equipment-inspections/pdf',
+                access_mode: 'public',
               },
               (error, result) => {
                 if (error) reject(error);
@@ -207,19 +208,20 @@ export async function POST(request: NextRequest) {
             // Utiliser directement Cloudinary OCR (si disponible)
             try {
               const ocrResult = await new Promise((resolve, reject) => {
-                cloudinary.uploader.upload_stream(
-                  {
-                    resource_type: 'image',
-                    ocr: 'adv_ocr',
-                    public_id: `equipment-inspections/ocr/pdf_${timestamp}`,
-                    folder: 'equipment-inspections/ocr',
-                    pages: 'all',
-                  },
-                  (error, result) => {
-                    if (error) reject(error);
-                    else resolve(result);
-                  }
-                ).end(buffer);
+                  cloudinary.uploader.upload_stream(
+                    {
+                      resource_type: 'image',
+                      ocr: 'adv_ocr',
+                      public_id: `equipment-inspections/ocr/pdf_${timestamp}`,
+                      folder: 'equipment-inspections/ocr',
+                      pages: 'all',
+                      access_mode: 'public',
+                    },
+                    (error, result) => {
+                      if (error) reject(error);
+                      else resolve(result);
+                    }
+                  ).end(buffer);
               });
               
               extractedText = (ocrResult as any).ocr?.adv_ocr?.data?.[0]?.text || '';
@@ -374,8 +376,8 @@ export async function POST(request: NextRequest) {
           rawText: extractedText,
           confidence: 95, // Simulation de confiance élevée
           // URLs pour les liens cliquables
-          referenceUrl: localFileUrl, // Même PDF pour les références
-          dateAchatUrl: localFileUrl // Même PDF pour la date d'achat
+          referenceUrl: fileUrl, // URL Cloudinary pour les références
+          dateAchatUrl: fileUrl // URL Cloudinary pour la date d'achat
         };
       } catch (ocrError) {
         console.error('Erreur OCR PDF:', ocrError);
@@ -412,6 +414,7 @@ export async function POST(request: NextRequest) {
               resource_type: 'raw',
               public_id: `equipment-inspections/dateAchat/${type}_${timestamp}`,
               folder: 'equipment-inspections/dateAchat',
+              access_mode: 'public',
             },
             (error, result) => {
               if (error) reject(error);
@@ -448,7 +451,7 @@ export async function POST(request: NextRequest) {
                   resource_type: 'image',
                   ocr: 'adv_ocr',
                   public_id: `equipment-inspections/ocr/dateAchat_${timestamp}`,
-                  folder: 'equipment-inspections/ocr',
+                  access_mode: 'public',
                 },
                 (error, result) => {
                   if (error) reject(error);
@@ -547,7 +550,7 @@ export async function POST(request: NextRequest) {
           confidence: extractedText ? 0.8 : 0,
           localUrl: localFileUrl,
           cloudinaryUrl: fileUrl,
-          dateAchatUrl: localFileUrl
+          dateAchatUrl: fileUrl
         };
       } catch (error) {
         console.error('Erreur DateAchat:', error);
@@ -582,6 +585,7 @@ export async function POST(request: NextRequest) {
               resource_type: 'raw',
               public_id: `equipment-inspections/reference/${type}_${timestamp}`,
               folder: 'equipment-inspections/reference',
+              access_mode: 'public',
             },
             (error, result) => {
               if (error) reject(error);

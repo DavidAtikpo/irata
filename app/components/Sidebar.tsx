@@ -53,7 +53,7 @@ const navigation = [
 
   { name: 'Formations', href: '/admin/formations', icon: AcademicCapIcon, showCount: false },
   { name: 'Stagiaires', href: '/admin/utilisateurs', icon: UserGroupIcon, showCount: false },
-  { name: 'Financement Participatif', href: '/admin/financement-participatif', icon: CurrencyDollarIcon, showCount: false },
+  // { name: 'Financement Participatif', href: '/admin/financement-participatif', icon: CurrencyDollarIcon, showCount: false },
 
   { name: 'Paramètres', href: '/admin/parametres', icon: Cog6ToothIcon, showCount: false },
 ];

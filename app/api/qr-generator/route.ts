@@ -135,7 +135,7 @@ function parseEquipmentData(text: string) {
     type: /type[:\s]*([^\n\r]+)/i,
     normes: /normes?[:\s]*([^\n\r]+)|certificat[:\s]*([^\n\r]+)|applicable standards?[:\s]*([^\n\r]+)/i,
     fabricant: /manufacturer:\s*([^\n\r]+)|manufacturer[:\s]*([^\n\r]+)/i,
-    date: /date[:\s]*([^\n\r]+)|contrôle[:\s]*([^\n\r]+)/i,
+    date: /date:\s*of\s+issue:[^\n\r,]*,\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})|([0-9]{2}\/[0-9]{2}\/[0-9]{4})/i,
     signataire: /signataire[:\s]*([^\n\r]+)|signé\s+par[:\s]*([^\n\r]+)|declares[:\s]*([^\n\r]+)/i,
   };
 
@@ -170,6 +170,7 @@ async function saveEquipmentToDatabase(data: any, qrCode: string, pdfUrl: string
         normesCertificat: data.normes || 'Non détecté',
         fabricant: data.fabricant || 'Non détecté',
         dateControle: data.date || 'Non détecté',
+        // dateFabrication: data.date || 'Non détecté', // Stocker aussi comme date de fabrication
         signataire: data.signataire || 'Non détecté',
         pdfUrl,
         rawText: data.rawText || '',

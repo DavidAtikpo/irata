@@ -162,7 +162,7 @@ export default function NouvelleInspectionPage() {
   const fetchEquipmentData = async (qrCode: string) => {
     setPrefillLoading(true);
     try {
-      const response = await fetch(`/api/equipment/${qrCode}`);
+      const response = await fetch(`/api/qr-equipment/${qrCode}`);
       
       if (!response.ok) {
         console.error('Équipement non trouvé');
@@ -176,14 +176,14 @@ export default function NouvelleInspectionPage() {
         ...prev,
         referenceInterne: equipmentData.referenceInterne || '',
         numeroSerie: equipmentData.numeroSerie || '',
-        normesCertificat: equipmentData.normes || '',
+        normesCertificat: equipmentData.normesCertificat || equipmentData.normes || '', // Remplir avec les normes
         fabricant: equipmentData.fabricant || '',
         date: equipmentData.dateControle || '',
         signataire: equipmentData.signataire || '',
         pdfUrl: equipmentData.pdfUrl || '',
         nature: 'Déclaration UE de conformité',
         reference: equipmentData.referenceInterne || '',
-        normes: equipmentData.normes || '',
+        normes: equipmentData.normes || equipmentData.normesCertificat || '',
       }));
 
       console.log('✅ Formulaire pré-rempli avec les données du QR code:', qrCode);
@@ -338,17 +338,17 @@ export default function NouvelleInspectionPage() {
               // Vérifier si c'est une URL vers /equipment/[code]
               let qrData: any = {};
               
-              if (result.includes('/equipment/')) {
+              if (result.includes('/qr-equipment/') || result.includes('/equipment/')) {
                 // Nouveau système : URL vers la page équipement
                 console.log('QR Code - URL détectée, extraction du code équipement');
-                const codeMatch = result.match(/\/equipment\/([a-zA-Z0-9_-]+)/);
+                const codeMatch = result.match(/\/(?:qr-)?equipment\/([a-zA-Z0-9_-]+)/);
                 if (codeMatch && codeMatch[1]) {
                   const equipmentCode = codeMatch[1];
                   console.log('Code équipement extrait:', equipmentCode);
                   
                   // Charger les données depuis l'API
                   try {
-                    const response = await fetch(`/api/equipment/${equipmentCode}`);
+                    const response = await fetch(`/api/qr-equipment/${equipmentCode}`);
                     if (response.ok) {
                       const equipmentData = await response.json();
                       console.log('Données équipement chargées depuis l\'API:', equipmentData);
@@ -358,7 +358,8 @@ export default function NouvelleInspectionPage() {
                         referenceInterne: equipmentData.referenceInterne,
                         numeroSerie: equipmentData.numeroSerie,
                         fabricant: equipmentData.fabricant,
-                        normes: equipmentData.normes,
+                        normes: equipmentData.normesCertificat || equipmentData.normes,
+                        normesCertificat: equipmentData.normesCertificat || equipmentData.normes,
                         date: equipmentData.dateControle,
                         signataire: equipmentData.signataire,
                         produit: equipmentData.produit,
@@ -397,7 +398,7 @@ export default function NouvelleInspectionPage() {
                 // Champs d'inspection existants
                 referenceInterne: qrData.referenceInterne || qrData.reference || prev.referenceInterne,
                 numeroSerie: qrData.numeroSerie || prev.numeroSerie,
-                dateFabrication: qrData.dateFabrication || qrData.date || prev.dateFabrication,
+                dateFabrication: qrData.date || prev.dateFabrication, // Remplir avec la date du QR code
                 typeEquipement: qrData.produit || qrData.typeEquipement || prev.typeEquipement,
                 dateInspectionDetaillee: nextInspectionDate,
                 
@@ -411,9 +412,9 @@ export default function NouvelleInspectionPage() {
                 signataire: qrData.signataire || prev.signataire,
                 
                 // Mise à jour des champs existants avec les nouvelles données
-                normesCertificat: qrData.normes || prev.normesCertificat,
+                normesCertificat: qrData.normesCertificat || qrData.normes || prev.normesCertificat, // Remplir les normes du QR code
                 documentsReference: prev.documentsReference, // Ne pas écraser documentsReference
-                dateAchat: qrData.date || prev.dateAchat,
+                dateAchat: prev.dateAchat, // Ne pas remplir dateAchat avec les données du QR code
                 pdfUrl: qrData.pdfUrl || prev.pdfUrl, // URL du PDF depuis l'équipement
               }));
               
@@ -470,7 +471,7 @@ export default function NouvelleInspectionPage() {
             // Seulement les champs spécifiques au PDF
             normesCertificat: data.extractedData.normes || prev.normesCertificat,
             documentsReference: data.extractedData.reference || prev.documentsReference,
-            pdfUrl: data.extractedData.pdfUrl || prev.pdfUrl,
+            pdfUrl: data.extractedData.pdfUrl || data.extractedData.cloudinaryUrl || data.url || prev.pdfUrl,
             // Ne pas écraser les données du QR code (dateFabrication, numeroSerie, dateAchat)
             // Ces champs restent inchangés s'ils ont été remplis par le QR code
           }));
@@ -556,7 +557,7 @@ export default function NouvelleInspectionPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setFormData(prev => ({ ...prev, dateAchatImage: data.url }));
+        setFormData(prev => ({ ...prev, dateAchatImage: data.extractedData?.dateAchatUrl || data.url }));
         
         // Auto-remplissage basé sur l'extraction de l'image
         // Ne mettre à jour que le champ dateAchat, préserver les autres données
@@ -647,14 +648,6 @@ export default function NouvelleInspectionPage() {
           mousseConfort: formData.inspectionData.mousseConfort,
           crochetsLampe: formData.inspectionData.crochetsLampe,
           accessoires: formData.inspectionData.accessoires,
-          // Nouveaux champs du QR Generator
-          fabricant: formData.fabricant,
-          nature: formData.nature,
-          reference: formData.reference,
-          type: formData.type,
-          normes: formData.normes,
-          date: formData.date,
-          signataire: formData.signataire,
         }),
       });
 
@@ -993,12 +986,6 @@ export default function NouvelleInspectionPage() {
                           Uploader une image/PDF pour extraire automatiquement la date d'achat
                         </p>
                         {/* Aperçu de l'image uploadée */}
-                        {formData.dateAchatImage && (
-                          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
-                            <div className="text-green-800 font-medium mb-1">Image de date d'achat :</div>
-                            <img src={formData.dateAchatImage} alt="Date d'achat" className="max-w-full h-24 object-contain rounded" />
-                          </div>
-                        )}
                       </div>
 
                       <div>
@@ -1120,23 +1107,7 @@ export default function NouvelleInspectionPage() {
                             className="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             placeholder="Ex: EN1249: 2012 EN 397: 2012+A1:2012"
                           />
-                          <button
-                            type="button"
-                            onClick={() => pdfInputRef.current?.click()}
-                            disabled={isUploadingPDF}
-                            className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
-                              isUploadingPDF 
-                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
-                                : 'text-gray-700 bg-white hover:bg-gray-50'
-                            }`}
-                            title={isUploadingPDF ? "Upload en cours..." : "Uploader un PDF pour auto-remplissage"}
-                          >
-                            {isUploadingPDF ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                            ) : (
-                              <DocumentIcon className="h-4 w-4" />
-                            )}
-                          </button>
+                          {/* <button */}
                         </div>
                         <input
                           ref={pdfInputRef}
@@ -1149,16 +1120,7 @@ export default function NouvelleInspectionPage() {
                           Uploader un PDF pour extraire automatiquement les normes
                         </p>
                         {/* Affichage des normes cliquables */}
-                        {formData.normesCertificat && formData.pdfUrl && (
-                          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
-                            <div className="text-blue-800 font-medium mb-1">Normes disponibles :</div>
-                            <div 
-                              dangerouslySetInnerHTML={{ 
-                                __html: renderClickableNormes(formData.normesCertificat) 
-                              }}
-                            />
-                          </div>
-                        )}
+                      
                       </div>
 
                       <div>
@@ -1204,16 +1166,6 @@ export default function NouvelleInspectionPage() {
                           Uploader un PDF pour extraire automatiquement les documents de référence
                         </p>
                         {/* Affichage des documents cliquables */}
-                        {formData.documentsReference && formData.pdfUrl && (
-                          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
-                            <div className="text-green-800 font-medium mb-1">Documents disponibles :</div>
-                            <div 
-                              dangerouslySetInnerHTML={{ 
-                                __html: renderClickableNormes(formData.documentsReference) 
-                              }}
-                            />
-                          </div>
-                        )}
                       </div>
 
                       <div>
@@ -1259,106 +1211,7 @@ export default function NouvelleInspectionPage() {
                       </div>
 
                       {/* Nouveaux champs du QR Generator */}
-                      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <h3 className="text-sm font-medium text-blue-900 mb-3">
-                          Informations du QR Code (Déclaration UE de conformité)
-                        </h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label htmlFor="nature" className="block text-sm font-medium text-gray-700">
-                              Nature
-                            </label>
-                            <input
-                              type="text"
-                              id="nature"
-                              name="nature"
-                              value={formData.nature}
-                              onChange={handleChange}
-                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-blue-50"
-                              placeholder="Ex: Déclaration UE de conformité"
-                            />
-                          </div>
-
-                          <div>
-                            <label htmlFor="reference" className="block text-sm font-medium text-gray-700">
-                              Référence
-                            </label>
-                            <input
-                              type="text"
-                              id="reference"
-                              name="reference"
-                              value={formData.reference}
-                              onChange={handleChange}
-                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-blue-50"
-                              placeholder="Ex: A010CA00"
-                            />
-                            <p className="mt-1 text-xs text-gray-500">
-                              Cette référence sera automatiquement copiée dans "Référence interne"
-                            </p>
-                          </div>
-
-                          <div>
-                            <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-                              Type
-                            </label>
-                            <input
-                              type="text"
-                              id="type"
-                              name="type"
-                              value={formData.type}
-                              onChange={handleChange}
-                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-blue-50"
-                              placeholder="Ex: Équipement de protection individuelle (EPI)"
-                            />
-                          </div>
-
-                          <div>
-                            <label htmlFor="normes" className="block text-sm font-medium text-gray-700">
-                              Normes
-                            </label>
-                            <input
-                              type="text"
-                              id="normes"
-                              name="normes"
-                              value={formData.normes}
-                              onChange={handleChange}
-                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-blue-50"
-                              placeholder="Ex: EN 397, EN 50365"
-                            />
-                          </div>
-
-                          <div>
-                            <label htmlFor="date" className="block text-sm font-medium text-gray-700">
-                              Date
-                            </label>
-                            <input
-                              type="text"
-                              id="date"
-                              name="date"
-                              value={formData.date}
-                              onChange={handleChange}
-                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-blue-50"
-                              placeholder="Ex: 28/03/2019"
-                            />
-                          </div>
-
-                          <div>
-                            <label htmlFor="signataire" className="block text-sm font-medium text-gray-700">
-                              Signataire
-                            </label>
-                            <input
-                              type="text"
-                              id="signataire"
-                              name="signataire"
-                              value={formData.signataire}
-                              onChange={handleChange}
-                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-blue-50"
-                              placeholder="Ex: Bernard Bressoux, Product Risk Director"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      {/*  */}
                     </div>
                   </div>
                 </div>

@@ -212,7 +212,7 @@ export default function ViewInspectionPage() {
 
       {/* Contenu principal */}
       <div className="max-w-7xl mx-auto px-6 py-8 print:px-0 print:py-0">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 print:grid-cols-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 print:grid-cols-2">
           
           {/* Colonne gauche - Identification équipement */}
           <div className="space-y-2">
@@ -299,7 +299,7 @@ export default function ViewInspectionPage() {
 
               {/* Détails de l'équipement */}
               <div className="space-y-3">
-                <div className=" justify-between bg-gray-100 p-2">
+                <div className="flex justify-between bg-gray-100 p-2">
                   <span className="text-sm font-medium text-gray-700">Référence interne:</span>
                   <span className="text-sm text-gray-900 font-bold">{inspection.referenceInterne || '/'}</span>
                 </div>
@@ -317,12 +317,17 @@ export default function ViewInspectionPage() {
                 </div>
                 <div className="flex justify-between bg-gray-100 p-2">
                   <span className="text-sm font-medium text-gray-700">Date d' Achat:</span>
-                  <span 
-                    className="text-sm text-gray-900 font-bold"
-                    dangerouslySetInnerHTML={{ 
-                      __html: inspection.dateAchat ? renderClickableDateAchat(inspection.dateAchat) : '/' 
-                    }}
-                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-900 font-bold">{inspection.dateAchat || '/'}</span>
+                    {inspection.dateAchatImage && (
+                      <button
+                        onClick={() => window.open(`/api/inspection-pdf?url=${encodeURIComponent(inspection.dateAchatImage)}`, '_blank')}
+                        className="text-blue-600 hover:text-blue-800 underline text-xs"
+                      >
+                        Voir PDF
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium text-gray-700">Date de mise en service:</span>
@@ -355,12 +360,22 @@ export default function ViewInspectionPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium text-gray-700">Documents Référence:</span>
-                  <span 
-                    className="text-sm text-gray-900 font-bold"
-                    dangerouslySetInnerHTML={{ 
-                      __html: inspection.documentsReference ? renderClickableReferences(inspection.documentsReference) : '/' 
-                    }}
-                  />
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className="text-sm text-gray-900 font-bold"
+                      dangerouslySetInnerHTML={{ 
+                        __html: inspection.documentsReference ? renderClickableReferences(inspection.documentsReference) : '/' 
+                      }}
+                    />
+                    {inspection.pdfUrl && (
+                      <button
+                        onClick={() => window.open(`/api/inspection-pdf?url=${encodeURIComponent(inspection.pdfUrl)}`, '_blank')}
+                        className="text-blue-600 hover:text-blue-800 underline text-xs"
+                      >
+                        Voir Notice
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="flex justify-between bg-gray-100 p-2">
                   <span className="text-sm font-medium text-gray-700">Consommation:</span>
@@ -598,7 +613,17 @@ export default function ViewInspectionPage() {
                         <div className="text-gray-400 text-sm">Signature</div>
                       )}
                     </div>
-                    <div className="text-xs text-gray-500 mt-2">Original Signé {inspection.verificateurNom || 'LA'}</div>
+                    <div className="flex items-center justify-center gap-2 mt-2">
+                      <div className="text-xs text-gray-500">Original Signé {inspection.verificateurNom || 'LA'}</div>
+                      {inspection.verificateurSignaturePdf && (
+                        <button
+                          onClick={() => window.open(`/api/inspection-pdf?url=${encodeURIComponent(inspection.verificateurSignaturePdf)}`, '_blank')}
+                          className="text-blue-600 hover:text-blue-800 underline text-xs"
+                        >
+                          Voir PDF
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

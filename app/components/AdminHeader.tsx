@@ -25,7 +25,8 @@ import {
   CalendarIcon,
   Bars3Icon,
   XMarkIcon,
-  QrCodeIcon
+  QrCodeIcon,
+  ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline';
 
 const navigationTabs = [
@@ -34,12 +35,6 @@ const navigationTabs = [
     href: '/admin/financement-participatif',
     icon: CurrencyDollarIcon,
     description: 'Gestion du financement participatif'
-  },
-  {
-    name: 'Suivi IRATA',
-    href: '/admin/suivi-irata',
-    icon: ShieldCheckIcon,
-    description: 'Suivi des certifications IRATA'
   },
   {
     name: 'QR Generator',
@@ -54,12 +49,6 @@ const navigationTabs = [
     description: 'Gestion des diplômes'
   },
   {
-    name: 'Actions Correctives',
-    href: '/admin/actions-correctives',
-    icon: ClipboardDocumentIcon,
-    description: 'Gestion des actions correctives'
-  },
-  {
     name: 'Rapports',
     href: '/admin/rapports',
     icon: ChartBarIcon,
@@ -71,6 +60,11 @@ const navigationTabs = [
     icon: CogIcon,
     description: 'Configuration du système'
   },
+   { name: 'Inspections Équipement',
+     href: '/admin/equipment-detailed-inspections', 
+     icon: ClipboardDocumentCheckIcon,
+     description: 'Gestion des inspections d\'équipement'
+   },
   {
     name: 'Historique',
     href: '/admin/historique-management',
