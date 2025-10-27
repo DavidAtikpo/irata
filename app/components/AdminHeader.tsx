@@ -24,7 +24,8 @@ import {
   ShieldCheckIcon,
   CalendarIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  QrCodeIcon
 } from '@heroicons/react/24/outline';
 
 const navigationTabs = [
@@ -41,10 +42,16 @@ const navigationTabs = [
     description: 'Suivi des certifications IRATA'
   },
   {
-    name: 'Liste présence',
-    href: '/admin/liste-presence',
-    icon: CalendarIcon,
-    description: 'Gestion des présences'
+    name: 'QR Generator',
+    href: '/admin/qr-generator',
+    icon: QrCodeIcon,
+    description: 'Gestion des QR Codes'
+  },
+  {
+    name: 'Diplômes',
+    href: '/admin/diplomes',
+    icon: DocumentIcon,
+    description: 'Gestion des diplômes'
   },
   {
     name: 'Actions Correctives',

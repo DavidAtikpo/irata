@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { v2 as cloudinary } from 'cloudinary';
 import { prisma } from 'lib/prisma';
-const pdf = require('pdf-parse');
+// @ts-expect-error - pdf-parse does not have type definitions
+import pdf from 'pdf-parse';
 
 // Configuration Cloudinary
 cloudinary.config({
