@@ -35,6 +35,10 @@ export default function InspectionsListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState<string>('Tous');
+  
+  // Extraire les types d'équipements uniques depuis les inspections
+  const equipmentTypes = ['Tous', ...Array.from(new Set(inspections.map(inspection => inspection.typeEquipement).filter(Boolean)))];
 
   useEffect(() => {
     const loadInspections = async () => {
@@ -152,6 +156,11 @@ export default function InspectionsListPage() {
     return inspectionDate >= sixMonthsAgo;
   };
 
+  // Filtrer les inspections par type d'équipement
+  const filteredInspections = selectedTab === 'Tous' 
+    ? inspections 
+    : inspections.filter(inspection => inspection.typeEquipement === selectedTab);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -168,7 +177,7 @@ export default function InspectionsListPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-bold text-gray-900">
                 Inspections Détaillées d'Équipements
               </h1>
@@ -180,6 +189,23 @@ export default function InspectionsListPage() {
                 Nouvelle inspection
               </button>
             </div>
+            
+            {/* Onglets de filtrage */}
+            <div className="flex flex-wrap gap-2">
+              {equipmentTypes.map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setSelectedTab(type)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    selectedTab === type
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="p-6">
@@ -189,18 +215,25 @@ export default function InspectionsListPage() {
               </div>
             )}
 
-            {inspections.length === 0 ? (
+            {filteredInspections.length === 0 ? (
               <div className="text-center py-12">
                 <DocumentIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune inspection trouvée</h3>
-                <p className="text-gray-500 mb-4">Commencez par créer votre première inspection d'équipement.</p>
-                <button
-                  onClick={() => router.push('/admin/equipment-detailed-inspections/nouveau')}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Créer une inspection
-                </button>
+                <p className="text-gray-500 mb-4">
+                  {selectedTab === 'Tous' 
+                    ? 'Commencez par créer votre première inspection d\'équipement.'
+                    : `Aucune inspection trouvée pour le type "${selectedTab}".`
+                  }
+                </p>
+                {selectedTab === 'Tous' && (
+                  <button
+                    onClick={() => router.push('/admin/equipment-detailed-inspections/nouveau')}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Créer une inspection
+                  </button>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -222,7 +255,7 @@ export default function InspectionsListPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {inspections.map((inspection) => (
+                    {filteredInspections.map((inspection) => (
                       <tr key={inspection.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
