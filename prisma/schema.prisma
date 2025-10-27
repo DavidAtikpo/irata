@@ -325,6 +325,7 @@ model EquipmentDetailedInspection {
   // Identification équipement
   referenceInterne             String
   typeEquipement               String
+  fabricant                    String?
   numeroSerie                  String?
   dateFabrication              String?
   dateAchat                    String?

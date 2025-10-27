@@ -65,6 +65,13 @@ export async function PUT(
       updatedAt, 
       createdBy,
       id: bodyId,
+      // Remove QR code related fields that are not in the Prisma model
+      nature,
+      reference,
+      type,
+      normes,
+      date,
+      signataire,
       ...updateData 
     } = body;
     

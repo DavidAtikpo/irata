@@ -91,6 +91,15 @@ export default function EditInspectionPage() {
     verificateurSignaturePdf: '',
     etat: 'OK',
     
+    // Nouveaux champs pour QR code
+    fabricant: '',
+    nature: '',
+    reference: '',
+    type: '',
+    normes: '',
+    date: '',
+    signataire: '',
+    
     // Vie de l'équipement
     inspectionData: {
       antecedentProduit: {
@@ -148,6 +157,7 @@ export default function EditInspectionPage() {
           setFormData(prev => ({
             ...prev,
             ...data,
+            fabricant: data.fabricant || '',
             inspectionData: {
               antecedentProduit: {
                 miseEnService: data.antecedentProduit?.miseEnService || '',
@@ -580,11 +590,52 @@ export default function EditInspectionPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           État
                         </label>
-                        <div className="flex items-center justify-center h-20 bg-green-100 rounded-lg">
-                          <div className="flex items-center text-green-800">
-                            <CheckCircleIcon className="h-6 w-6 mr-2" />
-                            <span className="font-medium">OK</span>
-                          </div>
+                        <div className={`flex items-center justify-center h-20 rounded-lg ${
+                          formData.etat === 'OK' 
+                            ? 'bg-green-100' 
+                            : 'bg-red-100'
+                        }`}>
+                          {formData.etat === 'OK' ? (
+                            <div className="text-center">
+                              <img 
+                                src="/picto-OK.jpg" 
+                                alt="État valide" 
+                                className="h-12 w-12 mx-auto mb-1 object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                                  if (nextElement) {
+                                    nextElement.style.display = 'block';
+                                  }
+                                }}
+                              />
+                              <CheckCircleIcon 
+                                className="h-8 w-12 text-green-600 mx-auto mb-1 hidden" 
+                                style={{ display: 'none' }}
+                              />
+                              <div className="text-xs font-medium text-green-800">Valide</div>
+                            </div>
+                          ) : (
+                            <div className="text-center">
+                              <img 
+                                src="/invalide.png" 
+                                alt="État invalide" 
+                                className="h-12 w-12 mx-auto mb-1 object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                                  if (nextElement) {
+                                    nextElement.style.display = 'block';
+                                  }
+                                }}
+                              />
+                              <XMarkIcon 
+                                className="h-8 w-8 text-red-600 mx-auto mb-1 hidden" 
+                                style={{ display: 'none' }}
+                              />
+                              <div className="text-xs font-medium text-red-800">Invalide</div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -648,6 +699,21 @@ export default function EditInspectionPage() {
                       </div>
 
                       <div>
+                        <label htmlFor="fabricant" className="block text-sm font-medium text-gray-700">
+                          Fabricant
+                        </label>
+                        <input
+                          type="text"
+                          id="fabricant"
+                          name="fabricant"
+                          value={formData.fabricant}
+                          onChange={handleChange}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-blue-50"
+                          placeholder="Ex: Petzl Distribution, Crolles (France)"
+                        />
+                      </div>
+
+                      <div>
                         <label htmlFor="numeroSerie" className="block text-sm font-medium text-gray-700">
                           Numéro de série
                         </label>
@@ -681,7 +747,7 @@ export default function EditInspectionPage() {
                         </label>
                         <div className="mt-1 flex space-x-2">
                           <input
-                            type="date"
+                            type="text"
                             id="dateAchat"
                             name="dateAchat"
                             value={formData.dateAchat}
@@ -709,12 +775,7 @@ export default function EditInspectionPage() {
                           Uploader une image/PDF pour extraire automatiquement la date d'achat
                         </p>
                         {/* Aperçu de l'image uploadée */}
-                        {formData.dateAchatImage && (
-                          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
-                            <div className="text-green-800 font-medium mb-1">Image de date d'achat :</div>
-                            <img src={formData.dateAchatImage} alt="Date d'achat" className="max-w-full h-24 object-contain rounded" />
-                          </div>
-                        )}
+
                       </div>
 
                       <div>
@@ -828,14 +889,6 @@ export default function EditInspectionPage() {
                             className="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             placeholder="Ex: EN1249: 2012 EN 397: 2012+A1:2012"
                           />
-                          <button
-                            type="button"
-                            onClick={() => pdfInputRef.current?.click()}
-                            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                            title="Uploader un PDF pour auto-remplissage"
-                          >
-                            <DocumentIcon className="h-4 w-4" />
-                          </button>
                         </div>
                         <input
                           ref={pdfInputRef}
@@ -848,16 +901,7 @@ export default function EditInspectionPage() {
                           Uploader un PDF pour extraire automatiquement les normes
                         </p>
                         {/* Affichage des normes cliquables */}
-                        {formData.normesCertificat && formData.pdfUrl && (
-                          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
-                            <div className="text-blue-800 font-medium mb-1">Normes disponibles :</div>
-                            <div 
-                              dangerouslySetInnerHTML={{ 
-                                __html: renderClickableNormes(formData.normesCertificat) 
-                              }}
-                            />
-                          </div>
-                        )}
+                      
                       </div>
 
                       <div>
@@ -887,16 +931,7 @@ export default function EditInspectionPage() {
                           Uploader un PDF pour extraire automatiquement les documents de référence
                         </p>
                         {/* Affichage des documents cliquables */}
-                        {formData.documentsReference && formData.pdfUrl && (
-                          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
-                            <div className="text-green-800 font-medium mb-1">Documents disponibles :</div>
-                            <div 
-                              dangerouslySetInnerHTML={{ 
-                                __html: renderClickableNormes(formData.documentsReference) 
-                              }}
-                            />
-                          </div>
-                        )}
+
                       </div>
 
                       <div>

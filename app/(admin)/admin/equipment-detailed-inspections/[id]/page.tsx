@@ -652,7 +652,7 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
 
             {/* Informations de métadonnées */}
             <div className="mt-8 pt-6 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
                 <div>
                   <span className="font-medium">Statut:</span> {getStatusText(inspection.status)}
                 </div>
@@ -660,9 +660,6 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
                   <span className="font-medium">Créé par:</span> {inspection.createdBy.nom && inspection.createdBy.prenom
                     ? `${inspection.createdBy.prenom} ${inspection.createdBy.nom}`
                     : inspection.createdBy.email}
-                </div>
-                <div>
-                  <span className="font-medium">Date de création:</span> {new Date(inspection.createdAt).toLocaleDateString('fr-FR')}
                 </div>
               </div>
             </div>

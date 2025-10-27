@@ -4,9 +4,6 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { 
-  EyeIcon, 
-  PencilIcon, 
-  TrashIcon, 
   PlusIcon,
   DocumentIcon,
   PrinterIcon
@@ -20,6 +17,7 @@ interface Inspection {
   dateFabrication: string;
   dateAchat: string;
   dateMiseEnService: string;
+  dateInspectionDetaillee: string;
   etat: string;
   createdAt: string;
   createdBy: {
@@ -93,10 +91,65 @@ export default function InspectionsListPage() {
     }
   };
 
+  const handleDuplicate = async (inspection: Inspection) => {
+    try {
+      // Récupérer les données complètes de l'inspection
+      const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspection.id}`);
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération de l\'inspection');
+      }
+      
+      const data = await response.json();
+      
+      // Supprimer l'id et les champs générés automatiquement
+      const { id, createdAt, updatedAt, createdBy, ...inspectionData } = data;
+      
+      // Créer une nouvelle inspection avec les données dupliquées
+      const createResponse = await fetch('/api/admin/equipment-detailed-inspections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(inspectionData),
+      });
+
+      if (createResponse.ok) {
+        const newInspection = await createResponse.json();
+        // Rediriger vers la page d'édition de la nouvelle inspection
+        router.push(`/admin/equipment-detailed-inspections/${newInspection.id}/edit`);
+      } else {
+        setError('Erreur lors de la duplication de l\'inspection');
+      }
+    } catch (error) {
+      setError('Erreur lors de la duplication de l\'inspection');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR');
+  };
+
+  const isInspectionUpToDate = (dateInspectionDetaillee: string) => {
+    if (!dateInspectionDetaillee) return false;
+    
+    let inspectionDate: Date;
+    // Parser la date selon le format JJ/MM/AAAA
+    if (dateInspectionDetaillee.includes('/')) {
+      const parts = dateInspectionDetaillee.split('/');
+      if (parts.length === 3) {
+        inspectionDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+      } else {
+        inspectionDate = new Date(dateInspectionDetaillee);
+      }
+    } else {
+      inspectionDate = new Date(dateInspectionDetaillee);
+    }
+    
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    return inspectionDate >= sixMonthsAgo;
   };
 
   if (isLoading) {
@@ -161,19 +214,7 @@ export default function InspectionsListPage() {
                         Type
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Série
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date Fabrication
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         État
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Créé par
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date création
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
@@ -194,33 +235,25 @@ export default function InspectionsListPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {inspection.numeroSerie || '-'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {inspection.dateFabrication || '-'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            inspection.etat === 'OK' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {inspection.etat || 'OK'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {inspection.createdBy?.prenom} {inspection.createdBy?.nom}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {formatDate(inspection.createdAt)}
-                          </div>
+                          {inspection.etat === 'OK' && isInspectionUpToDate(inspection.dateInspectionDetaillee) ? (
+                            <img 
+                              src="/picto-OK.jpg" 
+                              alt="État valide" 
+                              className="h-8 w-8 object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <img 
+                              src="/invalide.png" 
+                              alt="État invalide" 
+                              className="h-8 w-8 object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end space-x-2">
@@ -229,14 +262,21 @@ export default function InspectionsListPage() {
                               className="text-indigo-600 hover:text-indigo-900 p-1"
                               title="Voir l'inspection"
                             >
-                              <EyeIcon className="h-4 w-4" />
+                              Voir
                             </button>
                             <button
                               onClick={() => router.push(`/admin/equipment-detailed-inspections/${inspection.id}/edit`)}
                               className="text-yellow-600 hover:text-yellow-900 p-1"
                               title="Modifier l'inspection"
                             >
-                              <PencilIcon className="h-4 w-4" />
+                              Modifier
+                            </button>
+                            <button
+                              onClick={() => handleDuplicate(inspection)}
+                              className="text-blue-600 hover:text-blue-900 p-1"
+                              title="Dupliquer l'inspection"
+                            >
+                              Dupliquer
                             </button>
                             <button
                               onClick={() => handleDelete(inspection.id)}
@@ -244,7 +284,7 @@ export default function InspectionsListPage() {
                               className="text-red-600 hover:text-red-900 p-1 disabled:opacity-50"
                               title="Supprimer l'inspection"
                             >
-                              <TrashIcon className="h-4 w-4" />
+                              Supprimer
                             </button>
                           </div>
                         </td>
