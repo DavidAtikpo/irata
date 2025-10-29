@@ -63,7 +63,10 @@ export default function EditInspectionPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false); // Pour les autres uploads (photo, QR code)
+  const [isUploadingDateAchat, setIsUploadingDateAchat] = useState(false);
+  const [isUploadingDocumentReference, setIsUploadingDocumentReference] = useState(false);
+  const [isUploadingCertificate, setIsUploadingCertificate] = useState(false);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [digitalSignature, setDigitalSignature] = useState('');
   const [crossedOutWords, setCrossedOutWords] = useState<{[key: string]: {[word: string]: boolean}}>({});
@@ -189,6 +192,7 @@ export default function EditInspectionPage() {
     if (!qrCodeImageUrl) return;
     
     setIsUpdatingQR(true);
+    setIsLoadingData(true); // Afficher l'indicateur de chargement
     try {
       const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}/update-qr-code`, {
         method: 'POST',
@@ -215,6 +219,7 @@ export default function EditInspectionPage() {
       alert('Erreur lors de la mise à jour du QR code');
     } finally {
       setIsUpdatingQR(false);
+      setIsLoadingData(false); // Masquer l'indicateur de chargement
     }
   };
 
@@ -656,7 +661,7 @@ export default function EditInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
+    setIsUploadingDocumentReference(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -688,7 +693,7 @@ export default function EditInspectionPage() {
     } catch (error) {
       setError('Erreur lors de l\'upload du PDF');
     } finally {
-      setIsUploading(false);
+      setIsUploadingDocumentReference(false);
     }
   };
 
@@ -697,7 +702,7 @@ export default function EditInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
+    setIsUploadingDateAchat(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -725,7 +730,7 @@ export default function EditInspectionPage() {
     } catch (error) {
       setError('Erreur lors de l\'upload de l\'image');
     } finally {
-      setIsUploading(false);
+      setIsUploadingDateAchat(false);
     }
   };
 
@@ -734,7 +739,7 @@ export default function EditInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
+    setIsUploadingCertificate(true);
     try {
       const formDataUpload = new FormData();
       formDataUpload.append('file', file);
@@ -760,7 +765,7 @@ export default function EditInspectionPage() {
     } catch (error) {
       setError('Erreur lors de l\'upload du certificat');
     } finally {
-      setIsUploading(false);
+      setIsUploadingCertificate(false);
     }
   };
 
@@ -1168,7 +1173,17 @@ export default function EditInspectionPage() {
             )}
           </div>
 
-          <div className="p-6">
+          <div className="p-6 relative">
+            {/* Indicateur de chargement pour le rechargement du document */}
+            {isLoadingData && (
+              <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 shadow-xl flex flex-col items-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+                  <p className="text-sm font-medium text-gray-700">Chargement du document...</p>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
                 {error}
@@ -1389,10 +1404,22 @@ export default function EditInspectionPage() {
                           <button
                             type="button"
                             onClick={() => dateAchatInputRef.current?.click()}
-                            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                            disabled={isUploadingDateAchat}
+                            className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
+                              isUploadingDateAchat
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'text-gray-700 bg-white hover:bg-gray-50'
+                            }`}
                             title="Uploader une image/PDF pour extraire la date d'achat"
                           >
-                            <PhotoIcon className="h-4 w-4" />
+                            {isUploadingDateAchat ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                                <span className="text-xs">Chargement...</span>
+                              </>
+                            ) : (
+                              <PhotoIcon className="h-4 w-4" />
+                            )}
                           </button>
                         </div>
                         <input
@@ -1556,10 +1583,22 @@ export default function EditInspectionPage() {
                           <button
                             type="button"
                             onClick={() => pdfInputRef.current?.click()}
-                            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                            disabled={isUploadingDocumentReference}
+                            className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
+                              isUploadingDocumentReference
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'text-gray-700 bg-white hover:bg-gray-50'
+                            }`}
                             title="Uploader un PDF pour auto-remplissage"
                           >
-                            <DocumentIcon className="h-4 w-4" />
+                            {isUploadingDocumentReference ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                                <span className="text-xs">Chargement...</span>
+                              </>
+                            ) : (
+                              <DocumentIcon className="h-4 w-4" />
+                            )}
                           </button>
                         </div>
                         <p className="mt-1 text-xs text-gray-500">
@@ -1925,7 +1964,15 @@ export default function EditInspectionPage() {
                                 Certificat de contrôle (PDF)
                               </label>
                               <div className="flex space-x-2">
-                                <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                                <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center relative">
+                                  {isUploadingCertificate ? (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 rounded-lg">
+                                      <div className="flex flex-col items-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
+                                        <p className="text-xs text-gray-600">Chargement du certificat...</p>
+                                      </div>
+                                    </div>
+                                  ) : null}
                                   {getCurrentCertificate() ? (
                                     <div className="text-green-600 text-sm">
                                       <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
@@ -1948,10 +1995,22 @@ export default function EditInspectionPage() {
                                   <button
                                     type="button"
                                     onClick={() => signatureInputRef.current?.click()}
-                                    className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                    disabled={isUploadingCertificate}
+                                    className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
+                                      isUploadingCertificate
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'text-gray-700 bg-white hover:bg-gray-50'
+                                    }`}
                                     title="Uploader un certificat PDF"
                                   >
-                                    <DocumentIcon className="h-4 w-4" />
+                                    {isUploadingCertificate ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                                        <span className="text-xs">Chargement...</span>
+                                      </>
+                                    ) : (
+                                      <DocumentIcon className="h-4 w-4" />
+                                    )}
                                   </button>
                                 </div>
                               </div>
