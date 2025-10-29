@@ -31,8 +31,8 @@ export async function POST(
     const inspection = await prisma.equipmentDetailedInspection.findUnique({
       where: { id },
       select: {
-        referenceInterne: true,
-        numeroSerie: true,
+        // referenceInterne: true,
+        // numeroSerie: true,
         typeEquipement: true,
       },
     });
@@ -47,8 +47,8 @@ export async function POST(
     // Mettre à jour tous les équipements de même type avec cette signature
     const result = await prisma.equipmentDetailedInspection.updateMany({
       where: {
-        referenceInterne: inspection.referenceInterne,
-        numeroSerie: inspection.numeroSerie,
+        // referenceInterne: inspection.referenceInterne,
+        // numeroSerie: inspection.numeroSerie,
         typeEquipement: inspection.typeEquipement,
       },
       data: {
