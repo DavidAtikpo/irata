@@ -18,14 +18,7 @@ export async function POST(
     }
 
     const { id } = await params;
-    const { dateInspectionDetaillee } = await req.json();
-
-    if (!dateInspectionDetaillee) {
-      return NextResponse.json(
-        { message: 'Date d\'inspection détaillée requise' },
-        { status: 400 }
-      );
-    }
+    const { pdfUrl, documentsReference, normesCertificat } = await req.json();
 
     // Vérifier que l'inspection existe
     const inspection = await prisma.equipmentDetailedInspection.findUnique({
@@ -42,29 +35,41 @@ export async function POST(
       );
     }
 
+    // Préparer les données à mettre à jour (seulement les champs fournis)
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+
+    if (pdfUrl !== undefined) {
+      updateData.pdfUrl = pdfUrl;
+    }
+    if (documentsReference !== undefined) {
+      updateData.documentsReference = documentsReference;
+    }
+    if (normesCertificat !== undefined) {
+      updateData.normesCertificat = normesCertificat;
+    }
+
     // Mettre à jour TOUS les équipements dans la base de données
     // peu importe leur référence interne, type d'équipement ou ID
     // Condition where vide = tous les enregistrements
     const result = await prisma.equipmentDetailedInspection.updateMany({
       where: {},
-      data: {
-        dateInspectionDetaillee,
-        updatedAt: new Date(),
-      },
+      data: updateData,
     });
 
     return NextResponse.json(
       { 
-        message: 'Date d\'inspection mise à jour avec succès',
+        message: 'Tous les documents PDF et références mis à jour avec succès',
         filesUpdated: result.count 
       },
       { status: 200 }
     );
 
   } catch (error) {
-    console.error('Erreur lors de la mise à jour de la date d\'inspection:', error);
+    console.error('Erreur lors de la mise à jour des documents PDF:', error);
     return NextResponse.json(
-      { message: 'Erreur lors de la mise à jour' },
+      { message: 'Erreur lors de la mise à jour des documents PDF' },
       { status: 500 }
     );
   }

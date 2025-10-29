@@ -27,13 +27,11 @@ export async function POST(
       );
     }
 
-    // Récupérer l'équipement pour trouver les autres fichiers associés
+    // Vérifier que l'inspection existe
     const inspection = await prisma.equipmentDetailedInspection.findUnique({
       where: { id },
       select: {
-        // referenceInterne: true,
-        // numeroSerie: true,
-        typeEquipement: true,
+        id: true,
       },
     });
 
@@ -44,15 +42,13 @@ export async function POST(
       );
     }
 
-    // Mettre à jour tous les équipements de même type avec cette signature
+    // Mettre à jour TOUS les équipements dans la base de données
+    // peu importe leur référence interne, type d'équipement ou ID
+    // Condition where vide = tous les enregistrements
     const result = await prisma.equipmentDetailedInspection.updateMany({
-      where: {
-        // referenceInterne: inspection.referenceInterne,
-        // numeroSerie: inspection.numeroSerie,
-        typeEquipement: inspection.typeEquipement,
-      },
+      where: {},
       data: {
-        verificateurSignaturePdf: signature,
+        verificateurDigitalSignature: signature,
         dateSignature: new Date(dateSignature),
         updatedAt: new Date(),
       },

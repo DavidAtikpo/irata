@@ -729,7 +729,7 @@ export default function EditInspectionPage() {
     }
   };
 
-  // Fonction pour upload de signature PDF
+  // Fonction pour upload de signature PDF (certificat de contrôle)
   const handleSignatureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -747,14 +747,43 @@ export default function EditInspectionPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setFormData(prev => ({ ...prev, verificateurSignaturePdf: data.url }));
+        const certificateUrl = data.url;
+        
+        // Mettre à jour le formulaire local
+        setFormData(prev => ({ ...prev, verificateurSignaturePdf: certificateUrl }));
+        
+        // Mettre à jour tous les équipements avec ce certificat
+        await updateAllEquipmentCertificates(certificateUrl);
       } else {
-        throw new Error('Erreur lors de l\'upload de la signature');
+        throw new Error('Erreur lors de l\'upload du certificat');
       }
     } catch (error) {
-      setError('Erreur lors de l\'upload de la signature');
+      setError('Erreur lors de l\'upload du certificat');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  // Fonction pour mettre à jour tous les équipements avec le certificat PDF
+  const updateAllEquipmentCertificates = async (certificateUrl: string) => {
+    try {
+      const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}/update-all-certificates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          certificateUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Erreur lors de la mise à jour des certificats');
+      } else {
+        console.log('Tous les équipements ont été mis à jour avec le certificat');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des certificats:', error);
     }
   };
 
@@ -1893,7 +1922,7 @@ export default function EditInspectionPage() {
                             {/* Zone pour le certificat/document chargé */}
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Certificat du contrôleur (PDF)
+                                Certificat de contrôle (PDF)
                               </label>
                               <div className="flex space-x-2">
                                 <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
@@ -1905,7 +1934,7 @@ export default function EditInspectionPage() {
                                         target="_blank"
                                         className="text-blue-600 hover:text-blue-800 underline text-xs"
                                       >
-                                        <div>Certificat du contrôleur</div>
+                                        <div>Certificat de contrôle</div>
                                       </a>
                                     </div>
                                   ) : (

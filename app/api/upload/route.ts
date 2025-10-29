@@ -43,24 +43,29 @@ export async function POST(request: NextRequest) {
     const fileName = `equipment-inspections/${type}_${timestamp}`;
 
     // Upload vers Cloudinary
-    // Utiliser 'raw' pour les PDFs, 'auto' pour les autres types
-    const resourceType = (type === 'signature' || type === 'dateAchat') ? 'raw' : 'auto';
+    // Pour le type 'pdf', ne pas faire d'upload initial car il y aura un upload spécifique plus tard
+    // Utiliser 'raw' pour les signatures et dateAchat, 'auto' pour les autres types
+    let fileUrl: string | null = null;
     
-    const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        {
-          resource_type: resourceType,
-          public_id: fileName,
-          access_mode: 'public',
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      ).end(buffer);
-    });
+    if (type !== 'pdf') {
+      const resourceType = (type === 'signature' || type === 'dateAchat') ? 'raw' : 'auto';
+      
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          {
+            resource_type: resourceType,
+            public_id: fileName,
+            access_mode: 'public',
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        ).end(buffer);
+      });
 
-    const fileUrl = (uploadResult as any).secure_url;
+      fileUrl = (uploadResult as any).secure_url;
+    }
 
     // Extraction de données selon le type
     let extractedData = null;
@@ -137,20 +142,22 @@ export async function POST(request: NextRequest) {
       }
     } else if (type === 'pdf') {
       // Extraction rapide de PDF avec upload local + OCR Cloudinary
+      // Déclarer les variables en dehors du try pour qu'elles soient accessibles dans le catch
+      const uploadsDir = join(process.cwd(), 'public', 'uploads');
+      if (!existsSync(uploadsDir)) {
+        await mkdir(uploadsDir, { recursive: true });
+      }
+      
+      const localFileName = `pdf_${timestamp}.pdf`;
+      const localFilePath = join(uploadsDir, localFileName);
+      await writeFile(localFilePath, buffer);
+      const localFileUrl = `/uploads/${localFileName}`;
+      
+      let extractedText = '';
+      let cloudinaryPdfUrl: string | null = null;
+      
       try {
-        // 1. Upload local rapide pour traitement immédiat
-        const uploadsDir = join(process.cwd(), 'public', 'uploads');
-        if (!existsSync(uploadsDir)) {
-          await mkdir(uploadsDir, { recursive: true });
-        }
-        
-        const localFileName = `pdf_${timestamp}.pdf`;
-        const localFilePath = join(uploadsDir, localFileName);
-        await writeFile(localFilePath, buffer);
-        const localFileUrl = `/uploads/${localFileName}`;
-        
         // 2. Upload vers Cloudinary et extraction réelle
-        let extractedText = '';
         
         try {
           // Upload vers Cloudinary pour stockage
@@ -168,6 +175,9 @@ export async function POST(request: NextRequest) {
               }
             ).end(buffer);
           });
+          
+          // Extraire l'URL Cloudinary du résultat
+          cloudinaryPdfUrl = (cloudinaryResult as any).secure_url;
           
           // Extraction réelle avec pdf-parse (si disponible)
           if (pdf) {
@@ -374,13 +384,13 @@ export async function POST(request: NextRequest) {
           normes: normes,
           reference: reference,
           dateAchat: dateAchat,
-          pdfUrl: localFileUrl, // Utiliser l'URL locale pour un accès plus rapide
-          cloudinaryUrl: fileUrl, // Garder l'URL Cloudinary pour le stockage
+          pdfUrl: cloudinaryPdfUrl || localFileUrl, // Utiliser l'URL Cloudinary en priorité
+          cloudinaryUrl: cloudinaryPdfUrl || localFileUrl, // Garder l'URL Cloudinary pour le stockage
           rawText: extractedText,
           confidence: 95, // Simulation de confiance élevée
           // URLs pour les liens cliquables
-          referenceUrl: fileUrl, // URL Cloudinary pour les références
-          dateAchatUrl: fileUrl // URL Cloudinary pour la date d'achat
+          referenceUrl: cloudinaryPdfUrl || localFileUrl, // URL Cloudinary pour les références
+          dateAchatUrl: cloudinaryPdfUrl || localFileUrl // URL Cloudinary pour la date d'achat
         };
       } catch (ocrError) {
         console.error('Erreur OCR PDF:', ocrError);
@@ -391,7 +401,7 @@ export async function POST(request: NextRequest) {
           dateFabrication: 'Date non détectée',
           dateAchat: 'Date non détectée',
           numeroSerie: 'Numéro non détecté',
-        pdfUrl: fileUrl,
+        pdfUrl: cloudinaryPdfUrl || localFileUrl,
           rawText: 'Erreur lors de l\'extraction OCR',
           confidence: 0
       };
@@ -650,8 +660,11 @@ export async function POST(request: NextRequest) {
       extractedData = null;
     }
 
+    // Pour le type 'pdf', utiliser l'URL Cloudinary spécifique si disponible
+    const finalUrl = (type === 'pdf' && (extractedData as any)?.pdfUrl) || fileUrl;
+    
     return NextResponse.json({
-      url: fileUrl,
+      url: finalUrl,
       extractedData,
       message: 'Fichier uploadé avec succès'
     });

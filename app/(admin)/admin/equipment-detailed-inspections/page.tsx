@@ -285,6 +285,9 @@ export default function InspectionsListPage() {
                         Type
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Inspection Détaillée (tous les 6 mois)
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         État
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -324,6 +327,11 @@ export default function InspectionsListPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
                             {inspection.typeEquipement || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {formatDate(inspection.dateInspectionDetaillee)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

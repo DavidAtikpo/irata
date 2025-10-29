@@ -18,11 +18,11 @@ export async function POST(
     }
 
     const { id } = await params;
-    const { dateInspectionDetaillee } = await req.json();
+    const { certificateUrl } = await req.json();
 
-    if (!dateInspectionDetaillee) {
+    if (!certificateUrl) {
       return NextResponse.json(
-        { message: 'Date d\'inspection détaillée requise' },
+        { message: 'URL du certificat requise' },
         { status: 400 }
       );
     }
@@ -48,23 +48,23 @@ export async function POST(
     const result = await prisma.equipmentDetailedInspection.updateMany({
       where: {},
       data: {
-        dateInspectionDetaillee,
+        verificateurSignaturePdf: certificateUrl,
         updatedAt: new Date(),
       },
     });
 
     return NextResponse.json(
       { 
-        message: 'Date d\'inspection mise à jour avec succès',
+        message: 'Tous les certificats mis à jour avec succès',
         filesUpdated: result.count 
       },
       { status: 200 }
     );
 
   } catch (error) {
-    console.error('Erreur lors de la mise à jour de la date d\'inspection:', error);
+    console.error('Erreur lors de la mise à jour des certificats:', error);
     return NextResponse.json(
-      { message: 'Erreur lors de la mise à jour' },
+      { message: 'Erreur lors de la mise à jour des certificats' },
       { status: 500 }
     );
   }
