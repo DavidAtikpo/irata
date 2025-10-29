@@ -19,6 +19,7 @@ interface Inspection {
   dateMiseEnService: string;
   dateInspectionDetaillee: string;
   etat: string;
+  photo: string;
   createdAt: string;
   createdBy: {
     id: string;
@@ -241,6 +242,9 @@ export default function InspectionsListPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Photo
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Équipement
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -257,6 +261,24 @@ export default function InspectionsListPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredInspections.map((inspection) => (
                       <tr key={inspection.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex-shrink-0 h-12 w-12">
+                            {inspection.photo ? (
+                              <img
+                                className="h-12 w-12 rounded-lg object-cover border border-gray-200"
+                                src={inspection.photo}
+                                alt={`Photo de ${inspection.referenceInterne || 'l\'équipement'}`}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                }}
+                              />
+                            ) : null}
+                            <div className={`h-12 w-12 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center ${inspection.photo ? 'hidden' : ''}`}>
+                              <DocumentIcon className="h-6 w-6 text-gray-400" />
+                            </div>
+                          </div>
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
                             {inspection.referenceInterne || '-'}
