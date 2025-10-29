@@ -7,8 +7,11 @@ import {
   ArrowLeftIcon,
   PencilIcon,
   CheckCircleIcon,
-  XMarkIcon
+  XMarkIcon,
+  PhotoIcon,
+  QrCodeIcon
 } from '@heroicons/react/24/outline';
+import { generateSlugFromReference } from '@/lib/slug';
 
 interface EquipmentDetailedInspection {
   id: string;
@@ -70,6 +73,9 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
           throw new Error('Erreur lors de la récupération de l\'inspection');
         }
         const data = await response.json();
+        console.log('Données inspection chargées:', data);
+        console.log('QR Code dans les données:', data.qrCode);
+        console.log('Reference Interne:', data.referenceInterne);
         setInspection(data);
       } catch (error) {
         setError('Erreur lors de la récupération de l\'inspection');
@@ -116,6 +122,50 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
       default:
         return status;
     }
+  };
+
+  // Fonction pour obtenir l'URL de l'image QR code
+  // Priorité : 1) QR code sauvegardé dans la base, 2) Génération depuis referenceInterne
+  const getQRCodeImageUrl = (): string | null => {
+    if (!inspection) return null;
+    
+    console.log('🔍 getQRCodeImageUrl - inspection.qrCode:', inspection.qrCode);
+    console.log('🔍 getQRCodeImageUrl - inspection.referenceInterne:', inspection.referenceInterne);
+    
+    // 1. Si un QR code est stocké dans la base, l'utiliser en priorité
+    if (inspection.qrCode) {
+      // Si c'est une data URL (QR code avec CI.DES sauvegardé depuis la page view/edit)
+      if (inspection.qrCode.startsWith('data:image/')) {
+        console.log('✅ Utilisation du QR code data URL sauvegardé');
+        return inspection.qrCode;
+      }
+      
+      // Si c'est une URL Cloudinary (ancien format)
+      if (inspection.qrCode.startsWith('http://') || inspection.qrCode.startsWith('https://')) {
+        console.log('✅ Utilisation du QR code Cloudinary sauvegardé');
+        return inspection.qrCode;
+      }
+      
+      // Si c'est un code unique (ex: INS-XXX-YYY), mais on préfère utiliser referenceInterne pour le slug
+      console.log('⚠️ QR code stocké mais format non reconnu, utilisation de referenceInterne');
+    }
+    
+    // 2. Sinon, générer depuis l'ID unique pour garantir l'unicité
+    if (inspection.id) {
+      const slug = inspection.referenceInterne 
+        ? generateSlugFromReference(inspection.referenceInterne) 
+        : 'equipement';
+      const publicUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/inspection/${inspection.id}-${slug}` 
+        : `/inspection/${inspection.id}-${slug}`;
+      
+      console.log('✅ Génération du QR code depuis ID unique:', publicUrl);
+      // Générer l'image QR code depuis l'API basée sur l'ID unique
+      return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(publicUrl)}`;
+    }
+    
+    console.log('❌ Aucun QR code disponible');
+    return null;
   };
 
   if (loading) {
@@ -188,49 +238,106 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
                     Identification équipement
                   </h2>
                   
-                  {/* Photo et État */}
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Photo
-                      </label>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  {/* Photo, État et QR Code */}
+                  <div className="grid grid-cols-3 gap-1 mb-3">
+                    <div className="text-center">
+                      <div className="text-sm font-medium text-gray-700 mb-2">Photo</div>
+                      <div className="border-2 border-gray-300 rounded-lg p-4 h-32 flex items-center justify-center">
                         {inspection.photo ? (
-                          <img src={inspection.photo} alt="Équipement" className="max-w-full h-auto rounded" />
+                          <img src={inspection.photo} alt="Équipement" className="max-w-full max-h-full object-contain rounded" />
                         ) : (
-                          <div className="text-gray-400 text-sm">
-                            Aucune photo
+                          <PhotoIcon className="h-8 w-8 text-gray-400" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm font-medium text-gray-700 mb-2">État</div>
+                      <div className={`p-4 h-25 flex items-center justify-center ${
+                        inspection.etat === 'OK' ? 'bg-green-100' : 'bg-red-100'
+                      }`}>
+                        {inspection.etat === 'OK' ? (
+                          <div className="text-center">
+                            <img 
+                              src="/picto-OK.jpg" 
+                              alt="État valide" 
+                              className="h-12 w-12 mx-auto mb-1 object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                                if (nextElement) {
+                                  nextElement.style.display = 'block';
+                                }
+                              }}
+                            />
+                            <CheckCircleIcon 
+                              className="h-8 w-8 text-green-600 mx-auto mb-1 hidden" 
+                              style={{ display: 'none' }}
+                            />
+                            <div className="text-xs font-medium text-green-800">Valide</div>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <img 
+                              src="/invalide.png" 
+                              alt="État invalide" 
+                              className="h-12 w-12 mx-auto mb-1 object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                                if (nextElement) {
+                                  nextElement.style.display = 'block';
+                                }
+                              }}
+                            />
+                            <XMarkIcon 
+                              className="h-8 w-8 text-red-600 mx-auto mb-1 hidden" 
+                              style={{ display: 'none' }}
+                            />
+                            <div className="text-xs font-medium text-red-800">Invalide</div>
                           </div>
                         )}
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        État
-                      </label>
-                      <div className={`flex items-center justify-center h-20 rounded-lg ${
-                        inspection.etat === 'OK' ? 'bg-green-100' : 'bg-red-100'
-                      }`}>
-                        {inspection.etat === 'OK' ? (
-                          <CheckCircleIcon className="h-8 w-8 text-green-600" />
-                        ) : (
-                          <XMarkIcon className="h-8 w-8 text-red-600" />
-                        )}
+                    {/* QR Code */}
+                    <div className="text-center">
+                      <div className="text-sm font-medium text-gray-700 mb-2">QR Code</div>
+                      <div className="p-1 h-20 flex items-center justify-center border border-gray-200 rounded">
+                        {(() => {
+                          const qrUrl = getQRCodeImageUrl();
+                          
+                          if (qrUrl) {
+                            return (
+                              <>
+                                <img 
+                                  key={inspection?.qrCode || inspection?.referenceInterne || 'qr'}
+                                  src={qrUrl} 
+                                  alt="QR Code" 
+                                  className="max-w-full max-h-full object-contain" 
+                                  onLoad={() => console.log('✅ Image QR code chargée avec succès')}
+                                  onError={(e) => {
+                                    console.error('❌ Erreur de chargement de l\'image QR code');
+                                    console.error('URL:', qrUrl?.substring(0, 100));
+                                    e.currentTarget.style.display = 'none';
+                                    const iconContainer = e.currentTarget.parentElement;
+                                    if (iconContainer) {
+                                      const icon = iconContainer.querySelector('svg');
+                                      if (icon) {
+                                        (icon as unknown as HTMLElement).style.display = 'block';
+                                      }
+                                    }
+                                  }}
+                                />
+                                <QrCodeIcon className="h-8 w-8 text-gray-400" style={{ display: 'none' }} />
+                              </>
+                            );
+                          }
+                          return <QrCodeIcon className="h-8 w-8 text-gray-400" />;
+                        })()}
                       </div>
-                    </div>
-                  </div>
-
-                  {/* QR Code */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      QR Code
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                      {inspection.qrCode ? (
-                        <img src={inspection.qrCode} alt="QR Code" className="max-w-full h-auto rounded" />
-                      ) : (
-                        <div className="text-gray-400 text-sm">
-                          QR Code
+                      {/* Debug info (à retirer en production) */}
+                      {process.env.NODE_ENV === 'development' && inspection && (
+                        <div className="text-[8px] text-gray-400 mt-1">
+                          Debug: {inspection.qrCode ? `QR présent (${inspection.qrCode.substring(0, 20)}...)` : 'Pas de QR'} | Ref: {inspection.referenceInterne || 'N/A'}
                         </div>
                       )}
                     </div>

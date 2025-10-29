@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation';
 import { 
   PlusIcon,
   DocumentIcon,
-  PrinterIcon
+  PrinterIcon,
+  QrCodeIcon
 } from '@heroicons/react/24/outline';
+import { generateSlugFromReference } from '@/lib/slug';
 
 interface Inspection {
   id: string;
@@ -20,6 +22,7 @@ interface Inspection {
   dateInspectionDetaillee: string;
   etat: string;
   photo: string;
+  qrCode?: string;
   createdAt: string;
   createdBy: {
     id: string;
@@ -157,6 +160,37 @@ export default function InspectionsListPage() {
     return inspectionDate >= sixMonthsAgo;
   };
 
+  // Fonction pour obtenir l'URL de l'image QR code
+  const getQRCodeImageUrl = (inspection: Inspection): string | null => {
+    // 1. Si un QR code est stocké dans la base, l'utiliser en priorité
+    if (inspection.qrCode) {
+      // Si c'est une data URL (QR code avec CI.DES sauvegardé)
+      if (inspection.qrCode.startsWith('data:image/')) {
+        return inspection.qrCode;
+      }
+      
+      // Si c'est une URL Cloudinary (ancien format)
+      if (inspection.qrCode.startsWith('http://') || inspection.qrCode.startsWith('https://')) {
+        return inspection.qrCode;
+      }
+    }
+    
+    // 2. Sinon, générer depuis l'ID unique pour garantir l'unicité
+    if (inspection.id) {
+      const slug = inspection.referenceInterne 
+        ? generateSlugFromReference(inspection.referenceInterne) 
+        : 'equipement';
+      const publicUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/inspection/${inspection.id}-${slug}` 
+        : `/inspection/${inspection.id}-${slug}`;
+      
+      // Générer l'image QR code depuis l'API basée sur l'ID unique
+      return `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(publicUrl)}`;
+    }
+    
+    return null;
+  };
+
   // Filtrer les inspections par type d'équipement
   const filteredInspections = selectedTab === 'Tous' 
     ? inspections 
@@ -253,6 +287,9 @@ export default function InspectionsListPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         État
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        QR Code
+                      </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
@@ -309,6 +346,31 @@ export default function InspectionsListPage() {
                               }}
                             />
                           )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center">
+                            {(() => {
+                              const qrUrl = getQRCodeImageUrl(inspection);
+                              if (qrUrl) {
+                                return (
+                                  <img 
+                                    src={qrUrl} 
+                                    alt="QR Code" 
+                                    className="h-12 w-12 object-contain border border-gray-200 rounded"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                      const icon = e.currentTarget.nextElementSibling;
+                                      if (icon) {
+                                        (icon as HTMLElement).style.display = 'block';
+                                      }
+                                    }}
+                                  />
+                                );
+                              }
+                              return <QrCodeIcon className="h-6 w-6 text-gray-400" />;
+                            })()}
+                            <QrCodeIcon className="h-6 w-6 text-gray-400 hidden" />
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end space-x-2">

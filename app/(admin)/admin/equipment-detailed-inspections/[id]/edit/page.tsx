@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
-import { CheckCircleIcon, XMarkIcon, PhotoIcon, QrCodeIcon, DocumentIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, XMarkIcon, PhotoIcon, QrCodeIcon, DocumentIcon, LinkIcon } from '@heroicons/react/24/outline';
 import SignaturePad from '../../../../../../components/SignaturePad';
 import CommentInput from '../../../../../../components/CommentInput';
+import { generateSlugFromReference } from '@/lib/slug';
 
 interface InspectionPoint {
   status: 'V' | 'NA' | 'X';
@@ -73,7 +74,195 @@ export default function EditInspectionPage() {
     digitalSignature: '',
     dateSignature: '',
   });
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [isUpdatingQR, setIsUpdatingQR] = useState(false);
+  const [qrCodeImageUrl, setQrCodeImageUrl] = useState<string>('');
   const commentInputRefs = useRef<{[key: string]: HTMLTextAreaElement | null}>({});
+
+  // Générer l'URL publique basée sur l'ID unique (garantit l'unicité même avec même référence interne)
+  const getPublicUrl = () => {
+    if (!inspectionId || !formData?.referenceInterne) return '';
+    // Utiliser l'ID unique pour garantir l'unicité du QR code
+    // Format: /inspection/[id]-[slug] pour garder la lisibilité et la compatibilité
+    const slug = generateSlugFromReference(formData.referenceInterne);
+    return typeof window !== 'undefined' 
+      ? `${window.location.origin}/inspection/${inspectionId}-${slug}` 
+      : '';
+  };
+
+  // Fonction pour générer le QR code avec texte CI.DES
+  const generateQRCodeWithText = async (url: string): Promise<string> => {
+    return new Promise((resolve) => {
+      // Créer un canvas temporaire pour le QR code
+      const canvas = document.createElement('canvas');
+      const size = 300;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        // Fallback vers l'API standard si canvas n'est pas disponible
+        resolve(`https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`);
+        return;
+      }
+
+      // Charger l'image QR code depuis l'API avec niveau de correction d'erreur élevé (H)
+      // Le niveau H permet de masquer jusqu'à 30% du QR code sans perte de fonctionnalité
+      const qrImage = new Image();
+      qrImage.crossOrigin = 'anonymous';
+      
+      qrImage.onload = () => {
+        // Dessiner le QR code
+        ctx.drawImage(qrImage, 0, 0, size, size);
+        
+        // Ajouter un fond semi-transparent minimal pour le texte
+        // Zone réduite pour masquer le minimum de modules QR
+        const textSize = 36; // Légèrement réduit pour moins masquer
+        const textAreaHeight = 48; // Zone réduite
+        const textAreaWidth = 160; // Largeur ajustée
+        const textY = size / 2;
+        const textX = size / 2 - textAreaWidth / 2;
+        
+        // Fond blanc semi-transparent (masque moins le QR code)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillRect(textX, textY - textAreaHeight / 2, textAreaWidth, textAreaHeight);
+        
+        // Ajouter une bordure fine pour le texte
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(textX, textY - textAreaHeight / 2, textAreaWidth, textAreaHeight);
+        
+        // Ajouter le texte CI.DES au centre
+        ctx.font = `bold ${textSize}px Arial, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        
+        // Mesurer la largeur du texte pour centrer
+        const textCI = 'CI.';
+        const textDES = 'DES';
+        ctx.font = `bold ${textSize}px Arial, sans-serif`; // Réinitialiser pour la mesure
+        const fullTextWidth = ctx.measureText(textCI).width + ctx.measureText(textDES).width;
+        const startX = (size - fullTextWidth) / 2;
+        
+        // Dessiner "CI." (avec le point) en couleur ivoire
+        ctx.fillStyle = '#F2A62C'; // Couleur ivoire
+        const ciX = startX;
+        ctx.fillText(textCI, ciX, textY);
+        
+        // Dessiner "DES" en noir juste après
+        ctx.fillStyle = '#000000'; // Noir
+        const desX = ciX + ctx.measureText(textCI).width;
+        ctx.fillText(textDES, desX, textY);
+        
+        // Convertir le canvas en image URL
+        const dataUrl = canvas.toDataURL('image/png');
+        resolve(dataUrl);
+      };
+
+      qrImage.onerror = () => {
+        // Fallback vers l'API standard en cas d'erreur
+        resolve(`https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`);
+      };
+
+      // Charger le QR code avec niveau de correction d'erreur élevé (H) pour permettre le masquage du centre
+      // ECC H permet jusqu'à 30% de masquage tout en restant scannable
+      qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}&ecc=H`;
+    });
+  };
+
+  // Fonction pour copier le lien
+  const handleCopyLink = async () => {
+    try {
+      const url = getPublicUrl();
+      if (url && navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 2000);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la copie:', error);
+    }
+  };
+
+  // Fonction pour mettre à jour le QR code dans la base de données
+  const handleUpdateQRCode = async () => {
+    if (!qrCodeImageUrl) return;
+    
+    setIsUpdatingQR(true);
+    try {
+      const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}/update-qr-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qrCodeImageUrl }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Recharger les données pour mettre à jour l'affichage
+        const reloadResponse = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}`);
+        if (reloadResponse.ok) {
+          const updatedData = await reloadResponse.json();
+          setFormData(prev => ({ ...prev, qrCode: updatedData.qrCode || prev.qrCode }));
+        }
+        alert('QR code mis à jour avec succès !');
+      } else {
+        throw new Error('Erreur lors de la mise à jour');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de la mise à jour du QR code');
+    } finally {
+      setIsUpdatingQR(false);
+    }
+  };
+
+  // Fonction pour télécharger le QR code
+  const handleDownloadQRCode = () => {
+    if (!qrCodeImageUrl) return;
+    
+    const link = document.createElement('a');
+    link.href = qrCodeImageUrl;
+    link.download = `QR-Code-${formData?.referenceInterne || 'equipement'}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Fonction pour obtenir l'URL de l'image QR code à afficher dans la grille
+  const getQRCodeImageUrl = (): string | null => {
+    // 1. Si un QR code est stocké dans la base, l'utiliser en priorité
+    if (formData.qrCode) {
+      // Si c'est une data URL (QR code avec CI.DES sauvegardé)
+      if (formData.qrCode.startsWith('data:image/')) {
+        return formData.qrCode;
+      }
+      
+      // Si c'est une URL Cloudinary (ancien format)
+      if (formData.qrCode.startsWith('http://') || formData.qrCode.startsWith('https://')) {
+        return formData.qrCode;
+      }
+    }
+    
+    // 2. Si le QR code avec logo CI.DES est généré, l'utiliser
+    if (qrCodeImageUrl) {
+      return qrCodeImageUrl;
+    }
+    
+    // 3. Sinon, générer depuis l'ID unique pour garantir l'unicité
+    if (inspectionId && formData.referenceInterne) {
+      const slug = generateSlugFromReference(formData.referenceInterne);
+      const publicUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/inspection/${inspectionId}-${slug}` 
+        : `/inspection/${inspectionId}-${slug}`;
+      
+      // Générer l'image QR code depuis l'API basée sur l'ID unique
+      return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(publicUrl)}`;
+    }
+    
+    return null;
+  };
 
   // Fonctions utilitaires pour gérer les signatures séparées
   const getCurrentCertificate = () => {
@@ -268,6 +457,25 @@ export default function EditInspectionPage() {
       loadInspection();
     }
   }, [inspectionId]);
+
+  // Générer le QR code au chargement et quand referenceInterne ou ID change
+  useEffect(() => {
+    const loadQRCode = async () => {
+      if (!inspectionId || !formData?.referenceInterne) return;
+      // Utiliser l'ID unique pour garantir l'unicité du QR code
+      const slug = generateSlugFromReference(formData.referenceInterne);
+      const url = typeof window !== 'undefined' 
+        ? `${window.location.origin}/inspection/${inspectionId}-${slug}` 
+        : '';
+      if (url) {
+        const qrUrl = await generateQRCodeWithText(url);
+        setQrCodeImageUrl(qrUrl);
+      }
+    };
+    
+    loadQRCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspectionId, formData?.referenceInterne]);
 
   // Debug: Logger les changements de formData
   useEffect(() => {
@@ -848,6 +1056,87 @@ export default function EditInspectionPage() {
                 Retour
               </button>
             </div>
+
+            {/* Section génération QR Code pour admin */}
+            {formData?.referenceInterne && (
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-blue-900 mb-2">
+                      🔗 Génération du QR Code
+                    </h3>
+                    <div className="text-xs text-blue-800 mb-2">
+                      URL publique de cette inspection (pour générer le QR code) :
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 text-xs text-blue-600 break-all font-mono bg-white p-2 rounded border border-blue-200">
+                        {getPublicUrl()}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyLink}
+                        className={`inline-flex items-center px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                          linkCopied
+                            ? 'bg-green-500 text-white'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
+                        title="Copier le lien"
+                      >
+                        <LinkIcon className="h-3 w-3 mr-1" />
+                        {linkCopied ? 'Copié !' : 'Copier'}
+                      </button>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-xs text-blue-800 mb-2">QR Code généré avec CI.DES :</div>
+                      {qrCodeImageUrl ? (
+                        <div className="inline-block bg-white p-2 rounded border border-blue-200">
+                          <img
+                            src={qrCodeImageUrl}
+                            alt="QR Code CI.DES"
+                            className="w-40 h-40"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-40 h-40 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-400">
+                          Chargement...
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleUpdateQRCode}
+                        disabled={!qrCodeImageUrl || isUpdatingQR}
+                        className={`inline-flex items-center px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                          !qrCodeImageUrl || isUpdatingQR
+                            ? 'bg-gray-400 text-white cursor-not-allowed'
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
+                        title="Mettre à jour le QR code dans la base de données"
+                      >
+                        {isUpdatingQR ? 'Mise à jour...' : '🔄 Mettre à jour'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDownloadQRCode}
+                        disabled={!qrCodeImageUrl}
+                        className={`inline-flex items-center px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                          !qrCodeImageUrl
+                            ? 'bg-gray-400 text-white cursor-not-allowed'
+                            : 'bg-purple-600 text-white hover:bg-purple-700'
+                        }`}
+                        title="Télécharger le QR code"
+                      >
+                        📥 Télécharger
+                      </button>
+                    </div>
+                    <div className="mt-2 text-xs text-blue-600">
+                      💡 Utilisez l'URL ci-dessus ou le QR code pour partager cette inspection. Cliquez sur "Mettre à jour" pour sauvegarder le QR code dans la base de données.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="p-6">
@@ -875,114 +1164,111 @@ export default function EditInspectionPage() {
                       Identification équipement
                     </h2>
                     
-                    {/* Photo et État */}
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Photo
-                          </label>
-                         <div 
-                           className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-400 transition-colors"
-                           onClick={() => photoInputRef.current?.click()}
-                         >
-                           {formData.photo ? (
-                             <img src={formData.photo} alt="Équipement" className="max-w-full h-32 object-cover rounded" />
-                           ) : (
-                             <div className="text-gray-400">
-                               <PhotoIcon className="h-8 w-8 mx-auto mb-2" />
-                               <div className="text-sm">Cliquez pour ajouter une photo</div>
-                             </div>
-                           )}
+                    {/* Photo, État et QR Code */}
+                    <div className="grid grid-cols-3 gap-1 mb-3">
+                        <div className="text-center">
+                          <div className="text-sm font-medium text-gray-700 mb-2">Photo</div>
+                          <div 
+                            className="border-2 border-dashed border-gray-300 rounded-lg p-4 h-32 text-center cursor-pointer hover:border-indigo-400 transition-colors flex items-center justify-center"
+                            onClick={() => photoInputRef.current?.click()}
+                          >
+                            {formData.photo ? (
+                              <img src={formData.photo} alt="Équipement" className="max-w-full max-h-full object-contain rounded" />
+                            ) : (
+                              <div className="text-gray-400">
+                                <PhotoIcon className="h-8 w-8 mx-auto mb-2" />
+                                <div className="text-xs">Cliquez pour ajouter</div>
+                              </div>
+                            )}
                           </div>
-                         <input
-                           ref={photoInputRef}
-                           type="file"
-                           accept="image/*"
-                           onChange={handlePhotoUpload}
-                           className="hidden"
-                         />
+                          <input
+                            ref={photoInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handlePhotoUpload}
+                            className="hidden"
+                          />
                         </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          État
-                        </label>
-                        <div className={`flex items-center justify-center h-20 rounded-lg ${
-                          formData.etat === 'OK' 
-                            ? 'bg-green-100' 
-                            : 'bg-red-100'
-                        }`}>
-                          {formData.etat === 'OK' ? (
-                            <div className="text-center">
-                              <img 
-                                src="/picto-OK.jpg" 
-                                alt="État valide" 
-                                className="h-12 w-12 mx-auto mb-1 object-contain"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
-                                  if (nextElement) {
-                                    nextElement.style.display = 'block';
-                                  }
-                                }}
-                              />
-                              <CheckCircleIcon 
-                                className="h-8 w-12 text-green-600 mx-auto mb-1 hidden" 
-                                style={{ display: 'none' }}
-                              />
-                              <div className="text-xs font-medium text-green-800">Valide</div>
-                            </div>
-                          ) : (
-                            <div className="text-center">
-                              <img 
-                                src="/invalide.png" 
-                                alt="État invalide" 
-                                className="h-12 w-12 mx-auto mb-1 object-contain"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
-                                  if (nextElement) {
-                                    nextElement.style.display = 'block';
-                                  }
-                                }}
-                              />
-                              <XMarkIcon 
-                                className="h-8 w-8 text-red-600 mx-auto mb-1 hidden" 
-                                style={{ display: 'none' }}
-                              />
-                              <div className="text-xs font-medium text-red-800">Invalide</div>
-                            </div>
-                          )}
+                        <div className="text-center">
+                          <div className="text-sm font-medium text-gray-700 mb-2">État</div>
+                          <div className={`p-4 h-25 flex items-center justify-center rounded-lg ${
+                            formData.etat === 'OK' 
+                              ? 'bg-green-100' 
+                              : 'bg-red-100'
+                          }`}>
+                            {formData.etat === 'OK' ? (
+                              <div className="text-center">
+                                <img 
+                                  src="/picto-OK.jpg" 
+                                  alt="État valide" 
+                                  className="h-12 w-12 mx-auto mb-1 object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                                    if (nextElement) {
+                                      nextElement.style.display = 'block';
+                                    }
+                                  }}
+                                />
+                                <CheckCircleIcon 
+                                  className="h-8 w-8 text-green-600 mx-auto mb-1 hidden" 
+                                  style={{ display: 'none' }}
+                                />
+                                <div className="text-xs font-medium text-green-800">Valide</div>
+                              </div>
+                            ) : (
+                              <div className="text-center">
+                                <img 
+                                  src="/invalide.png" 
+                                  alt="État invalide" 
+                                  className="h-12 w-12 mx-auto mb-1 object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                                    if (nextElement) {
+                                      nextElement.style.display = 'block';
+                                    }
+                                  }}
+                                />
+                                <XMarkIcon 
+                                  className="h-8 w-8 text-red-600 mx-auto mb-1 hidden" 
+                                  style={{ display: 'none' }}
+                                />
+                                <div className="text-xs font-medium text-red-800">Invalide</div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                        {/* QR Code */}
+                        <div className="text-center">
+                          <div className="text-sm font-medium text-gray-700 mb-2">QR Code</div>
+                          <div className="border-2 border-gray-300 rounded-lg p-1 h-32 flex items-center justify-center">
+                            {(() => {
+                              const qrUrl = getQRCodeImageUrl();
+                              if (qrUrl) {
+                                return (
+                                  <>
+                                    <img 
+                                      src={qrUrl} 
+                                      alt="QR Code" 
+                                      className="max-w-full max-h-full object-contain" 
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        const icon = e.currentTarget.nextElementSibling;
+                                        if (icon) {
+                                          (icon as HTMLElement).style.display = 'block';
+                                        }
+                                      }}
+                                    />
+                                    <QrCodeIcon className="h-8 w-8 text-gray-400" style={{ display: 'none' }} />
+                                  </>
+                                );
+                              }
+                              return <QrCodeIcon className="h-8 w-8 text-gray-400" />;
+                            })()}
+                          </div>
+                        </div>
                     </div>
-
-                    {/* QR Code */}
-                      <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                         QR Code (Auto-remplissage)
-                        </label>
-                       <div 
-                         className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-400 transition-colors"
-                         onClick={() => qrInputRef.current?.click()}
-                       >
-                         {formData.qrCode ? (
-                           <img src={formData.qrCode} alt="QR Code" className="max-w-full h-24 object-contain rounded" />
-                         ) : (
-                           <div className="text-gray-400">
-                             <QrCodeIcon className="h-8 w-8 mx-auto mb-2" />
-                             <div className="text-sm">Cliquez pour scanner le QR code</div>
-                             <div className="text-xs text-gray-500 mt-1">Auto-remplira les données</div>
-                           </div>
-                         )}
-                        </div>
-                       <input
-                         ref={qrInputRef}
-                         type="file"
-                         accept="image/*"
-                         onChange={handleQRCodeUpload}
-                         className="hidden"
-                       />
-                      </div>
 
                     {/* Champs d'identification */}
                     <div className="space-y-4">
