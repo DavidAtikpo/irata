@@ -406,7 +406,7 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
                             </div>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Lisibilité Numéro de série, de la norme</span>
+                            <span className="text-sm text-gray-700">Lisibilité <del>Numéro de série,</del> de la norme</span>
                             <div className="flex items-center">
                               {getStatusIcon(inspection.antecedentProduit.lisibiliteNumeroSerie?.status)}
                             </div>

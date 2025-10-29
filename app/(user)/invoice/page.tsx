@@ -58,7 +58,7 @@ export default function InvoicePage() {
     company: {
       name: 'CI.DES',
       contactName: 'CHEZ CHAGNEAU',
-      addressLines: ['17270 BORESSE-ET-MARTRON', 'admin38@cides.fr'],
+      addressLines: ['17270 BORESSE-ET-MARTRON', 'pm@cides.tf'],
       siret: '87840789900011',
       invoiceNumberLabel: 'FACTURE N°',
       invoiceNumber: 'CI.FF 2508 000',
@@ -79,7 +79,7 @@ export default function InvoicePage() {
     recipient: {
       name: `Monsieur ${session?.user?.name || 'Utilisateur'}`,
       addressLines: ['Adresse de l\'utilisateur', 'Ville, Code postal'],
-      phone: '+33 6 24 67 13 65',
+      phone: (session?.user as any)?.phone || '',
     },
     items: [
       {
@@ -118,7 +118,7 @@ export default function InvoicePage() {
           session?.user?.email ? `${session.user.email}` : 'Adresse de l\'utilisateur',
           'Ville, Code postal'
         ],
-        phone: '+33 6 24 67 13 65',
+        phone: (session?.user as any)?.phone || '',
         email: session?.user?.email || '',
       },
     }));
@@ -275,7 +275,7 @@ export default function InvoicePage() {
           session?.user?.email ? `${session.user.email}` : 'Adresse de l\'utilisateur',
           'Ville, Code postal'
         ],
-        phone: '+33 6 24 67 13 65',
+        phone: (session?.user as any)?.phone || '',
         email: session?.user?.email || '',
       },
       items: [

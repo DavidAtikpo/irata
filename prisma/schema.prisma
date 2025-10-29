@@ -357,10 +357,16 @@ model EquipmentDetailedInspection {
   mousseConfort                Json?            // Structure pour la mousse de confort
   crochetsLampe                Json?            // Structure pour les crochets de lampe
   accessoires                  Json?            // Structure pour les accessoires
-  
+
+  // Données pour les éléments barrés (ancienne fonctionnalité)
+  crossedOutItems              Json?            // Éléments barrés complètement
+  // Données pour les mots barrés individuellement (nouvelle fonctionnalité)
+  crossedOutWords              Json?            // Mots barrés individuellement
+
   // Signature
   verificateurSignature        String?
-  verificateurSignaturePdf     String?
+  verificateurSignaturePdf     String?    // Pour les certificats PDF
+  verificateurDigitalSignature String?    // Pour les signatures digitales (Base64)
   verificateurNom              String?
   dateSignature                DateTime?
   

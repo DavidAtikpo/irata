@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircleIcon, XMarkIcon, PhotoIcon, QrCodeIcon, DocumentIcon } from '@heroicons/react/24/outline';
+import CommentInput from '@/components/CommentInput';
 
 interface InspectionPoint {
   status: 'V' | 'NA' | 'X';
@@ -62,6 +63,27 @@ export default function NouvelleInspectionPage() {
   const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
   const [isUploadingDateAchat, setIsUploadingDateAchat] = useState(false);
   const [prefillLoading, setPrefillLoading] = useState(false);
+  const [openCommentFields, setOpenCommentFields] = useState<{[key: string]: boolean}>({});
+  const [commentInputs, setCommentInputs] = useState<{[key: string]: string}>({});
+  const [crossedOutItems, setCrossedOutItems] = useState<{[key: string]: boolean}>({});
+  const [crossedOutWords, setCrossedOutWords] = useState<{[key: string]: {[word: string]: boolean}}>({});
+  const commentInputRefs = useRef<{[key: string]: HTMLTextAreaElement | null}>({});
+
+  // Initialiser les refs au montage du composant
+  useEffect(() => {
+    // Forcer la direction LTR au niveau global pour éviter les problèmes de texte inversé
+    document.documentElement.dir = 'ltr';
+    document.body.dir = 'ltr';
+    document.documentElement.style.direction = 'ltr';
+    document.body.style.direction = 'ltr';
+
+    return () => {
+      // Nettoyer toutes les refs au démontage
+      Object.keys(commentInputRefs.current).forEach(key => {
+        commentInputRefs.current[key] = null;
+      });
+    };
+  }, []);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const qrInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -91,6 +113,7 @@ export default function NouvelleInspectionPage() {
     pdfUrl: '',
     dateAchatImage: '',
     verificateurSignaturePdf: '',
+    verificateurDigitalSignature: '',
     etat: 'INVALID', // État invalide par défaut
     
     // Nouveaux champs pour QR code
@@ -222,6 +245,77 @@ export default function NouvelleInspectionPage() {
           [field]: { status, comment: comment || '' },
         },
       },
+    }));
+  };
+
+  // Fonction pour ouvrir/fermer l'input de commentaire
+  const toggleCommentInput = (key: string) => {
+    const isOpening = !openCommentFields[key];
+
+    setOpenCommentFields(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+
+    // Si l'input s'ouvre, initialiser avec le commentaire existant s'il y en a un
+    if (isOpening) {
+      const [section, field] = key.split('.');
+      const sectionData = formData.inspectionData[section as keyof InspectionData] as any;
+      const currentComment = sectionData[field]?.comment || '';
+      setCommentInputs(prev => ({
+        ...prev,
+        [key]: currentComment
+      }));
+
+      // Focus sur le textarea après que le state a été mis à jour
+      setTimeout(() => {
+        const textarea = commentInputRefs.current[key];
+        if (textarea) {
+          textarea.focus();
+          // S'assurer que le curseur est à la fin du texte
+          textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }
+      }, 100);
+    } else {
+      // Si on ferme l'input, nettoyer la ref
+      if (commentInputRefs.current[key]) {
+        commentInputRefs.current[key] = null;
+      }
+    }
+  };
+
+  // Fonction pour basculer l'état barré d'un élément
+  const toggleCrossedOut = (key: string) => {
+    setCrossedOutItems(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  // Fonction pour basculer l'état barré d'un mot spécifique
+  const toggleCrossedOutWord = (key: string, word: string) => {
+    setCrossedOutWords(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [word]: !prev[key]?.[word]
+      }
+    }));
+  };
+
+  // Fonction pour enregistrer le commentaire
+  const saveComment = (key: string, section: string, field: string) => {
+    const comment = commentInputs[key] || '';
+
+    const sectionData = formData.inspectionData[section as keyof InspectionData] as any;
+    const fieldData = sectionData[field];
+    const currentStatus = fieldData?.status || 'V';
+
+    handleInspectionChange(section, field, currentStatus, comment);
+
+    setOpenCommentFields(prev => ({
+      ...prev,
+      [key]: false
     }));
   };
 
@@ -648,6 +742,9 @@ export default function NouvelleInspectionPage() {
           mousseConfort: formData.inspectionData.mousseConfort,
           crochetsLampe: formData.inspectionData.crochetsLampe,
           accessoires: formData.inspectionData.accessoires,
+          // Nouvelles données pour les éléments barrés
+          crossedOutItems: crossedOutItems,
+          crossedOutWords: crossedOutWords,
         }),
       });
 
@@ -664,34 +761,120 @@ export default function NouvelleInspectionPage() {
     }
   };
 
-  const StatusButton = ({ 
+  const StatusSelect = ({
     currentStatus, 
-    status, 
-    label, 
     onStatusChange 
   }: { 
     currentStatus: 'V' | 'NA' | 'X'; 
-    status: 'V' | 'NA' | 'X'; 
-    label: string; 
     onStatusChange: (status: 'V' | 'NA' | 'X') => void;
   }) => (
-    <button
-      type="button"
-      onClick={() => onStatusChange(status)}
-      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-        currentStatus === status
-          ? status === 'V'
-            ? 'bg-green-100 text-green-800'
-            : status === 'NA'
-            ? 'bg-gray-100 text-gray-800'
-            : 'bg-red-100 text-red-800'
-          : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+    <select
+      value={currentStatus}
+      onChange={(e) => onStatusChange(e.target.value as 'V' | 'NA' | 'X')}
+      className={`text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
+        currentStatus === 'V'
+          ? 'bg-green-50 border-green-200 text-green-800'
+          : currentStatus === 'NA'
+          ? 'bg-gray-50 border-gray-200 text-gray-800'
+          : 'bg-red-50 border-red-200 text-red-800'
       }`}
     >
-      {status === 'V' && <CheckCircleIcon className="h-4 w-4 mr-1" />}
-      {status === 'X' && <XMarkIcon className="h-4 w-4 mr-1" />}
-      {label}
-    </button>
+      <option value="V">V - Valide</option>
+      <option value="NA">NA - Non Applicable</option>
+      <option value="X">X - Invalide</option>
+    </select>
+  );
+
+  // Composant réutilisable pour l'input de commentaire
+  const CommentInputInline = ({
+    fieldKey,
+    section,
+    field,
+    value
+  }: {
+    fieldKey: string;
+    section: string;
+    field: string;
+    value: any
+  }) => {
+    if (!openCommentFields[fieldKey]) {
+      return null;
+    }
+
+    return (
+      <div className="mt-2 ml-4">
+        <CommentInput
+          value={commentInputs[fieldKey] || ''}
+          onChange={(newValue) => setCommentInputs(prev => ({...prev, [fieldKey]: newValue}))}
+          onSave={() => saveComment(fieldKey, section, field)}
+          onCancel={() => toggleCommentInput(fieldKey)}
+          className="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          placeholder="Ajouter votre commentaire..."
+          rows={2}
+          autoFocus={true}
+        />
+      </div>
+    );
+  };
+
+  // Composant pour rendre du texte avec mots cliquables
+  const ClickableText = ({
+    text,
+    fieldKey,
+    className = "text-sm text-gray-700"
+  }: {
+    text: string;
+    fieldKey: string;
+    className?: string;
+  }) => {
+    // Diviser le texte en mots et séparateurs
+    const parts = text.split(/(\s+|\/|\(|\)|-|\.)/);
+
+    return (
+      <span className={className}>
+        {parts.map((part, index) => {
+          // Si c'est un séparateur (espaces, /, (), etc.), l'afficher tel quel
+          if (/^\s+$/.test(part) || /^[\/\(\)\-\.]+$/.test(part)) {
+            return <span key={index}>{part}</span>;
+          }
+
+          // Si c'est un mot, le rendre cliquable
+          const isCrossed = crossedOutWords[fieldKey]?.[part];
+          return (
+            <span
+              key={index}
+              className={`cursor-pointer hover:bg-gray-200 px-0.5 rounded transition-colors ${isCrossed ? 'line-through' : ''}`}
+              onClick={() => toggleCrossedOutWord(fieldKey, part)}
+              title={`Cliquez pour ${isCrossed ? 'débarrer' : 'barrer'} "${part}"`}
+            >
+              {part}
+            </span>
+          );
+        })}
+      </span>
+    );
+  };
+
+  // Composant complet pour le commentaire
+  const CommentSection = ({
+    fieldKey,
+    section,
+    field,
+    value
+  }: {
+    fieldKey: string;
+    section: string;
+    field: string;
+    value: any
+  }) => (
+    <>
+      <CommentInputInline fieldKey={fieldKey} section={section} field={field} value={value} />
+      {value.comment && (
+        <div className="text-xs text-gray-600 italic ml-4 mt-1">
+          Commentaire: {value.comment}
+        </div>
+      )}
+    </>
   );
 
   return (
@@ -749,10 +932,10 @@ export default function NouvelleInspectionPage() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-6 gap-8">
                 {/* Colonne gauche - Identification équipement */}
-                <div className="space-y-6">
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-gray-50 p-4 rounded-lg" dir="ltr">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">
                       Identification équipement
                     </h2>
@@ -869,7 +1052,7 @@ export default function NouvelleInspectionPage() {
                       </div>
 
                     {/* Champs d'identification */}
-                    <div className="space-y-4">
+                    <div className="space-y-4" dir="ltr">
                       <div>
                         <label htmlFor="referenceInterne" className="block text-sm font-medium text-gray-700">
                           Référence interne
@@ -1217,14 +1400,14 @@ export default function NouvelleInspectionPage() {
                 </div>
 
                 {/* Colonne droite - Vie de l'équipement */}
-                <div className="space-y-6">
+                <div className="lg:col-span-4 space-y-6">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">
                       Vie de l'équipement
                     </h2>
 
                     {/* Points d'inspection */}
-                    <div className="space-y-6">
+                    <div className="space-y-6" dir="ltr">
                       {/* 1. ANTECEDENT DU PRODUIT */}
                       <div className="border-b border-gray-200 pb-4">
                         <h3 className="text-sm font-medium text-gray-900 mb-3">
@@ -1260,255 +1443,517 @@ export default function NouvelleInspectionPage() {
 
                       {/* 2. OBSERVATIONS PREALABLES */}
                       <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          2. OBSERVATIONS PREALABLES:
-                        </h3>
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          {/* Première colonne : Titre - 45% */}
+                          <div className="text-sm font-medium text-gray-900">
+                            2. OBSERVATIONS PREALABLES
+                          </div>
+
+                          {/* Deuxième colonne : Éléments - 55% */}
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Référence Interne marquée et lisible</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                            <div className="flex flex-col gap-1">
+                              <li><span className="text-sm text-gray-700">Référence Interne marquée et lisible</span></li>
+                              <div className="flex items-center justify-end gap-2">
+                                {/* <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('observationsPrelables.referenceInterneMarquee')}
+                                >
+                                  Ajouter commentaires
+                                </button> */}
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.observationsPrelables.referenceInterneMarquee.status}
-                                status="V"
-                                label="V"
                                 onStatusChange={(status) => handleInspectionChange('observationsPrelables', 'referenceInterneMarquee', status)}
                               />
                             </div>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Lisibilité Numéro de série, de la norme</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                            {/* <CommentSection
+                              fieldKey="observationsPrelables.referenceInterneMarquee"
+                              section="observationsPrelables"
+                              field="referenceInterneMarquee"
+                              value={formData.inspectionData.observationsPrelables.referenceInterneMarquee}
+                            /> */}
+                            <div className="flex flex-col gap-1">
+                              <li>
+                                <span
+                                  className="text-sm text-gray-700 cursor-pointer hover:bg-gray-100 px-1 rounded transition-colors"
+                                  onClick={() => toggleCrossedOut('observationsPrelables.lisibiliteNumeroSerie')}
+                                >
+                                  Lisibilité {crossedOutItems['observationsPrelables.lisibiliteNumeroSerie'] ? <del>Numéro de série</del> : 'Numéro de série'}, de la norme
+                                </span>
+                              </li>
+                              {/* <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('observationsPrelables.lisibiliteNumeroSerie')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.observationsPrelables.lisibiliteNumeroSerie.status}
-                                status="V"
-                                label="V"
                                 onStatusChange={(status) => handleInspectionChange('observationsPrelables', 'lisibiliteNumeroSerie', status)}
                               />
-                            </div>
+                            </div> */}
                           </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Durée de vie n'est pas dépassée</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                            {/* <CommentSection
+                              fieldKey="observationsPrelables.lisibiliteNumeroSerie"
+                              section="observationsPrelables"
+                              field="lisibiliteNumeroSerie"
+                              value={formData.inspectionData.observationsPrelables.lisibiliteNumeroSerie}
+                            /> */}
+                            <div className="flex flex-col gap-1">
+                              <li><span className="text-sm text-gray-700">Durée de vie n'est pas dépassée</span></li>
+                              {/* <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('observationsPrelables.dureeVieNonDepassee')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.observationsPrelables.dureeVieNonDepassee.status}
-                                status="V"
-                                label="V"
                                 onStatusChange={(status) => handleInspectionChange('observationsPrelables', 'dureeVieNonDepassee', status)}
                               />
+                            </div> */}
                             </div>
+                            {/* <CommentSection
+                              fieldKey="observationsPrelables.dureeVieNonDepassee"
+                              section="observationsPrelables"
+                              field="dureeVieNonDepassee"
+                              value={formData.inspectionData.observationsPrelables.dureeVieNonDepassee}
+                            /> */}
                           </div>
                         </div>
                       </div>
 
                       {/* 3. CALOTTE (Coque) - Extérieur-Intérieur */}
                       <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          3. CALOTTE (Coque): - Extérieur-Intérieur:
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Fentes et trous accessoires:</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.calotteExterieurInterieur.fentesTrousAccessoires.status}
-                                status="V"
-                                label="V"
-                                onStatusChange={(status) => handleInspectionChange('calotteExterieurInterieur', 'fentesTrousAccessoires', status)}
-                              />
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          {/* Première colonne : Titre */}
+                          <div className="text-sm font-medium text-gray-900">
+                            3. CALOTTE (Coque): - Extérieur- Intérieur
                             </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Volets aération si il y a, (fonctionnement):</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.calotteExterieurInterieur.voletsAeration.status}
-                                status="NA"
-                                label="NA"
-                                onStatusChange={(status) => handleInspectionChange('calotteExterieurInterieur', 'voletsAeration', status)}
+
+                          {/* Deuxième colonne : Éléments */}
+                          <div className="space-y-2">
+                            <div className="flex flex-col gap-1 bg-gray-100 p-1">
+                              <ClickableText
+                                text="Marque/Impact/Fissure/déformation/Trace de salissure / Rayure/Brûlure/ Trace de produits chimique/Usure..."
+                                fieldKey="calotteExterieurInterieur.marqueFissureDeformation"
                               />
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Marque/Fissure/Déformation/Usure ... Ajouter commentaires</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('calotteExterieurInterieur.marqueFissureDeformation')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.calotteExterieurInterieur.marqueFissureDeformation.status}
-                                status="NA"
-                                label="NA"
                                 onStatusChange={(status) => handleInspectionChange('calotteExterieurInterieur', 'marqueFissureDeformation', status)}
                               />
                             </div>
+                            </div>
+                            <CommentSection
+                              fieldKey="calotteExterieurInterieur.marqueFissureDeformation"
+                              section="calotteExterieurInterieur"
+                              field="marqueFissureDeformation"
+                              value={formData.inspectionData.calotteExterieurInterieur.marqueFissureDeformation}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="border-b border-gray-200 pb-4">
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          <div className="text-sm font-medium text-gray-900">
+                            -Fentes et trous accessoires
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex flex-col gap-1 bg-gray-100 p-1">
+                              <ClickableText
+                                text="Déformation/Fissure/Impact ..."
+                                fieldKey="calotteExterieurInterieur.fentesTrousAccessoires"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('calotteExterieurInterieur.fentesTrousAccessoires')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
+                                  currentStatus={formData.inspectionData.calotteExterieurInterieur.fentesTrousAccessoires.status}
+                                  onStatusChange={(status) => handleInspectionChange('calotteExterieurInterieur', 'fentesTrousAccessoires', status)}
+                                />
+                              </div>
+                            </div>
+                            <CommentSection
+                              fieldKey="calotteExterieurInterieur.fentesTrousAccessoires"
+                              section="calotteExterieurInterieur"
+                              field="fentesTrousAccessoires"
+                              value={formData.inspectionData.calotteExterieurInterieur.fentesTrousAccessoires}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* -Volets aération si il y a, (fonctionnement) */}
+                      <div className="border-b border-gray-200 pb-4">
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          <div className="text-sm font-medium text-gray-900">
+                            -Volets aération si il y a, (fonctionnement)
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('calotteExterieurInterieur.voletsAeration')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
+                                  currentStatus={formData.inspectionData.calotteExterieurInterieur.voletsAeration.status}
+                                  onStatusChange={(status) => handleInspectionChange('calotteExterieurInterieur', 'voletsAeration', status)}
+                                />
+                              </div>
+                            </div>
+                            <CommentSection
+                              fieldKey="calotteExterieurInterieur.voletsAeration"
+                              section="calotteExterieurInterieur"
+                              field="voletsAeration"
+                              value={formData.inspectionData.calotteExterieurInterieur.voletsAeration}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 4. CALOTIN */}
                       <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          4. CALOTIN (si il y a):
-                        </h3>
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          <div className="text-sm font-medium text-gray-900">
+                            4. CALOTIN (si il y a): - Ôtez éléments de confort si nécessaire; Ne pas démonté calotin si fixé sur la coque.
+                          </div>
+
+                          {/* Deuxième colonne : Éléments */}
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">- Ôtez éléments de confort si nécessaire; Ne pas démonté calotin si fixé sur la coque.</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                            <div className="flex flex-col gap-1">
+                              <ClickableText
+                                text="Marque/Fissure/Déformation/Usure ..."
+                                fieldKey="calotin.otezElementsConfort"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('calotin.otezElementsConfort')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.calotin.otezElementsConfort.status}
-                                status="NA"
-                                label="NA"
                                 onStatusChange={(status) => handleInspectionChange('calotin', 'otezElementsConfort', status)}
                               />
                             </div>
+                            </div>
+                            <CommentSection
+                              fieldKey="calotin.otezElementsConfort"
+                              section="calotin"
+                              field="otezElementsConfort"
+                              value={formData.inspectionData.calotin.otezElementsConfort}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 5. COIFFE */}
                       <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          5. COIFFE:
-                        </h3>
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          <div className="text-sm font-medium text-gray-900">
+                            5. COIFFE:- Etat des sangles et de leurs fixation dans la calotte.
+                          </div>
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">- Etat des sangles et de leurs fixation dans la calotte. Usure/Coupure/Brûlure/Déformation... Ajouter commentaires.</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                            <div className="flex flex-col gap-1">
+                              
+                                <ClickableText
+                                  text="Usure/Coupure/Brûlure/Déformation ..."
+                                  fieldKey="coiffe.etatSanglesFixation"
+                                />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('coiffe.etatSanglesFixation')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.coiffe.etatSanglesFixation.status}
-                                status="V"
-                                label="V"
                                 onStatusChange={(status) => handleInspectionChange('coiffe', 'etatSanglesFixation', status)}
                               />
                             </div>
+                            </div>
+                            <CommentSection
+                              fieldKey="coiffe.etatSanglesFixation"
+                              section="coiffe"
+                              field="etatSanglesFixation"
+                              value={formData.inspectionData.coiffe.etatSanglesFixation}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 6. TOUR DE TETE */}
                       <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          6. TOUR DE TETE:
-                        </h3>
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          <div className="text-sm font-medium text-gray-900">
+                            6. TOUR DE TETE
+                          </div>
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Usure/Déformation/Elément manquant/ Fixation ... ajouter commentaires.</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                            <div className="flex flex-col gap-1">
+                              
+                                <ClickableText
+                                  text="Usure/Déformation/Elément manquant/Fixation ..."
+                                  fieldKey="tourDeTete.usureDeformationElement"
+                                />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('tourDeTete.usureDeformationElement')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.tourDeTete.usureDeformationElement.status}
-                                status="V"
-                                label="V"
                                 onStatusChange={(status) => handleInspectionChange('tourDeTete', 'usureDeformationElement', status)}
                               />
                             </div>
+                            </div>
+                            <CommentSection
+                              fieldKey="tourDeTete.usureDeformationElement"
+                              section="tourDeTete"
+                              field="usureDeformationElement"
+                              value={formData.inspectionData.tourDeTete.usureDeformationElement}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 7. SYSTEME DE REGLAGE */}
                       <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          7. SYSTEME DE REGLAGE:
-                        </h3>
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          <div className="text-sm font-medium text-gray-900">
+                            7. SYSTEME DE REGLAGE: - Etat, fixations; actionner système dans les deux sens; Tirez sur système pour voir si il se dérègle ou pas
+                          </div>
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">- Etat, fixations; actionner système dans les deux sens; Tirez sur système pour voir si il se dérègle ou pas. Usure/Déformation / Elément manquant/ Fixation ... ajouter commentaires</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                            <div className="flex flex-col gap-1">
+                              
+                                <ClickableText
+                                  text="Usure/Déformation/Elément manquant/Fixation ..."
+                                  fieldKey="systemeReglage.etatFixations"
+                                />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('systemeReglage.etatFixations')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.systemeReglage.etatFixations.status}
-                                status="V"
-                                label="V"
                                 onStatusChange={(status) => handleInspectionChange('systemeReglage', 'etatFixations', status)}
                               />
                             </div>
+                            </div>
+                            <CommentSection
+                              fieldKey="systemeReglage.etatFixations"
+                              section="systemeReglage"
+                              field="etatFixations"
+                              value={formData.inspectionData.systemeReglage.etatFixations}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 8. JUGULAIRE */}
                       <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          8. JUGULAIRE:
-                        </h3>
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          <div className="text-sm font-medium text-gray-900">
+                            8. JUGULAIRE: - Etat sangles et éléments de réglage (inspecter les parties cachées également)
+                          </div>
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">- Etat sangles et éléments de réglage (inspecter les parties cachées également). Usure/Coupure/Brûlure/Déformation... Ajouter commentaires</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                            <div className="flex flex-col gap-1">
+                              
+                                <ClickableText
+                                  text="Usure/Coupure/Brûlure/Déformation ..."
+                                  fieldKey="coiffe.etatSanglesFixation"
+                                />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('jugulaire.etatSanglesElements')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.jugulaire.etatSanglesElements.status}
-                                status="V"
-                                label="V"
                                 onStatusChange={(status) => handleInspectionChange('jugulaire', 'etatSanglesElements', status)}
                               />
                             </div>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Etat de la boucle de fermeture jugulaire: Casse/Déformation/Fissure / Usure ... ajouter commentaires</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                            <CommentSection
+                              fieldKey="jugulaire.etatSanglesElements"
+                              section="jugulaire"
+                              field="etatSanglesElements"
+                              value={formData.inspectionData.jugulaire.etatSanglesElements}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      {/* 9. JUGULAIRE - Boucle de fermeture */}
+                      <div className="border-b border-gray-200 pb-4">
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          <div className="text-sm font-medium text-gray-900">
+                            - Etat de la boucle de fermeture jugulaire
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex flex-col gap-1">
+                              
+                                <ClickableText
+                                  text="Casse / Déformation / Fissure / Usure"
+                                  fieldKey="jugulaire.etatBoucleFermeture"
+                                />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('jugulaire.etatBoucleFermeture')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.jugulaire.etatBoucleFermeture.status}
-                                status="V"
-                                label="V"
                                 onStatusChange={(status) => handleInspectionChange('jugulaire', 'etatBoucleFermeture', status)}
                               />
                             </div>
+                            </div>
+                            <CommentSection
+                              fieldKey="jugulaire.etatBoucleFermeture"
+                              section="jugulaire"
+                              field="etatBoucleFermeture"
+                              value={formData.inspectionData.jugulaire.etatBoucleFermeture}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 9. MOUSSE DE CONFORT */}
                       <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          9. MOUSSE DE CONFORT:
-                        </h3>
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          <div className="text-sm font-medium text-gray-900">
+                            9. MOUSSE DE CONFORT: Démonter pour laver ou remplacer quand c'est nécessaire
+                          </div>
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Démonter pour laver ou remplacer quand c'est nécessaire. Usure/Déformation/Casse/ Elément manquant... ajouter commentaires.</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm text-gray-700"></span>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('mousseConfort.usureDeformationCasse')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.mousseConfort.usureDeformationCasse.status}
-                                status="V"
-                                label="V"
                                 onStatusChange={(status) => handleInspectionChange('mousseConfort', 'usureDeformationCasse', status)}
                               />
                             </div>
+                            </div>
+                            <CommentSection
+                              fieldKey="mousseConfort.usureDeformationCasse"
+                              section="mousseConfort"
+                              field="usureDeformationCasse"
+                              value={formData.inspectionData.mousseConfort.usureDeformationCasse}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 10. CROCHETS DE LAMPE */}
                       <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          10. CROCHETS DE LAMPE:
-                        </h3>
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          <div className="text-sm font-medium text-gray-900">
+                            10. CROCHETS DE LAMPE
+                          </div>
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Usure/Déformation/Casse/ Elément manquant... ajouter commentaires.</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                            <div className="flex flex-col gap-1">
+                              
+                                <ClickableText
+                                  text="Usure/Déformation/Casse/Elément manquant ..."
+                                  fieldKey="crochetsLampe.usureDeformationCasse"
+                                />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('crochetsLampe.usureDeformationCasse')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.crochetsLampe.usureDeformationCasse.status}
-                                status="V"
-                                label="V"
                                 onStatusChange={(status) => handleInspectionChange('crochetsLampe', 'usureDeformationCasse', status)}
                               />
                             </div>
+                            </div>
+                            <CommentSection
+                              fieldKey="crochetsLampe.usureDeformationCasse"
+                              section="crochetsLampe"
+                              field="usureDeformationCasse"
+                              value={formData.inspectionData.crochetsLampe.usureDeformationCasse}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 11. ACCESSOIRES */}
                       <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          11. ACCESSOIRES: Visière, lampe:
-                        </h3>
+                        <div className="grid grid-cols-[40%_60%] gap-2">
+                          <div className="text-sm font-medium text-gray-900">
+                            11. ACCESSOIRES: Visière, lampe
+                          </div>
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Fonctionnement / Etat... ajouter commentaires.</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm text-gray-700">Fonctionnement/Etat ...</span>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('accessoires.fonctionnementEtat')}
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                 currentStatus={formData.inspectionData.accessoires.fonctionnementEtat.status}
-                                status="NA"
-                                label="NA"
                                 onStatusChange={(status) => handleInspectionChange('accessoires', 'fonctionnementEtat', status)}
                               />
                             </div>
+                            </div>
+                            <CommentSection
+                              fieldKey="accessoires.fonctionnementEtat"
+                              section="accessoires"
+                              field="fonctionnementEtat"
+                              value={formData.inspectionData.accessoires.fonctionnementEtat}
+                            />
                           </div>
                         </div>
                       </div>
@@ -1608,3 +2053,5 @@ export default function NouvelleInspectionPage() {
     </div>
   );
 }
+
+

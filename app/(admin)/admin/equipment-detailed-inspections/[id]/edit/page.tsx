@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { CheckCircleIcon, XMarkIcon, PhotoIcon, QrCodeIcon, DocumentIcon } from '@heroicons/react/24/outline';
 import SignaturePad from '../../../../../../components/SignaturePad';
+import CommentInput from '../../../../../../components/CommentInput';
 
 interface InspectionPoint {
   status: 'V' | 'NA' | 'X';
@@ -64,6 +65,24 @@ export default function EditInspectionPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [digitalSignature, setDigitalSignature] = useState('');
+  const [crossedOutWords, setCrossedOutWords] = useState<{[key: string]: {[word: string]: boolean}}>({});
+  const [editingComment, setEditingComment] = useState<string | null>(null);
+  const [commentInputs, setCommentInputs] = useState<{[key: string]: string}>({});
+  const [originalData, setOriginalData] = useState({
+    certificatePdf: '',
+    digitalSignature: '',
+    dateSignature: '',
+  });
+  const commentInputRefs = useRef<{[key: string]: HTMLTextAreaElement | null}>({});
+
+  // Fonctions utilitaires pour gérer les signatures séparées
+  const getCurrentCertificate = () => {
+    return formData.verificateurSignaturePdf || originalData.certificatePdf;
+  };
+
+  const getCurrentDigitalSignature = () => {
+    return formData.verificateurDigitalSignature || originalData.digitalSignature || digitalSignature;
+  };
   const photoInputRef = useRef<HTMLInputElement>(null);
   const qrInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -92,8 +111,9 @@ export default function EditInspectionPage() {
     pdfUrl: '',
     dateAchatImage: '',
     verificateurSignaturePdf: '',
+    verificateurDigitalSignature: '',
     dateSignature: '',
-    etat: 'OK',
+    etat: 'INVALID', // Même valeur par défaut que la page création
     
     // Nouveaux champs pour QR code
     fabricant: '',
@@ -158,51 +178,82 @@ export default function EditInspectionPage() {
         const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}`);
         if (response.ok) {
           const data = await response.json();
-          setFormData(prev => ({
-            ...prev,
+          console.log('Données chargées depuis API:', data);
+
+          // Charger les données des mots barrés
+          setCrossedOutWords(data.crossedOutWords || {});
+          console.log('crossedOutWords chargés:', data.crossedOutWords);
+          console.log('crossedOutItems chargés:', data.crossedOutItems);
+
+          // Séparer et sauvegarder les valeurs originales pour certificat et signature digitale
+          setOriginalData({
+            certificatePdf: data.verificateurSignaturePdf || '',
+            digitalSignature: data.verificateurDigitalSignature || '',
+            dateSignature: data.dateSignature || '',
+          });
+
+          console.log('inspectionData depuis API:', data.observationsPrelables, data.calotteExterieurInterieur);
+
+          // Créer le nouvel état formData en utilisant directement les données de l'API
+          const newFormData = {
+            // Copier toutes les données de base depuis l'API
             ...data,
             fabricant: data.fabricant || '',
+            etat: data.etat || 'INVALID',
+
+            // Structure d'inspectionData - utiliser directement les données de l'API
             inspectionData: {
               antecedentProduit: {
                 miseEnService: data.antecedentProduit?.miseEnService || '',
               },
-              observationsPrelables: {
-                referenceInterneMarquee: data.observationsPrelables?.referenceInterneMarquee || { status: 'V' as const, comment: '' },
-                lisibiliteNumeroSerie: data.observationsPrelables?.lisibiliteNumeroSerie || { status: 'V' as const, comment: '' },
-                dureeVieNonDepassee: data.observationsPrelables?.dureeVieNonDepassee || { status: 'V' as const, comment: '' },
+              // IMPORTANT : Utiliser directement les objets de l'API pour préserver statuts et commentaires
+              // Avec fallback aux valeurs par défaut si les données n'existent pas
+              observationsPrelables: data.observationsPrelables || {
+                referenceInterneMarquee: { status: 'V', comment: '' },
+                lisibiliteNumeroSerie: { status: 'V', comment: '' },
+                dureeVieNonDepassee: { status: 'V', comment: '' },
               },
-              calotteExterieurInterieur: {
-                fentesTrousAccessoires: data.calotteExterieurInterieur?.fentesTrousAccessoires || { status: 'V' as const, comment: '' },
-                voletsAeration: data.calotteExterieurInterieur?.voletsAeration || { status: 'NA' as const, comment: '' },
-                marqueFissureDeformation: data.calotteExterieurInterieur?.marqueFissureDeformation || { status: 'NA' as const, comment: '' },
+              calotteExterieurInterieur: data.calotteExterieurInterieur || {
+                fentesTrousAccessoires: { status: 'V', comment: '' },
+                voletsAeration: { status: 'NA', comment: '' },
+                marqueFissureDeformation: { status: 'NA', comment: '' },
               },
-              calotin: {
-                otezElementsConfort: data.calotin?.otezElementsConfort || { status: 'NA' as const, comment: '' },
+              calotin: data.calotin || {
+                otezElementsConfort: { status: 'NA', comment: '' },
               },
-              coiffe: {
-                etatSanglesFixation: data.coiffe?.etatSanglesFixation || { status: 'V' as const, comment: '' },
+              coiffe: data.coiffe || {
+                etatSanglesFixation: { status: 'V', comment: '' },
               },
-              tourDeTete: {
-                usureDeformationElement: data.tourDeTete?.usureDeformationElement || { status: 'V' as const, comment: '' },
+              tourDeTete: data.tourDeTete || {
+                usureDeformationElement: { status: 'V', comment: '' },
               },
-              systemeReglage: {
-                etatFixations: data.systemeReglage?.etatFixations || { status: 'V' as const, comment: '' },
+              systemeReglage: data.systemeReglage || {
+                etatFixations: { status: 'V', comment: '' },
               },
-              jugulaire: {
-                etatSanglesElements: data.jugulaire?.etatSanglesElements || { status: 'V' as const, comment: '' },
-                etatBoucleFermeture: data.jugulaire?.etatBoucleFermeture || { status: 'V' as const, comment: '' },
+              jugulaire: data.jugulaire || {
+                etatSanglesElements: { status: 'V', comment: '' },
+                etatBoucleFermeture: { status: 'V', comment: '' },
               },
-              mousseConfort: {
-                usureDeformationCasse: data.mousseConfort?.usureDeformationCasse || { status: 'V' as const, comment: '' },
+              mousseConfort: data.mousseConfort || {
+                usureDeformationCasse: { status: 'V', comment: '' },
               },
-              crochetsLampe: {
-                usureDeformationCasse: data.crochetsLampe?.usureDeformationCasse || { status: 'V' as const, comment: '' },
+              crochetsLampe: data.crochetsLampe || {
+                usureDeformationCasse: { status: 'V', comment: '' },
               },
-              accessoires: {
-                fonctionnementEtat: data.accessoires?.fonctionnementEtat || { status: 'NA' as const, comment: '' },
+              accessoires: data.accessoires || {
+                fonctionnementEtat: { status: 'NA', comment: '' },
               },
             },
-          }));
+          };
+
+          // console.log('Nouveau formData créé:', newFormData);
+          // console.log('Observations préalables dans formData:', newFormData.inspectionData.observationsPrelables);
+          // console.log('Statut referenceInterneMarquee:', newFormData.inspectionData.observationsPrelables?.referenceInterneMarquee?.status);
+          // console.log('Commentaire referenceInterneMarquee:', newFormData.inspectionData.observationsPrelables?.referenceInterneMarquee?.comment);
+
+          setFormData(newFormData);
+
+          console.log('Chargement terminé - Statuts et commentaires récupérés depuis l\'API');
         } else {
           setError('Erreur lors du chargement de l\'inspection');
         }
@@ -218,6 +269,21 @@ export default function EditInspectionPage() {
     }
   }, [inspectionId]);
 
+  // Debug: Logger les changements de formData
+  useEffect(() => {
+    if (formData.inspectionData?.observationsPrelables) {
+      console.log('🔍 formData mis à jour - Statuts et commentaires:');
+      console.log('- referenceInterneMarquee:', {
+        status: formData.inspectionData.observationsPrelables.referenceInterneMarquee?.status,
+        comment: formData.inspectionData.observationsPrelables.referenceInterneMarquee?.comment
+      });
+      console.log('- lisibiliteNumeroSerie:', {
+        status: formData.inspectionData.observationsPrelables.lisibiliteNumeroSerie?.status,
+        comment: formData.inspectionData.observationsPrelables.lisibiliteNumeroSerie?.comment
+      });
+    }
+  }, [formData]);
+
   if (status === 'unauthenticated') {
     router.push('/login');
     return null;
@@ -227,6 +293,24 @@ export default function EditInspectionPage() {
     router.push('/');
     return null;
   }
+
+  const StatusSelect = ({
+    currentStatus,
+    onStatusChange
+  }: {
+    currentStatus: 'V' | 'NA' | 'X';
+    onStatusChange: (status: 'V' | 'NA' | 'X') => void;
+  }) => (
+    <select
+      value={currentStatus}
+      onChange={(e) => onStatusChange(e.target.value as 'V' | 'NA' | 'X')}
+      className="w-12 h-8 text-xs border border-gray-300 rounded px-1 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+    >
+      <option value="V">V</option>
+      <option value="NA">NA</option>
+      <option value="X">X</option>
+    </select>
+  );
 
   if (isLoadingData) {
     return (
@@ -444,13 +528,13 @@ export default function EditInspectionPage() {
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', 'signature');
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+      formDataUpload.append('type', 'signature');
 
       const response = await fetch('/api/upload', {
         method: 'POST',
-        body: formData,
+        body: formDataUpload,
       });
 
       if (response.ok) {
@@ -470,15 +554,15 @@ export default function EditInspectionPage() {
   const handleDigitalSignature = async (signature: string) => {
     setDigitalSignature(signature);
     setShowSignatureModal(false);
-    
-    // Enregistrer la signature directement dans formData avec la date actuelle
+
+    // Enregistrer la signature dans le nouveau champ séparé
     const currentDate = new Date().toISOString();
-    setFormData(prev => ({ 
-      ...prev, 
-      verificateurSignaturePdf: signature,
+    setFormData(prev => ({
+      ...prev,
+      verificateurDigitalSignature: signature,
       dateSignature: currentDate
     }));
-    
+
     // Mettre à jour tous les équipements de même type avec cette signature
     await updateAllEquipmentSignatures(signature, currentDate);
   };
@@ -491,9 +575,9 @@ export default function EditInspectionPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          signature, 
-          dateSignature: date 
+        body: JSON.stringify({
+          signature,
+          dateSignature: date
         }),
       });
 
@@ -506,6 +590,137 @@ export default function EditInspectionPage() {
       console.error('Erreur lors de la mise à jour des signatures:', error);
     }
   };
+
+  // Fonction pour rendre du texte avec mots barrés individuellement
+  const renderCrossedOutText = (text: string, fieldKey: string) => {
+    // Diviser le texte en mots et séparateurs
+    const parts = text.split(/(\s+|\/|\(|\)|-|\.)/);
+
+    return parts.map((part, index) => {
+      // Si c'est un séparateur ou un mot vide, l'afficher tel quel
+      if (/^\s+$/.test(part) || /^[\/\(\)\-\.]+$/.test(part) || part.trim() === '') {
+        return <span key={index}>{part}</span>;
+      }
+
+      // Si c'est un mot, vérifier s'il est barré
+      const isCrossed = crossedOutWords[fieldKey]?.[part] || false;
+      return (
+        <span
+          key={index}
+          className={`cursor-pointer hover:bg-gray-200 px-0.5 rounded transition-colors ${isCrossed ? 'line-through' : ''}`}
+          onClick={() => toggleCrossedOutWord(fieldKey, part)}
+          title={`Cliquez pour ${isCrossed ? 'débarrer' : 'barrer'} "${part}"`}
+        >
+          {part}
+        </span>
+      );
+    });
+  };
+
+  // Fonction pour basculer l'état barré d'un mot spécifique
+  const toggleCrossedOutWord = (key: string, word: string) => {
+    setCrossedOutWords(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [word]: !prev[key]?.[word]
+      }
+    }));
+  };
+
+  // Fonction pour commencer l'édition d'un commentaire
+  const startEditingComment = (key: string, currentComment: string = '') => {
+    setEditingComment(key);
+    setCommentInputs(prev => ({
+      ...prev,
+      [key]: currentComment
+    }));
+
+    // Focus après le rendu
+    setTimeout(() => {
+      commentInputRefs.current[key]?.focus();
+    }, 100);
+  };
+
+  // Fonction pour sauvegarder le commentaire
+  const saveComment = (key: string, section: string, field: string) => {
+    const comment = commentInputs[key] || '';
+
+    // Récupérer le statut actuel de manière sécurisée
+    const sectionData = formData.inspectionData[section as keyof InspectionData];
+    const fieldData = sectionData && typeof sectionData === 'object' && field in sectionData
+      ? (sectionData as any)[field]
+      : null;
+    const currentStatus = fieldData?.status || 'V';
+
+    handleInspectionChange(section as keyof InspectionData, field, currentStatus, comment);
+    setEditingComment(null);
+  };
+
+  // Fonction pour annuler l'édition
+  const cancelEditingComment = () => {
+    setEditingComment(null);
+  };
+
+  // Composant réutilisable pour un élément d'inspection avec statut et commentaire
+  const InspectionItem = ({
+    text,
+    section,
+    field,
+    renderText
+  }: {
+    text: string;
+    section: keyof InspectionData;
+    field: string;
+    renderText?: boolean;
+  }) => {
+    const fieldKey = `${section}.${field}`;
+    const fieldData = (formData.inspectionData[section] as any)?.[field];
+
+    return (
+      <>
+        <div className="bg-gray-100 p-1">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm text-gray-700">
+              {renderText ? renderCrossedOutText(text, fieldKey) : text}
+            </span>
+            <div className="flex items-center gap-2 justify-end">
+              <StatusSelect
+                currentStatus={fieldData?.status || 'V'}
+                onStatusChange={(status) => handleInspectionChange(section, field, status)}
+              />
+              <button
+                type="button"
+                className="text-[10px] text-red-600 hover:underline"
+                onClick={() => startEditingComment(fieldKey, fieldData?.comment || '')}
+              >
+                {fieldData?.comment ? 'Éditer commentaire' : 'Ajouter commentaire'}
+              </button>
+            </div>
+          </div>
+          {editingComment === fieldKey ? (
+            <div className="ml-4 mt-1">
+              <CommentInput
+                value={commentInputs[fieldKey] || ''}
+                onChange={(newValue) => setCommentInputs(prev => ({...prev, [fieldKey]: newValue}))}
+                onSave={() => saveComment(fieldKey, section, field)}
+                onCancel={cancelEditingComment}
+                className="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="Ajouter votre commentaire..."
+                rows={2}
+                autoFocus={true}
+              />
+            </div>
+          ) : fieldData?.comment && (
+            <div className="text-xs text-blue-600 italic ml-4">
+              Commentaire: {fieldData.comment}
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
 
   // Fonction pour rendre les normes cliquables avec liens PDF
   const renderClickableNormes = (text: string) => {
@@ -523,7 +738,8 @@ export default function EditInspectionPage() {
     setError('');
 
     try {
-      const submitData = {
+      // Préparer les données à envoyer, en ne mettant à jour que les champs modifiés
+      const submitData: any = {
           ...formData,
           antecedentProduit: formData.inspectionData.antecedentProduit,
           observationsPrelables: formData.inspectionData.observationsPrelables,
@@ -536,10 +752,35 @@ export default function EditInspectionPage() {
           mousseConfort: formData.inspectionData.mousseConfort,
           crochetsLampe: formData.inspectionData.crochetsLampe,
           accessoires: formData.inspectionData.accessoires,
-          dateSignature: formData.dateSignature || null,
+          // Données pour les éléments barrés
+          crossedOutWords: crossedOutWords,
         };
-      
+
+      // Gestion séparée des certificats PDF et signatures digitales
+      const certificateChanged = formData.verificateurSignaturePdf !== originalData.certificatePdf;
+      const digitalSignatureChanged = formData.verificateurDigitalSignature !== originalData.digitalSignature;
+      const dateChanged = formData.dateSignature !== originalData.dateSignature;
+
+      // Ajouter les champs seulement s'ils ont changé
+      if (certificateChanged) {
+        submitData.verificateurSignaturePdf = formData.verificateurSignaturePdf;
+      }
+      if (digitalSignatureChanged) {
+        submitData.verificateurDigitalSignature = formData.verificateurDigitalSignature;
+      }
+      if (dateChanged) {
+        submitData.dateSignature = formData.dateSignature;
+      }
+
+      console.log('=== DEBUG SAUVEGARDE ===');
+      console.log('originalData:', originalData);
+      console.log('certificateChanged:', certificateChanged);
+      console.log('digitalSignatureChanged:', digitalSignatureChanged);
+      console.log('dateChanged:', dateChanged);
+      console.log('Envoi verificateurSignaturePdf:', submitData.verificateurSignaturePdf);
+      console.log('Envoi verificateurDigitalSignature:', submitData.verificateurDigitalSignature);
       console.log('Envoi dateSignature:', submitData.dateSignature);
+      console.log('========================');
       
       const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}`, {
         method: 'PUT',
@@ -562,15 +803,15 @@ export default function EditInspectionPage() {
     }
   };
 
-  const StatusButton = ({ 
-    currentStatus, 
-    status, 
-    label, 
-    onStatusChange 
-  }: { 
-    currentStatus: 'V' | 'NA' | 'X'; 
-    status: 'V' | 'NA' | 'X'; 
-    label: string; 
+  const StatusButton = ({
+    currentStatus,
+    status,
+    label,
+    onStatusChange
+  }: {
+    currentStatus: 'V' | 'NA' | 'X';
+    status: 'V' | 'NA' | 'X';
+    label: string;
     onStatusChange: (status: 'V' | 'NA' | 'X') => void;
   }) => (
     <button
@@ -589,6 +830,7 @@ export default function EditInspectionPage() {
       {label}
     </button>
   );
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -625,16 +867,16 @@ export default function EditInspectionPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Colonne gauche - Identification équipement */}
-                <div className="space-y-6">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                {/* Colonne gauche - Identification équipement - 40% */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-gray-50 p-2 rounded-lg">
+                    <h2 className="text-sm font-semibold text-gray-900 mb-2">
                       Identification équipement
                     </h2>
                     
                     {/* Photo et État */}
-                    <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="grid grid-cols-2 gap-2 mb-3">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Photo
@@ -1057,21 +1299,21 @@ export default function EditInspectionPage() {
                   </div>
                 </div>
 
-                {/* Colonne droite - Vie de l'équipement */}
-                <div className="space-y-6">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                {/* Colonne droite - Vie de l'équipement - 60% */}
+                <div className="lg:col-span-3 space-y-6">
+                  <div className="bg-gray-50 p-2 rounded-lg">
+                    <h2 className="text-sm font-semibold text-gray-900 mb-2">
                       Vie de l'équipement
                     </h2>
 
                     {/* Points d'inspection */}
-                    <div className="space-y-6">
+                    <div className="space-y-2">
                       {/* 1. ANTECEDENT DU PRODUIT */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
+                      <div className="border-b border-gray-200 pb-2">
+                        <h3 className="text-xs font-medium text-gray-900 mb-1">
                           1. ANTECEDENT DU PRODUIT:
                         </h3>
-                        <div className="space-y-2">
+                        <div className="space-y-1">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Mise en service le
@@ -1100,263 +1342,251 @@ export default function EditInspectionPage() {
                       </div>
 
                       {/* 2. OBSERVATIONS PREALABLES */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          2. OBSERVATIONS PREALABLES:
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Référence Interne marquée et lisible</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.observationsPrelables.referenceInterneMarquee.status}
-                                status="V"
-                                label="V"
-                                onStatusChange={(status) => handleInspectionChange('observationsPrelables', 'referenceInterneMarquee', status)}
-                              />
-                            </div>
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          {/* Première colonne : Titre - 45% */}
+                          <div className="text-xs font-bold text-gray-900">
+                            2. OBSERVATIONS PREALABLES
                           </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Lisibilité Numéro de série, de la norme</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.observationsPrelables.lisibiliteNumeroSerie.status}
-                                status="V"
-                                label="V"
-                                onStatusChange={(status) => handleInspectionChange('observationsPrelables', 'lisibiliteNumeroSerie', status)}
-                              />
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Durée de vie n'est pas dépassée</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.observationsPrelables.dureeVieNonDepassee.status}
-                                status="V"
-                                label="V"
-                                onStatusChange={(status) => handleInspectionChange('observationsPrelables', 'dureeVieNonDepassee', status)}
-                              />
-                            </div>
+
+                          {/* Deuxième colonne : Éléments - 55% */}
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Référence Interne marquée et lisible"
+                              section="observationsPrelables"
+                              field="referenceInterneMarquee"
+                              renderText={true}
+                            />
+                            <InspectionItem
+                              text="Lisibilité Numéro de série, de la norme"
+                              section="observationsPrelables"
+                              field="lisibiliteNumeroSerie"
+                              renderText={true}
+                            />
+                            <InspectionItem
+                              text="Durée de vie n'est pas dépassée"
+                              section="observationsPrelables"
+                              field="dureeVieNonDepassee"
+                              renderText={true}
+                            />
                           </div>
                         </div>
                       </div>
 
-                      {/* 3. CALOTTE (Coque) - Extérieur-Intérieur */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          3. CALOTTE (Coque): - Extérieur-Intérieur:
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Fentes et trous accessoires</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.calotteExterieurInterieur.fentesTrousAccessoires.status}
-                                status="V"
-                                label="V"
-                                onStatusChange={(status) => handleInspectionChange('calotteExterieurInterieur', 'fentesTrousAccessoires', status)}
-                              />
-                            </div>
+                      {/* 3. CALOTTE */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          {/* Première colonne : Titre */}
+                          <div className="text-xs font-bold text-gray-900">
+                            3. CALOTTE (Coque): - Extérieur- Intérieur
                           </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Volets aération si il y a, (fonctionnement)</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.calotteExterieurInterieur.voletsAeration.status}
-                                status="NA"
-                                label="NA"
-                                onStatusChange={(status) => handleInspectionChange('calotteExterieurInterieur', 'voletsAeration', status)}
-                              />
-                            </div>
+
+                          {/* Deuxième colonne : Éléments */}
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Marque/Impact/Fissure/déformation/Trace de salissure / Rayure/Brûlure/ Trace de produits chimique/Usure..."
+                              section="calotteExterieurInterieur"
+                              field="marqueFissureDeformation"
+                              renderText={true}
+                            />
                           </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Marque/Fissure/Déformation</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.calotteExterieurInterieur.marqueFissureDeformation.status}
-                                status="NA"
-                                label="NA"
-                                onStatusChange={(status) => handleInspectionChange('calotteExterieurInterieur', 'marqueFissureDeformation', status)}
-                              />
-                            </div>
+                        </div>
+                      </div>
+
+                      {/* 4. CALOTIN - Fentes et trous accessoires */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          {/* Première colonne : Titre */}
+                          <div className="text-xs font-bold text-gray-900">
+                           -Fentes et trous accessoires
+                          </div>
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Déformation/Fissure/Impact ..."
+                              section="calotteExterieurInterieur"
+                              field="fentesTrousAccessoires"
+                              renderText={true}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 5. CALOTIN - Volets aération */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          {/* Première colonne : Titre */}
+                          <div className="text-xs font-bold text-gray-900">
+                            -Volets aération si il y a, (fonctionnement)
+                          </div>
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Volets aération si il y a, (fonctionnement)"
+                              section="calotteExterieurInterieur"
+                              field="voletsAeration"
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 4. CALOTIN */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          4. CALOTIN (si il y a):
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Ôtez éléments de confort si nécessaire</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.calotin.otezElementsConfort.status}
-                                status="NA"
-                                label="NA"
-                                onStatusChange={(status) => handleInspectionChange('calotin', 'otezElementsConfort', status)}
-                              />
-                            </div>
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          {/* Première colonne : Titre */}
+                          <div className="text-xs font-bold text-gray-900">
+                            4. CALOTIN (si il y a): - Ôtez éléments de confort si nécessaire; Ne pas démonté calotin si fixé sur la coque.
+                          </div>
+
+                          {/* Deuxième colonne : Éléments */}
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Marque/Fissure/Déformation/Usure ..."
+                              section="calotin"
+                              field="otezElementsConfort"
+                              renderText={true}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 5. COIFFE */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          5. COIFFE:
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Etat des sangles et de leurs fixation dans la calotte</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.coiffe.etatSanglesFixation.status}
-                                status="V"
-                                label="V"
-                                onStatusChange={(status) => handleInspectionChange('coiffe', 'etatSanglesFixation', status)}
-                              />
-                            </div>
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            5. COIFFE:- Etat des sangles et de leurs fixation dans la calotte.
+                          </div>
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Usure/Coupure/Brûlure/Déformation ..."
+                              section="coiffe"
+                              field="etatSanglesFixation"
+                              renderText={true}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 6. TOUR DE TETE */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          6. TOUR DE TETE
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Usure/Déformation/Elément manquant/Fixation</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.tourDeTete.usureDeformationElement.status}
-                                status="V"
-                                label="V"
-                                onStatusChange={(status) => handleInspectionChange('tourDeTete', 'usureDeformationElement', status)}
-                              />
-                            </div>
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            6. TOUR DE TETE
+                          </div>
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Usure/Déformation/Elément manquant/Fixation ..."
+                              section="tourDeTete"
+                              field="usureDeformationElement"
+                              renderText={true}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 7. SYSTEME DE REGLAGE */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          7. SYSTEME DE REGLAGE:
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Etat, fixations; actionner système dans les deux sens</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.systemeReglage.etatFixations.status}
-                                status="V"
-                                label="V"
-                                onStatusChange={(status) => handleInspectionChange('systemeReglage', 'etatFixations', status)}
-                              />
-                            </div>
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            7. SYSTEME DE REGLAGE: - Etat, fixations; actionner système dans les deux sens; Tirez sur système pour voir si il se dérègle ou pas
+                          </div>
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Usure/Déformation/Elément manquant/Fixation ..."
+                              section="systemeReglage"
+                              field="etatFixations"
+                              renderText={true}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 8. JUGULAIRE */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          8. JUGULAIRE:
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Etat sangles et éléments de réglage</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.jugulaire.etatSanglesElements.status}
-                                status="V"
-                                label="V"
-                                onStatusChange={(status) => handleInspectionChange('jugulaire', 'etatSanglesElements', status)}
-                              />
-                            </div>
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            8. JUGULAIRE: - Etat sangles et éléments de réglage (inspecter les parties cachées également)
                           </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Etat de la boucle de fermeture jugulaire</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.jugulaire.etatBoucleFermeture.status}
-                                status="V"
-                                label="V"
-                                onStatusChange={(status) => handleInspectionChange('jugulaire', 'etatBoucleFermeture', status)}
-                              />
-                            </div>
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Usure/Coupure/Brûlure/Déformation ..."
+                              section="jugulaire"
+                              field="etatSanglesElements"
+                              renderText={true}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 9. JUGULAIRE - Boucle de fermeture */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            - Etat de la boucle de fermeture jugulaire
+                          </div>
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Casse / Déformation / Fissure / Usure"
+                              section="jugulaire"
+                              field="etatBoucleFermeture"
+                              renderText={true}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 9. MOUSSE DE CONFORT */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          9. MOUSSE DE CONFORT
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Démonter pour laver ou remplacer quand c'est nécessaire</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.mousseConfort.usureDeformationCasse.status}
-                                status="V"
-                                label="V"
-                                onStatusChange={(status) => handleInspectionChange('mousseConfort', 'usureDeformationCasse', status)}
-                              />
-                            </div>
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            9. MOUSSE DE CONFORT: Démonter pour laver ou remplacer quand c'est nécessaire
+                          </div>
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Usure/Déformation/Casse ..."
+                              section="mousseConfort"
+                              field="usureDeformationCasse"
+                              renderText={true}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 10. CROCHETS DE LAMPE */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          10. CROCHETS DE LAMPE
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Usure/Déformation/Casse/Elément manquant</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.crochetsLampe.usureDeformationCasse.status}
-                                status="V"
-                                label="V"
-                                onStatusChange={(status) => handleInspectionChange('crochetsLampe', 'usureDeformationCasse', status)}
-                              />
-                            </div>
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            10. CROCHETS DE LAMPE
+                          </div>
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Usure/Déformation/Casse/Elément manquant ..."
+                              section="crochetsLampe"
+                              field="usureDeformationCasse"
+                              renderText={true}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* 11. ACCESSOIRES */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
-                          11. ACCESSOIRES: Visière, lampe
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Fonctionnement/Etat</span>
-                            <div className="flex space-x-2">
-                              <StatusButton
-                                currentStatus={formData.inspectionData.accessoires.fonctionnementEtat.status}
-                                status="NA"
-                                label="NA"
-                                onStatusChange={(status) => handleInspectionChange('accessoires', 'fonctionnementEtat', status)}
-                              />
-                            </div>
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            11. ACCESSOIRES: Visière, lampe
+                          </div>
+                          <div className="space-y-2">
+                            <InspectionItem
+                              text="Fonctionnement/Etat ..."
+                              section="accessoires"
+                              field="fonctionnementEtat"
+                              renderText={true}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* Signature */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">
+                      <div className="border-b border-gray-200 pb-2">
+                        <h3 className="text-xs font-medium text-gray-900 mb-2">
                           Signature
                         </h3>
                         <div className="space-y-4">
@@ -1373,72 +1603,87 @@ export default function EditInspectionPage() {
                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                           </div>
-                          <div>
-                            <label htmlFor="verificateurSignature" className="block text-sm font-medium text-gray-700">
-                              Signature
-                            </label>
-                            <div className="mt-1 flex space-x-2">
-                              <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                                {formData.verificateurSignaturePdf || digitalSignature ? (
-                                  <div className="text-green-600 text-sm">
-                                    <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
-                                    {formData.verificateurSignaturePdf ? (
-                                      <a 
-                                        href={formData.verificateurSignaturePdf} 
-                                        target="_blank" 
+                          <div className="space-y-4">
+                            {/* Zone pour le certificat/document chargé */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Certificat du contrôleur (PDF)
+                              </label>
+                              <div className="flex space-x-2">
+                                <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                                  {getCurrentCertificate() ? (
+                                    <div className="text-green-600 text-sm">
+                                      <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                                      <a
+                                        href={getCurrentCertificate()}
+                                        target="_blank"
                                         className="text-blue-600 hover:text-blue-800 underline text-xs"
                                       >
-                                        <div>Certificat du controleur</div>
+                                        <div>Certificat du contrôleur</div>
                                       </a>
-                                    ) : (
-                                      <div className="text-gray-600">
-                                        <img src={digitalSignature} alt="Signature digitale" className="h-16 mx-auto object-contain" />
-                                        <div className="text-xs mt-2">Signature digitale enregistrée</div>
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="text-gray-400 text-sm">
-                                    <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
-                                    <div>Zone de signature</div>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex flex-col space-y-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setShowSignatureModal(true)}
-                                  className="inline-flex items-center px-3 py-2 border border-indigo-300 rounded-md text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
-                                  title="Signature digitale"
-                                >
-                                  ✍️ Signer
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => signatureInputRef.current?.click()}
-                                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                  title="Uploader une signature PDF"
-                                >
-                                  <DocumentIcon className="h-4 w-4" />
-                                </button>
+                                    </div>
+                                  ) : (
+                                    <div className="text-gray-400 text-sm">
+                                      <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                                      <div>Aucun certificat chargé</div>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => signatureInputRef.current?.click()}
+                                    className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                    title="Uploader un certificat PDF"
+                                  >
+                                    <DocumentIcon className="h-4 w-4" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                            <input
-                              ref={signatureInputRef}
-                              type="file"
-                              accept=".pdf"
-                              onChange={handleSignatureUpload}
-                              className="hidden"
-                            />
-                            <p className="mt-1 text-xs text-gray-500">
-                              Cliquez sur <span 
-                                className="text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
-                                onClick={() => setShowSignatureModal(true)}
-                              >
-                                "Uploader un PDF de signature Original" 
-                              </span> ou signez digitalement
-                            </p>
+
+                            {/* Zone pour la signature digitale */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Signature digitale
+                              </label>
+                              <div className="flex space-x-2">
+                                <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                                  {getCurrentDigitalSignature() ? (
+                                    <div className="text-green-600 text-sm">
+                                      <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                                      <div className="text-gray-600">
+                                        <img src={getCurrentDigitalSignature()} alt="Signature digitale" className="h-16 mx-auto object-contain" />
+                                        <div className="text-xs mt-2">Signature digitale enregistrée</div>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="text-gray-400 text-sm">
+                                      <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                                      <div>Aucune signature digitale</div>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowSignatureModal(true)}
+                                    className="inline-flex items-center px-3 py-2 border border-indigo-300 rounded-md text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
+                                    title="Signature digitale"
+                                  >
+                                    ✍️ Signer
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           </div>
+                          <input
+                            ref={signatureInputRef}
+                            type="file"
+                            accept=".pdf"
+                            onChange={handleSignatureUpload}
+                            className="hidden"
+                          />
                         </div>
                       </div>
                     </div>

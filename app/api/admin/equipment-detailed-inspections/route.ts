@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Extraire inspectionData du body et l'exclure de la sauvegarde
-    const { inspectionData, nature, reference, type, normes, date, signataire, ...inspectionDataWithoutNested } = body;
+    const { inspectionData, nature, reference, type, normes, date, signataire, crossedOutWords, crossedOutItems, ...inspectionDataWithoutNested } = body;
     
     const inspection = await prisma.equipmentDetailedInspection.create({
       data: {

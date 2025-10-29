@@ -95,7 +95,7 @@ export async function GET(
             <div>CI.DES</div>
             <div>CHEZ CHAGNEAU</div>
             <div>17270 BORESSE-ET-MARTRON</div>
-            <div>admin38@cides.fr</div>
+            <div>pm@cides.tf</div>
           </div>
           <div class="card">
             <div class="title">Destinataire</div>
