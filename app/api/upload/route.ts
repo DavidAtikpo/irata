@@ -629,18 +629,23 @@ export async function POST(request: NextRequest) {
         };
       }
     } else if (type === 'reference') {
-      // Upload de documents de référence (PDF) avec simulation
+      // Upload de documents de référence (PDF)
       try {
-        // 1. Upload local rapide
-        const uploadsDir = join(process.cwd(), 'public', 'uploads');
-        if (!existsSync(uploadsDir)) {
-          await mkdir(uploadsDir, { recursive: true });
+        // 1. Upload local (optionnel) – ignoré en environnement read-only
+        let localFileUrl: string | null = null;
+        try {
+          const uploadsDir = join(process.cwd(), 'public', 'uploads');
+          if (!existsSync(uploadsDir)) {
+            await mkdir(uploadsDir, { recursive: true });
+          }
+          const localFileName = `reference_${timestamp}.pdf`;
+          const localFilePath = join(uploadsDir, localFileName);
+          await writeFile(localFilePath, buffer);
+          localFileUrl = `/uploads/${localFileName}`;
+        } catch (fsErr) {
+          console.warn('Reference - Ecriture locale indisponible (serverless):', (fsErr as Error).message);
+          localFileUrl = null;
         }
-        
-        const localFileName = `reference_${timestamp}.pdf`;
-        const localFilePath = join(uploadsDir, localFileName);
-        await writeFile(localFilePath, buffer);
-        const localFileUrl = `/uploads/${localFileName}`;
         
         // 2. Upload vers Cloudinary pour stockage
         const cloudinaryResult = await new Promise((resolve, reject) => {
@@ -737,9 +742,9 @@ export async function POST(request: NextRequest) {
             reference: reference,
             rawText: extractedText,
             confidence: extractedText ? 0.8 : 0,
-            localUrl: localFileUrl,
-            cloudinaryUrl: referenceCloudUrl || fileUrl || localFileUrl,
-            referenceUrl: referenceCloudUrl || localFileUrl
+            localUrl: localFileUrl || undefined,
+            cloudinaryUrl: referenceCloudUrl || fileUrl || undefined,
+            referenceUrl: referenceCloudUrl || undefined
           };
         } catch (pdfError) {
           console.log('Reference - Erreur pdf-parse:', (pdfError as Error).message);
@@ -747,9 +752,9 @@ export async function POST(request: NextRequest) {
             reference: 'document detecte',
             rawText: 'Erreur lors de l\'extraction PDF',
             confidence: 0,
-            localUrl: localFileUrl,
-            cloudinaryUrl: referenceCloudUrl || fileUrl || localFileUrl,
-            referenceUrl: referenceCloudUrl || localFileUrl
+            localUrl: localFileUrl || undefined,
+            cloudinaryUrl: referenceCloudUrl || fileUrl || undefined,
+            referenceUrl: referenceCloudUrl || undefined
           };
         }
       } catch (error) {
