@@ -1,28 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/lib/auth';
-import { PrismaClient } from '@prisma/client';
+import { authOptions } from '@/lib/auth';
+import { prisma } from 'lib/prisma';
 
-const prisma = new PrismaClient();
-
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    // Vérifier l'authentification
+    // Vérifier l'authentification admin
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session || session.user?.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    // Récupérer l'utilisateur
+    const { userId } = await request.json();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'userId requis' }, { status: 400 });
+    }
+
+    // Vérifier que l'utilisateur existe
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: userId },
     });
 
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    // Vérifier s'il y a des devis validés sans factures correspondantes
+    // Trouver les devis validés avec contrats validés (et signés par admin) qui n'ont pas encore de facture
     const validDevis = await prisma.devis.findMany({
       where: {
         userId: user.id,
@@ -37,15 +41,17 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Créer des factures pour les devis validés qui n'en ont pas encore
-    // REQUIS: Le contrat doit être VALIDE, signé par l'utilisateur ET signé par l'admin
+    const generatedInvoices = [];
+
+    // Créer des factures pour les devis validés avec contrats VALIDÉS et signés par l'utilisateur ET l'admin
     for (const devis of validDevis) {
+      // REQUIS: Le contrat doit être VALIDE, signé par l'utilisateur ET signé par l'admin
       if (
-        devis.contrat && 
+        devis.contrat &&
         devis.contrat.statut === 'VALIDE' &&
-        devis.contrat.signature && 
+        devis.contrat.signature &&
         devis.contrat.signature.trim() !== '' && // Signature utilisateur présente
-        devis.contrat.adminSignature && 
+        devis.contrat.adminSignature &&
         devis.contrat.adminSignature.trim() !== '' && // Signature admin présente
         devis.contrat.invoices.length === 0
       ) {
@@ -56,63 +62,44 @@ export async function GET(request: NextRequest) {
         const timestamp = Date.now();
         const invoiceNumber = `CI.FF ${currentYear}${currentMonth}${currentDay} ${String(timestamp).slice(-3).padStart(3, '0')}`;
 
-        await prisma.invoice.create({
+        const invoice = await prisma.invoice.create({
           data: {
             invoiceNumber,
             amount: devis.montant, // Montant du devis
             paymentStatus: 'PENDING',
-            notes: `Facture générée automatiquement à partir du devis ${devis.numero}`,
+            notes: `Facture générée par l'administrateur pour le devis ${devis.numero}`,
             userId: user.id,
             contratId: devis.contrat.id,
           },
         });
+
+        generatedInvoices.push({
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          amount: invoice.amount,
+          contratId: devis.contrat.id,
+          devisNumber: devis.numero,
+        });
       }
     }
 
-    // Récupérer les factures de l'utilisateur avec gestion des relations optionnelles
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        userId: user.id,
-      },
-      include: {
-        contrat: {
-          include: {
-            devis: {
-              select: {
-                numero: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    // Formater les données pour le frontend avec gestion des valeurs null
-    const formattedInvoices = invoices.map((invoice) => ({
-      id: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      amount: invoice.amount,
-      paymentStatus: invoice.paymentStatus,
-      paidAmount: invoice.paidAmount,
-      paymentMethod: invoice.paymentMethod,
-      notes: invoice.notes,
-      createdAt: invoice.createdAt.toISOString(),
-      devisNumber: invoice.contrat?.devis?.numero || null,
-    }));
+    if (generatedInvoices.length === 0) {
+      return NextResponse.json({
+        message: 'Aucune facture générée. Vérifiez que l\'utilisateur a des contrats validés, signés par l\'utilisateur ET par l\'admin, sans facture.',
+        invoices: [],
+      });
+    }
 
     return NextResponse.json({
-      invoices: formattedInvoices,
+      message: `${generatedInvoices.length} facture(s) générée(s) avec succès`,
+      invoices: generatedInvoices,
     });
   } catch (error) {
-    console.error('Erreur lors de la récupération des factures:', error);
+    console.error('Erreur lors de la génération de facture:', error);
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
+

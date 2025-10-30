@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         nom: lastName ?? null,
         email: normEmail,
         password: hashedPassword,
-        role: Role.USER,
+        role: Role.CLIENT,
       },
     })
 

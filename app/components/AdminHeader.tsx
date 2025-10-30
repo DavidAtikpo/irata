@@ -65,12 +65,22 @@ const navigationTabs = [
      icon: ClipboardDocumentCheckIcon,
      description: 'Gestion des inspections d\'équipement'
    },
-  {
-    name: 'Historique',
-    href: '/admin/historique-management',
-    icon: CalendarIcon,
-    description: 'Historique des modifications'
-  }
+   { name: 'Suivi Utilisateurs',
+    href: '/admin/user-follow-up',
+    icon: UserGroupIcon,
+    description: 'Gestion du suivi des utilisateurs'
+  },
+   { name: 'Gestion des rôles',
+    href: '/admin/roles-management',
+    icon: ShieldCheckIcon,
+    description: 'Gestion des rôles et permissions'
+  },
+  // {
+  //   name: 'Historique',
+  //   href: '/admin/historique-management',
+  //   icon: CalendarIcon,
+  //   description: 'Historique des modifications'
+  // }
 ];
 
 interface AdminHeaderProps {

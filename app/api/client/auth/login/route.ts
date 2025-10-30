@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier que seuls certains rôles peuvent se connecter via cette route
-    if (user.role !== Role.USER && user.role !== Role.ADMIN) {
+    if (user.role !== Role.CLIENT) {
       return NextResponse.json({ error: "Accès réservé aux clients" }, { status: 403 })
     }
 
