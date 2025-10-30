@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import cloudinary from '@/lib/cloudinary';
+import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
@@ -15,6 +16,35 @@ try {
   pdf = eval('require')('pdf-parse');
 } catch (error) {
   console.log('pdf-parse non disponible:', (error as Error).message);
+}
+
+// Initialisation Google Vision (utilisé en priorité en production pour OCR d'images)
+let vision: ImageAnnotatorClient | null = null;
+try {
+  const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+  if (credentialsJson) {
+    vision = new ImageAnnotatorClient({ credentials: JSON.parse(credentialsJson) as any });
+    console.log('✅ Google Vision initialisé');
+  } else {
+    console.log('ℹ️ GOOGLE_APPLICATION_CREDENTIALS_JSON non défini');
+  }
+} catch (visionInitError) {
+  console.error('❌ Erreur initialisation Google Vision:', (visionInitError as Error).message);
+  vision = null;
+}
+
+async function extractTextWithVision(buffer: Buffer): Promise<string> {
+  try {
+    if (!vision) return '';
+    const [result] = await vision.textDetection({ image: { content: buffer } as any });
+    const annotations = result.textAnnotations || [];
+    if (annotations.length === 0) return '';
+    // Le premier élément contient tout le texte détecté
+    return annotations[0].description || '';
+  } catch (e) {
+    console.error('Vision OCR - erreur:', (e as Error).message);
+    return '';
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -188,8 +218,8 @@ export async function POST(request: NextRequest) {
           // Extraire l'URL Cloudinary du résultat
           cloudinaryPdfUrl = (cloudinaryResult as any).secure_url;
           
-          // Extraction réelle avec pdf-parse (si disponible)
-          if (pdf) {
+          // Extraction réelle avec pdf-parse (si disponible) pour PDFs
+          if (pdf && file.type === 'application/pdf') {
             console.log('PDF - Tentative d\'extraction réelle avec pdf-parse...');
             
             try {
@@ -224,8 +254,20 @@ export async function POST(request: NextRequest) {
                 extractedText = ''; // Pas de simulation
               }
             }
-          } else {
-            console.log('PDF - pdf-parse non disponible, tentative Cloudinary OCR...');
+          }
+
+          // Si ce n'est PAS un PDF (ex: image scannée), tenter d'abord Google Vision
+          if (file.type !== 'application/pdf' && !extractedText) {
+            console.log('PDF - Tentative OCR Google Vision (image)...');
+            const visionText = await extractTextWithVision(buffer);
+            if (visionText && visionText.length > 0) {
+              extractedText = visionText;
+              console.log('PDF - Vision OCR réussi, longueur du texte:', extractedText.length);
+            }
+          }
+
+          if (!extractedText) {
+            console.log('PDF - pdf-parse non disponible ou vide, tentative Cloudinary OCR...');
             
             // Utiliser directement Cloudinary OCR (si disponible)
             try {
@@ -615,25 +657,80 @@ export async function POST(request: NextRequest) {
             }
           ).end(buffer);
         });
+        const referenceCloudUrl = (cloudinaryResult as any).secure_url as string | undefined;
         
-        // 3. Extraction réelle avec pdf-parse
-        console.log('Reference - Tentative d\'extraction réelle avec pdf-parse...');
+        // 3. Extraction réelle: préférer Google Vision pour images, pdf-parse pour PDF
+        console.log('Reference - Tentative d\'extraction réelle (Vision/pdf-parse)...');
         
         let extractedText = '';
-        let reference = 'Documents de référence non détectés';
+        let reference = '';
         
         try {
-          const pdfData = await pdf(buffer);
-          extractedText = pdfData.text;
-          console.log('Reference - Extraction pdf-parse réussie, longueur:', extractedText.length);
+          if (file.type !== 'application/pdf') {
+            // Image: tenter Google Vision en priorité
+            const visionText = await extractTextWithVision(buffer);
+            if (visionText) {
+              extractedText = visionText;
+              console.log('Reference - Vision OCR OK, longueur:', extractedText.length);
+            }
+          }
+
+          // PDF: tenter pdf-parse si pas de texte encore
+          if (!extractedText && pdf && file.type === 'application/pdf') {
+            const pdfData = await pdf(buffer);
+            extractedText = pdfData.text;
+            console.log('Reference - Extraction pdf-parse réussie, longueur:', extractedText.length);
+          }
+
+          // Fallback Cloudinary OCR si toujours vide (et traiter comme image OCR)
+          if (!extractedText) {
+            try {
+              const ocrResult = await new Promise((resolve, reject) => {
+                cloudinary.uploader.upload_stream(
+                  {
+                    resource_type: 'image',
+                    ocr: 'adv_ocr',
+                    public_id: `equipment-inspections/ocr/reference_${timestamp}`,
+                    access_mode: 'public',
+                  },
+                  (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                  }
+                ).end(buffer);
+              });
+              extractedText = (ocrResult as any).ocr?.adv_ocr?.data?.[0]?.text || '';
+              if (extractedText) {
+                console.log('Reference - Cloudinary OCR OK, longueur:', extractedText.length);
+              }
+            } catch (ocrErr) {
+              console.log('Reference - Cloudinary OCR indisponible');
+            }
+          }
           
-          // Rechercher les références de documents
-          const referenceMatch = extractedText.match(/(notice|procédure|manuel|guide|instruction|référence|document)/gi);
-          if (referenceMatch) {
-            // Dédupliquer les références en gardant l'ordre d'apparition
-            const uniqueReferences = [...new Set(referenceMatch.map((ref: string) => ref.trim()))];
-            reference = uniqueReferences.join(' / ');
-            console.log('Reference - Références trouvées:', reference);
+          // Extraction spécifique: ligne titre complète avec code (ex: TECHNICAL NOTICE ... A0040300B (240918))
+          const lines = extractedText.split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
+          // 1) Chercher une ligne contenant 'TECHNICAL' et 'NOTICE' et un code entre parenthèses
+          let candidate = lines.find((l: string) => /TECHNICAL/i.test(l) && /NOTICE/i.test(l) && /\([^)]+\)/.test(l));
+          // 2) Sinon, chercher une ligne avec un code style A0040300B (240918)
+          if (!candidate) {
+            candidate = lines.find((l: string) => /[A-Z0-9]{5,}\s*\([0-9]{6,8}\)/.test(l));
+          }
+          // 3) Sinon, combiner la ligne précédente en titre + ligne code
+          if (!candidate) {
+            for (let i = 1; i < lines.length; i++) {
+              if (/[A-Z0-9]{5,}\s*\([0-9]{6,8}\)/.test(lines[i])) {
+                const prev = lines[i - 1];
+                if (prev && prev.length > 3) {
+                  candidate = `${prev} ${lines[i]}`;
+                  break;
+                }
+              }
+            }
+          }
+          reference = candidate || '';
+          if (!reference) {
+            reference = 'document detecte';
           }
           
           extractedData = {
@@ -641,25 +738,25 @@ export async function POST(request: NextRequest) {
             rawText: extractedText,
             confidence: extractedText ? 0.8 : 0,
             localUrl: localFileUrl,
-            cloudinaryUrl: fileUrl,
-            referenceUrl: localFileUrl
+            cloudinaryUrl: referenceCloudUrl || fileUrl || localFileUrl,
+            referenceUrl: referenceCloudUrl || localFileUrl
           };
         } catch (pdfError) {
           console.log('Reference - Erreur pdf-parse:', (pdfError as Error).message);
           extractedData = {
-            reference: 'Documents de référence non détectés',
+            reference: 'document detecte',
             rawText: 'Erreur lors de l\'extraction PDF',
             confidence: 0,
             localUrl: localFileUrl,
-            cloudinaryUrl: fileUrl,
-            referenceUrl: localFileUrl
+            cloudinaryUrl: referenceCloudUrl || fileUrl || localFileUrl,
+            referenceUrl: referenceCloudUrl || localFileUrl
           };
         }
       } catch (error) {
         console.error('Erreur Reference:', error);
         // Fallback
       extractedData = {
-          reference: 'Documents de référence non détectés - Veuillez saisir manuellement',
+          reference: 'document detecte',
           rawText: 'Erreur lors de l\'extraction',
           confidence: 0
       };
@@ -669,14 +766,17 @@ export async function POST(request: NextRequest) {
       extractedData = null;
     }
 
-    // Pour le type 'pdf', utiliser l'URL Cloudinary spécifique si disponible
-    const finalUrl = (type === 'pdf' && (extractedData as any)?.pdfUrl) || fileUrl;
+    // Pour le type 'pdf' et 'reference', utiliser l'URL Cloudinary spécifique si disponible
+    const finalUrl =
+      (type === 'pdf' && (extractedData as any)?.pdfUrl) ||
+      (type === 'reference' && (extractedData as any)?.referenceUrl) ||
+      fileUrl;
     
-    if (!finalUrl && type === 'pdf') {
+    if (!finalUrl && (type === 'pdf' || type === 'reference')) {
       // Si aucune URL n'a été générée pour le PDF, il y a eu un problème
-      console.error('PDF - Aucune URL générée pour le PDF');
+      console.error('Upload - Aucune URL générée pour le fichier type:', type);
       return NextResponse.json(
-        { error: 'Erreur lors de l\'upload du PDF vers Cloudinary' },
+        { error: 'Erreur lors de l\'upload du fichier vers Cloudinary' },
         { status: 500 }
       );
     }

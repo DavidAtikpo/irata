@@ -66,6 +66,7 @@ export default function EditInspectionPage() {
   const [isUploading, setIsUploading] = useState(false); // Pour les autres uploads (photo, QR code)
   const [isUploadingDateAchat, setIsUploadingDateAchat] = useState(false);
   const [isUploadingDocumentReference, setIsUploadingDocumentReference] = useState(false);
+  const [isUploadingNormes, setIsUploadingNormes] = useState(false);
   const [isUploadingCertificate, setIsUploadingCertificate] = useState(false);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [digitalSignature, setDigitalSignature] = useState('');
@@ -279,7 +280,8 @@ export default function EditInspectionPage() {
   };
   const photoInputRef = useRef<HTMLInputElement>(null);
   const qrInputRef = useRef<HTMLInputElement>(null);
-  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null); // Documents Référence
+  const normesPdfInputRef = useRef<HTMLInputElement>(null); // Normes et Certificat
   const dateAchatInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRef = useRef<HTMLInputElement>(null);
   
@@ -633,19 +635,8 @@ export default function EditInspectionPage() {
 
       if (response.ok) {
         const data = await response.json();
+        // Pas d'extraction : enregistrer seulement l'URL/chemin du QR
         setFormData(prev => ({ ...prev, qrCode: data.url }));
-        
-        // Auto-remplissage basé sur le QR code
-        if (data.extractedData) {
-          setFormData(prev => ({
-            ...prev,
-            referenceInterne: data.extractedData.referenceInterne || prev.referenceInterne,
-            numeroSerie: data.extractedData.numeroSerie || prev.numeroSerie,
-            dateFabrication: data.extractedData.dateFabrication || prev.dateFabrication,
-            typeEquipement: data.extractedData.typeEquipement || prev.typeEquipement,
-            dateInspectionDetaillee: calculateNextInspectionDate(),
-          }));
-        }
       } else {
         throw new Error('Erreur lors de l\'upload du QR code');
       }
@@ -657,11 +648,12 @@ export default function EditInspectionPage() {
   };
 
   // Fonction pour upload de PDF (normes et certificats)
+  // Upload PDF pour extraire UNIQUEMENT les normes
   const handlePDFUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setIsUploadingDocumentReference(true);
+    setIsUploadingNormes(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -674,24 +666,50 @@ export default function EditInspectionPage() {
 
       if (response.ok) {
         const data = await response.json();
-        
-        // Auto-remplissage basé sur l'extraction du PDF
-        if (data.extractedData) {
-          setFormData(prev => ({
-            ...prev,
-            normesCertificat: data.extractedData.normes || prev.normesCertificat,
-            documentsReference: data.extractedData.reference || prev.documentsReference,
-            dateFabrication: data.extractedData.dateFabrication || prev.dateFabrication,
-            dateAchat: data.extractedData.dateAchat || prev.dateAchat,
-            numeroSerie: data.extractedData.numeroSerie || prev.numeroSerie,
-            pdfUrl: data.extractedData.pdfUrl || prev.pdfUrl,
-          }));
-        }
+        // Extraction limitée: ne remplir que les normes; le reste reste manuel
+        setFormData(prev => ({
+          ...prev,
+          pdfUrl: (data.extractedData?.pdfUrl || data.url || prev.pdfUrl),
+          normesCertificat: data.extractedData?.normes || prev.normesCertificat,
+        }));
       } else {
         throw new Error('Erreur lors de l\'upload du PDF');
       }
     } catch (error) {
       setError('Erreur lors de l\'upload du PDF');
+    } finally {
+      setIsUploadingNormes(false);
+    }
+  };
+
+  // Upload PDF Documents de référence (sans extraction des normes)
+  const handleReferencePDFUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingDocumentReference(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'reference');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFormData(prev => ({
+          ...prev,
+          pdfUrl: data.url || prev.pdfUrl,
+          documentsReference: data.extractedData?.reference || 'document detecte',
+        }));
+      } else {
+        throw new Error('Erreur lors de l\'upload du document de référence');
+      }
+    } catch (error) {
+      setError('Erreur lors de l\'upload du document de référence');
     } finally {
       setIsUploadingDocumentReference(false);
     }
@@ -715,15 +733,8 @@ export default function EditInspectionPage() {
 
       if (response.ok) {
         const data = await response.json();
+        // Pas d'extraction: uniquement stocker l'image/URL fournie
         setFormData(prev => ({ ...prev, dateAchatImage: data.url }));
-        
-        // Auto-remplissage basé sur l'extraction de l'image
-        if (data.extractedData) {
-          setFormData(prev => ({
-            ...prev,
-            dateAchat: data.extractedData.dateAchat || prev.dateAchat,
-          }));
-        }
       } else {
         throw new Error('Erreur lors de l\'upload de l\'image');
       }
@@ -1106,6 +1117,13 @@ export default function EditInspectionPage() {
                       <div className="flex-1 text-xs text-blue-600 break-all font-mono bg-white p-2 rounded border border-blue-200">
                         {getPublicUrl()}
                       </div>
+                      <input
+                        ref={pdfInputRef}
+                        type="file"
+                        accept=".pdf"
+                        onChange={handleReferencePDFUpload}
+                        className="hidden"
+                      />
                       <button
                         type="button"
                         onClick={handleCopyLink}
@@ -1367,8 +1385,9 @@ export default function EditInspectionPage() {
                           type="text"
                           id="numeroSerie"
                           name="numeroSerie"
-                          value={formData.numeroSerie}
+                          value={formData.numeroSerie === 'Numéro non détecté' ? '' : formData.numeroSerie}
                           onChange={handleChange}
+                          placeholder="Saisir le numéro de série"
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         />
                       </div>
@@ -1381,8 +1400,9 @@ export default function EditInspectionPage() {
                           type="text"
                           id="dateFabrication"
                           name="dateFabrication"
-                          value={formData.dateFabrication}
+                          value={formData.dateFabrication === 'Date non détectée' ? '' : formData.dateFabrication}
                           onChange={handleChange}
+                          placeholder="Saisir la date de fabrication (ex: 2021)"
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         />
                       </div>
@@ -1430,7 +1450,7 @@ export default function EditInspectionPage() {
                           className="hidden"
                         />
                         <p className="mt-1 text-xs text-gray-500">
-                          Uploader une image/PDF pour extraire automatiquement la date d'achat
+                          Uploader une image/PDF, — remplir la date manuellement
                         </p>
                         {/* Aperçu de l'image uploadée */}
 
@@ -1551,16 +1571,36 @@ export default function EditInspectionPage() {
                             className="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             placeholder="Ex: EN1249: 2012 EN 397: 2012+A1:2012"
                           />
+                          <button
+                            type="button"
+                            onClick={() => normesPdfInputRef.current?.click()}
+                            disabled={isUploadingNormes}
+                            className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
+                              isUploadingNormes
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'text-gray-700 bg-white hover:bg-gray-50'
+                            }`}
+                            title="Importer un PDF pour extraire les normes"
+                          >
+                            {isUploadingNormes ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                                <span className="text-xs">Chargement...</span>
+                              </>
+                            ) : (
+                              <DocumentIcon className="h-4 w-4" />
+                            )}
+                          </button>
                         </div>
                         <input
-                          ref={pdfInputRef}
+                          ref={normesPdfInputRef}
                           type="file"
                           accept=".pdf"
                           onChange={handlePDFUpload}
                           className="hidden"
                         />
                         <p className="mt-1 text-xs text-gray-500">
-                          Uploader un PDF pour extraire automatiquement les normes
+                          Uploader un PDF pour extraire automatiquement les normes (le reste reste manuel)
                         </p>
                         {/* Affichage des normes cliquables */}
                       
@@ -1589,7 +1629,7 @@ export default function EditInspectionPage() {
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 : 'text-gray-700 bg-white hover:bg-gray-50'
                             }`}
-                            title="Uploader un PDF pour auto-remplissage"
+                            title="Uploader un document de référence (PDF)"
                           >
                             {isUploadingDocumentReference ? (
                               <>
@@ -1602,7 +1642,7 @@ export default function EditInspectionPage() {
                           </button>
                         </div>
                         <p className="mt-1 text-xs text-gray-500">
-                          Uploader un PDF pour extraire automatiquement les documents de référence
+                          Uploader un document de référence (PDF) — aucun remplissage automatique
                         </p>
                         {/* Affichage des documents cliquables */}
 
