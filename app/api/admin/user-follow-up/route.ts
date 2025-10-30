@@ -15,8 +15,11 @@ export async function GET(req: NextRequest) {
     const onlyPending = searchParams.get('onlyPending') === 'true';
     const invoiceFilter = searchParams.get('invoiceFilter'); // 'total_manuel', 'partiel_manuel', 'total_stripe', 'partiel_stripe', 'partiel_virement', 'no_invoice'
 
-    // Fetch users with key follow-up signals
+    // Fetch users with key follow-up signals - only USER role
     const users = await prisma.user.findMany({
+      where: {
+        role: 'USER'
+      },
       select: {
         id: true,
         email: true,
@@ -108,6 +111,7 @@ export async function GET(req: NextRequest) {
       const contratsPending = contrats.find(c => c.statut === 'EN_ATTENTE')?._count._all || 0;
       const contratsSignes = contrats.find(c => c.statut === 'SIGNE')?._count._all || 0;
       const contratsValides = contrats.find(c => c.statut === 'VALIDE')?._count._all || 0;
+      const totalContrats = contrats.reduce((sum, c) => sum + c._count._all, 0);
 
       // Traitement des factures selon les nouvelles règles
       // PAID = tout payé, PARTIAL = payé partiellement
@@ -170,8 +174,9 @@ export async function GET(req: NextRequest) {
 
       const pendingFlags = {
         devisNonValides: devisPending > 0,
-        contratNonSigne: contratsPending > 0 && contratsSignes === 0,
-        contratNonValide: contratsValides === 0 && (contratsPending > 0 || contratsSignes > 0),
+        contratNonSigne: totalContrats === 0 ? false : (contratsPending > 0 && contratsSignes === 0),
+        contratNonValide: totalContrats === 0 ? false : (contratsValides === 0 && (contratsPending > 0 || contratsSignes > 0)),
+        contratInexistant: totalContrats === 0,
         facturesImpayees: invoicesUnpaid > 0,
         demandeEnAttente: demandesEnAttente > 0,
         factureNonGeneree: hasNoInvoice,
@@ -214,6 +219,7 @@ export async function GET(req: NextRequest) {
           contratsPending,
           contratsSignes,
           contratsValides,
+          totalContrats,
           invoicesUnpaid,
           invoicesPaid,
           invoicesPartial,

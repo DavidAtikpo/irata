@@ -24,10 +24,13 @@ export async function POST(req: NextRequest) {
     const emailSubject = subject || 'Action requise sur votre dossier';
     const emailBody = message || `Bonjour ${user.prenom || ''} ${user.nom || ''},\n\nMerci de compléter les étapes en attente (validation du devis, signature du contrat, ou paiement).\n\nCordialement.`;
 
+    // Convertir les retours à la ligne en <br> pour le HTML
+    const emailHtml = emailBody.replace(/\n/g, '<br>');
+
     await sendEmail({
       to: user.email,
       subject: emailSubject,
-      text: emailBody,
+      html: emailHtml,
     });
 
     return NextResponse.json({ ok: true });

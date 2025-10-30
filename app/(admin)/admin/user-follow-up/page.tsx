@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { ExclamationTriangleIcon, CheckCircleIcon, EnvelopeIcon, PhoneIcon, ChevronDownIcon, ChevronUpIcon, DocumentTextIcon, LinkIcon, ClipboardIcon, BugAntIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, CheckCircleIcon, EnvelopeIcon, PhoneIcon, ChevronDownIcon, ChevronUpIcon, DocumentTextIcon, LinkIcon, ClipboardIcon } from '@heroicons/react/24/outline';
 
 interface Invoice {
   invoiceNumber: string;
@@ -39,6 +39,7 @@ interface FollowRow {
     devisNonValides: boolean;
     contratNonSigne: boolean;
     contratNonValide: boolean;
+    contratInexistant: boolean;
     facturesImpayees: boolean;
     factureNonGeneree: boolean;
     demandeEnAttente: boolean;
@@ -68,9 +69,6 @@ export default function UserFollowUpPage() {
     links: any;
   } | null>(null);
   const [loadingLinks, setLoadingLinks] = useState<Set<string>>(new Set());
-  const [showDebugModal, setShowDebugModal] = useState(false);
-  const [debugData, setDebugData] = useState<any>(null);
-  const [debuggingUser, setDebuggingUser] = useState<string>('');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -115,6 +113,7 @@ export default function UserFollowUpPage() {
     if (row) {
       const pendingActions = [];
       if (row.pending.devisNonValides) pendingActions.push('validation de votre devis');
+      if (row.pending.contratInexistant) pendingActions.push('création de votre contrat');
       if (row.pending.contratNonSigne) pendingActions.push('signature de votre contrat');
       if (row.pending.contratNonValide) pendingActions.push('validation de votre contrat');
       if (row.pending.facturesImpayees) pendingActions.push('paiement de votre facture');
@@ -246,23 +245,6 @@ export default function UserFollowUpPage() {
     window.open(url, '_blank');
   };
 
-  const debugUser = async (email: string) => {
-    setDebuggingUser(email);
-    try {
-      const response = await fetch(`/api/admin/user-follow-up/debug?email=${encodeURIComponent(email)}`);
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement des données de debug');
-      }
-      const data = await response.json();
-      setDebugData(data);
-      setShowDebugModal(true);
-    } catch (e: any) {
-      alert('Erreur lors du chargement des données de debug: ' + (e.message || 'Erreur inconnue'));
-    } finally {
-      setDebuggingUser('');
-    }
-  };
-
   const generateInvoice = async (userId: string) => {
     setGeneratingInvoice(prev => new Set(prev).add(userId));
     try {
@@ -307,12 +289,12 @@ export default function UserFollowUpPage() {
             </div>
             
             {/* Filtres de factures */}
-            <div className="flex flex-wrap gap-2">
-              <label className="text-sm font-medium text-gray-700">Filtre factures:</label>
+            <div className="flex flex-wrap gap-2 items-center">
+              <label className="text-xs font-medium text-gray-700">Filtre factures:</label>
               <select
                 value={invoiceFilter}
                 onChange={(e) => setInvoiceFilter(e.target.value)}
-                className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="text-xs border border-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 min-w-[140px]"
               >
                 <option value="">Toutes les factures</option>
                 <option value="total_manuel">Total manuel</option>
@@ -339,128 +321,133 @@ export default function UserFollowUpPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Devis</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contrat</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Factures</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demandes</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Devis</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contrat</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Factures</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demandes</th>
+                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {rows.map((row) => (
                       <tr key={row.user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{row.user.prenom || ''} {row.user.nom || ''}</div>
-                          <div className="text-xs text-gray-500">{row.user.email}</div>
-                          {row.user.phone && <div className="text-xs text-gray-500">{row.user.phone}</div>}
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <div className="text-xs font-medium text-gray-900">{row.user.prenom || ''} {row.user.nom || ''}</div>
+                          <div className="text-[10px] text-gray-500">{row.user.email}</div>
+                          {row.user.phone && <div className="text-[10px] text-gray-500">{row.user.phone}</div>}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm">
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <div className="text-xs">
                             {row.pending.devisNonValides ? (
-                              <span className="inline-flex items-center gap-1 text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
-                                <ExclamationTriangleIcon className="h-4 w-4" /> {row.stats.devisPending} en attente
+                              <span className="inline-flex items-center gap-0.5 text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded text-xs">
+                                <ExclamationTriangleIcon className="h-3 w-3" /> {row.stats.devisPending} en attente
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-green-700 bg-green-100 px-2 py-1 rounded">
-                                <CheckCircleIcon className="h-4 w-4" /> {row.stats.devisValides} validés
+                              <span className="inline-flex items-center gap-0.5 text-green-700 bg-green-100 px-1.5 py-0.5 rounded text-xs">
+                                <CheckCircleIcon className="h-3 w-3" /> {row.stats.devisValides} validés
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="space-y-1 text-sm">
-                            {row.pending.contratNonSigne && (
-                              <div className="text-yellow-700 bg-yellow-100 px-2 py-1 rounded inline-flex items-center gap-1">
-                                <ExclamationTriangleIcon className="h-4 w-4" /> Non signé
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <div className="space-y-0.5 text-xs">
+                            {row.pending.contratInexistant && (
+                              <div className="text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 text-xs">
+                                <ExclamationTriangleIcon className="h-3 w-3" /> Aucun contrat
                               </div>
                             )}
-                            {row.pending.contratNonValide && (
-                              <div className="text-orange-700 bg-orange-100 px-2 py-1 rounded inline-flex items-center gap-1">
-                                <ExclamationTriangleIcon className="h-4 w-4" /> En attente validation
+                            {!row.pending.contratInexistant && row.pending.contratNonSigne && (
+                              <div className="text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 text-xs">
+                                <ExclamationTriangleIcon className="h-3 w-3" /> Non signé
                               </div>
                             )}
-                            {!row.pending.contratNonSigne && !row.pending.contratNonValide && (
-                              <div className="text-green-700 bg-green-100 px-2 py-1 rounded inline-flex items-center gap-1">
-                                <CheckCircleIcon className="h-4 w-4" /> OK
+                            {!row.pending.contratInexistant && row.pending.contratNonValide && (
+                              <div className="text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 text-xs">
+                                <ExclamationTriangleIcon className="h-3 w-3" /> En attente validation
+                              </div>
+                            )}
+                            {!row.pending.contratInexistant && !row.pending.contratNonSigne && !row.pending.contratNonValide && (
+                              <div className="text-green-700 bg-green-100 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 text-xs">
+                                <CheckCircleIcon className="h-3 w-3" /> OK
                               </div>
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <div className="space-y-1 text-sm flex-1">
+                        <td className="px-3 py-2">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1">
+                              <div className="space-y-0.5 text-xs flex-1">
                                 {row.pending.facturesImpayees && (
-                                  <div className="text-red-700 bg-red-100 px-2 py-1 rounded inline-flex items-center gap-1">
-                                    <ExclamationTriangleIcon className="h-4 w-4" /> {row.stats.invoicesUnpaid} impayée(s)
+                                  <div className="text-red-700 bg-red-100 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 text-xs">
+                                    <ExclamationTriangleIcon className="h-3 w-3" /> {row.stats.invoicesUnpaid} impayée(s)
                                   </div>
                                 )}
                                 {row.stats.invoicesPaid > 0 && (
-                                  <div className="text-green-700 bg-green-100 px-2 py-1 rounded inline-flex items-center gap-1">
-                                    <CheckCircleIcon className="h-4 w-4" /> {row.stats.invoicesPaid} payée(s) total
+                                  <div className="text-green-700 bg-green-100 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 text-xs">
+                                    <CheckCircleIcon className="h-3 w-3" /> {row.stats.invoicesPaid} payée(s) total
                                     {row.stats.invoicesPaidStripe > 0 && (
-                                      <span className="text-xs ml-1">({row.stats.invoicesPaidStripe} Stripe)</span>
+                                      <span className="text-[10px] ml-0.5">({row.stats.invoicesPaidStripe} Stripe)</span>
                                     )}
                                     {row.stats.invoicesPaidManualValidated > 0 && (
-                                      <span className="text-xs ml-1">({row.stats.invoicesPaidManualValidated} manuel)</span>
+                                      <span className="text-[10px] ml-0.5">({row.stats.invoicesPaidManualValidated} manuel)</span>
                                     )}
                                   </div>
                                 )}
                                 {row.stats.invoicesPartial > 0 && (
-                                  <div className="text-orange-700 bg-orange-100 px-2 py-1 rounded inline-flex items-center gap-1">
-                                    <ExclamationTriangleIcon className="h-4 w-4" /> {row.stats.invoicesPartial} partiel(le)
+                                  <div className="text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 text-xs">
+                                    <ExclamationTriangleIcon className="h-3 w-3" /> {row.stats.invoicesPartial} partiel(le)
                                     {row.stats.invoicesPartialStripe > 0 && (
-                                      <span className="text-xs ml-1">({row.stats.invoicesPartialStripe} Stripe)</span>
+                                      <span className="text-[10px] ml-0.5">({row.stats.invoicesPartialStripe} Stripe)</span>
                                     )}
                                     {row.stats.invoicesPartialVirement > 0 && (
-                                      <span className="text-xs ml-1">({row.stats.invoicesPartialVirement} virement)</span>
+                                      <span className="text-[10px] ml-0.5">({row.stats.invoicesPartialVirement} virement)</span>
                                     )}
                                     {row.stats.invoicesPartialManualValidated > 0 && (
-                                      <span className="text-xs ml-1">({row.stats.invoicesPartialManualValidated} manuel)</span>
+                                      <span className="text-[10px] ml-0.5">({row.stats.invoicesPartialManualValidated} manuel)</span>
                                     )}
                                   </div>
                                 )}
                                 {row.pending.factureNonGeneree && (
-                                  <div className="text-red-700 bg-red-100 px-2 py-1 rounded inline-flex items-center gap-1">
-                                    <ExclamationTriangleIcon className="h-4 w-4" /> Facture non générée
+                                  <div className="text-red-700 bg-red-100 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 text-xs">
+                                    <ExclamationTriangleIcon className="h-3 w-3" /> Facture non générée
                                   </div>
                                 )}
                                 {!row.pending.facturesImpayees && !row.pending.factureNonGeneree && row.stats.invoicesPaid === 0 && row.stats.invoicesPartial === 0 && (
-                                  <span className="text-gray-500 text-xs">Aucune facture</span>
+                                  <span className="text-gray-500 text-[10px]">Aucune facture</span>
                                 )}
                               </div>
                               {row.invoices.length > 0 && (
                                 <button
                                   onClick={() => toggleExpand(row.user.id)}
-                                  className="text-indigo-600 hover:text-indigo-900"
+                                  className="text-indigo-600 hover:text-indigo-900 flex-shrink-0"
                                   title="Voir les détails des factures"
                                 >
                                   {expandedRows.has(row.user.id) ? (
-                                    <ChevronUpIcon className="h-5 w-5" />
+                                    <ChevronUpIcon className="h-4 w-4" />
                                   ) : (
-                                    <ChevronDownIcon className="h-5 w-5" />
+                                    <ChevronDownIcon className="h-4 w-4" />
                                   )}
                                 </button>
                               )}
                             </div>
                             {expandedRows.has(row.user.id) && row.invoices.length > 0 && (
-                              <div className="mt-2 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                <div className="text-xs font-semibold text-gray-700 mb-2">Détails des factures ({row.invoices.length})</div>
-                                <div className="space-y-2">
+                              <div className="mt-1 bg-gray-50 rounded p-2 border border-gray-200">
+                                <div className="text-[10px] font-semibold text-gray-700 mb-1">Détails des factures ({row.invoices.length})</div>
+                                <div className="space-y-1">
                                   {row.invoices.map((invoice, idx) => (
-                                    <div key={idx} className="bg-white rounded p-2 border border-gray-200 text-xs">
-                                      <div className="mb-2 pb-2 border-b border-gray-200">
+                                    <div key={idx} className="bg-white rounded p-1.5 border border-gray-200 text-[10px]">
+                                      <div className="mb-1 pb-1 border-b border-gray-200">
                                         <span className="font-semibold text-gray-900">Facture #{invoice.invoiceNumber}</span>
                                       </div>
-                                      <div className="grid grid-cols-2 gap-2">
+                                      <div className="grid grid-cols-2 gap-1">
                                         <div>
                                           <span className="font-medium text-gray-700">Montant total:</span>
-                                          <span className="ml-1">{invoice.amount.toFixed(2)} €</span>
+                                          <span className="ml-0.5">{invoice.amount.toFixed(2)} €</span>
                                         </div>
                                         <div>
                                           <span className="font-medium text-gray-700">Statut:</span>
-                                          <span className={`ml-1 px-2 py-0.5 rounded ${
+                                          <span className={`ml-0.5 px-1 py-0.5 rounded text-[10px] ${
                                             invoice.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
                                             invoice.paymentStatus === 'PARTIAL' ? 'bg-orange-100 text-orange-800' :
                                             invoice.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
@@ -471,16 +458,16 @@ export default function UserFollowUpPage() {
                                         </div>
                                         <div>
                                           <span className="font-medium text-gray-700">Montant payé:</span>
-                                          <span className="ml-1">{invoice.paidAmount !== null ? `${invoice.paidAmount.toFixed(2)} €` : '-'}</span>
+                                          <span className="ml-0.5">{invoice.paidAmount !== null ? `${invoice.paidAmount.toFixed(2)} €` : '-'}</span>
                                         </div>
                                         <div>
                                           <span className="font-medium text-gray-700">Moyen de paiement:</span>
-                                          <span className="ml-1 text-gray-600">{getPaymentMethodLabel(invoice.paymentMethod)}</span>
+                                          <span className="ml-0.5 text-gray-600">{getPaymentMethodLabel(invoice.paymentMethod)}</span>
                                         </div>
                                         {invoice.notes && (
                                           <div className="col-span-2">
                                             <span className="font-medium text-gray-700">Notes:</span>
-                                            <span className="ml-1 text-gray-600">{invoice.notes}</span>
+                                            <span className="ml-0.5 text-gray-600">{invoice.notes}</span>
                                           </div>
                                         )}
                                       </div>
@@ -491,49 +478,32 @@ export default function UserFollowUpPage() {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-2 whitespace-nowrap">
                           {row.pending.demandeEnAttente ? (
-                            <span className="inline-flex items-center gap-1 text-yellow-700 bg-yellow-100 px-2 py-1 rounded text-sm">
-                              <ExclamationTriangleIcon className="h-4 w-4" /> {row.stats.demandesEnAttente} en attente
+                            <span className="inline-flex items-center gap-0.5 text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded text-xs">
+                              <ExclamationTriangleIcon className="h-3 w-3" /> {row.stats.demandesEnAttente} en attente
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-green-700 bg-green-100 px-2 py-1 rounded text-sm">
-                              <CheckCircleIcon className="h-4 w-4" /> {row.stats.demandesValidees} validée(s)
+                            <span className="inline-flex items-center gap-0.5 text-green-700 bg-green-100 px-1.5 py-0.5 rounded text-xs">
+                              <CheckCircleIcon className="h-3 w-3" /> {row.stats.demandesValidees} validée(s)
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                          <button
-                            onClick={() => debugUser(row.user.email)}
-                            disabled={debuggingUser === row.user.email}
-                            className="inline-flex items-center px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                            title="Debug - Voir l'état des contrats"
-                          >
-                            {debuggingUser === row.user.email ? (
-                              <>
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                                ...
-                              </>
-                            ) : (
-                              <>
-                                <BugAntIcon className="h-3 w-3 mr-1" /> Debug
-                              </>
-                            )}
-                          </button>
+                        <td className="px-3 py-2 whitespace-nowrap text-right text-xs font-medium space-x-1">
                           <button
                             onClick={() => openUserPages(row.user.id, `${row.user.prenom} ${row.user.nom}`)}
                             disabled={loadingLinks.has(row.user.id)}
-                            className="inline-flex items-center px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center px-1.5 py-0.5 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
                             title="Voir les pages de devis/contrat pour cet utilisateur"
                           >
                             {loadingLinks.has(row.user.id) ? (
                               <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
-                                Chargement...
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-0.5"></div>
+                                ...
                               </>
                             ) : (
                               <>
-                                <LinkIcon className="h-4 w-4 mr-1" /> Pages
+                                <LinkIcon className="h-3 w-3 mr-0.5" /> Pages
                               </>
                             )}
                           </button>
@@ -541,27 +511,27 @@ export default function UserFollowUpPage() {
                             <button
                               onClick={() => generateInvoice(row.user.id)}
                               disabled={generatingInvoice.has(row.user.id)}
-                              className="inline-flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="inline-flex items-center px-1.5 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
                               title="Générer la facture pour cet utilisateur"
                             >
                               {generatingInvoice.has(row.user.id) ? (
                                 <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
-                                  Génération...
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-0.5"></div>
+                                  ...
                                 </>
                               ) : (
                                 <>
-                                  <DocumentTextIcon className="h-4 w-4 mr-1" /> Générer facture
+                                  <DocumentTextIcon className="h-3 w-3 mr-0.5" /> Facture
                                 </>
                               )}
                             </button>
                           )}
-                          <button onClick={() => openEmailModal(row.user.id, { nom: row.user.nom, prenom: row.user.prenom, email: row.user.email })} className="inline-flex items-center px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700">
-                            <EnvelopeIcon className="h-4 w-4 mr-1" /> Email
+                          <button onClick={() => openEmailModal(row.user.id, { nom: row.user.nom, prenom: row.user.prenom, email: row.user.email })} className="inline-flex items-center px-1.5 py-0.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs">
+                            <EnvelopeIcon className="h-3 w-3 mr-0.5" /> Email
                           </button>
                           {row.user.phone && (
-                            <a href={`https://wa.me/${row.user.phone}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">
-                              <PhoneIcon className="h-4 w-4 mr-1" /> WhatsApp
+                            <a href={`https://wa.me/${row.user.phone}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-1.5 py-0.5 bg-green-600 text-white rounded hover:bg-green-700 text-xs">
+                              <PhoneIcon className="h-3 w-3 mr-0.5" /> WA
                             </a>
                           )}
                         </td>
@@ -769,145 +739,6 @@ export default function UserFollowUpPage() {
         </div>
       )}
 
-      {/* Modal de debug */}
-      {showDebugModal && debugData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] my-8 flex flex-col shadow-2xl">
-            <div className="p-4 border-b border-gray-200 sticky top-0 bg-white rounded-t-xl z-10">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">Debug - {debugData.user.prenom} {debugData.user.nom}</h2>
-                  <p className="text-gray-600 text-sm mt-1">{debugData.user.email}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    setShowDebugModal(false);
-                    setDebugData(null);
-                  }}
-                  className="text-gray-500 hover:text-gray-700 p-1"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <div className="p-4 overflow-y-auto flex-1">
-              {/* Résumé */}
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="text-sm font-semibold text-blue-900 mb-2">Résumé</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
-                  <div>Total contrats: <strong>{debugData.summary.totalContrats}</strong></div>
-                  <div>Contrats VALIDES: <strong>{debugData.summary.contratsValides}</strong></div>
-                  <div>Contrats avec signature user: <strong>{debugData.summary.contratsWithUserSignature}</strong></div>
-                  <div>Contrats avec signature admin: <strong>{debugData.summary.contratsWithAdminSignature}</strong></div>
-                  <div>Contrats complètement signés: <strong>{debugData.summary.contratsFullySigned}</strong></div>
-                  <div className="text-red-700 font-bold">Contrats sans facture: <strong>{debugData.summary.contratsWithoutInvoice}</strong></div>
-                  <div className="border-t border-blue-300 pt-2 mt-2 col-span-2 md:col-span-3">
-                    <strong>Demandes:</strong>
-                  </div>
-                  <div>Total demandes: <strong>{debugData.summary.totalDemandes}</strong></div>
-                  <div>Demandes en attente: <strong className="text-yellow-700">{debugData.summary.demandesEnAttente}</strong></div>
-                  <div>Demandes validées: <strong className="text-green-700">{debugData.summary.demandesValidees}</strong></div>
-                  <div>Demandes avec devis: <strong>{debugData.summary.demandesWithDevis}</strong></div>
-                </div>
-              </div>
-
-              {/* Détails des contrats */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Détails des contrats</h3>
-                <div className="space-y-2">
-                  {debugData.contrats.map((contrat: any, idx: number) => (
-                    <div key={idx} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div><strong>Contrat ID:</strong> {contrat.contratId}</div>
-                        <div><strong>Statut:</strong> 
-                          <span className={`ml-1 px-2 py-0.5 rounded ${
-                            contrat.statut === 'VALIDE' ? 'bg-green-100 text-green-800' :
-                            contrat.statut === 'SIGNE' ? 'bg-blue-100 text-blue-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {contrat.statut}
-                          </span>
-                        </div>
-                        <div><strong>Signature user:</strong> 
-                          <span className={contrat.hasUserSignature ? 'text-green-700 font-bold' : 'text-red-700'}>
-                            {contrat.hasUserSignature ? '✓ Oui' : '✗ Non'} ({contrat.signatureLength} chars)
-                          </span>
-                        </div>
-                        <div><strong>Signature admin:</strong> 
-                          <span className={contrat.hasAdminSignature ? 'text-green-700 font-bold' : 'text-red-700'}>
-                            {contrat.hasAdminSignature ? '✓ Oui' : '✗ Non'} ({contrat.adminSignatureLength} chars)
-                          </span>
-                        </div>
-                        <div><strong>Factures:</strong> {contrat.invoiceCount} facture(s)</div>
-                        <div><strong>Devrait avoir facture:</strong> 
-                          <span className={contrat.shouldHaveInvoice ? 'text-red-700 font-bold' : 'text-gray-600'}>
-                            {contrat.shouldHaveInvoice ? '✓ OUI' : '✗ Non'}
-                          </span>
-                        </div>
-                        {contrat.devis && (
-                          <div className="col-span-2 text-xs text-gray-600">
-                            Devis: {contrat.devis.numero} (Statut: {contrat.devis.statut})
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {debugData.contrats.length === 0 && (
-                    <div className="text-center py-4 text-gray-500 text-sm">Aucun contrat trouvé</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Détails des demandes */}
-              {debugData.demandes && debugData.demandes.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Détails des demandes</h3>
-                  <div className="space-y-2">
-                    {debugData.demandes.map((demande: any, idx: number) => (
-                      <div key={idx} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div><strong>Demande ID:</strong> {demande.id}</div>
-                          <div><strong>Statut:</strong> 
-                            <span className={`ml-1 px-2 py-0.5 rounded ${
-                              demande.statut === 'VALIDE' ? 'bg-green-100 text-green-800' :
-                              demande.statut === 'EN_ATTENTE' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {demande.statut}
-                            </span>
-                          </div>
-                          <div className="col-span-2"><strong>Session:</strong> {demande.session || '-'}</div>
-                          {demande.message && (
-                            <div className="col-span-2"><strong>Message:</strong> <span className="text-gray-600">{demande.message}</span></div>
-                          )}
-                          <div><strong>Date création:</strong> {new Date(demande.createdAt).toLocaleDateString('fr-FR')}</div>
-                          <div><strong>A un devis:</strong> 
-                            <span className={demande.hasDevis ? 'text-green-700 font-bold' : 'text-red-700'}>
-                              {demande.hasDevis ? '✓ Oui' : '✗ Non'}
-                            </span>
-                          </div>
-                          {demande.devis && (
-                            <div className="col-span-2 text-xs text-gray-600 border-t border-gray-300 pt-2 mt-2">
-                              <strong>Devis associé:</strong> {demande.devis.numero} (Statut: {demande.devis.statut})
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {(!debugData.demandes || debugData.demandes.length === 0) && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Détails des demandes</h3>
-                  <div className="text-center py-4 text-gray-500 text-sm">Aucune demande trouvée</div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

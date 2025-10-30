@@ -7,7 +7,7 @@ type Role = 'USER' | 'ADMIN' | 'GESTIONNAIRE' | 'CONTRIBUTOR' | 'CLIENT';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -20,7 +20,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Accès réservé aux administrateurs' }, { status: 403 });
     }
 
-    const userId = params.id;
+    const { id: userId } = await params;
     const body = await request.json();
     const { role } = body;
 
