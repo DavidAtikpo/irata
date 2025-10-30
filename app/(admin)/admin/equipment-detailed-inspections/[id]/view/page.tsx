@@ -372,13 +372,15 @@ export default function ViewInspectionPage() {
 
   // Fonction pour rendre les normes cliquables avec liens PDF
   const renderClickableNormes = (text: string) => {
-    if (!text || !inspection.pdfUrl) return text;
+    // Utiliser normesUrl si disponible, sinon pdfUrl comme fallback
+    const normesUrlToUse = inspection.normesUrl || inspection.pdfUrl;
+    if (!text || !normesUrlToUse) return text;
     
     // Remplacer les normes par des liens cliquables vers le PDF
     const normePattern = /(EN\s*\d+(?::\d{4})?(?:\s*\+\s*[A-Z]\d+(?::\d{4})?)?)/gi;
     
     return text.replace(normePattern, (match) => {
-      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(inspection.pdfUrl)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF">${match}</a>`;
+      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(normesUrlToUse)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF des normes">${match}</a>`;
     });
   };
 

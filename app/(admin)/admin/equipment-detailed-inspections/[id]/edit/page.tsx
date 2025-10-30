@@ -305,6 +305,7 @@ export default function EditInspectionPage() {
     photo: '',
     qrCode: '',
     pdfUrl: '',
+    normesUrl: '',
     dateAchatImage: '',
     verificateurSignaturePdf: '',
     verificateurDigitalSignature: '',
@@ -667,9 +668,9 @@ export default function EditInspectionPage() {
       if (response.ok) {
         const data = await response.json();
         // Extraction limitée: ne remplir que les normes; le reste reste manuel
-        setFormData(prev => ({
-          ...prev,
-          pdfUrl: (data.extractedData?.pdfUrl || data.url || prev.pdfUrl),
+          setFormData(prev => ({
+            ...prev,
+          normesUrl: (data.extractedData?.pdfUrl || data.url || prev.normesUrl),
           normesCertificat: data.extractedData?.normes || prev.normesCertificat,
         }));
       } else {

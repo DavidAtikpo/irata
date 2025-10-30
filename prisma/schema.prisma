@@ -342,6 +342,7 @@ model EquipmentDetailedInspection {
   photo                        String?
   qrCode                       String?
   pdfUrl                       String?
+  normesUrl                    String?
   dateAchatImage               String?
   etat                         String           @default("OK")
   
