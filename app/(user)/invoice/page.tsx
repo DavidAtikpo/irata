@@ -10,14 +10,10 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   EyeIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  ClipboardIcon
 } from '@heroicons/react/24/outline';
 import InvoiceTemplate, { InvoiceData } from '../../components/InvoiceTemplate';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-
-// Charger Stripe avec la clé publique (live)
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S0KtgGOlwWHVuTebej5X9UXmlWZWYvwjEfOFXNotDT7rrYR0vhVAKQaRRRZiLuajzA2Igq5Ps6da8G2RrcVyOxK00KsBBNMR8');
 
 interface Invoice {
   id: string;
@@ -29,6 +25,7 @@ interface Invoice {
   notes?: string;
   createdAt: string;
   devisNumber?: string;
+  contratId?: string;
 }
 
 export default function InvoicePage() {
@@ -38,13 +35,9 @@ export default function InvoicePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-     const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
-   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
-   const [showPaymentSignalModal, setShowPaymentSignalModal] = useState<boolean>(false);
+      const [showPaymentSignalModal, setShowPaymentSignalModal] = useState<boolean>(false);
    const [paymentSignalAmount, setPaymentSignalAmount] = useState<number>(0);
    const [paymentSignalNotes, setPaymentSignalNotes] = useState<string>('');
-   const [showPaymentOptionsModal, setShowPaymentOptionsModal] = useState<boolean>(false);
-   const [selectedInvoiceForOptions, setSelectedInvoiceForOptions] = useState<Invoice | null>(null);
   
        // Données pour l'aperçu de facture
   const [invoicePreviewData, setInvoicePreviewData] = useState<InvoiceData>({
@@ -144,6 +137,7 @@ export default function InvoicePage() {
       const fetchedInvoices = data.invoices || [];
       setInvoices(fetchedInvoices);
       
+      
       // Debug: afficher les statuts des factures
       console.log('Factures récupérées:', fetchedInvoices.map((inv: any) => ({
         id: inv.id,
@@ -195,35 +189,25 @@ export default function InvoicePage() {
   };
 
   const signalPayment = async (invoiceId: string) => {
-    try {
-      const response = await fetch('/api/user/invoice/signal-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          invoiceId,
-        }),
-      });
-
-      if (response.ok) {
-        alert('Paiement signalé avec succès !');
-        fetchInvoices(); // Recharger les factures
-      } else {
-        throw new Error('Erreur lors du signalement');
-      }
-    } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors du signalement du paiement');
+    // Trouver la facture pour pré-remplir le modal
+    const invoice = invoices.find(inv => inv.id === invoiceId);
+    if (invoice) {
+      setSelectedInvoice(invoice);
+      const amountToPay = invoice.paymentStatus === 'PARTIAL' && invoice.paidAmount
+        ? invoice.amount - invoice.paidAmount
+        : invoice.amount;
+      setPaymentSignalAmount(amountToPay);
+      setPaymentSignalNotes(`Paiement signalé - Facture ${invoice.invoiceNumber}`);
+      setShowPaymentSignalModal(true);
     }
   };
 
      const handlePayment = (invoice: Invoice) => {
-     setSelectedInvoiceForOptions(invoice);
-     setShowPaymentOptionsModal(true);
+     // Rediriger vers la page de paiement avec les options
+     router.push(`/invoice/${invoice.id}/payment?method=options`);
    };
 
-  const signalPaymentWithDetails = async () => {
+  const signalPaymentWithDetails = async (invoiceId: string) => {
     try {
       const response = await fetch('/api/user/invoice/signal-payment-detailed', {
         method: 'POST',
@@ -231,6 +215,7 @@ export default function InvoicePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          invoiceId,
           amount: paymentSignalAmount,
           notes: paymentSignalNotes,
         }),
@@ -329,138 +314,6 @@ export default function InvoicePage() {
     }
   };
 
-     // Composant de paiement Stripe
-   const PaymentForm = ({ invoice, customAmount }: { invoice: Invoice; customAmount?: number }) => {
-     const stripe = useStripe();
-     const elements = useElements();
-     const [loading, setLoading] = useState(false);
-     const [error, setError] = useState<string | null>(null);
-
-     // Calculer le montant à payer (reste, total, ou montant personnalisé)
-     const amountToPay = customAmount || (invoice.paymentStatus === 'PARTIAL' && invoice.paidAmount 
-       ? invoice.amount - invoice.paidAmount 
-       : invoice.amount);
-
-    const handleSubmit = async (event: React.FormEvent) => {
-      event.preventDefault();
-      if (!stripe || !elements) {
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        // Créer le PaymentIntent
-        const response = await fetch('/api/user/invoice/create-payment-intent', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            amount: amountToPay,
-            invoiceId: invoice.id,
-            description: `Paiement facture ${invoice.invoiceNumber}`,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Erreur serveur:', errorData);
-          throw new Error(errorData.details || errorData.error || 'Erreur lors de la création du paiement');
-        }
-
-        const { clientSecret, paymentIntentId } = await response.json();
-
-        // Confirmer le paiement
-        const { error: stripeError } = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: {
-            card: elements.getElement(CardElement)!,
-          },
-        });
-
-        if (stripeError) {
-          setError(stripeError.message || 'Erreur lors du paiement');
-        } else {
-          // Confirmer le paiement côté serveur
-          const confirmResponse = await fetch('/api/user/invoice/confirm-payment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              paymentIntentId,
-              invoiceId: invoice.id,
-              amount: amountToPay, // Envoyer le montant réel payé
-            }),
-          });
-
-          if (confirmResponse.ok) {
-            alert('Paiement effectué avec succès !');
-            setShowPaymentModal(false);
-            fetchInvoices();
-          } else {
-            setError('Erreur lors de la confirmation du paiement');
-          }
-        }
-      } catch (error) {
-        console.error('Erreur:', error);
-        setError('Erreur lors du paiement');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Informations de carte
-          </label>
-                     <div className="border border-gray-300 rounded-lg p-3">
-             <CardElement
-               options={{
-                 style: {
-                   base: {
-                     fontSize: '16px',
-                     color: '#424770',
-                     '::placeholder': {
-                       color: '#aab7c4',
-                     },
-                   },
-                   invalid: {
-                     color: '#9e2146',
-                   },
-                 },
-                 hidePostalCode: true, // Masquer le champ code postal
-               }}
-             />
-           </div>
-        </div>
-
-        {error && (
-          <div className="text-red-600 text-sm">{error}</div>
-        )}
-
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={!stripe || loading}
-            className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Traitement...' : `Payer ${amountToPay}€`}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowPaymentModal(false)}
-            className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-400 transition-colors"
-          >
-            Annuler
-          </button>
-        </div>
-      </form>
-    );
-  };
 
   if (status === 'loading' || loading) {
     return (
@@ -755,7 +608,7 @@ export default function InvoicePage() {
                      <>
                        <button
                          onClick={() => {
-                           handlePayment(selectedInvoice);
+                           router.push(`/invoice/${selectedInvoice.id}/payment?method=options`);
                            setSelectedInvoice(null);
                          }}
                          className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
@@ -781,171 +634,10 @@ export default function InvoicePage() {
           </div>
         )}
 
-                 {/* Modal des options de paiement */}
-         {showPaymentOptionsModal && selectedInvoiceForOptions && (
-           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-             <div className="bg-white rounded-xl max-w-md w-full">
-               <div className="p-6 border-b border-gray-200">
-                 <div className="flex justify-between items-start">
-                   <div>
-                     <h2 className="text-xl font-bold text-gray-900">Options de paiement</h2>
-                     <p className="text-gray-600">Facture {selectedInvoiceForOptions.invoiceNumber}</p>
-                   </div>
-                   <button
-                     onClick={() => setShowPaymentOptionsModal(false)}
-                     className="text-gray-500 hover:text-gray-700"
-                   >
-                     ✕
-                   </button>
-                 </div>
-               </div>
 
-               <div className="p-6">
-                 <div className="space-y-4">
-                   <div className="text-center mb-6">
-                     <p className="text-lg font-semibold text-gray-900">
-                       Montant total: {selectedInvoiceForOptions.amount}€
-                     </p>
-                     {selectedInvoiceForOptions.paymentStatus === 'PARTIAL' && selectedInvoiceForOptions.paidAmount && (
-                       <p className="text-sm text-gray-600">
-                         Déjà payé: {selectedInvoiceForOptions.paidAmount}€
-                       </p>
-                     )}
-                   </div>
-
-                   {/* Option 1: Payer la totalité */}
-                   <button
-                     onClick={() => {
-                       setSelectedInvoiceForPayment(selectedInvoiceForOptions);
-                       setShowPaymentOptionsModal(false);
-                       setShowPaymentModal(true);
-                     }}
-                     className="w-full p-4 border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-left"
-                   >
-                     <div className="flex items-center justify-between">
-                       <div>
-                         <h3 className="font-semibold text-blue-600">Payer la totalité</h3>
-                         <p className="text-sm text-gray-600">
-                           {selectedInvoiceForOptions.paymentStatus === 'PARTIAL' && selectedInvoiceForOptions.paidAmount 
-                             ? `Reste à payer: ${selectedInvoiceForOptions.amount - selectedInvoiceForOptions.paidAmount}€`
-                             : `Montant: ${selectedInvoiceForOptions.amount}€`
-                           }
-                         </p>
-                       </div>
-                       <div className="text-blue-600">
-                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                         </svg>
-                       </div>
-                     </div>
-                   </button>
-
-                   {/* Option 2: Payer la moitié */}
-                   <button
-                     onClick={() => {
-                       const halfAmount = Math.ceil(selectedInvoiceForOptions.amount / 2);
-                       setSelectedInvoiceForPayment(selectedInvoiceForOptions);
-                       setShowPaymentOptionsModal(false);
-                       setShowPaymentModal(true);
-                       // Passer le montant personnalisé via une variable temporaire
-                       (window as any).customPaymentAmount = halfAmount;
-                     }}
-                     className="w-full p-4 border-2 border-green-600 rounded-lg hover:bg-green-50 transition-colors text-left"
-                   >
-                     <div className="flex items-center justify-between">
-                       <div>
-                         <h3 className="font-semibold text-green-600">Payer la moitié</h3>
-                         <p className="text-sm text-gray-600">
-                           Montant: {Math.ceil(selectedInvoiceForOptions.amount / 2)}€
-                         </p>
-                       </div>
-                       <div className="text-green-600">
-                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                         </svg>
-                       </div>
-                     </div>
-                   </button>
-
-                   {/* Option 3: Montant personnalisé */}
-                   <div className="p-4 border-2 border-gray-300 rounded-lg">
-                     <h3 className="font-semibold text-gray-700 mb-2">Montant personnalisé</h3>
-                     <div className="flex gap-2">
-                       <input
-                         type="number"
-                         id="customAmount"
-                         placeholder="Montant en €"
-                         className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                         min="1"
-                         max={selectedInvoiceForOptions.amount}
-                       />
-                       <button
-                         onClick={() => {
-                           const customAmount = Number((document.getElementById('customAmount') as HTMLInputElement).value);
-                           if (customAmount > 0 && customAmount <= selectedInvoiceForOptions.amount) {
-                             setSelectedInvoiceForPayment(selectedInvoiceForOptions);
-                             setShowPaymentOptionsModal(false);
-                             setShowPaymentModal(true);
-                             (window as any).customPaymentAmount = customAmount;
-                           } else {
-                             alert('Veuillez entrer un montant valide entre 1€ et ' + selectedInvoiceForOptions.amount + '€');
-                           }
-                         }}
-                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                       >
-                         Payer
-                       </button>
-                     </div>
-                   </div>
-                 </div>
-               </div>
-             </div>
-           </div>
-         )}
-
-         {/* Modal de paiement Stripe */}
-         {showPaymentModal && selectedInvoiceForPayment && (
-           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-             <div className="bg-white rounded-xl max-w-md w-full">
-               <div className="p-6 border-b border-gray-200">
-                 <div className="flex justify-between items-start">
-                   <div>
-                     <h2 className="text-xl font-bold text-gray-900">Payer la facture</h2>
-                     <p className="text-gray-600">
-                       Facture {selectedInvoiceForPayment.invoiceNumber} - 
-                       {(window as any).customPaymentAmount || 
-                         (selectedInvoiceForPayment.paymentStatus === 'PARTIAL' && selectedInvoiceForPayment.paidAmount 
-                           ? selectedInvoiceForPayment.amount - selectedInvoiceForPayment.paidAmount 
-                           : selectedInvoiceForPayment.amount)
-                       }€
-                     </p>
-                   </div>
-                   <button
-                     onClick={() => {
-                       setShowPaymentModal(false);
-                       (window as any).customPaymentAmount = undefined;
-                     }}
-                     className="text-gray-500 hover:text-gray-700"
-                   >
-                     ✕
-                   </button>
-                 </div>
-               </div>
-
-               <div className="p-6">
-                 <Elements stripe={stripePromise}>
-                   <PaymentForm 
-                     invoice={selectedInvoiceForPayment} 
-                     customAmount={(window as any).customPaymentAmount}
-                   />
-                 </Elements>
-               </div>
-             </div>
-           </div>
-         )}
 
         {/* Modal pour signaler un paiement */}
-        {showPaymentSignalModal && (
+        {showPaymentSignalModal && selectedInvoice && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl max-w-md w-full">
               <div className="p-6 border-b border-gray-200">
@@ -953,9 +645,14 @@ export default function InvoicePage() {
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">Signaler un paiement</h2>
                     <p className="text-gray-600">Informez l'administration d'un paiement effectué</p>
+                    <p className="text-sm text-gray-500 mt-1">Facture {selectedInvoice.invoiceNumber}</p>
                   </div>
                   <button
-                    onClick={() => setShowPaymentSignalModal(false)}
+                    onClick={() => {
+                      setShowPaymentSignalModal(false);
+                      setPaymentSignalAmount(0);
+                      setPaymentSignalNotes('');
+                    }}
                     className="text-gray-500 hover:text-gray-700"
                   >
                     ✕
@@ -971,7 +668,9 @@ export default function InvoicePage() {
                     </label>
                     <input
                       type="number"
-                      value={paymentSignalAmount}
+                      value={paymentSignalAmount || (selectedInvoice.paymentStatus === 'PARTIAL' && selectedInvoice.paidAmount
+                        ? selectedInvoice.amount - selectedInvoice.paidAmount
+                        : selectedInvoice.amount)}
                       onChange={(e) => setPaymentSignalAmount(Number(e.target.value))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Montant"
@@ -993,13 +692,17 @@ export default function InvoicePage() {
 
                 <div className="mt-6 flex gap-3">
                   <button
-                    onClick={signalPaymentWithDetails}
+                    onClick={() => signalPaymentWithDetails(selectedInvoice.id)}
                     className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
                   >
                     Signaler le paiement
                   </button>
                   <button
-                    onClick={() => setShowPaymentSignalModal(false)}
+                    onClick={() => {
+                      setShowPaymentSignalModal(false);
+                      setPaymentSignalAmount(0);
+                      setPaymentSignalNotes('');
+                    }}
                     className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-400 transition-colors"
                   >
                     Annuler

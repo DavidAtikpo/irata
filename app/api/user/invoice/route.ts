@@ -101,6 +101,7 @@ export async function GET(request: NextRequest) {
       notes: invoice.notes,
       createdAt: invoice.createdAt.toISOString(),
       devisNumber: invoice.contrat?.devis?.numero || null,
+      contratId: invoice.contratId || null,
     }));
 
     return NextResponse.json({
