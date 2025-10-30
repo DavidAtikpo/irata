@@ -70,11 +70,11 @@ const navigationTabs = [
     icon: UserGroupIcon,
     description: 'Gestion du suivi des utilisateurs'
   },
-   { name: 'Gestion des rôles',
-    href: '/admin/roles-management',
-    icon: ShieldCheckIcon,
-    description: 'Gestion des rôles et permissions'
-  },
+  //  { name: 'Gestion des rôles',
+  //   href: '/admin/roles-management',
+  //   icon: ShieldCheckIcon,
+  //   description: 'Gestion des rôles et permissions'
+  // },
   // {
   //   name: 'Historique',
   //   href: '/admin/historique-management',
