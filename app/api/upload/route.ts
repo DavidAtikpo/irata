@@ -9,14 +9,9 @@ import { existsSync } from 'fs';
 // @ts-expect-error - qrcode-reader doesn't have TypeScript declarations
 import QRCodeReader from 'qrcode-reader';
 
-let pdf: any = null;
-try {
-  // Charger pdf-parse de manière dynamique pour éviter les erreurs de test
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  pdf = eval('require')('pdf-parse');
-} catch (error) {
-  console.log('pdf-parse non disponible:', (error as Error).message);
-}
+// Import statique de pdf-parse comme dans qr-generator (fonctionne en production)
+// @ts-expect-error - pdf-parse does not have type definitions
+import pdf from 'pdf-parse';
 
 // Initialisation Google Vision (utilisé en priorité en production pour OCR d'images)
 let vision: ImageAnnotatorClient | null = null;
@@ -218,87 +213,14 @@ export async function POST(request: NextRequest) {
           // Extraire l'URL Cloudinary du résultat
           cloudinaryPdfUrl = (cloudinaryResult as any).secure_url;
           
-          // Extraction réelle avec pdf-parse (si disponible) pour PDFs
-          if (pdf && file.type === 'application/pdf') {
-            console.log('PDF - Tentative d\'extraction réelle avec pdf-parse...');
-            
-            try {
-              const pdfData = await pdf(buffer);
-              extractedText = pdfData.text;
-              console.log('PDF - Extraction pdf-parse réussie, longueur du texte:', extractedText.length);
-            } catch (pdfError) {
-              console.log('PDF - Erreur pdf-parse, tentative Cloudinary OCR...');
-              
-              // Fallback vers Cloudinary OCR (si disponible)
-              try {
-                const ocrResult = await new Promise((resolve, reject) => {
-                  cloudinary.uploader.upload_stream(
-                    {
-                      resource_type: 'image',
-                      ocr: 'adv_ocr',
-                      public_id: `equipment-inspections/ocr/pdf_${timestamp}`,
-                      folder: 'equipment-inspections/ocr',
-                      pages: 'all',
-                    },
-                    (error, result) => {
-                      if (error) reject(error);
-                      else resolve(result);
-                    }
-                  ).end(buffer);
-                });
-                
-                extractedText = (ocrResult as any).ocr?.adv_ocr?.data?.[0]?.text || '';
-                console.log('PDF - Extraction Cloudinary OCR, longueur du texte:', extractedText.length);
-              } catch (ocrError) {
-                console.log('PDF - Cloudinary OCR non disponible, texte vide');
-                extractedText = ''; // Pas de simulation
-              }
-            }
-          }
-
-          // Si ce n'est PAS un PDF (ex: image scannée), tenter d'abord Google Vision
-          if (file.type !== 'application/pdf' && !extractedText) {
-            console.log('PDF - Tentative OCR Google Vision (image)...');
-            const visionText = await extractTextWithVision(buffer);
-            if (visionText && visionText.length > 0) {
-              extractedText = visionText;
-              console.log('PDF - Vision OCR réussi, longueur du texte:', extractedText.length);
-            }
-          }
-
-          if (!extractedText) {
-            console.log('PDF - pdf-parse non disponible ou vide, tentative Cloudinary OCR...');
-            
-            // Utiliser directement Cloudinary OCR (si disponible)
-            try {
-              const ocrResult = await new Promise((resolve, reject) => {
-                  cloudinary.uploader.upload_stream(
-                    {
-                      resource_type: 'image',
-                      ocr: 'adv_ocr',
-                      public_id: `equipment-inspections/ocr/pdf_${timestamp}`,
-                      folder: 'equipment-inspections/ocr',
-                      pages: 'all',
-                      access_mode: 'public',
-                    },
-                    (error, result) => {
-                      if (error) reject(error);
-                      else resolve(result);
-                    }
-                  ).end(buffer);
-              });
-              
-              extractedText = (ocrResult as any).ocr?.adv_ocr?.data?.[0]?.text || '';
-              console.log('PDF - Extraction Cloudinary OCR, longueur du texte:', extractedText.length);
-            } catch (ocrError) {
-              console.log('PDF - Cloudinary OCR non disponible, texte vide');
-              extractedText = ''; // Pas de simulation
-            }
-          }
-          
-          // Si pas de texte extrait, laisser vide pour voir l'erreur
-          if (!extractedText || extractedText.length < 10) {
-            console.log('PDF - Aucune extraction réussie, texte vide ou trop court');
+          // Extraction simplifiée (comme qr-generator qui fonctionne)
+          console.log('PDF - Extraction avec pdf-parse...');
+          try {
+            const pdfData = await pdf(buffer);
+            extractedText = pdfData.text;
+            console.log('PDF - Extraction réussie, longueur du texte:', extractedText.length);
+          } catch (pdfError) {
+            console.error('PDF - Erreur extraction:', pdfError);
             extractedText = '';
           }
           
@@ -671,47 +593,11 @@ export async function POST(request: NextRequest) {
         let reference = '';
         
         try {
-          if (file.type !== 'application/pdf') {
-            // Image: tenter Google Vision en priorité
-            const visionText = await extractTextWithVision(buffer);
-            if (visionText) {
-              extractedText = visionText;
-              console.log('Reference - Vision OCR OK, longueur:', extractedText.length);
-            }
-          }
-
-          // PDF: tenter pdf-parse si pas de texte encore
-          if (!extractedText && pdf && file.type === 'application/pdf') {
-            const pdfData = await pdf(buffer);
-            extractedText = pdfData.text;
-            console.log('Reference - Extraction pdf-parse réussie, longueur:', extractedText.length);
-          }
-
-          // Fallback Cloudinary OCR si toujours vide (et traiter comme image OCR)
-          if (!extractedText) {
-            try {
-              const ocrResult = await new Promise((resolve, reject) => {
-                cloudinary.uploader.upload_stream(
-                  {
-                    resource_type: 'image',
-                    ocr: 'adv_ocr',
-                    public_id: `equipment-inspections/ocr/reference_${timestamp}`,
-                    access_mode: 'public',
-                  },
-                  (error, result) => {
-                    if (error) reject(error);
-                    else resolve(result);
-                  }
-                ).end(buffer);
-              });
-              extractedText = (ocrResult as any).ocr?.adv_ocr?.data?.[0]?.text || '';
-              if (extractedText) {
-                console.log('Reference - Cloudinary OCR OK, longueur:', extractedText.length);
-              }
-            } catch (ocrErr) {
-              console.log('Reference - Cloudinary OCR indisponible');
-            }
-          }
+          // Extraction simplifiée (comme qr-generator qui fonctionne)
+          console.log('Reference - Extraction avec pdf-parse...');
+          const pdfData = await pdf(buffer);
+          extractedText = pdfData.text;
+          console.log('Reference - Extraction réussie, longueur:', extractedText.length);
           
           // Extraction spécifique: ligne titre complète avec code (ex: TECHNICAL NOTICE ... A0040300B (240918))
           const lines = extractedText.split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
