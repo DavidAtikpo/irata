@@ -143,15 +143,24 @@ export async function POST(request: NextRequest) {
     } else if (type === 'pdf') {
       // Extraction rapide de PDF avec upload local + OCR Cloudinary
       // Déclarer les variables en dehors du try pour qu'elles soient accessibles dans le catch
-      const uploadsDir = join(process.cwd(), 'public', 'uploads');
-      if (!existsSync(uploadsDir)) {
-        await mkdir(uploadsDir, { recursive: true });
-      }
+      let localFileUrl: string | null = null;
       
-      const localFileName = `pdf_${timestamp}.pdf`;
-      const localFilePath = join(uploadsDir, localFileName);
-      await writeFile(localFilePath, buffer);
-      const localFileUrl = `/uploads/${localFileName}`;
+      // Essayer d'uploader localement (fonctionne seulement en local, pas en production)
+      try {
+        const uploadsDir = join(process.cwd(), 'public', 'uploads');
+        if (!existsSync(uploadsDir)) {
+          await mkdir(uploadsDir, { recursive: true });
+        }
+        
+        const localFileName = `pdf_${timestamp}.pdf`;
+        const localFilePath = join(uploadsDir, localFileName);
+        await writeFile(localFilePath, buffer);
+        localFileUrl = `/uploads/${localFileName}`;
+      } catch (localError) {
+        // En production (Vercel, etc.), l'écriture locale peut échouer - ce n'est pas grave
+        console.log('PDF - Upload local non disponible (normal en production):', (localError as Error).message);
+        localFileUrl = null;
+      }
       
       let extractedText = '';
       let cloudinaryPdfUrl: string | null = null;
@@ -384,27 +393,27 @@ export async function POST(request: NextRequest) {
           normes: normes,
           reference: reference,
           dateAchat: dateAchat,
-          pdfUrl: cloudinaryPdfUrl || localFileUrl, // Utiliser l'URL Cloudinary en priorité
-          cloudinaryUrl: cloudinaryPdfUrl || localFileUrl, // Garder l'URL Cloudinary pour le stockage
+          pdfUrl: cloudinaryPdfUrl || localFileUrl || '', // Utiliser l'URL Cloudinary en priorité
+          cloudinaryUrl: cloudinaryPdfUrl || localFileUrl || '', // Garder l'URL Cloudinary pour le stockage
           rawText: extractedText,
           confidence: 95, // Simulation de confiance élevée
           // URLs pour les liens cliquables
-          referenceUrl: cloudinaryPdfUrl || localFileUrl, // URL Cloudinary pour les références
-          dateAchatUrl: cloudinaryPdfUrl || localFileUrl // URL Cloudinary pour la date d'achat
+          referenceUrl: cloudinaryPdfUrl || localFileUrl || '', // URL Cloudinary pour les références
+          dateAchatUrl: cloudinaryPdfUrl || localFileUrl || '' // URL Cloudinary pour la date d'achat
         };
       } catch (ocrError) {
         console.error('Erreur OCR PDF:', ocrError);
         // Fallback vers une extraction manuelle ou simulation
-      extractedData = {
+        extractedData = {
           normes: 'Normes non détectées - Veuillez saisir manuellement',
           reference: 'Documents de référence non détectés',
           dateFabrication: 'Date non détectée',
           dateAchat: 'Date non détectée',
           numeroSerie: 'Numéro non détecté',
-        pdfUrl: cloudinaryPdfUrl || localFileUrl,
+          pdfUrl: cloudinaryPdfUrl || localFileUrl || '',
           rawText: 'Erreur lors de l\'extraction OCR',
           confidence: 0
-      };
+        };
       }
     } else if (type === 'dateAchat') {
       // Extraction de date d'achat depuis un PDF avec la même procédure que les normes
@@ -663,6 +672,15 @@ export async function POST(request: NextRequest) {
     // Pour le type 'pdf', utiliser l'URL Cloudinary spécifique si disponible
     const finalUrl = (type === 'pdf' && (extractedData as any)?.pdfUrl) || fileUrl;
     
+    if (!finalUrl && type === 'pdf') {
+      // Si aucune URL n'a été générée pour le PDF, il y a eu un problème
+      console.error('PDF - Aucune URL générée pour le PDF');
+      return NextResponse.json(
+        { error: 'Erreur lors de l\'upload du PDF vers Cloudinary' },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json({
       url: finalUrl,
       extractedData,
@@ -671,8 +689,16 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Erreur lors de l\'upload:', error);
+    console.error('Erreur détaillée:', {
+      message: (error as Error).message,
+      stack: (error as Error).stack,
+      name: (error as Error).name
+    });
     return NextResponse.json(
-      { error: 'Erreur lors de l\'upload du fichier' },
+      { 
+        error: 'Erreur lors de l\'upload du fichier',
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      },
       { status: 500 }
     );
   }
