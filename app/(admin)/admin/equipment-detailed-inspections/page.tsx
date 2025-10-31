@@ -123,8 +123,12 @@ export default function InspectionsListPage() {
 
       if (createResponse.ok) {
         const newInspection = await createResponse.json();
-        // Rediriger vers la page d'édition de la nouvelle inspection
-        router.push(`/admin/equipment-detailed-inspections/${newInspection.id}/edit`);
+        // Rediriger vers la page d'édition de la nouvelle inspection selon le type
+        if (inspection.typeEquipement === 'Harnais de Suspension') {
+          router.push(`/admin/equipment-detailed-inspections/harnais/${newInspection.id}/edit`);
+        } else {
+          router.push(`/admin/equipment-detailed-inspections/${newInspection.id}/edit`);
+        }
       } else {
         setError('Erreur lors de la duplication de l\'inspection');
       }
@@ -196,6 +200,22 @@ export default function InspectionsListPage() {
     ? inspections 
     : inspections.filter(inspection => inspection.typeEquipement === selectedTab);
 
+  // Fonction pour obtenir le chemin de visualisation selon le type d'équipement
+  const getViewPath = (inspection: Inspection) => {
+    if (inspection.typeEquipement === 'Harnais de Suspension') {
+      return `/admin/equipment-detailed-inspections/harnais/${inspection.id}/view`;
+    }
+    return `/admin/equipment-detailed-inspections/${inspection.id}/view`;
+  };
+
+  // Fonction pour obtenir le chemin d'édition selon le type d'équipement
+  const getEditPath = (inspection: Inspection) => {
+    if (inspection.typeEquipement === 'Harnais de Suspension') {
+      return `/admin/equipment-detailed-inspections/harnais/${inspection.id}/edit`;
+    }
+    return `/admin/equipment-detailed-inspections/${inspection.id}/edit`;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -216,13 +236,22 @@ export default function InspectionsListPage() {
               <h1 className="text-2xl font-bold text-gray-900">
                 Inspections Détaillées d'Équipements
               </h1>
-              <button
-                onClick={() => router.push('/admin/equipment-detailed-inspections/nouveau')}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Nouvelle inspection
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => router.push('/admin/equipment-detailed-inspections/harnais')}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Nouvelle inspection Harnais
+                </button>
+                <button
+                  onClick={() => router.push('/admin/equipment-detailed-inspections/nouveau')}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Nouvelle inspection
+                </button>
+              </div>
             </div>
             
             {/* Onglets de filtrage */}
@@ -391,14 +420,14 @@ export default function InspectionsListPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end space-x-2">
                             <button
-                              onClick={() => router.push(`/admin/equipment-detailed-inspections/${inspection.id}/view`)}
+                              onClick={() => router.push(getViewPath(inspection))}
                               className="text-indigo-600 hover:text-indigo-900 p-1"
                               title="Voir l'inspection"
                             >
                               Voir
                             </button>
                             <button
-                              onClick={() => router.push(`/admin/equipment-detailed-inspections/${inspection.id}/edit`)}
+                              onClick={() => router.push(getEditPath(inspection))}
                               className="text-yellow-600 hover:text-yellow-900 p-1"
                               title="Modifier l'inspection"
                             >

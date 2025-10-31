@@ -47,12 +47,40 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
-    // Extraire inspectionData du body et l'exclure de la sauvegarde
-    const { inspectionData, nature, reference, type, normes, date, signataire, crossedOutWords, crossedOutItems, ...inspectionDataWithoutNested } = body;
+    // Extraire les champs qui ne doivent pas être directement sauvegardés
+    const { 
+      inspectionData, 
+      nature, 
+      reference, 
+      type, 
+      normes, 
+      date, 
+      signataire, 
+      crossedOutWords, 
+      crossedOutItems,
+      // Extraire les champs spécifiques au harnais pour les sauvegarder
+      etatSangles,
+      pointsAttache,
+      etatBouclesReglages,
+      etatElementsConfort,
+      etatConnecteurTorseCuissard,
+      bloqueurCroll,
+      ...inspectionDataWithoutNested 
+    } = body;
     
     const inspection = await prisma.equipmentDetailedInspection.create({
       data: {
         ...inspectionDataWithoutNested,
+        // Inclure les champs spécifiques au harnais s'ils existent
+        ...(etatSangles && { etatSangles }),
+        ...(pointsAttache && { pointsAttache }),
+        ...(etatBouclesReglages && { etatBouclesReglages }),
+        ...(etatElementsConfort && { etatElementsConfort }),
+        ...(etatConnecteurTorseCuissard && { etatConnecteurTorseCuissard }),
+        ...(bloqueurCroll && { bloqueurCroll }),
+        // Inclure les données de mots barrés
+        ...(crossedOutWords && { crossedOutWords }),
+        ...(crossedOutItems && { crossedOutItems }),
         createdById: session.user.id,
       },
       include: {

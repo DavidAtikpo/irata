@@ -193,7 +193,6 @@ export default function EditInspectionPage() {
     if (!qrCodeImageUrl) return;
     
     setIsUpdatingQR(true);
-    setIsLoadingData(true); // Afficher l'indicateur de chargement
     try {
       const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}/update-qr-code`, {
         method: 'POST',
@@ -205,11 +204,62 @@ export default function EditInspectionPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Recharger les données pour mettre à jour l'affichage
         const reloadResponse = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}`);
         if (reloadResponse.ok) {
           const updatedData = await reloadResponse.json();
-          setFormData(prev => ({ ...prev, qrCode: updatedData.qrCode || prev.qrCode }));
+          
+          // Mapper les données au même format que loadInspection
+          const newFormData = {
+            ...updatedData,
+            fabricant: updatedData.fabricant || '',
+            etat: updatedData.etat || 'INVALID',
+
+            // Structure d'inspectionData - utiliser directement les données de l'API
+            inspectionData: {
+              antecedentProduit: {
+                miseEnService: updatedData.antecedentProduit?.miseEnService || '',
+              },
+              // IMPORTANT : Utiliser directement les objets de l'API pour préserver statuts et commentaires
+              observationsPrelables: updatedData.observationsPrelables || {
+                referenceInterneMarquee: { status: 'V', comment: '' },
+                lisibiliteNumeroSerie: { status: 'V', comment: '' },
+                dureeVieNonDepassee: { status: 'V', comment: '' },
+              },
+              calotteExterieurInterieur: updatedData.calotteExterieurInterieur || {
+                fentesTrousAccessoires: { status: 'V', comment: '' },
+                voletsAeration: { status: 'NA', comment: '' },
+                marqueFissureDeformation: { status: 'NA', comment: '' },
+              },
+              calotin: updatedData.calotin || {
+                otezElementsConfort: { status: 'NA', comment: '' },
+              },
+              coiffe: updatedData.coiffe || {
+                etatSanglesFixation: { status: 'V', comment: '' },
+              },
+              tourDeTete: updatedData.tourDeTete || {
+                usureDeformationElement: { status: 'V', comment: '' },
+              },
+              systemeReglage: updatedData.systemeReglage || {
+                etatFixations: { status: 'V', comment: '' },
+              },
+              jugulaire: updatedData.jugulaire || {
+                etatSanglesElements: { status: 'V', comment: '' },
+                etatBoucleFermeture: { status: 'V', comment: '' },
+              },
+              mousseConfort: updatedData.mousseConfort || {
+                usureDeformationCasse: { status: 'V', comment: '' },
+              },
+              crochetsLampe: updatedData.crochetsLampe || {
+                usureDeformationCasse: { status: 'V', comment: '' },
+              },
+              accessoires: updatedData.accessoires || {
+                fonctionnementEtat: { status: 'NA', comment: '' },
+              },
+            },
+          };
+          
+          setFormData(newFormData);
+          setCrossedOutWords(updatedData.crossedOutWords || {});
         }
         alert('QR code mis à jour avec succès !');
       } else {
@@ -220,7 +270,6 @@ export default function EditInspectionPage() {
       alert('Erreur lors de la mise à jour du QR code');
     } finally {
       setIsUpdatingQR(false);
-      setIsLoadingData(false); // Masquer l'indicateur de chargement
     }
   };
 
@@ -1254,11 +1303,20 @@ export default function EditInspectionPage() {
                         </div>
                         <div className="text-center">
                           <div className="text-sm font-medium text-gray-700 mb-2">État</div>
-                          <div className={`p-4 h-25 flex items-center justify-center rounded-lg ${
-                            formData.etat === 'OK' 
-                              ? 'bg-green-100' 
-                              : 'bg-red-100'
-                          }`}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                etat: prev.etat === 'OK' ? 'INVALID' : 'OK'
+                              }));
+                            }}
+                            className={`w-full flex items-center justify-center h-20 rounded-lg transition-colors cursor-pointer ${
+                              formData.etat === 'OK' 
+                                ? 'bg-green-100 hover:bg-green-200' 
+                                : 'bg-red-100 hover:bg-red-200'
+                            }`}
+                          >
                             {formData.etat === 'OK' ? (
                               <div className="text-center">
                                 <img 
@@ -1300,7 +1358,7 @@ export default function EditInspectionPage() {
                                 <div className="text-xs font-medium text-red-800">Invalide</div>
                               </div>
                             )}
-                          </div>
+                          </button>
                         </div>
                         {/* QR Code */}
                         <div className="text-center">

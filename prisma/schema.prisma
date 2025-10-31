@@ -327,6 +327,9 @@ model EquipmentDetailedInspection {
   typeEquipement               String
   fabricant                    String?
   numeroSerie                  String?
+  numeroSerieTop               String?            // Pour harnais
+  numeroSerieCuissard          String?            // Pour harnais
+  numeroSerieNonEtiquete       String?            // Pour harnais
   dateFabrication              String?
   dateAchat                    String?
   dateMiseEnService            String?
@@ -349,15 +352,22 @@ model EquipmentDetailedInspection {
   // Vie de l'équipement - Points d'inspection
   antecedentProduit            Json?            // Structure pour les points d'antécédent
   observationsPrelables        Json?            // Structure pour les observations
-  calotteExterieurInterieur    Json?            // Structure pour la calotte
-  calotin                      Json?            // Structure pour le calotin
-  coiffe                       Json?            // Structure pour la coiffe
-  tourDeTete                   Json?            // Structure pour le tour de tête
-  systemeReglage               Json?            // Structure pour le système de réglage
-  jugulaire                    Json?            // Structure pour la jugulaire
-  mousseConfort                Json?            // Structure pour la mousse de confort
-  crochetsLampe                Json?            // Structure pour les crochets de lampe
-  accessoires                  Json?            // Structure pour les accessoires
+  calotteExterieurInterieur    Json?            // Structure pour la calotte (casque)
+  calotin                      Json?            // Structure pour le calotin (casque)
+  coiffe                       Json?            // Structure pour la coiffe (casque)
+  tourDeTete                   Json?            // Structure pour le tour de tête (casque)
+  systemeReglage               Json?            // Structure pour le système de réglage (casque)
+  jugulaire                    Json?            // Structure pour la jugulaire (casque)
+  mousseConfort                Json?            // Structure pour la mousse de confort (casque)
+  crochetsLampe                Json?            // Structure pour les crochets de lampe (casque)
+  accessoires                  Json?            // Structure pour les accessoires (casque)
+  // Champs spécifiques au harnais
+  etatSangles                  Json?            // Structure pour l'état des sangles (harnais)
+  pointsAttache                Json?            // Structure pour les points d'attache (harnais)
+  etatBouclesReglages          Json?            // Structure pour l'état des boucles de réglages (harnais)
+  etatElementsConfort          Json?            // Structure pour l'état des éléments de confort (harnais)
+  etatConnecteurTorseCuissard Json?            // Structure pour l'état du connecteur torse/cuissard (harnais)
+  bloqueurCroll                 Json?            // Structure pour le bloqueur Croll (harnais)
 
   // Données pour les éléments barrés (ancienne fonctionnalité)
   crossedOutItems              Json?            // Éléments barrés complètement

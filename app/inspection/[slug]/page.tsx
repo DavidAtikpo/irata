@@ -14,6 +14,13 @@ export default function PublicInspectionDetailPage() {
   const [error, setError] = useState('');
   const [inspection, setInspection] = useState<any>(null);
 
+  // Fonction pour déterminer si c'est un harnais
+  const isHarness = () => {
+    if (!inspection) return false;
+    return inspection.typeEquipement?.toLowerCase().includes('harnais') || 
+           (inspection.etatSangles !== null && inspection.etatSangles !== undefined);
+  };
+
   // Helper functions (doivent être définies avant les early returns)
   const StatusIndicator = ({ status }: { status: 'V' | 'NA' | 'X' }) => {
     if (status === 'V') {
@@ -363,10 +370,28 @@ export default function PublicInspectionDetailPage() {
                     <span className="text-sm font-medium text-gray-700">Type d'équipement:</span>
                     <span className="text-sm text-gray-900 font-bold">{inspection.typeEquipement || '/'}</span>
                   </div>
+                  {isHarness() && inspection.numeroSerieTop && (
+                    <div className="flex justify-between bg-gray-100 p-2">
+                      <span className="text-sm font-medium text-gray-700">N° de série Top:</span>
+                      <span className="text-sm text-gray-900 font-bold">{inspection.numeroSerieTop || '/'}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between bg-gray-100 p-2">
-                    <span className="text-sm font-medium text-gray-700">Numéro de série:</span>
+                    <span className="text-sm font-medium text-gray-700">N° de série:</span>
                     <span className="text-sm text-gray-900 font-bold">{inspection.numeroSerie || '/'}</span>
                   </div>
+                  {isHarness() && inspection.numeroSerieCuissard && (
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-700">N° de série Cuissard:</span>
+                      <span className="text-sm text-gray-900 font-bold">{inspection.numeroSerieCuissard || '/'}</span>
+                    </div>
+                  )}
+                  {isHarness() && inspection.numeroSerieNonEtiquete && (
+                    <div className="flex justify-between bg-gray-100 p-2">
+                      <span className="text-sm font-medium text-gray-700">Numéro (non étiqueté):</span>
+                      <span className="text-sm text-gray-900 font-bold">{inspection.numeroSerieNonEtiquete || '/'}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-sm font-medium text-gray-700">Date de Fabrication:</span>
                     <span className="text-sm text-gray-900 font-bold">{inspection.dateFabrication || '/'}</span>
@@ -407,7 +432,19 @@ export default function PublicInspectionDetailPage() {
                   </div>
                   <div className="flex justify-between bg-gray-100 p-2">
                     <span className="text-sm font-medium text-gray-700">Normes et Certificat de conformité:</span>
-                    <span className="text-sm text-gray-900 font-bold">{inspection.normesCertificat || '/'}</span>
+                    <span 
+                      className="text-sm text-gray-900 font-bold"
+                      dangerouslySetInnerHTML={{ 
+                        __html: inspection.normesCertificat 
+                          ? (inspection.normesUrl || inspection.pdfUrl
+                              ? inspection.normesCertificat.replace(/(EN\s*\d+(?::\d{4})?(?:\s*\+\s*[A-Z]\d+(?::\d{4})?)?)/gi, (match: string) => {
+                                  const url = inspection.normesUrl || inspection.pdfUrl;
+                                  return `<a href="/api/inspection-pdf?url=${encodeURIComponent(url)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF des normes">${match}</a>`;
+                                })
+                              : inspection.normesCertificat)
+                          : '/' 
+                      }}
+                    />
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm font-medium text-gray-700">Documents Référence:</span>
@@ -455,15 +492,22 @@ export default function PublicInspectionDetailPage() {
                     Mise en service le {formatDate(inspection.antecedentProduit?.miseEnService) || formatDate(inspection.dateMiseEnService)}
                   </div>
                 </div>
+                {isHarness() && inspection.antecedentProduit?.comment && (
+                  <div className="text-xs text-blue-600 italic ml-4 mb-2">
+                    Commentaire: {inspection.antecedentProduit.comment}
+                  </div>
+                )}
 
                 {/* Points d'inspection */}
                 <div className="space-y-1">
                   
                   {/* Observations Préalables */}
                   <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        2. OBSERVATIONS PREALABLES
+                    <div className={isHarness() ? "grid grid-cols-[40%_60%] gap-2" : "grid grid-cols-[45%_55%] gap-2"}>
+                      <div className="space-y-2">
+                        <div className="text-xs font-bold text-gray-900">
+                          2. OBSERVATIONS PREALABLES
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <div className="space-y-2">
@@ -477,7 +521,7 @@ export default function PublicInspectionDetailPage() {
                             </div>
                           )}
                           <div className="flex items-center justify-between gap-2">
-                            <li><span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Lisibilité Numéro de série, de la norme", "observationsPrelables.lisibiliteNumeroSerie")}</span></li>
+                            <li><span className="text-xs text-gray-700 flex-1">{renderCrossedOutText(isHarness() ? "Lisibilité Numéro de série, de la norme" : "Lisibilité Numéro de série, de la norme", "observationsPrelables.lisibiliteNumeroSerie")}</span></li>
                             <StatusIndicator status={inspection.observationsPrelables?.lisibiliteNumeroSerie?.status || 'V'} />
                           </div>
                           {inspection.observationsPrelables?.lisibiliteNumeroSerie?.comment && (
@@ -499,269 +543,669 @@ export default function PublicInspectionDetailPage() {
                     </div>
                   </div>
 
-                  {/* 3. CALOTTE */}
-                  <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        3. CALOTTE (Coque): - Extérieur- Intérieur
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-gray-100 p-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque/Impact/Fissure/déformation/Trace de salissure / Rayure/Brûlure/ Trace de produits chimique/Usure...", "calotteExterieurInterieur.marqueFissureDeformation")}</span>
-                            <StatusIndicator status={inspection.calotteExterieurInterieur?.marqueFissureDeformation?.status || 'V'} />
+                  {/* Affichage conditionnel selon le type d'équipement */}
+                  {isHarness() ? (
+                    <>
+                      {/* 3. ETAT DES SANGLES DE */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="space-y-2">
+                          <div className="text-xs font-bold text-gray-900 mb-2">
+                            3. ETAT DES SANGLES DE
                           </div>
-                          {inspection.calotteExterieurInterieur?.marqueFissureDeformation?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
-                              Commentaire: {inspection.calotteExterieurInterieur.marqueFissureDeformation.comment}
+                          
+                          {/* Ceinture / cuisse / bretelles */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Ceinture / cuisse / liaison cuisse ceinture et bretelles / zones cachées par boucles et points d'attaches</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Coupure/Gonflement/Usure Dommage dus à l'utilisation, à des traces de salissures, à la chaleur; aux UV, aux produits...", "etatSangles.ceintureCuisseBretelles")}</span>
+                                  <StatusIndicator status={inspection.etatSangles?.ceintureCuisseBretelles?.status || 'V'} />
+                                </div>
+                                {inspection.etatSangles?.ceintureCuisseBretelles?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.etatSangles.ceintureCuisseBretelles.comment}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                          </div>
 
-                  {/* -Fentes et trous accessoires */}
-                  <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        -Fentes et trous accessoires
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-gray-100 p-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Déformation/Fissure/Impact ...", "calotteExterieurInterieur.fentesTrousAccessoires")}</span>
-                            <StatusIndicator status={inspection.calotteExterieurInterieur?.fentesTrousAccessoires?.status || 'V'} />
-                          </div>
-                          {inspection.calotteExterieurInterieur?.fentesTrousAccessoires?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
-                              Commentaire: {inspection.calotteExterieurInterieur.fentesTrousAccessoires.comment}
+                          {/* Etat coutures sécurité */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Etat coutures sécurité (dessus/dessous): Fil couleur différente</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Fil distendu, usé ou coupé...", "etatSangles.etatCouturesSecurite")}</span>
+                                  <StatusIndicator status={inspection.etatSangles?.etatCouturesSecurite?.status || 'V'} />
+                                </div>
+                                {inspection.etatSangles?.etatCouturesSecurite?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.etatSangles.etatCouturesSecurite.comment}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                          </div>
 
-                  {/* -Volets aération */}
-                  <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        -Volets aération si il y a, (fonctionnement)
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-gray-100 p-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">Volets aération si il y a, (fonctionnement)</span>
-                            <StatusIndicator status={inspection.calotteExterieurInterieur?.voletsAeration?.status || 'NA'} />
-                          </div>
-                          {inspection.calotteExterieurInterieur?.voletsAeration?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
-                              Commentaire: {inspection.calotteExterieurInterieur.voletsAeration.comment}
+                          {/* Présence des ourlets */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Présence des ourlets en bout de sangle</div>
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">Présence des ourlets</span>
+                                <StatusIndicator status={inspection.etatSangles?.presenceOurlets?.status || 'V'} />
+                              </div>
+                              {inspection.etatSangles?.presenceOurlets?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.etatSangles.presenceOurlets.comment}
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* 4. CALOTIN */}
-                  <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        4. CALOTIN (si il y a): - Ôtez éléments de confort si nécessaire; Ne pas démonté calotin si fixé sur la coque.
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-gray-100 p-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque/Fissure/Déformation/Usure ...", "calotin.otezElementsConfort")}</span>
-                            <StatusIndicator status={inspection.calotin?.otezElementsConfort?.status || 'NA'} />
-                          </div>
-                          {inspection.calotin?.otezElementsConfort?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
-                              Commentaire: {inspection.calotin.otezElementsConfort.comment}
+                      {/* 4. POINTS D'ATTACHE */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs font-bold text-gray-900">
+                              4. POINTS D'ATTACHE  - Métalliques:
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque/Fissure/Usure/Déformation/Corrosion...", "pointsAttache.metalliques")}</span>
+                                  <StatusIndicator status={inspection.pointsAttache?.metalliques?.status || 'V'} />
+                                </div>
+                                {inspection.pointsAttache?.metalliques?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.pointsAttache.metalliques.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
 
-                  {/* 5. COIFFE */}
-                  <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        5. COIFFE:- Etat des sangles et de leurs fixation dans la calotte.
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-gray-100 p-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Usure/Coupure/Brûlure/Déformation ...", "coiffe.etatSanglesFixation")}</span>
-                            <StatusIndicator status={inspection.coiffe?.etatSanglesFixation?.status || 'V'} />
-                          </div>
-                          {inspection.coiffe?.etatSanglesFixation?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
-                              Commentaire: {inspection.coiffe.etatSanglesFixation.comment}
+                          {/* Textiles */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Textiles:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Coupure/Usure/Déchirement.", "pointsAttache.textiles")}</span>
+                                  <StatusIndicator status={inspection.pointsAttache?.textiles?.status || 'V'} />
+                                </div>
+                                {inspection.pointsAttache?.textiles?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.pointsAttache.textiles.comment}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                          </div>
 
-                  {/* 6. TOUR DE TETE */}
-                  <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        6. TOUR DE TETE
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-gray-100 p-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Usure/Déformation/Elément manquant/Fixation ...", "tourDeTete.usureDeformationElement")}</span>
-                            <StatusIndicator status={inspection.tourDeTete?.usureDeformationElement?.status || 'V'} />
-                          </div>
-                          {inspection.tourDeTete?.usureDeformationElement?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
-                              Commentaire: {inspection.tourDeTete.usureDeformationElement.comment}
+                          {/* Plastiques */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Plastiques:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Coupure/Usure/Déchirement...", "pointsAttache.plastiques")}</span>
+                                  <StatusIndicator status={inspection.pointsAttache?.plastiques?.status || 'V'} />
+                                </div>
+                                {inspection.pointsAttache?.plastiques?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.pointsAttache.plastiques.comment}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                          </div>
 
-                  {/* 7. SYSTEME DE REGLAGE */}
-                  <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        7. SYSTEME DE REGLAGE: - Etat, fixations; actionner système dans les deux sens; Tirez sur système pour voir si il se dérègle ou pas
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-gray-100 p-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Usure/Déformation/Elément manquant/Fixation ...", "systemeReglage.etatFixations")}</span>
-                            <StatusIndicator status={inspection.systemeReglage?.etatFixations?.status || 'V'} />
-                          </div>
-                          {inspection.systemeReglage?.etatFixations?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
-                              Commentaire: {inspection.systemeReglage.etatFixations.comment}
+                          {/* Indicateur arrêt de chute */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Si indicateur arrêt de chute apparait</div>
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Oui - Non", "pointsAttache.indicateurArretChute")}</span>
+                                <StatusIndicator status={inspection.pointsAttache?.indicateurArretChute?.status || 'V'} />
+                              </div>
+                              {inspection.pointsAttache?.indicateurArretChute?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.pointsAttache.indicateurArretChute.comment}
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* 8. JUGULAIRE */}
-                  <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        8. JUGULAIRE: - Etat sangles et éléments de réglage (inspecter les parties cachées également)
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-gray-100 p-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Usure/Coupure/Brûlure/Déformation ...", "jugulaire.etatSanglesElements")}</span>
-                            <StatusIndicator status={inspection.jugulaire?.etatSanglesElements?.status || 'V'} />
-                          </div>
-                          {inspection.jugulaire?.etatSanglesElements?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
-                              Commentaire: {inspection.jugulaire.etatSanglesElements.comment}
+                      {/* 5. ETAT BOUCLES DE REGLAGES */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="space-y-2">
+                          {/* Grand titre avec Marque/Fissure/Usure/Déformation/Corrosion... */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs font-bold text-gray-900">
+                              5. ETAT BOUCLES DE REGLAGES
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque/Fissure/Usure/Déformation/Corrosion...", "etatBouclesReglages.fonctionnementBoucles")}</span>
+                                  <StatusIndicator status={inspection.etatBouclesReglages?.fonctionnementBoucles?.status || 'V'} />
+                                </div>
+                                {inspection.etatBouclesReglages?.fonctionnementBoucles?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.etatBouclesReglages.fonctionnementBoucles.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
 
-                  {/* 9. JUGULAIRE - Boucle de fermeture */}
-                  <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        - Etat de la boucle de fermeture jugulaire
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-gray-100 p-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Casse / Déformation / Fissure / Usure", "jugulaire.etatBoucleFermeture")}</span>
-                            <StatusIndicator status={inspection.jugulaire?.etatBoucleFermeture?.status || 'V'} />
-                          </div>
-                          {inspection.jugulaire?.etatBoucleFermeture?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
-                              Commentaire: {inspection.jugulaire.etatBoucleFermeture.comment}
+                          {/* Passage de sangles */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Passage de sangles (pas de vrille)</div>
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">Passage de sangles</span>
+                                <StatusIndicator status={inspection.etatBouclesReglages?.passageSangles?.status || 'V'} />
+                              </div>
+                              {inspection.etatBouclesReglages?.passageSangles?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.etatBouclesReglages.passageSangles.comment}
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                          </div>
 
-                  {/* 9. MOUSSE DE CONFORT */}
-                  <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        9. MOUSSE DE CONFORT: Démonter pour laver ou remplacer quand c'est nécessaire
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-gray-100 p-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">Usure/Déformation/Casse ...</span>
-                            <StatusIndicator status={inspection.mousseConfort?.usureDeformationCasse?.status || 'V'} />
-                          </div>
-                          {inspection.mousseConfort?.usureDeformationCasse?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
-                              Commentaire: {inspection.mousseConfort.usureDeformationCasse.comment}
+                          {/* Fonctionnement des boucles */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Fonctionnement des boucles</div>
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">Fonctionnement des boucles</span>
+                                <StatusIndicator status={inspection.etatBouclesReglages?.fonctionnementBoucles?.status || 'V'} />
+                              </div>
+                              {inspection.etatBouclesReglages?.fonctionnementBoucles?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.etatBouclesReglages.fonctionnementBoucles.comment}
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* 10. CROCHETS DE LAMPE */}
-                  <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        10. CROCHETS DE LAMPE
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-gray-100 p-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Usure/Déformation/Casse/Elément manquant ...", "crochetsLampe.usureDeformationCasse")}</span>
-                            <StatusIndicator status={inspection.crochetsLampe?.usureDeformationCasse?.status || 'V'} />
-                          </div>
-                          {inspection.crochetsLampe?.usureDeformationCasse?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
-                              Commentaire: {inspection.crochetsLampe.usureDeformationCasse.comment}
+                      {/* 6. ETAT ELEMENTS DE CONFORT */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="space-y-2">
+                          {/* Grand titre avec Passants élastiques ou plastiques */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs font-bold text-gray-900">
+                              6. ETAT ELEMENTS DE CONFORT - Passants élastiques ou plastiques:
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Coupure/Déchirement/Usure...", "etatElementsConfort.passantsElastiques")}</span>
+                                  <StatusIndicator status={inspection.etatElementsConfort?.passantsElastiques?.status || 'V'} />
+                                </div>
+                                {inspection.etatElementsConfort?.passantsElastiques?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.etatElementsConfort.passantsElastiques.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
 
-                  {/* 11. ACCESSOIRES */}
-                  <div className="border-b border-gray-200 pb-2">
-                    <div className="grid grid-cols-[45%_55%] gap-2">
-                      <div className="text-xs font-bold text-gray-900">
-                        11. ACCESSOIRES: Visière, lampe
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-gray-100 p-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">Fonctionnement/Etat ...</span>
-                            <StatusIndicator status={inspection.accessoires?.fonctionnementEtat?.status || 'NA'} />
-                          </div>
-                          {inspection.accessoires?.fonctionnementEtat?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
-                              Commentaire: {inspection.accessoires.fonctionnementEtat.comment}
+                          {/* Elastiques de cuisses */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Elastiques de cuisses:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Coupure/Déchirement/Usure...", "etatElementsConfort.elastiquesCuisses")}</span>
+                                  <StatusIndicator status={inspection.etatElementsConfort?.elastiquesCuisses?.status || 'V'} />
+                                </div>
+                                {inspection.etatElementsConfort?.elastiquesCuisses?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.etatElementsConfort.elastiquesCuisses.comment}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
+                          </div>
+
+                          {/* Portes matériels */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Portes matériels:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Coupure/Déchirement/Usure...", "etatElementsConfort.portesMateriels")}</span>
+                                  <StatusIndicator status={inspection.etatElementsConfort?.portesMateriels?.status || 'V'} />
+                                </div>
+                                {inspection.etatElementsConfort?.portesMateriels?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.etatElementsConfort.portesMateriels.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
+
+                      {/* 7. ETAT CONNECTEUR TORSE / CUISSARD */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="space-y-2">
+                          {/* Grand titre avec Corps du mousqueton */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs font-bold text-gray-900">
+                              7. ETAT CONNECTEUR TORSE / CUISSARD (si il y a) - Corps du mousqueton (connecteur):
+                            </div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque/Fissure/Usure/Déformation/Corrosion...", "etatConnecteurTorseCuissard.corpsMousqueton")}</span>
+                                  <StatusIndicator status={inspection.etatConnecteurTorseCuissard?.corpsMousqueton?.status || 'NA'} />
+                                </div>
+                                {inspection.etatConnecteurTorseCuissard?.corpsMousqueton?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.etatConnecteurTorseCuissard.corpsMousqueton.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Doigt du mousqueton */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Doigt du mousqueton (connecteur):</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque/Usure / Déformation/Fissure/Corrosion/Propreté des liaisons doigt; corps/Etat du rivet/ Ouverture manuelle complète/ Fermeture automatique du doigt; efficacité ressort de rappel...", "etatConnecteurTorseCuissard.doigtMousqueton")}</span>
+                                  <StatusIndicator status={inspection.etatConnecteurTorseCuissard?.doigtMousqueton?.status || 'NA'} />
+                                </div>
+                                {inspection.etatConnecteurTorseCuissard?.doigtMousqueton?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.etatConnecteurTorseCuissard.doigtMousqueton.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Bague de verrouillage */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Bague de verrouillage:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque/Déformation/Fissure/Usure/Verrouillage - Déverrouillage manuel ou automatique...", "etatConnecteurTorseCuissard.bagueVerrouillage")}</span>
+                                  <StatusIndicator status={inspection.etatConnecteurTorseCuissard?.bagueVerrouillage?.status || 'NA'} />
+                                </div>
+                                {inspection.etatConnecteurTorseCuissard?.bagueVerrouillage?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.etatConnecteurTorseCuissard.bagueVerrouillage.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 8. BLOQUEUR CROLL */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="space-y-2">
+                          {/* Grand titre avec Corps et ses trous de connexion */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs font-bold text-gray-900">
+                              8. BLOQUEUR CROLL - Corps et ses trous de connexion:
+                            </div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque/Fissure/Déformation/Usure/Corrosion/...", "bloqueurCroll.corpsTrousConnexion")}</span>
+                                  <StatusIndicator status={inspection.bloqueurCroll?.corpsTrousConnexion?.status || 'V'} />
+                                </div>
+                                {inspection.bloqueurCroll?.corpsTrousConnexion?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.bloqueurCroll.corpsTrousConnexion.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Gachette */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Gachette:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque/Fissure/Déformation/Usure/Corrosion/ Présence de toutes les dents/Propreté de toutes les dents / Axe de la gâchette et du rivet (jeu, marque, déformation, fissure, usure, corrosion) / Rotation et ressort de rappel de la gâchette ...", "bloqueurCroll.gachette")}</span>
+                                  <StatusIndicator status={inspection.bloqueurCroll?.gachette?.status || 'V'} />
+                                </div>
+                                {inspection.bloqueurCroll?.gachette?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.bloqueurCroll.gachette.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Taquet de sécurité */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Taquet de sécurité</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque/Déformation/Fissure/Usure/Corrosion Blocage taquet fonctionnement...", "bloqueurCroll.taquetSecurite")}</span>
+                                  <StatusIndicator status={inspection.bloqueurCroll?.taquetSecurite?.status || 'V'} />
+                                </div>
+                                {inspection.bloqueurCroll?.taquetSecurite?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.bloqueurCroll.taquetSecurite.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Fonctionnel */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Fonctionnel:</div>
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">Coulisse le long de la corde dans un sens, bloque dans l'autre</span>
+                                <StatusIndicator status={inspection.bloqueurCroll?.fonctionnel?.status || 'V'} />
+                              </div>
+                              {inspection.bloqueurCroll?.fonctionnel?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.bloqueurCroll.fonctionnel.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* 3. CALOTTE */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            3. CALOTTE (Coque): - Extérieur- Intérieur
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque/Impact/Fissure/déformation/Trace de salissure / Rayure/Brûlure/ Trace de produits chimique/Usure...", "calotteExterieurInterieur.marqueFissureDeformation")}</span>
+                                <StatusIndicator status={inspection.calotteExterieurInterieur?.marqueFissureDeformation?.status || 'V'} />
+                              </div>
+                              {inspection.calotteExterieurInterieur?.marqueFissureDeformation?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.calotteExterieurInterieur.marqueFissureDeformation.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* -Fentes et trous accessoires */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            -Fentes et trous accessoires
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Déformation/Fissure/Impact ...", "calotteExterieurInterieur.fentesTrousAccessoires")}</span>
+                                <StatusIndicator status={inspection.calotteExterieurInterieur?.fentesTrousAccessoires?.status || 'V'} />
+                              </div>
+                              {inspection.calotteExterieurInterieur?.fentesTrousAccessoires?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.calotteExterieurInterieur.fentesTrousAccessoires.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* -Volets aération */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            -Volets aération si il y a, (fonctionnement)
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">Volets aération si il y a, (fonctionnement)</span>
+                                <StatusIndicator status={inspection.calotteExterieurInterieur?.voletsAeration?.status || 'NA'} />
+                              </div>
+                              {inspection.calotteExterieurInterieur?.voletsAeration?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.calotteExterieurInterieur.voletsAeration.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 4. CALOTIN */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            4. CALOTIN (si il y a): - Ôtez éléments de confort si nécessaire; Ne pas démonté calotin si fixé sur la coque.
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque/Fissure/Déformation/Usure ...", "calotin.otezElementsConfort")}</span>
+                                <StatusIndicator status={inspection.calotin?.otezElementsConfort?.status || 'NA'} />
+                              </div>
+                              {inspection.calotin?.otezElementsConfort?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.calotin.otezElementsConfort.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 5. COIFFE */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            5. COIFFE:- Etat des sangles et de leurs fixation dans la calotte.
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Usure/Coupure/Brûlure/Déformation ...", "coiffe.etatSanglesFixation")}</span>
+                                <StatusIndicator status={inspection.coiffe?.etatSanglesFixation?.status || 'V'} />
+                              </div>
+                              {inspection.coiffe?.etatSanglesFixation?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.coiffe.etatSanglesFixation.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 6. TOUR DE TETE */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            6. TOUR DE TETE
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Usure/Déformation/Elément manquant/Fixation ...", "tourDeTete.usureDeformationElement")}</span>
+                                <StatusIndicator status={inspection.tourDeTete?.usureDeformationElement?.status || 'V'} />
+                              </div>
+                              {inspection.tourDeTete?.usureDeformationElement?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.tourDeTete.usureDeformationElement.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 7. SYSTEME DE REGLAGE */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            7. SYSTEME DE REGLAGE: - Etat, fixations; actionner système dans les deux sens; Tirez sur système pour voir si il se dérègle ou pas
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Usure/Déformation/Elément manquant/Fixation ...", "systemeReglage.etatFixations")}</span>
+                                <StatusIndicator status={inspection.systemeReglage?.etatFixations?.status || 'V'} />
+                              </div>
+                              {inspection.systemeReglage?.etatFixations?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.systemeReglage.etatFixations.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 8. JUGULAIRE */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            8. JUGULAIRE: - Etat sangles et éléments de réglage (inspecter les parties cachées également)
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Usure/Coupure/Brûlure/Déformation ...", "jugulaire.etatSanglesElements")}</span>
+                                <StatusIndicator status={inspection.jugulaire?.etatSanglesElements?.status || 'V'} />
+                              </div>
+                              {inspection.jugulaire?.etatSanglesElements?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.jugulaire.etatSanglesElements.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 9. JUGULAIRE - Boucle de fermeture */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            - Etat de la boucle de fermeture jugulaire
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Casse / Déformation / Fissure / Usure", "jugulaire.etatBoucleFermeture")}</span>
+                                <StatusIndicator status={inspection.jugulaire?.etatBoucleFermeture?.status || 'V'} />
+                              </div>
+                              {inspection.jugulaire?.etatBoucleFermeture?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.jugulaire.etatBoucleFermeture.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 9. MOUSSE DE CONFORT */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            9. MOUSSE DE CONFORT: Démonter pour laver ou remplacer quand c'est nécessaire
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">Usure/Déformation/Casse ...</span>
+                                <StatusIndicator status={inspection.mousseConfort?.usureDeformationCasse?.status || 'V'} />
+                              </div>
+                              {inspection.mousseConfort?.usureDeformationCasse?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.mousseConfort.usureDeformationCasse.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 10. CROCHETS DE LAMPE */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            10. CROCHETS DE LAMPE
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Usure/Déformation/Casse/Elément manquant ...", "crochetsLampe.usureDeformationCasse")}</span>
+                                <StatusIndicator status={inspection.crochetsLampe?.usureDeformationCasse?.status || 'V'} />
+                              </div>
+                              {inspection.crochetsLampe?.usureDeformationCasse?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.crochetsLampe.usureDeformationCasse.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 11. ACCESSOIRES */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="grid grid-cols-[45%_55%] gap-2">
+                          <div className="text-xs font-bold text-gray-900">
+                            11. ACCESSOIRES: Visière, lampe
+                          </div>
+                          <div className="space-y-2">
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">Fonctionnement/Etat ...</span>
+                                <StatusIndicator status={inspection.accessoires?.fonctionnementEtat?.status || 'NA'} />
+                              </div>
+                              {inspection.accessoires?.fonctionnementEtat?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.accessoires.fonctionnementEtat.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                 {/* Signature */}
                 <div className="pt-4 bg-gray-100 p-2 mt-4">

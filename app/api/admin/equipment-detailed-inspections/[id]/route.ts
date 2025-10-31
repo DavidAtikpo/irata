@@ -74,12 +74,32 @@ export async function PUT(
       normes,
       date,
       signataire,
+      // Extract harness-specific fields to ensure they're included
+      etatSangles,
+      pointsAttache,
+      etatBouclesReglages,
+      etatElementsConfort,
+      etatConnecteurTorseCuissard,
+      bloqueurCroll,
+      crossedOutWords,
+      crossedOutItems,
       ...updateData 
     } = body;
     
     const inspection = await prisma.equipmentDetailedInspection.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...updateData,
+        // Explicitly include harness-specific fields if they exist
+        ...(etatSangles !== undefined && { etatSangles }),
+        ...(pointsAttache !== undefined && { pointsAttache }),
+        ...(etatBouclesReglages !== undefined && { etatBouclesReglages }),
+        ...(etatElementsConfort !== undefined && { etatElementsConfort }),
+        ...(etatConnecteurTorseCuissard !== undefined && { etatConnecteurTorseCuissard }),
+        ...(bloqueurCroll !== undefined && { bloqueurCroll }),
+        ...(crossedOutWords !== undefined && { crossedOutWords }),
+        ...(crossedOutItems !== undefined && { crossedOutItems }),
+      },
       include: {
         createdBy: {
           select: {
