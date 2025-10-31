@@ -15,7 +15,7 @@ interface Invoice {
 }
 
 interface FollowRow {
-  user: { id: string; email: string; nom?: string; prenom?: string; phone?: string };
+  user: { id: string; email: string; nom?: string; prenom?: string; phone?: string; session?: string | null };
   stats: {
     devisPending: number;
     devisValides: number;
@@ -55,6 +55,8 @@ export default function UserFollowUpPage() {
   const [error, setError] = useState('');
   const [onlyPending, setOnlyPending] = useState(true);
   const [invoiceFilter, setInvoiceFilter] = useState<string>('');
+  const [sessionFilter, setSessionFilter] = useState<string>('');
+  const [availableSessions, setAvailableSessions] = useState<string[]>([]);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [generatingInvoice, setGeneratingInvoice] = useState<Set<string>>(new Set());
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -81,9 +83,33 @@ export default function UserFollowUpPage() {
     }
     if (status === 'authenticated') {
       load();
+      loadSessions();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, onlyPending, invoiceFilter]);
+  }, [status, onlyPending, invoiceFilter, sessionFilter]);
+
+  const loadSessions = async () => {
+    try {
+      const res = await fetch('/api/admin/sessions');
+      if (res.ok) {
+        const data = await res.json();
+        // Combiner les sessions des demandes et des training sessions
+        const allSessions = new Set<string>();
+        if (data.sessions) {
+          data.sessions.forEach((s: string) => allSessions.add(s));
+        }
+        if (data.trainingSessions) {
+          data.trainingSessions.forEach((ts: { id: string; name: string }) => {
+            allSessions.add(ts.id);
+            if (ts.name) allSessions.add(ts.name);
+          });
+        }
+        setAvailableSessions(Array.from(allSessions).sort());
+      }
+    } catch (e) {
+      console.error('Erreur lors du chargement des sessions:', e);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -93,6 +119,9 @@ export default function UserFollowUpPage() {
       params.append('onlyPending', onlyPending.toString());
       if (invoiceFilter) {
         params.append('invoiceFilter', invoiceFilter);
+      }
+      if (sessionFilter) {
+        params.append('sessionFilter', sessionFilter);
       }
       const res = await fetch(`/api/admin/user-follow-up?${params.toString()}`);
       if (!res.ok) throw new Error('Erreur lors du chargement');
@@ -288,7 +317,7 @@ export default function UserFollowUpPage() {
               </label>
             </div>
             
-            {/* Filtres de factures */}
+            {/* Filtres */}
             <div className="flex flex-wrap gap-2 items-center">
               <label className="text-xs font-medium text-gray-700">Filtre factures:</label>
               <select
@@ -303,6 +332,20 @@ export default function UserFollowUpPage() {
                 <option value="partiel_stripe">Partiel Stripe</option>
                 <option value="partiel_virement">Partiel virement</option>
                 <option value="no_invoice">Sans facture</option>
+              </select>
+              
+              <label className="text-xs font-medium text-gray-700 ml-2">Filtre session:</label>
+              <select
+                value={sessionFilter}
+                onChange={(e) => setSessionFilter(e.target.value)}
+                className="text-xs border border-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 min-w-[140px]"
+              >
+                <option value="">Toutes les sessions</option>
+                {availableSessions.map((session) => (
+                  <option key={session} value={session}>
+                    {session}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

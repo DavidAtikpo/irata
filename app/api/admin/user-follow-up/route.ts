@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const onlyPending = searchParams.get('onlyPending') === 'true';
     const invoiceFilter = searchParams.get('invoiceFilter'); // 'total_manuel', 'partiel_manuel', 'total_stripe', 'partiel_stripe', 'partiel_virement', 'no_invoice'
+    const sessionFilter = searchParams.get('sessionFilter'); // ID de session pour filtrer
 
     // Fetch users with key follow-up signals - only USER role
     const users = await prisma.user.findMany({
@@ -35,21 +36,50 @@ export async function GET(req: NextRequest) {
       return NextResponse.json([]);
     }
 
+    // Récupérer les sessions des utilisateurs depuis les demandes
+    const userSessions = await prisma.demande.findMany({
+      where: { userId: { in: userIds } },
+      select: {
+        userId: true,
+        session: true,
+      },
+      distinct: ['userId'],
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Créer un index userId -> session
+    const userSessionMap: Record<string, string | null> = {};
+    userSessions.forEach(d => {
+      userSessionMap[d.userId] = d.session;
+    });
+
+    // Filtrer les utilisateurs par session si nécessaire
+    let filteredUserIds = userIds;
+    if (sessionFilter) {
+      filteredUserIds = userSessions
+        .filter(d => d.session === sessionFilter)
+        .map(d => d.userId);
+      
+      if (filteredUserIds.length === 0) {
+        return NextResponse.json([]);
+      }
+    }
+
     // Batch fetch related entities
     const [devisByUser, contratsByUser, contratsDetails, invoices, demandesByUser] = await Promise.all([
       prisma.devis.groupBy({
         by: ['userId', 'statut'],
-        where: { userId: { in: userIds } },
+        where: { userId: { in: filteredUserIds } },
         _count: { _all: true }
       }),
       prisma.contrat.groupBy({
         by: ['userId', 'statut'],
-        where: { userId: { in: userIds } },
+        where: { userId: { in: filteredUserIds } },
         _count: { _all: true }
       }),
       // Récupérer les détails des contrats pour vérifier les signatures
       prisma.contrat.findMany({
-        where: { userId: { in: userIds } },
+        where: { userId: { in: filteredUserIds } },
         select: {
           id: true,
           userId: true,
@@ -60,7 +90,7 @@ export async function GET(req: NextRequest) {
       }),
       // Récupérer les factures avec tous les détails nécessaires
       prisma.invoice.findMany({
-        where: { userId: { in: userIds } },
+        where: { userId: { in: filteredUserIds } },
         select: {
           userId: true,
           contratId: true,
@@ -74,7 +104,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.demande.groupBy({
         by: ['userId', 'statut'],
-        where: { userId: { in: userIds } },
+        where: { userId: { in: filteredUserIds } },
         _count: { _all: true }
       })
     ]);
@@ -99,7 +129,7 @@ export async function GET(req: NextRequest) {
     }
     const demandesIdx = buildIndex(demandesByUser as any);
 
-    const results = users.map(u => {
+    const results = users.filter(u => filteredUserIds.includes(u.id)).map(u => {
       const devis = (devisIdx[u.id] || []) as Array<{ userId: string; statut: string; _count: { _all: number } }>;
       const contrats = (contratsIdx[u.id] || []) as Array<{ userId: string; statut: string; _count: { _all: number } }>;
       const userInvoices = invoicesByUserId[u.id] || [];
@@ -212,7 +242,14 @@ export async function GET(req: NextRequest) {
       }
 
       return {
-        user: { id: u.id, email: u.email, nom: u.nom, prenom: u.prenom, phone: u.phone },
+        user: { 
+          id: u.id, 
+          email: u.email, 
+          nom: u.nom, 
+          prenom: u.prenom, 
+          phone: u.phone,
+          session: userSessionMap[u.id] || null
+        },
         stats: {
           devisPending,
           devisValides,
