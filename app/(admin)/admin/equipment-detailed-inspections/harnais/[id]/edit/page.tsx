@@ -1573,7 +1573,7 @@ export default function EditInspectionPage() {
                         />
                       </div>
 
-                      <div>
+                      {/* <div>
                         <label htmlFor="numeroSerieNonEtiquete" className="block text-sm font-medium text-gray-700">
                           Numéro (non étiqueté)
                         </label>
@@ -1585,7 +1585,7 @@ export default function EditInspectionPage() {
                           onChange={handleChange}
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         />
-                      </div>
+                      </div> */}
 
                       <div>
                         <label htmlFor="fabricant" className="block text-sm font-medium text-gray-700">
@@ -2223,7 +2223,7 @@ export default function EditInspectionPage() {
                         <div className="space-y-2">
                           {/* Grand titre avec Mousses */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-xs font-medium text-gray-900">
+                            <div className="text-[10px] font-medium text-gray-900">
                               6. ETAT ELEMENTS DE CONFORT - Mousses (ceinture; cuisses, bretelles):
                             </div>
                             <div className="space-y-1">
@@ -2257,7 +2257,7 @@ export default function EditInspectionPage() {
 
                           {/* Passants élastiques ou plastiques */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-xs text-gray-700 ml-2">- Passants élastiques ou plastiques:</div>
+                            <div className="text-[10px] text-gray-700 ml-2">- Passants élastiques ou plastiques:</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
                                 <ClickableText
@@ -2289,7 +2289,7 @@ export default function EditInspectionPage() {
 
                           {/* Elastiques de cuisses */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-xs text-gray-700 ml-2">- Elastiques de cuisses:</div>
+                            <div className="text-[10px] text-gray-700 ml-2">- Elastiques de cuisses:</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
                                 <ClickableText
@@ -2321,7 +2321,7 @@ export default function EditInspectionPage() {
 
                           {/* Portes matériels */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-xs text-gray-700 ml-2">- Portes matériels:</div>
+                            <div className="text-[10px] text-gray-700 ml-2">- Portes matériels:</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
                                 <ClickableText

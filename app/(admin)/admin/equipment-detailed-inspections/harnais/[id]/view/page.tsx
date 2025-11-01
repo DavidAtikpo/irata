@@ -589,12 +589,12 @@ export default function ViewInspectionPage() {
                     <span className="text-sm text-gray-900 font-bold">{inspection.numeroSerieCuissard || '/'}</span>
                   </div>
                 )}
-                {inspection.numeroSerieNonEtiquete && (
+                {/* {inspection.numeroSerieNonEtiquete && (
                   <div className="flex justify-between bg-gray-100 p-2">
                     <span className="text-sm font-medium text-gray-700">Numéro (non étiqueté):</span>
                     <span className="text-sm text-gray-900 font-bold">{inspection.numeroSerieNonEtiquete || '/'}</span>
                   </div>
-                )}
+                )} */}
                 <div className="flex justify-between">
                   <span className="text-sm font-medium text-gray-700">Date de Fabrication:</span>
                   <span className="text-sm text-gray-900 font-bold">{inspection.dateFabrication || '/'}</span>
