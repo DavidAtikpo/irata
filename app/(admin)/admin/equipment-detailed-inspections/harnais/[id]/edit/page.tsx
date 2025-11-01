@@ -137,6 +137,7 @@ export default function EditInspectionPage() {
     photo: '',
     qrCode: '',
     pdfUrl: '',
+    normesUrl: '',
     dateAchatImage: '',
     verificateurSignaturePdf: '',
     verificateurDigitalSignature: '',
@@ -858,21 +859,23 @@ export default function EditInspectionPage() {
         const data = await response.json();
         
         // Auto-remplissage basé sur l'extraction du PDF - uniquement les normes
-        if (data.extractedData) {
-          setFormData(prev => ({
-            ...prev,
-            // Seulement les normes
-            normesCertificat: data.extractedData.normes || prev.normesCertificat,
-            pdfUrl: data.extractedData.pdfUrl || data.extractedData.cloudinaryUrl || data.url || prev.pdfUrl,
-            // Ne pas écraser les documents de référence ni les autres données
-          }));
-          
-          // Afficher les informations d'extraction PDF
-          if (data.extractedData.rawText) {
-            console.log('PDF - Texte extrait:', data.extractedData.rawText);
-            console.log('PDF - Normes détectées:', data.extractedData.normes);
-            console.log('PDF - Confiance:', data.extractedData.confidence);
-          }
+        // Sauvegarder aussi l'URL du PDF uploadé
+        const pdfUrlToSave = data.extractedData?.pdfUrl || data.extractedData?.cloudinaryUrl || data.url;
+        setFormData(prev => ({
+          ...prev,
+          // Sauvegarder l'URL du PDF des normes (avec plusieurs fallbacks)
+          normesUrl: pdfUrlToSave || prev.normesUrl,
+          // Extraire les normes
+          normesCertificat: data.extractedData?.normes || prev.normesCertificat,
+          // Ne pas écraser les documents de référence ni les autres données
+        }));
+        
+        // Afficher les informations d'extraction PDF
+        console.log('PDF - URL sauvegardée dans normesUrl:', pdfUrlToSave);
+        if (data.extractedData?.rawText) {
+          console.log('PDF - Texte extrait:', data.extractedData.rawText);
+          console.log('PDF - Normes détectées:', data.extractedData.normes);
+          console.log('PDF - Confiance:', data.extractedData.confidence);
         }
       } else {
         throw new Error('Erreur lors de l\'upload du PDF');
