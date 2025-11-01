@@ -67,6 +67,7 @@ export default function EditInspectionPage() {
   const [error, setError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingPDF, setIsUploadingPDF] = useState(false);
+  const [isUploadingNormes, setIsUploadingNormes] = useState(false);
   const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
   const [isUploadingDateAchat, setIsUploadingDateAchat] = useState(false);
   const [isUploadingCertificate, setIsUploadingCertificate] = useState(false);
@@ -108,6 +109,7 @@ export default function EditInspectionPage() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const qrInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const normesPdfInputRef = useRef<HTMLInputElement>(null);
   const documentsInputRef = useRef<HTMLInputElement>(null);
   const dateAchatInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRef = useRef<HTMLInputElement>(null);
@@ -836,12 +838,12 @@ export default function EditInspectionPage() {
     }
   };
 
-  // Fonction pour upload de PDF (normes et certificats)
+  // Fonction pour upload de PDF (normes et certificats) - Extraction uniquement des normes
   const handlePDFUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setIsUploadingPDF(true);
+    setIsUploadingNormes(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -855,24 +857,20 @@ export default function EditInspectionPage() {
       if (response.ok) {
         const data = await response.json();
         
-        // Auto-remplissage basé sur l'extraction du PDF
-        // Ne mettre à jour que les champs spécifiques au PDF, préserver les données du QR code
+        // Auto-remplissage basé sur l'extraction du PDF - uniquement les normes
         if (data.extractedData) {
           setFormData(prev => ({
             ...prev,
-            // Seulement les champs spécifiques au PDF
+            // Seulement les normes
             normesCertificat: data.extractedData.normes || prev.normesCertificat,
-            documentsReference: data.extractedData.reference || prev.documentsReference,
             pdfUrl: data.extractedData.pdfUrl || data.extractedData.cloudinaryUrl || data.url || prev.pdfUrl,
-            // Ne pas écraser les données du QR code (dateFabrication, numeroSerie, dateAchat)
-            // Ces champs restent inchangés s'ils ont été remplis par le QR code
+            // Ne pas écraser les documents de référence ni les autres données
           }));
           
           // Afficher les informations d'extraction PDF
           if (data.extractedData.rawText) {
             console.log('PDF - Texte extrait:', data.extractedData.rawText);
             console.log('PDF - Normes détectées:', data.extractedData.normes);
-            console.log('PDF - Références détectées:', data.extractedData.reference);
             console.log('PDF - Confiance:', data.extractedData.confidence);
           }
         }
@@ -882,7 +880,7 @@ export default function EditInspectionPage() {
     } catch (error) {
       setError('Erreur lors de l\'upload du PDF');
     } finally {
-      setIsUploadingPDF(false);
+      setIsUploadingNormes(false);
     }
   };
 
@@ -1761,17 +1759,36 @@ export default function EditInspectionPage() {
                             className="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             placeholder="Ex: EN1249: 2012 EN 397: 2012+A1:2012"
                           />
-                          {/* <button */}
+                          <button
+                            type="button"
+                            onClick={() => normesPdfInputRef.current?.click()}
+                            disabled={isUploadingNormes}
+                            className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
+                              isUploadingNormes
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'text-gray-700 bg-white hover:bg-gray-50'
+                            }`}
+                            title="Importer un PDF pour extraire les normes"
+                          >
+                            {isUploadingNormes ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                                <span className="text-xs">Chargement...</span>
+                              </>
+                            ) : (
+                              <DocumentIcon className="h-4 w-4" />
+                            )}
+                          </button>
                         </div>
                         <input
-                          ref={pdfInputRef}
+                          ref={normesPdfInputRef}
                           type="file"
                           accept=".pdf"
                           onChange={handlePDFUpload}
                           className="hidden"
                         />
                         <p className="mt-1 text-xs text-gray-500">
-                          Uploader un PDF pour extraire automatiquement les normes
+                          Uploader un PDF pour extraire automatiquement les normes (le reste reste manuel)
                         </p>
                         {/* Affichage des normes cliquables */}
                       
