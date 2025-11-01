@@ -2221,11 +2221,43 @@ export default function EditInspectionPage() {
                       {/* 6. ETAT ELEMENTS DE CONFORT */}
                       <div className="border-b border-gray-200 pb-4">
                         <div className="space-y-2">
-                          {/* Grand titre avec Passants élastiques ou plastiques */}
+                          {/* Grand titre avec Mousses */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm font-medium text-gray-900">
-                              6. ETAT ELEMENTS DE CONFORT - Passants élastiques ou plastiques:
+                            <div className="text-xs font-medium text-gray-900">
+                              6. ETAT ELEMENTS DE CONFORT - Mousses (ceinture; cuisses, bretelles):
                             </div>
+                            <div className="space-y-1">
+                              <div className="flex flex-col gap-1">
+                                <ClickableText
+                                  text="Coupure / Déchirement / Usure…"
+                                  fieldKey="etatElementsConfort.mousses"
+                                />
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    className="text-[9px] text-red-600 hover:underline"
+                                    onClick={() => toggleCommentInput('etatElementsConfort.mousses')}
+                                  >
+                                    ajouter commentaires
+                                  </button>
+                                  <StatusSelect
+                                    currentStatus={formData.inspectionData.etatElementsConfort.mousses.status}
+                                    onStatusChange={(status) => handleInspectionChange('etatElementsConfort', 'mousses', status)}
+                                  />
+                                </div>
+                              </div>
+                              <CommentSection
+                                fieldKey="etatElementsConfort.mousses"
+                                section="etatElementsConfort"
+                                field="mousses"
+                                value={formData.inspectionData.etatElementsConfort.mousses}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Passants élastiques ou plastiques */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Passants élastiques ou plastiques:</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
                                 <ClickableText
@@ -2235,7 +2267,7 @@ export default function EditInspectionPage() {
                                 <div className="flex items-center justify-end gap-2">
                                   <button
                                     type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                                    className="text-[9px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('etatElementsConfort.passantsElastiques')}
                                   >
                                     ajouter commentaires
@@ -2257,7 +2289,7 @@ export default function EditInspectionPage() {
 
                           {/* Elastiques de cuisses */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Elastiques de cuisses:</div>
+                            <div className="text-xs text-gray-700 ml-2">- Elastiques de cuisses:</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
                                 <ClickableText
@@ -2267,7 +2299,7 @@ export default function EditInspectionPage() {
                                 <div className="flex items-center justify-end gap-2">
                                   <button
                                     type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                                    className="text-[9px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('etatElementsConfort.elastiquesCuisses')}
                                   >
                                     ajouter commentaires
@@ -2289,7 +2321,7 @@ export default function EditInspectionPage() {
 
                           {/* Portes matériels */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Portes matériels:</div>
+                            <div className="text-xs text-gray-700 ml-2">- Portes matériels:</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
                                 <ClickableText
@@ -2299,7 +2331,7 @@ export default function EditInspectionPage() {
                                 <div className="flex items-center justify-end gap-2">
                                   <button
                                     type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                                    className="text-[9px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('etatElementsConfort.portesMateriels')}
                                   >
                                     ajouter commentaires

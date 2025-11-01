@@ -241,3 +241,4 @@ curl -X POST https://www.a-finpart.com/api/qr-generator \
 
 
 
+

@@ -549,8 +549,8 @@ export default function NouvelleInspectionPage() {
       if (response.ok) {
         const data = await response.json();
         // Extraction limitée: ne remplir que les normes; le reste reste manuel
-        setFormData(prev => ({
-          ...prev,
+          setFormData(prev => ({
+            ...prev,
           normesUrl: (data.extractedData?.pdfUrl || data.url || prev.normesUrl),
           normesCertificat: data.extractedData?.normes || prev.normesCertificat,
         }));
@@ -612,8 +612,8 @@ export default function NouvelleInspectionPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setFormData(prev => ({
-          ...prev,
+          setFormData(prev => ({
+            ...prev,
           pdfUrl: data.url || prev.pdfUrl,
           documentsReference: data.extractedData?.reference || 'document detecte',
         }));
@@ -848,13 +848,13 @@ export default function NouvelleInspectionPage() {
                 <h1 className="text-2xl font-bold text-gray-900">
                   Nouvelle Inspection d'Équipement
                 </h1>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-xs text-gray-500">
                   Formulaire d'inspection détaillée d'équipement
                 </p>
               </div>
               <button
                 onClick={() => router.back()}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
                 Retour
               </button>
@@ -878,7 +878,7 @@ export default function NouvelleInspectionPage() {
                 <CheckCircleIcon className="h-5 w-5 mr-3" />
                 <div>
                   <strong>Formulaire pré-rempli !</strong>
-                  <p className="text-sm mt-1">Les données de l'équipement ont été chargées automatiquement depuis le QR code.</p>
+                  <p className="text-xs mt-1">Les données de l'équipement ont été chargées automatiquement depuis le QR code.</p>
                 </div>
               </div>
             )}
@@ -897,14 +897,14 @@ export default function NouvelleInspectionPage() {
                 {/* Colonne gauche - Identification équipement */}
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-gray-50 p-4 rounded-lg" dir="ltr">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    <h2 className="text-sm font-semibold text-gray-900 mb-4">
                       Identification équipement
                     </h2>
                     
                     {/* Photo et État */}
                     <div className="grid grid-cols-2 gap-4 mb-6">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-2">
                             Photo
                           </label>
                          <div 
@@ -916,7 +916,7 @@ export default function NouvelleInspectionPage() {
                            ) : (
                              <div className="text-gray-400">
                                <PhotoIcon className="h-8 w-8 mx-auto mb-2" />
-                               <div className="text-sm">Cliquez pour ajouter une photo</div>
+                               <div className="text-xs">Cliquez pour ajouter une photo</div>
                              </div>
                            )}
                           </div>
@@ -941,7 +941,7 @@ export default function NouvelleInspectionPage() {
                             }));
                           }}
                           className={`w-full flex items-center justify-center h-20 rounded-lg transition-colors cursor-pointer ${
-                            formData.etat === 'OK' 
+                          formData.etat === 'OK' 
                               ? 'bg-green-100 hover:bg-green-200' 
                               : 'bg-red-100 hover:bg-red-200'
                           }`}
@@ -1007,8 +1007,8 @@ export default function NouvelleInspectionPage() {
                          ) : (
                            <div className="text-gray-400">
                              <QrCodeIcon className="h-8 w-8 mx-auto mb-2" />
-                             <div className="text-sm">Cliquez pour scanner le QR code</div>
-                             <div className="text-xs text-gray-500 mt-1">Auto-remplira les données</div>
+                             <div className="text-xs">Cliquez pour scanner le QR code</div>
+                             <div className="text-[9px] text-gray-500 mt-1">Auto-remplira les données</div>
                            </div>
                          )}
                         </div>
@@ -1024,7 +1024,7 @@ export default function NouvelleInspectionPage() {
                     {/* Champs d'identification */}
                     <div className="space-y-4" dir="ltr">
                       <div>
-                        <label htmlFor="referenceInterne" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="referenceInterne" className="block text-xs font-medium text-gray-700">
                           Référence interne
                         </label>
                         <input
@@ -1158,7 +1158,7 @@ export default function NouvelleInspectionPage() {
                             onClick={() => dateAchatInputRef.current?.click()}
                             disabled={isUploadingDateAchat}
                             className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
-                              isUploadingDateAchat
+                              isUploadingDateAchat 
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 : 'text-gray-700 bg-white hover:bg-gray-50'
                             }`}
@@ -1217,15 +1217,15 @@ export default function NouvelleInspectionPage() {
                           <label htmlFor="dateInspectionDetaillee" className="block text-sm font-medium text-gray-700">
                             Inspection Détaillée (tous les 6 mois)
                           </label>
-                          <input
-                            type="text"
-                            id="dateInspectionDetaillee"
-                            name="dateInspectionDetaillee"
-                            value={formData.dateInspectionDetaillee}
+                           <input
+                             type="text"
+                             id="dateInspectionDetaillee"
+                             name="dateInspectionDetaillee"
+                             value={formData.dateInspectionDetaillee}
                             onChange={handleChange}
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            placeholder="Date de la prochaine inspection"
-                          />
+                             placeholder="Date de la prochaine inspection"
+                           />
                         </div>
 
                       <div>
@@ -1418,9 +1418,9 @@ export default function NouvelleInspectionPage() {
                 {/* Colonne droite - Vie de l'équipement */}
                 <div className="lg:col-span-4 space-y-6">
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      Vie de l'équipement
-                    </h2>
+                      <h2 className="text-sm font-semibold text-gray-900 mb-4">
+                        Vie de l'équipement
+                      </h2>
 
                     {/* Points d'inspection */}
                     <div className="space-y-6" dir="ltr">
@@ -1478,8 +1478,8 @@ export default function NouvelleInspectionPage() {
                                 currentStatus={formData.inspectionData.observationsPrelables.lisibiliteNumeroSerie.status}
                                 onStatusChange={(status) => handleInspectionChange('observationsPrelables', 'lisibiliteNumeroSerie', status)}
                               />
-                          </div> */}
-                            </div>
+                            </div> */}
+                          </div>
                             <div className="flex flex-col gap-1">
                               <li><span className="text-sm text-gray-700">Durée de vie n'est pas dépassée</span></li>
                               {/* <div className="flex items-center justify-end gap-2">
@@ -1498,64 +1498,64 @@ export default function NouvelleInspectionPage() {
                         <div className="space-y-2">
                           <div className="text-sm font-medium text-gray-900 mb-2">
                             3. ETAT DES SANGLES DE
-                          </div>
-                          
+                            </div>
+
                           {/* Ceinture / cuisse / bretelles */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
                             <div className="text-sm text-gray-700 ml-2">- Ceinture / cuisse / liaison cuisse ceinture et bretelles / zones cachées par boucles et points d'attaches</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
-                                <ClickableText
+                              <ClickableText
                                   text="Coupure/Gonflement/Usure Dommage dus à l'utilisation, à des traces de salissures, à la chaleur; aux UV, aux produits..."
                                   fieldKey="etatSangles.ceintureCuisseBretelles"
-                                />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('etatSangles.ceintureCuisseBretelles')}
-                                  >
+                                >
                                     ajouter commentaires
-                                  </button>
-                                  <StatusSelect
+                                </button>
+                                <StatusSelect
                                     currentStatus={formData.inspectionData.etatSangles.ceintureCuisseBretelles.status}
                                     onStatusChange={(status) => handleInspectionChange('etatSangles', 'ceintureCuisseBretelles', status)}
-                                  />
-                                </div>
-                              </div>
-                              <CommentSection
+                              />
+                            </div>
+                            </div>
+                            <CommentSection
                                 fieldKey="etatSangles.ceintureCuisseBretelles"
                                 section="etatSangles"
                                 field="ceintureCuisseBretelles"
                                 value={formData.inspectionData.etatSangles.ceintureCuisseBretelles}
-                              />
-                            </div>
+                            />
                           </div>
+                        </div>
 
                           {/* Etat coutures sécurité */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
                             <div className="text-sm text-gray-700 ml-2">- Etat coutures sécurité (dessus/dessous): Fil couleur différente</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
-                                <ClickableText
+                              <ClickableText
                                   text="Fil distendu, usé ou coupé..."
                                   fieldKey="etatSangles.etatCouturesSecurite"
-                                />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('etatSangles.etatCouturesSecurite')}
-                                  >
+                                >
                                     ajouter commentaires
-                                  </button>
-                                  <StatusSelect
+                                </button>
+                                <StatusSelect
                                     currentStatus={formData.inspectionData.etatSangles.etatCouturesSecurite.status}
                                     onStatusChange={(status) => handleInspectionChange('etatSangles', 'etatCouturesSecurite', status)}
-                                  />
-                                </div>
+                                />
                               </div>
-                              <CommentSection
+                            </div>
+                            <CommentSection
                                 fieldKey="etatSangles.etatCouturesSecurite"
                                 section="etatSangles"
                                 field="etatCouturesSecurite"
@@ -1583,37 +1583,37 @@ export default function NouvelleInspectionPage() {
                       <div className="border-b border-gray-200 pb-4">
                         <div className="space-y-2">
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-gray-900">
                               4. POINTS D'ATTACHE  - Métalliques:
-                            </div>
+                          </div>
                             <div className="space-y-1">
-                              <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1">
                                 <ClickableText
                                   text="Marque/Fissure/Usure/Déformation/Corrosion..."
                                   fieldKey="pointsAttache.metalliques"
                                 />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('pointsAttache.metalliques')}
-                                  >
+                                >
                                     ajouter commentaires
-                                  </button>
-                                  <StatusSelect
+                                </button>
+                                <StatusSelect
                                     currentStatus={formData.inspectionData.pointsAttache.metalliques.status}
                                     onStatusChange={(status) => handleInspectionChange('pointsAttache', 'metalliques', status)}
-                                  />
-                                </div>
+                                />
                               </div>
-                              <CommentSection
+                            </div>
+                            <CommentSection
                                 fieldKey="pointsAttache.metalliques"
                                 section="pointsAttache"
                                 field="metalliques"
                                 value={formData.inspectionData.pointsAttache.metalliques}
                               />
-                            </div>
-                          </div>
+                        </div>
+                      </div>
 
                           {/* Textiles */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
@@ -1651,26 +1651,26 @@ export default function NouvelleInspectionPage() {
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
                             <div className="text-sm text-gray-700 ml-2">- Plastiques:</div>
                             <div className="space-y-1">
-                              <div className="flex flex-col gap-1">
-                                <ClickableText
+                            <div className="flex flex-col gap-1">
+                              <ClickableText
                                   text="Coupure/Usure/Déchirement..."
                                   fieldKey="pointsAttache.plastiques"
-                                />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('pointsAttache.plastiques')}
-                                  >
+                                >
                                     ajouter commentaires
-                                  </button>
-                                  <StatusSelect
+                                </button>
+                                <StatusSelect
                                     currentStatus={formData.inspectionData.pointsAttache.plastiques.status}
                                     onStatusChange={(status) => handleInspectionChange('pointsAttache', 'plastiques', status)}
-                                  />
-                                </div>
-                              </div>
-                              <CommentSection
+                              />
+                            </div>
+                            </div>
+                            <CommentSection
                                 fieldKey="pointsAttache.plastiques"
                                 section="pointsAttache"
                                 field="plastiques"
@@ -1703,30 +1703,30 @@ export default function NouvelleInspectionPage() {
                         <div className="space-y-2">
                           {/* Grand titre avec Marque/Fissure/Usure/Déformation/Corrosion... */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-gray-900">
                               5. ETAT BOUCLES DE REGLAGES
-                            </div>
+                          </div>
                             <div className="space-y-1">
-                              <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1">
                                 <ClickableText
                                   text="Marque/Fissure/Usure/Déformation/Corrosion..."
                                   fieldKey="etatBouclesReglages.fonctionnementBoucles"
                                 />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('etatBouclesReglages.fonctionnementBoucles')}
-                                  >
+                                >
                                     ajouter commentaires
-                                  </button>
-                                  <StatusSelect
+                                </button>
+                                <StatusSelect
                                     currentStatus={formData.inspectionData.etatBouclesReglages.fonctionnementBoucles.status}
                                     onStatusChange={(status) => handleInspectionChange('etatBouclesReglages', 'fonctionnementBoucles', status)}
-                                  />
-                                </div>
-                              </div>
-                              <CommentSection
+                              />
+                            </div>
+                            </div>
+                            <CommentSection
                                 fieldKey="etatBouclesReglages.fonctionnementBoucles"
                                 section="etatBouclesReglages"
                                 field="fonctionnementBoucles"
@@ -1743,10 +1743,10 @@ export default function NouvelleInspectionPage() {
                                 <StatusSelect
                                   currentStatus={formData.inspectionData.etatBouclesReglages.passageSangles.status}
                                   onStatusChange={(status) => handleInspectionChange('etatBouclesReglages', 'passageSangles', status)}
-                                />
-                              </div>
-                            </div>
+                            />
                           </div>
+                        </div>
+                      </div>
 
                           {/* Fonctionnement des boucles */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
@@ -1766,45 +1766,77 @@ export default function NouvelleInspectionPage() {
                       {/* 6. ETAT ELEMENTS DE CONFORT */}
                       <div className="border-b border-gray-200 pb-4">
                         <div className="space-y-2">
-                          {/* Grand titre avec Passants élastiques ou plastiques */}
+                          {/* Grand titre avec Mousses */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm font-medium text-gray-900">
-                              6. ETAT ELEMENTS DE CONFORT - Passants élastiques ou plastiques:
-                            </div>
+                          <div className="text-xs font-medium text-gray-900">
+                              6. ETAT ELEMENTS DE CONFORT - Mousses (ceinture; cuisses, bretelles):
+                          </div>
                             <div className="space-y-1">
-                              <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1">
+                                <ClickableText
+                                  text="Coupure / Déchirement / Usure…"
+                                  fieldKey="etatElementsConfort.mousses"
+                                />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[9px] text-red-600 hover:underline"
+                                    onClick={() => toggleCommentInput('etatElementsConfort.mousses')}
+                                >
+                                    ajouter commentaires
+                                </button>
+                                <StatusSelect
+                                    currentStatus={formData.inspectionData.etatElementsConfort.mousses.status}
+                                    onStatusChange={(status) => handleInspectionChange('etatElementsConfort', 'mousses', status)}
+                              />
+                            </div>
+                            </div>
+                            <CommentSection
+                                fieldKey="etatElementsConfort.mousses"
+                                section="etatElementsConfort"
+                                field="mousses"
+                                value={formData.inspectionData.etatElementsConfort.mousses}
+                              />
+                        </div>
+                      </div>
+
+                          {/* Passants élastiques ou plastiques */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Passants élastiques ou plastiques:</div>
+                            <div className="space-y-1">
+                            <div className="flex flex-col gap-1">
                                 <ClickableText
                                   text="Coupure/Déchirement/Usure..."
                                   fieldKey="etatElementsConfort.passantsElastiques"
                                 />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[9px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('etatElementsConfort.passantsElastiques')}
-                                  >
+                                >
                                     ajouter commentaires
-                                  </button>
-                                  <StatusSelect
+                                </button>
+                                <StatusSelect
                                     currentStatus={formData.inspectionData.etatElementsConfort.passantsElastiques.status}
                                     onStatusChange={(status) => handleInspectionChange('etatElementsConfort', 'passantsElastiques', status)}
-                                  />
-                                </div>
-                              </div>
-                              <CommentSection
+                              />
+                            </div>
+                            </div>
+                            <CommentSection
                                 fieldKey="etatElementsConfort.passantsElastiques"
                                 section="etatElementsConfort"
                                 field="passantsElastiques"
                                 value={formData.inspectionData.etatElementsConfort.passantsElastiques}
                               />
-                            </div>
-                          </div>
+                        </div>
+                      </div>
 
                           {/* Elastiques de cuisses */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Elastiques de cuisses:</div>
+                            <div className="text-xs text-gray-700 ml-2">- Elastiques de cuisses:</div>
                             <div className="space-y-1">
-                              <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1">
                                 <ClickableText
                                   text="Coupure/Déchirement/Usure..."
                                   fieldKey="etatElementsConfort.elastiquesCuisses"
@@ -1812,7 +1844,7 @@ export default function NouvelleInspectionPage() {
                                 <div className="flex items-center justify-end gap-2">
                                   <button
                                     type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                                    className="text-[9px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('etatElementsConfort.elastiquesCuisses')}
                                   >
                                     ajouter commentaires
@@ -1834,28 +1866,28 @@ export default function NouvelleInspectionPage() {
 
                           {/* Portes matériels */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Portes matériels:</div>
+                            <div className="text-xs text-gray-700 ml-2">- Portes matériels:</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
                                 <ClickableText
                                   text="Coupure/Déchirement/Usure..."
                                   fieldKey="etatElementsConfort.portesMateriels"
                                 />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[9px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('etatElementsConfort.portesMateriels')}
-                                  >
+                                >
                                     ajouter commentaires
-                                  </button>
-                                  <StatusSelect
+                                </button>
+                                <StatusSelect
                                     currentStatus={formData.inspectionData.etatElementsConfort.portesMateriels.status}
                                     onStatusChange={(status) => handleInspectionChange('etatElementsConfort', 'portesMateriels', status)}
-                                  />
-                                </div>
-                              </div>
-                              <CommentSection
+                              />
+                            </div>
+                            </div>
+                            <CommentSection
                                 fieldKey="etatElementsConfort.portesMateriels"
                                 section="etatElementsConfort"
                                 field="portesMateriels"
@@ -1871,37 +1903,37 @@ export default function NouvelleInspectionPage() {
                         <div className="space-y-2">
                           {/* Grand titre avec Corps du mousqueton */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-gray-900">
                               7. ETAT CONNECTEUR TORSE / CUISSARD (si il y a) - Corps du mousqueton (connecteur):
-                            </div>
+                          </div>
                             <div className="space-y-1">
-                              <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1">
                                 <ClickableText
                                   text="Marque/Fissure/Usure/Déformation/Corrosion..."
                                   fieldKey="etatConnecteurTorseCuissard.corpsMousqueton"
                                 />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('etatConnecteurTorseCuissard.corpsMousqueton')}
-                                  >
+                                >
                                     ajouter commentaires
-                                  </button>
-                                  <StatusSelect
+                                </button>
+                                <StatusSelect
                                     currentStatus={formData.inspectionData.etatConnecteurTorseCuissard.corpsMousqueton.status}
                                     onStatusChange={(status) => handleInspectionChange('etatConnecteurTorseCuissard', 'corpsMousqueton', status)}
-                                  />
-                                </div>
-                              </div>
-                              <CommentSection
+                              />
+                            </div>
+                          </div>
+                            <CommentSection
                                 fieldKey="etatConnecteurTorseCuissard.corpsMousqueton"
                                 section="etatConnecteurTorseCuissard"
                                 field="corpsMousqueton"
                                 value={formData.inspectionData.etatConnecteurTorseCuissard.corpsMousqueton}
-                              />
-                            </div>
+                            />
                           </div>
+                        </div>
 
                           {/* Doigt du mousqueton */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
@@ -1924,8 +1956,8 @@ export default function NouvelleInspectionPage() {
                                     currentStatus={formData.inspectionData.etatConnecteurTorseCuissard.doigtMousqueton.status}
                                     onStatusChange={(status) => handleInspectionChange('etatConnecteurTorseCuissard', 'doigtMousqueton', status)}
                                   />
-                                </div>
-                              </div>
+                      </div>
+                          </div>
                               <CommentSection
                                 fieldKey="etatConnecteurTorseCuissard.doigtMousqueton"
                                 section="etatConnecteurTorseCuissard"
@@ -1944,21 +1976,21 @@ export default function NouvelleInspectionPage() {
                                   text="Marque/Déformation/Fissure/Usure/Verrouillage - Déverrouillage manuel ou automatique..."
                                   fieldKey="etatConnecteurTorseCuissard.bagueVerrouillage"
                                 />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('etatConnecteurTorseCuissard.bagueVerrouillage')}
-                                  >
+                                >
                                     ajouter commentaires
-                                  </button>
-                                  <StatusSelect
+                                </button>
+                                <StatusSelect
                                     currentStatus={formData.inspectionData.etatConnecteurTorseCuissard.bagueVerrouillage.status}
                                     onStatusChange={(status) => handleInspectionChange('etatConnecteurTorseCuissard', 'bagueVerrouillage', status)}
-                                  />
-                                </div>
-                              </div>
-                              <CommentSection
+                              />
+                            </div>
+                            </div>
+                            <CommentSection
                                 fieldKey="etatConnecteurTorseCuissard.bagueVerrouillage"
                                 section="etatConnecteurTorseCuissard"
                                 field="bagueVerrouillage"
@@ -1974,94 +2006,94 @@ export default function NouvelleInspectionPage() {
                         <div className="space-y-2">
                           {/* Grand titre avec Corps et ses trous de connexion */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-gray-900">
                               8. BLOQUEUR CROLL - Corps et ses trous de connexion:
-                            </div>
+                          </div>
                             <div className="space-y-1">
-                              <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1">
                                 <ClickableText
                                   text="Marque/Fissure/Déformation/Usure/Corrosion/..."
                                   fieldKey="bloqueurCroll.corpsTrousConnexion"
                                 />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('bloqueurCroll.corpsTrousConnexion')}
-                                  >
+                                >
                                     ajouter commentaires
-                                  </button>
-                                  <StatusSelect
+                                </button>
+                                <StatusSelect
                                     currentStatus={formData.inspectionData.bloqueurCroll.corpsTrousConnexion.status}
                                     onStatusChange={(status) => handleInspectionChange('bloqueurCroll', 'corpsTrousConnexion', status)}
-                                  />
-                                </div>
-                              </div>
-                              <CommentSection
+                              />
+                            </div>
+                            </div>
+                            <CommentSection
                                 fieldKey="bloqueurCroll.corpsTrousConnexion"
                                 section="bloqueurCroll"
                                 field="corpsTrousConnexion"
                                 value={formData.inspectionData.bloqueurCroll.corpsTrousConnexion}
                               />
-                            </div>
-                          </div>
+                        </div>
+                      </div>
 
                           {/* Gachette */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
                             <div className="text-sm text-gray-700 ml-2">- Gachette:</div>
                             <div className="space-y-1">
-                              <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1">
                                 <ClickableText
                                   text="Marque/Fissure/Déformation/Usure/Corrosion/ Présence de toutes les dents/Propreté de toutes les dents / Axe de la gâchette et du rivet (jeu, marque, déformation, fissure, usure, corrosion) / Rotation et ressort de rappel de la gâchette ..."
                                   fieldKey="bloqueurCroll.gachette"
                                 />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('bloqueurCroll.gachette')}
-                                  >
+                                >
                                     ajouter commentaires
-                                  </button>
-                                  <StatusSelect
+                                </button>
+                                <StatusSelect
                                     currentStatus={formData.inspectionData.bloqueurCroll.gachette.status}
                                     onStatusChange={(status) => handleInspectionChange('bloqueurCroll', 'gachette', status)}
-                                  />
-                                </div>
-                              </div>
-                              <CommentSection
+                              />
+                            </div>
+                            </div>
+                            <CommentSection
                                 fieldKey="bloqueurCroll.gachette"
                                 section="bloqueurCroll"
                                 field="gachette"
                                 value={formData.inspectionData.bloqueurCroll.gachette}
                               />
-                            </div>
-                          </div>
+                        </div>
+                      </div>
 
                           {/* Taquet de sécurité */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
                             <div className="text-sm text-gray-700 ml-2">- Taquet de sécurité</div>
                             <div className="space-y-1">
-                              <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1">
                                 <ClickableText
                                   text="Marque/Déformation/Fissure/Usure/Corrosion Blocage taquet fonctionnement..."
                                   fieldKey="bloqueurCroll.taquetSecurite"
                                 />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    className="text-[10px] text-red-600 hover:underline"
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
                                     onClick={() => toggleCommentInput('bloqueurCroll.taquetSecurite')}
-                                  >
-                                    Ajouter commentaires
-                                  </button>
-                                  <StatusSelect
+                                >
+                                  Ajouter commentaires
+                                </button>
+                                <StatusSelect
                                     currentStatus={formData.inspectionData.bloqueurCroll.taquetSecurite.status}
                                     onStatusChange={(status) => handleInspectionChange('bloqueurCroll', 'taquetSecurite', status)}
-                                  />
-                                </div>
-                              </div>
-                              <CommentSection
+                              />
+                            </div>
+                            </div>
+                            <CommentSection
                                 fieldKey="bloqueurCroll.taquetSecurite"
                                 section="bloqueurCroll"
                                 field="taquetSecurite"
@@ -2108,10 +2140,10 @@ export default function NouvelleInspectionPage() {
                         </div>
                         <div className="space-y-4">
                           {/* Zone pour le certificat/document chargé */}
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-2">
                               Certificat de contrôle (PDF)
-                            </label>
+                          </label>
                             <div className="flex space-x-2">
                               <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center relative">
                                 {isUploadingCertificate ? (
@@ -2122,28 +2154,28 @@ export default function NouvelleInspectionPage() {
                                     </div>
                                   </div>
                                 ) : null}
-                                {formData.verificateurSignaturePdf ? (
-                                  <div className="text-green-600 text-sm">
-                                    <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
-                                    <a
-                                      href={formData.verificateurSignaturePdf}
-                                      target="_blank"
-                                      className="text-blue-600 hover:text-blue-800 underline text-xs"
-                                    >
+                              {formData.verificateurSignaturePdf ? (
+                                <div className="text-green-600 text-sm">
+                                  <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                                  <a 
+                                    href={formData.verificateurSignaturePdf} 
+                                    target="_blank" 
+                                    className="text-blue-600 hover:text-blue-800 underline text-xs"
+                                  >
                                       <div>Certificat de contrôle</div>
-                                    </a>
-                                  </div>
-                                ) : (
-                                  <div className="text-gray-400 text-sm">
-                                    <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                                  </a>
+                                </div>
+                              ) : (
+                                <div className="text-gray-400 text-sm">
+                                  <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
                                     <div>Aucun certificat chargé</div>
-                                  </div>
-                                )}
-                              </div>
+                                </div>
+                              )}
+                            </div>
                               <div className="flex items-center">
-                                <button
-                                  type="button"
-                                  onClick={() => signatureInputRef.current?.click()}
+                            <button
+                              type="button"
+                              onClick={() => signatureInputRef.current?.click()}
                                   disabled={isUploadingCertificate}
                                   className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
                                     isUploadingCertificate
@@ -2158,16 +2190,16 @@ export default function NouvelleInspectionPage() {
                                       <span className="text-xs">Chargement...</span>
                                     </>
                                   ) : (
-                                    <DocumentIcon className="h-4 w-4" />
+                              <DocumentIcon className="h-4 w-4" />
                                   )}
-                                </button>
+                            </button>
                               </div>
                             </div>
                           </div>
 
                           {/* Zone pour la signature digitale */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs font-medium text-gray-700 mb-2">
                               Signature digitale
                             </label>
                             <div className="flex space-x-2">
@@ -2199,14 +2231,14 @@ export default function NouvelleInspectionPage() {
                               </div>
                             </div>
                           </div>
-                        </div>
-                        <input
-                          ref={signatureInputRef}
-                          type="file"
-                          accept=".pdf"
-                          onChange={handleSignatureUpload}
-                          className="hidden"
-                        />
+                          </div>
+                          <input
+                            ref={signatureInputRef}
+                            type="file"
+                            accept=".pdf"
+                            onChange={handleSignatureUpload}
+                            className="hidden"
+                          />
                       </div>
                     </div>
                   </div>

@@ -940,19 +940,37 @@ export default function ViewInspectionPage() {
                 {/* 6. ETAT ELEMENTS DE CONFORT */}
                 <div className="border-b border-gray-200 pb-2">
                   <div className="space-y-2">
-                    {/* Grand titre avec Passants élastiques ou plastiques */}
+                    {/* Grand titre avec Mousses */}
                     <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                      <div className="text-xs font-bold text-gray-900">
-                        6. ETAT ELEMENTS DE CONFORT - Passants élastiques ou plastiques:
+                      <div className="text-[10px] font-bold text-gray-900">
+                        6. ETAT ELEMENTS DE CONFORT - Mousses (ceinture; cuisses, bretelles):
                       </div>
                       <div className="space-y-1">
                         <div className="bg-gray-100 p-1">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Coupure/Déchirement/Usure...", "etatElementsConfort.passantsElastiques")}</span>
+                            <span className="text-[10px] text-gray-700 flex-1">{renderCrossedOutText("Coupure / Déchirement / Usure…", "etatElementsConfort.mousses")}</span>
+                            <StatusIndicator status={inspection.etatElementsConfort?.mousses?.status || 'V'} />
+                          </div>
+                          {inspection.etatElementsConfort?.mousses?.comment && (
+                            <div className="text-[9px] text-blue-600 italic ml-4 mt-1">
+                              Commentaire: {inspection.etatElementsConfort.mousses.comment}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Passants élastiques ou plastiques */}
+                    <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                      <div className="text-[10px] text-gray-700 ml-2">- Passants élastiques ou plastiques:</div>
+                      <div className="space-y-1">
+                        <div className="bg-gray-100 p-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] text-gray-700 flex-1">{renderCrossedOutText("Coupure/Déchirement/Usure...", "etatElementsConfort.passantsElastiques")}</span>
                             <StatusIndicator status={inspection.etatElementsConfort?.passantsElastiques?.status || 'V'} />
                           </div>
                           {inspection.etatElementsConfort?.passantsElastiques?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                            <div className="text-[9px] text-blue-600 italic ml-4 mt-1">
                               Commentaire: {inspection.etatElementsConfort.passantsElastiques.comment}
                             </div>
                           )}
@@ -962,15 +980,15 @@ export default function ViewInspectionPage() {
 
                     {/* Elastiques de cuisses */}
                     <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                      <div className="text-xs text-gray-700 ml-2">- Elastiques de cuisses:</div>
+                      <div className="text-[10px] text-gray-700 ml-2">- Elastiques de cuisses:</div>
                       <div className="space-y-1">
                         <div className="bg-gray-100 p-1">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Coupure/Déchirement/Usure...", "etatElementsConfort.elastiquesCuisses")}</span>
+                            <span className="text-[10px] text-gray-700 flex-1">{renderCrossedOutText("Coupure/Déchirement/Usure...", "etatElementsConfort.elastiquesCuisses")}</span>
                             <StatusIndicator status={inspection.etatElementsConfort?.elastiquesCuisses?.status || 'V'} />
                           </div>
                           {inspection.etatElementsConfort?.elastiquesCuisses?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                            <div className="text-[9px] text-blue-600 italic ml-4 mt-1">
                               Commentaire: {inspection.etatElementsConfort.elastiquesCuisses.comment}
                             </div>
                           )}
@@ -980,15 +998,15 @@ export default function ViewInspectionPage() {
 
                     {/* Portes matériels */}
                     <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                      <div className="text-xs text-gray-700 ml-2">- Portes matériels:</div>
+                      <div className="text-[10px] text-gray-700 ml-2">- Portes matériels:</div>
                       <div className="space-y-1">
                         <div className="bg-gray-100 p-1">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Coupure/Déchirement/Usure...", "etatElementsConfort.portesMateriels")}</span>
+                            <span className="text-[10px] text-gray-700 flex-1">{renderCrossedOutText("Coupure/Déchirement/Usure...", "etatElementsConfort.portesMateriels")}</span>
                             <StatusIndicator status={inspection.etatElementsConfort?.portesMateriels?.status || 'V'} />
                           </div>
                           {inspection.etatElementsConfort?.portesMateriels?.comment && (
-                            <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                            <div className="text-[9px] text-blue-600 italic ml-4 mt-1">
                               Commentaire: {inspection.etatElementsConfort.portesMateriels.comment}
                             </div>
                           )}
