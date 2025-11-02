@@ -234,34 +234,54 @@ export async function POST(request: NextRequest) {
         console.log('PDF - Texte extrait complet:', extractedText);
         console.log('PDF - Longueur du texte:', extractedText.length);
         
-        // Rechercher les normes avec plusieurs approches
-        let normes = 'Normes non détectées';
-        
-        // Approche 1: Recherche simple de "EN" dans le texte
-        if (extractedText.toLowerCase().includes('en')) {
-          console.log('PDF - Texte contient "EN", recherche des normes...');
+        // Fonction pour normaliser et dédupliquer les normes
+        const normalizeAndDeduplicateNormes = (matches: string[]): string => {
+          // Map pour stocker les normes dédupliquées (clé = numéro de base, valeur = version complète avec année)
+          const normesMap = new Map<string, string>();
           
-          // Diviser le texte en lignes pour analyser
-          const lines = extractedText.split('\n');
-          console.log('PDF - Lignes trouvées:', lines.length);
-          
-          const normesFound: string[] = [];
-          lines.forEach((line: string, index: number) => {
-            console.log(`PDF - Ligne ${index}:`, line);
+          matches.forEach((norme: string) => {
+            const trimmed = norme.trim();
+            if (!trimmed) return;
             
-            // Rechercher EN suivi de chiffres
-            const enMatch = line.match(/EN\s*\d+/gi);
-            if (enMatch) {
-              console.log(`PDF - Norme trouvée dans la ligne ${index}:`, enMatch);
-              normesFound.push(...enMatch);
+            // Extraire le numéro de base (ex: "EN 361" de "EN 361: 2002")
+            const baseMatch = trimmed.match(/^(EN|ISO|CE|NF)\s*(\d+)/i);
+            if (!baseMatch) return;
+            
+            const prefix = baseMatch[1].toUpperCase();
+            const number = baseMatch[2];
+            const baseKey = `${prefix} ${number}`;
+            
+            // Normaliser le format : EN 361: 2002 ou EN 361 : 2002 → EN 361: 2002
+            let normalized = trimmed
+              .replace(/\s*:\s*/g, ': ') // Normaliser les espaces autour des deux-points
+              .replace(/\s+/g, ' ') // Normaliser les espaces multiples
+              .trim();
+            
+            // Si on a une année, s'assurer qu'elle est bien formatée
+            const yearMatch = normalized.match(/:\s*(\d{4})/);
+            if (yearMatch) {
+              normalized = normalized.replace(/:\s*\d{4}/, `: ${yearMatch[1]}`);
+            }
+            
+            // Si cette norme n'existe pas encore, la garder
+            if (!normesMap.has(baseKey)) {
+              normesMap.set(baseKey, normalized);
+            } else {
+              // Si elle existe déjà, garder la version avec l'année si disponible
+              const existing = normesMap.get(baseKey) || '';
+              if (normalized.includes(':') && !existing.includes(':')) {
+                normesMap.set(baseKey, normalized);
+              }
             }
           });
           
-          if (normesFound.length > 0) {
-            normes = normesFound.join(' ');
-            console.log('PDF - Normes trouvées (approche simple):', normes);
-          }
-        }
+          // Retourner les normes dédupliquées
+          return Array.from(normesMap.values()).join(' ');
+        };
+        
+        // Rechercher les normes avec plusieurs approches
+        let normes = 'Normes non détectées';
+        const allNormesMatches: string[] = [];
         
         // Pattern 1: EN 397 :2012 + A1 :2012
         const pattern1 = /(?:EN|ISO|CE|NF)\s*\d+\s*:\s*\d{4}\s*\+\s*[A-Z]\d+\s*:\s*\d{4}/gi;
@@ -275,34 +295,27 @@ export async function POST(request: NextRequest) {
         const pattern5 = /(?:EN|ISO|CE|NF)\s*\d+/gi;
         
         const allPatterns = [pattern1, pattern2, pattern3, pattern4, pattern5];
-        const allMatches: string[] = [];
         
         allPatterns.forEach(pattern => {
           const matches = extractedText.match(pattern);
           if (matches) {
-            allMatches.push(...matches);
+            allNormesMatches.push(...matches);
           }
         });
         
-        if (allMatches.length > 0) {
-          // Dédupliquer les normes en gardant l'ordre d'apparition
-          const uniqueNormes = [...new Set(allMatches.map((norme: string) => norme.trim()))];
-          normes = uniqueNormes
-            .filter((norme: string) => norme.length > 0)
-            .join(' ');
-          console.log('PDF - Normes trouvées (patterns avancés):', normes);
-        }
-        
-        // Approche 3: Si toujours rien trouvé, recherche très large
-        if (normes === 'Normes non détectées') {
+        // Si toujours rien trouvé, recherche très large
+        if (allNormesMatches.length === 0) {
           console.log('PDF - Tentative de recherche très large...');
           const veryBroadMatch = extractedText.match(/EN\s*\d+/gi);
           if (veryBroadMatch) {
-            // Dédupliquer aussi pour la recherche large
-            const uniqueBroadNormes = [...new Set(veryBroadMatch.map((norme: string) => norme.trim()))];
-            normes = uniqueBroadNormes.join(' ');
-            console.log('PDF - Normes trouvées (recherche large):', normes);
+            allNormesMatches.push(...veryBroadMatch);
           }
+        }
+        
+        if (allNormesMatches.length > 0) {
+          // Normaliser et dédupliquer les normes
+          normes = normalizeAndDeduplicateNormes(allNormesMatches);
+          console.log('PDF - Normes trouvées et dédupliquées:', normes);
         }
         
         // Rechercher les références de documents
