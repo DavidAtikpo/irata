@@ -844,6 +844,14 @@ export default function EditInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validation de la taille du fichier (max 4.5 MB pour éviter l'erreur 413)
+    const maxSize = 4.5 * 1024 * 1024; // 4.5 MB en bytes
+    if (file.size > maxSize) {
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale : 4.5 MB. Veuillez compresser le PDF avant de l'uploader.`);
+      setIsUploadingNormes(false);
+      return;
+    }
+
     setIsUploadingNormes(true);
     try {
       const formData = new FormData();
@@ -878,10 +886,17 @@ export default function EditInspectionPage() {
           console.log('PDF - Confiance:', data.extractedData.confidence);
         }
       } else {
-        throw new Error('Erreur lors de l\'upload du PDF');
+        // Gestion spécifique de l'erreur 413 (Payload Too Large)
+        if (response.status === 413) {
+          throw new Error(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale : 4.5 MB. Veuillez compresser le PDF avant de l'uploader. Vous pouvez utiliser un outil en ligne comme https://www.ilovepdf.com/compress_pdf`);
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload du PDF' }));
+          throw new Error(errorData.error || 'Erreur lors de l\'upload du PDF');
+        }
       }
     } catch (error) {
-      setError('Erreur lors de l\'upload du PDF');
+      console.error('Erreur upload PDF:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload du PDF');
     } finally {
       setIsUploadingNormes(false);
     }
@@ -891,6 +906,14 @@ export default function EditInspectionPage() {
   const handleDocumentsUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Validation de la taille du fichier (max 4.5 MB pour éviter l'erreur 413)
+    const maxSize = 4.5 * 1024 * 1024; // 4.5 MB en bytes
+    if (file.size > maxSize) {
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale : 4.5 MB. Veuillez compresser le PDF avant de l'uploader.`);
+      setIsUploadingDocuments(false);
+      return;
+    }
 
     setIsUploadingDocuments(true);
     try {
@@ -929,11 +952,17 @@ export default function EditInspectionPage() {
           console.log('Documents - Confiance:', data.extractedData.confidence);
         }
       } else {
-        throw new Error('Erreur lors de l\'upload du PDF');
+        // Gestion spécifique de l'erreur 413 (Payload Too Large)
+        if (response.status === 413) {
+          throw new Error(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale : 4.5 MB. Veuillez compresser le PDF avant de l'uploader. Vous pouvez utiliser un outil en ligne comme https://www.ilovepdf.com/compress_pdf`);
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload du PDF' }));
+          throw new Error(errorData.error || 'Erreur lors de l\'upload du PDF');
+        }
       }
     } catch (error) {
       console.error('Erreur upload documents:', error);
-      setError('Erreur lors de l\'upload du PDF');
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload du PDF');
     } finally {
       setIsUploadingDocuments(false);
     }
