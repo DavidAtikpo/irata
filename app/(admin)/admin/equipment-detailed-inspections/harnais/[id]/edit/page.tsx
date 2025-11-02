@@ -672,6 +672,14 @@ export default function EditInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validation de la taille du fichier (max 5 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 5 * 1024 * 1024; // 5 MB en bytes
+    if (file.size > maxSize) {
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 5 MB. Veuillez compresser l'image avant de l'uploader.`);
+      setIsUploading(false);
+      return;
+    }
+
     setIsUploading(true);
     try {
       const formData = new FormData();
@@ -687,10 +695,17 @@ export default function EditInspectionPage() {
         const data = await response.json();
         setFormData(prev => ({ ...prev, photo: data.url }));
       } else {
-        throw new Error('Erreur lors de l\'upload de la photo');
+        // Gestion spécifique de l'erreur 413 (Payload Too Large)
+        if (response.status === 413) {
+          throw new Error(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Le serveur a refusé l'upload. Veuillez compresser l'image avant de l'uploader.`);
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload de la photo' }));
+          throw new Error(errorData.error || 'Erreur lors de l\'upload de la photo');
+        }
       }
     } catch (error) {
-      setError('Erreur lors de l\'upload de la photo');
+      console.error('Erreur upload photo:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload de la photo');
     } finally {
       setIsUploading(false);
     }
@@ -700,6 +715,14 @@ export default function EditInspectionPage() {
   const handleQRCodeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Validation de la taille du fichier (max 5 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 5 * 1024 * 1024; // 5 MB en bytes
+    if (file.size > maxSize) {
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 5 MB. Veuillez compresser l'image avant de l'uploader.`);
+      setIsUploading(false);
+      return;
+    }
 
     setIsUploading(true);
     try {
@@ -830,10 +853,17 @@ export default function EditInspectionPage() {
           setError('Bibliothèque QR Scanner non disponible');
         }
       } else {
-        throw new Error('Erreur lors de l\'upload du QR code');
+        // Gestion spécifique de l'erreur 413 (Payload Too Large)
+        if (response.status === 413) {
+          throw new Error(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Le serveur a refusé l'upload. Veuillez compresser l'image avant de l'uploader.`);
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload du QR code' }));
+          throw new Error(errorData.error || 'Erreur lors de l\'upload du QR code');
+        }
       }
     } catch (error) {
-      setError('Erreur lors de l\'upload du QR code');
+      console.error('Erreur upload QR code:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload du QR code');
     } finally {
       setIsUploading(false);
     }
@@ -973,6 +1003,14 @@ export default function EditInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validation de la taille du fichier (max 5 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 5 * 1024 * 1024; // 5 MB en bytes
+    if (file.size > maxSize) {
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 5 MB. Veuillez compresser le fichier avant de l'uploader.`);
+      setIsUploadingDateAchat(false);
+      return;
+    }
+
     setIsUploadingDateAchat(true);
     try {
       const formDataUpload = new FormData();
@@ -989,10 +1027,17 @@ export default function EditInspectionPage() {
         // Stocker seulement l'URL de l'image/PDF, sans extraction de date
         setFormData(prev => ({ ...prev, dateAchatImage: data.url || data.extractedData?.dateAchatUrl || prev.dateAchatImage }));
       } else {
-        throw new Error('Erreur lors de l\'upload du fichier');
+        // Gestion spécifique de l'erreur 413 (Payload Too Large)
+        if (response.status === 413) {
+          throw new Error(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Le serveur a refusé l'upload. Veuillez compresser le fichier avant de l'uploader.`);
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload du fichier' }));
+          throw new Error(errorData.error || 'Erreur lors de l\'upload du fichier');
+        }
       }
     } catch (error) {
-      setError('Erreur lors de l\'upload du fichier');
+      console.error('Erreur upload date achat:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload du fichier');
     } finally {
       setIsUploadingDateAchat(false);
     }
