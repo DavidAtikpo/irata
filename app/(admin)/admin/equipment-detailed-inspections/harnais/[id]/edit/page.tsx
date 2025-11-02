@@ -672,10 +672,10 @@ export default function EditInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validation de la taille du fichier (max 5 MB pour éviter l'erreur 413, avec marge de sécurité)
-    const maxSize = 5 * 1024 * 1024; // 5 MB en bytes
+    // Validation de la taille du fichier (max 6 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 6 * 1024 * 1024; // 6 MB en bytes
     if (file.size > maxSize) {
-      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 5 MB. Veuillez compresser l'image avant de l'uploader.`);
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 6 MB. Veuillez compresser l'image avant de l'uploader.`);
       setIsUploading(false);
       return;
     }
@@ -716,10 +716,10 @@ export default function EditInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validation de la taille du fichier (max 5 MB pour éviter l'erreur 413, avec marge de sécurité)
-    const maxSize = 5 * 1024 * 1024; // 5 MB en bytes
+    // Validation de la taille du fichier (max 6 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 6 * 1024 * 1024; // 6 MB en bytes
     if (file.size > maxSize) {
-      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 5 MB. Veuillez compresser l'image avant de l'uploader.`);
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 6 MB. Veuillez compresser l'image avant de l'uploader.`);
       setIsUploading(false);
       return;
     }
@@ -874,10 +874,10 @@ export default function EditInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validation de la taille du fichier (max 5 MB pour éviter l'erreur 413, avec marge de sécurité)
-    const maxSize = 5 * 1024 * 1024; // 5 MB en bytes
+    // Validation de la taille du fichier (max 10 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 10 * 1024 * 1024; // 10 MB en bytes
     if (file.size > maxSize) {
-      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 5 MB. Veuillez compresser le PDF avant de l'uploader.`);
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 10 MB. Veuillez compresser le PDF avant de l'uploader.`);
       setIsUploadingNormes(false);
       return;
     }
@@ -937,10 +937,10 @@ export default function EditInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validation de la taille du fichier (max 5 MB pour éviter l'erreur 413, avec marge de sécurité)
-    const maxSize = 5 * 1024 * 1024; // 5 MB en bytes
+    // Validation de la taille du fichier (max 10 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 10 * 1024 * 1024; // 10 MB en bytes
     if (file.size > maxSize) {
-      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 5 MB. Veuillez compresser le PDF avant de l'uploader.`);
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 10 MB. Veuillez compresser le PDF avant de l'uploader.`);
       setIsUploadingDocuments(false);
       return;
     }
@@ -1003,10 +1003,10 @@ export default function EditInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validation de la taille du fichier (max 5 MB pour éviter l'erreur 413, avec marge de sécurité)
-    const maxSize = 5 * 1024 * 1024; // 5 MB en bytes
+    // Validation de la taille du fichier (max 6 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 6 * 1024 * 1024; // 6 MB en bytes
     if (file.size > maxSize) {
-      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 5 MB. Veuillez compresser le fichier avant de l'uploader.`);
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 6 MB. Veuillez compresser le fichier avant de l'uploader.`);
       setIsUploadingDateAchat(false);
       return;
     }
@@ -1058,6 +1058,14 @@ export default function EditInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validation de la taille du fichier (max 10 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 10 * 1024 * 1024; // 10 MB en bytes
+    if (file.size > maxSize) {
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 10 MB. Veuillez compresser le PDF avant de l'uploader.`);
+      setIsUploadingCertificate(false);
+      return;
+    }
+
     setIsUploadingCertificate(true);
     try {
       const formDataUpload = new FormData();
@@ -1077,10 +1085,17 @@ export default function EditInspectionPage() {
         
         await updateAllEquipmentCertificates(certificateUrl);
       } else {
-        throw new Error('Erreur lors de l\'upload du certificat');
+        // Gestion spécifique de l'erreur 413 (Payload Too Large)
+        if (response.status === 413) {
+          throw new Error(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Le serveur a refusé l'upload. Veuillez compresser le PDF avant de l'uploader.`);
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload du certificat' }));
+          throw new Error(errorData.error || 'Erreur lors de l\'upload du certificat');
+        }
       }
     } catch (error) {
-      setError('Erreur lors de l\'upload du certificat');
+      console.error('Erreur upload certificat:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload du certificat');
     } finally {
       setIsUploadingCertificate(false);
     }
