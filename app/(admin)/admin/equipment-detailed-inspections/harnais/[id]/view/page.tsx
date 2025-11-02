@@ -365,12 +365,12 @@ export default function ViewInspectionPage() {
 
   // Fonction pour rendre les documents de référence cliquables
   const renderClickableReferences = (text: string) => {
-    if (!text || !inspection.referenceUrl) return text;
+    if (!text || !inspection.pdfUrl) return text;
     
     const referencePattern = /(notice|procédure|manuel|guide|instruction|référence|document)/gi;
     
     return text.replace(referencePattern, (match) => {
-      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(inspection.referenceUrl)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF">${match}</a>`;
+      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(inspection.pdfUrl)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF">${match}</a>`;
     });
   };
 

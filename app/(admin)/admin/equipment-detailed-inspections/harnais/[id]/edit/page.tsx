@@ -907,25 +907,32 @@ export default function EditInspectionPage() {
         const data = await response.json();
         
         // Auto-remplissage basé sur l'extraction du PDF pour les documents de référence
-        if (data.extractedData) {
-          setFormData(prev => ({
-            ...prev,
-            // Seulement le champ documents de référence
-            documentsReference: data.extractedData.reference || prev.documentsReference,
-            // Ne pas écraser les autres données
-          }));
-          
-          // Afficher les informations d'extraction
-          if (data.extractedData.rawText) {
-            console.log('Documents - Texte extrait:', data.extractedData.rawText);
-            console.log('Documents - Références détectées:', data.extractedData.reference);
-            console.log('Documents - Confiance:', data.extractedData.confidence);
-          }
+        // Sauvegarder aussi l'URL du PDF uploadé
+        const pdfUrlToSave = data.extractedData?.pdfUrl || data.extractedData?.cloudinaryUrl || data.extractedData?.referenceUrl || data.url;
+        
+        // Toujours mettre à jour le formulaire, même si extractedData n'existe pas
+        setFormData(prev => ({
+          ...prev,
+          // Sauvegarder l'URL du PDF des documents de référence (avec plusieurs fallbacks)
+          pdfUrl: pdfUrlToSave || prev.pdfUrl,
+          // Extraire les documents de référence (avec fallback)
+          documentsReference: data.extractedData?.reference || prev.documentsReference,
+          // Ne pas écraser les autres données
+        }));
+        
+        // Afficher les informations d'extraction
+        console.log('Documents - Données reçues:', data);
+        console.log('Documents - URL sauvegardée dans pdfUrl:', pdfUrlToSave);
+        if (data.extractedData?.rawText) {
+          console.log('Documents - Texte extrait:', data.extractedData.rawText);
+          console.log('Documents - Références détectées:', data.extractedData.reference);
+          console.log('Documents - Confiance:', data.extractedData.confidence);
         }
       } else {
         throw new Error('Erreur lors de l\'upload du PDF');
       }
     } catch (error) {
+      console.error('Erreur upload documents:', error);
       setError('Erreur lors de l\'upload du PDF');
     } finally {
       setIsUploadingDocuments(false);
