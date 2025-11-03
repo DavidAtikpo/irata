@@ -46,8 +46,13 @@ export async function GET() {
         statut: true,
         session: true,
         message: true,
+        commentaire: true,
         createdAt: true,
         updatedAt: true,
+        sessionChangeRequest: true,
+        sessionChangeStatus: true,
+        sessionChangeReason: true,
+        sessionChangeDate: true,
       },
       orderBy: {
         createdAt: 'desc',

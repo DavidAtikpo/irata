@@ -171,46 +171,46 @@ export default function MonContratPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-2 sm:px-4 lg:px-6">
+      <div className="min-h-screen bg-gray-50 py-4 px-2 sm:px-3">
         <div className="max-w-4xl mx-auto">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <h2 className="mt-2 sm:mt-4 text-lg sm:text-xl font-semibold text-gray-900">Chargement...</h2>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+            <h2 className="mt-2 text-sm font-semibold text-gray-900">Chargement...</h2>
                   </div>
       </div>
 
       {/* Popup de notification de facture générée */}
       {showInvoicePopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-green-100 rounded-full mb-4">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
+          <div className="bg-white rounded shadow-xl max-w-md w-full p-4">
+            <div className="flex items-center justify-center w-10 h-10 mx-auto bg-green-100 rounded-full mb-3">
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             
             <div className="text-center">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-sm font-medium text-gray-900 mb-2">
                 Facture générée !
               </h3>
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-[10px] text-gray-600 mb-4">
                 Votre contrat a été validé et votre facture a été générée. 
                 Vous pouvez maintenant procéder au paiement pour accéder à tous les documents et activités de formation.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={() => {
                     setShowInvoicePopup(false);
                     router.push('/invoice');
                   }}
-                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  className="flex-1 bg-green-600 text-white px-3 py-1 rounded text-[10px] font-medium hover:bg-green-700"
                 >
                   Passer au paiement
                 </button>
                 <button
                   onClick={() => setShowInvoicePopup(false)}
-                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  className="flex-1 bg-gray-200 text-gray-800 px-3 py-1 rounded text-[10px] font-medium hover:bg-gray-300"
                 >
                   Plus tard
                 </button>
@@ -224,48 +224,48 @@ export default function MonContratPage() {
 }
 
   return (
-    <div className="py-2 sm:py-4 lg:py-6 px-2 sm:px-4 lg:px-6" suppressHydrationWarning>
+    <div className="py-2 sm:py-3 px-2 sm:px-3" suppressHydrationWarning>
       <div className="max-w-4xl mx-auto">
         {/* En-tête */}
-        <div className="mb-3 sm:mb-4">
+        <div className="mb-2 sm:mb-3">
           <button
             onClick={() => router.back()}
-            className="inline-flex items-center text-xs sm:text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
+            className="inline-flex items-center text-[10px] font-medium text-indigo-600 hover:text-indigo-500"
           >
-            <ArrowLeftIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+            <ArrowLeftIcon className="h-3 w-3 mr-0.5" />
             Retour
           </button>
-          <div className="mt-2 sm:mt-4 text-center sm:text-left">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Mes contrats / conventions</h1>
-            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600">Vous trouverez ici vos contrats ou conventions validés par l'administration</p>
+          <div className="mt-2 text-center sm:text-left">
+            <h1 className="text-sm sm:text-base font-bold text-gray-900">Mes contrats / conventions</h1>
+            <p className="text-[10px] text-gray-600">Vos contrats validés par l'administration</p>
           </div>
         </div>
 
         {error && (
-          <div className="mb-3 sm:mb-4 rounded-md bg-red-50 p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-red-800">{error}</div>
+          <div className="mb-2 rounded bg-red-50 p-2">
+            <div className="text-[10px] text-red-800">{error}</div>
           </div>
         )}
 
         {/* Contenu principal */}
         {contrats.length === 0 ? (
-          <div className="bg-white shadow rounded-lg p-6 sm:p-8 text-center">
-            <DocumentTextIcon className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm sm:text-base font-medium text-gray-900">Aucun contrat</h3>
-            <p className="mt-1 text-xs sm:text-sm text-gray-500">
+          <div className="bg-white shadow-sm rounded p-4 text-center">
+            <DocumentTextIcon className="mx-auto h-8 w-8 text-gray-400" />
+            <h3 className="mt-2 text-[11px] font-medium text-gray-900">Aucun contrat</h3>
+            <p className="mt-1 text-[10px] text-gray-500">
               Vous n'avez pas encore de contrat de formation.
             </p>
-            <div className="mt-4">
+            <div className="mt-3">
               <button
                 onClick={() => router.push('/mes-devis')}
-                className="inline-flex items-center px-3 sm:px-4 py-1 sm:py-2 border border-transparent text-xs sm:text-sm font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="inline-flex items-center px-3 py-1 border border-transparent text-[10px] font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700"
               >
                 Voir mes devis
               </button>
             </div>
           </div>
         ) : (
-          <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-2 sm:space-y-3">
             {contrats.map((contrat) => {
               const statusConfig = getStatusConfig(contrat.statut);
               const isConvention = Boolean(
@@ -275,47 +275,47 @@ export default function MonContratPage() {
               );
               
               return (
-                <div key={contrat.id} className="bg-white shadow rounded-lg overflow-hidden">
-                  <div className="p-3 sm:p-4 lg:p-6">
+                <div key={contrat.id} className="bg-white shadow-sm rounded overflow-hidden">
+                  <div className="p-3">
                     {/* En-tête du contrat */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
-                      <div className="flex items-center space-x-2 sm:space-x-3">
-                        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <DocumentTextIcon className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                          <DocumentTextIcon className="h-3 w-3 text-indigo-600" />
                         </div>
                         <div>
-                          <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900">
+                          <h3 className="text-[11px] font-medium text-gray-900">
                             {isConvention ? 'Convention' : 'Contrat'} #{contrat.id.slice(-6)}
                           </h3>
-                          <p className="text-xs sm:text-sm text-gray-500">
+                          <p className="text-[10px] text-gray-500">
                             Devis #{contrat.devis.numero} - {contrat.devis.demande.session}
                           </p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-2">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
-                          {contrat.statut === 'VALIDE' && <CheckCircleIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />}
-                          {contrat.statut === 'SIGNE' && <DocumentTextIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />}
-                          {contrat.statut === 'EN_ATTENTE' && <ClockIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />}
-                          {!['VALIDE', 'SIGNE', 'EN_ATTENTE'].includes(contrat.statut) && <ExclamationTriangleIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />}
+                      <div className="flex items-center gap-1">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium ${statusConfig.color}`}>
+                          {contrat.statut === 'VALIDE' && <CheckCircleIcon className="h-3 w-3 mr-0.5" />}
+                          {contrat.statut === 'SIGNE' && <DocumentTextIcon className="h-3 w-3 mr-0.5" />}
+                          {contrat.statut === 'EN_ATTENTE' && <ClockIcon className="h-3 w-3 mr-0.5" />}
+                          {!['VALIDE', 'SIGNE', 'EN_ATTENTE'].includes(contrat.statut) && <ExclamationTriangleIcon className="h-3 w-3 mr-0.5" />}
                           {statusConfig.label}
                         </span>
                         {contrat.statut === 'VALIDE' && (
-                          <div className="flex space-x-2">
+                          <div className="flex gap-1">
                             <button
                               onClick={() => router.push(`/admin/contrats/${contrat.id}`)}
-                              className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-2 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                              className="inline-flex items-center px-2 py-0.5 border border-transparent text-[9px] font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700"
                             >
-                              <DocumentTextIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                              Voir le contrat
+                              <DocumentTextIcon className="h-3 w-3 mr-0.5" />
+                              Voir
                             </button>
                             <button
                               onClick={() => downloadContrat(contrat.id, contrat.devis.numero)}
-                              className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-2 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                              className="inline-flex items-center px-2 py-0.5 border border-transparent text-[9px] font-medium rounded text-white bg-green-600 hover:bg-green-700"
                             >
-                              <ArrowDownTrayIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                              Télécharger
+                              <ArrowDownTrayIcon className="h-3 w-3 mr-0.5" />
+                              DL
                             </button>
                           </div>
                         )}
@@ -323,70 +323,70 @@ export default function MonContratPage() {
                     </div>
 
                     {/* Description du statut */}
-                    <div className="mb-3 sm:mb-4">
-                      <p className="text-xs sm:text-sm text-gray-600">{statusConfig.description}</p>
+                    <div className="mb-2">
+                      <p className="text-[10px] text-gray-600">{statusConfig.description}</p>
                     </div>
 
                     {/* Informations du contrat */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
-                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-                        <div className="flex items-center text-xs sm:text-sm text-gray-500 mb-1">
-                          <UserIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-2">
+                      <div className="bg-gray-50 rounded p-1.5">
+                        <div className="flex items-center text-[9px] text-gray-500 mb-0.5">
+                          <UserIcon className="h-3 w-3 mr-0.5" />
                           Stagiaire
                         </div>
-                        <p className="text-xs sm:text-sm font-medium text-gray-900">
+                        <p className="text-[10px] font-medium text-gray-900">
                           {contrat.prenom} {contrat.nom}
                         </p>
                       </div>
 
-                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-                        <div className="flex items-center text-xs sm:text-sm text-gray-500 mb-1">
-                          <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                          Date de signature
+                      <div className="bg-gray-50 rounded p-1.5">
+                        <div className="flex items-center text-[9px] text-gray-500 mb-0.5">
+                          <CalendarIcon className="h-3 w-3 mr-0.5" />
+                          Date signature
                         </div>
-                        <p className="text-xs sm:text-sm font-medium text-gray-900">
-                          {new Date(contrat.dateSignature).toLocaleDateString('fr-FR')}
+                        <p className="text-[10px] font-medium text-gray-900">
+                          {new Date(contrat.dateSignature).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit', year: '2-digit'})}
                         </p>
                       </div>
 
-                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-                        <div className="flex items-center text-xs sm:text-sm text-gray-500 mb-1">
-                          <BuildingOfficeIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      <div className="bg-gray-50 rounded p-1.5">
+                        <div className="flex items-center text-[9px] text-gray-500 mb-0.5">
+                          <BuildingOfficeIcon className="h-3 w-3 mr-0.5" />
                           Formation
                         </div>
-                        <p className="text-xs sm:text-sm font-medium text-gray-900">
+                        <p className="text-[10px] font-medium text-gray-900 truncate" title={contrat.devis.demande.session}>
                           {contrat.devis.demande.session}
                         </p>
                       </div>
 
-                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-                        <div className="flex items-center text-xs sm:text-sm text-gray-500 mb-1">
-                          <DocumentTextIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      <div className="bg-gray-50 rounded p-1.5">
+                        <div className="flex items-center text-[9px] text-gray-500 mb-0.5">
+                          <DocumentTextIcon className="h-3 w-3 mr-0.5" />
                           Montant
                         </div>
-                        <p className="text-xs sm:text-sm font-medium text-gray-900">
-                          {contrat.devis.montant.toLocaleString('fr-FR')} €
+                        <p className="text-[10px] font-medium text-gray-900">
+                          {contrat.devis.montant.toLocaleString('fr-FR')}€
                         </p>
                       </div>
 
                       {contrat.devis.dateFormation && (
-                        <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-                          <div className="flex items-center text-xs sm:text-sm text-gray-500 mb-1">
-                            <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                            Date de formation
+                        <div className="bg-gray-50 rounded p-1.5">
+                          <div className="flex items-center text-[9px] text-gray-500 mb-0.5">
+                            <CalendarIcon className="h-3 w-3 mr-0.5" />
+                            Date formation
                           </div>
-                          <p className="text-xs sm:text-sm font-medium text-gray-900">
-                            {new Date(contrat.devis.dateFormation).toLocaleDateString('fr-FR')}
+                          <p className="text-[10px] font-medium text-gray-900">
+                            {new Date(contrat.devis.dateFormation).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit', year: '2-digit'})}
                           </p>
                         </div>
                       )}
 
-                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-                        <div className="flex items-center text-xs sm:text-sm text-gray-500 mb-1">
-                          <MapPinIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      <div className="bg-gray-50 rounded p-1.5">
+                        <div className="flex items-center text-[9px] text-gray-500 mb-0.5">
+                          <MapPinIcon className="h-3 w-3 mr-0.5" />
                           Adresse
                         </div>
-                        <p className="text-xs sm:text-sm font-medium text-gray-900 truncate" title={contrat.adresse}>
+                        <p className="text-[10px] font-medium text-gray-900 truncate" title={contrat.adresse}>
                           {contrat.adresse}
                         </p>
                       </div>
@@ -394,12 +394,12 @@ export default function MonContratPage() {
 
                     {/* Informations supplémentaires */}
                     {contrat.profession && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3">
+                      <div className="bg-blue-50 border border-blue-200 rounded p-2">
                         <div className="flex items-start">
-                          <BuildingOfficeIcon className="h-4 w-4 text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
+                          <BuildingOfficeIcon className="h-3 w-3 text-blue-400 mt-0.5 mr-1.5 flex-shrink-0" />
                           <div>
-                            <p className="text-xs sm:text-sm font-medium text-blue-900">Profession</p>
-                            <p className="text-xs sm:text-sm text-blue-800">{contrat.profession}</p>
+                            <p className="text-[10px] font-medium text-blue-900">Profession</p>
+                            <p className="text-[10px] text-blue-800">{contrat.profession}</p>
                           </div>
                         </div>
                       </div>
@@ -407,14 +407,13 @@ export default function MonContratPage() {
 
                     {/* Actions */}
                     {contrat.statut === 'SIGNE' && (
-                      <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
                         <div className="flex items-start">
-                          <ClockIcon className="h-4 w-4 text-yellow-400 mt-0.5 mr-2 flex-shrink-0" />
+                          <ClockIcon className="h-3 w-3 text-yellow-400 mt-0.5 mr-1.5 flex-shrink-0" />
                           <div>
-                            <p className="text-xs sm:text-sm font-medium text-yellow-900">En attente de validation</p>
-                            <p className="text-xs sm:text-sm text-yellow-800">
-                              Votre contrat a été signé et est en cours de validation par l'administrateur. 
-                              Vous recevrez une notification par email une fois validé.
+                            <p className="text-[10px] font-medium text-yellow-900">En attente de validation</p>
+                            <p className="text-[9px] text-yellow-800">
+                              Votre contrat a été signé et est en cours de validation par l'admin. Notification par email une fois validé.
                             </p>
                           </div>
                         </div>
@@ -422,14 +421,13 @@ export default function MonContratPage() {
                     )}
 
                     {contrat.statut === 'VALIDE' && (
-                      <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
                         <div className="flex items-start">
-                          <CheckCircleIcon className="h-4 w-4 text-green-400 mt-0.5 mr-2 flex-shrink-0" />
+                          <CheckCircleIcon className="h-3 w-3 text-green-400 mt-0.5 mr-1.5 flex-shrink-0" />
                           <div>
-                            <p className="text-xs sm:text-sm font-medium text-green-900">Contrat validé</p>
-                            <p className="text-xs sm:text-sm text-green-800">
-                              Votre contrat a été validé par l'administrateur. 
-                              Une facture vous sera générée et envoyée par email dans les plus brefs délais.
+                            <p className="text-[10px] font-medium text-green-900">Contrat validé</p>
+                            <p className="text-[9px] text-green-800">
+                              Votre contrat a été validé. Facture générée et envoyée par email.
                             </p>
                           </div>
                         </div>
@@ -443,48 +441,47 @@ export default function MonContratPage() {
         )}
 
         {/* Information */}
-        <div className="mt-6 sm:mt-8 bg-blue-50 rounded-lg p-3 sm:p-4 lg:p-6">
-          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-blue-900 mb-2">Information</h3>
-          <p className="text-xs sm:text-sm text-blue-800">
-            Cette page affiche tous vos contrats de formation. Après validation de votre contrat par l'administration, 
-            une facture vous sera générée et envoyée par email. L'accès à tous les documents de formation et activités 
-            sera disponible après le paiement de cette facture.
+        <div className="mt-3 bg-blue-50 rounded p-3">
+          <h3 className="text-[11px] font-semibold text-blue-900 mb-1">Information</h3>
+          <p className="text-[10px] text-blue-800">
+            Cette page affiche tous vos contrats de formation. Après validation par l'admin, 
+            une facture vous sera générée et envoyée par email. L'accès aux documents de formation sera disponible après paiement.
           </p>
         </div>
       </div>
 
       {/* Popup de notification de facture générée */}
       {showInvoicePopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-green-100 rounded-full mb-4">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
+          <div className="bg-white rounded shadow-xl max-w-md w-full p-4">
+            <div className="flex items-center justify-center w-10 h-10 mx-auto bg-green-100 rounded-full mb-3">
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             
             <div className="text-center">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-sm font-medium text-gray-900 mb-2">
                 Facture générée !
               </h3>
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-[10px] text-gray-600 mb-4">
                 Votre contrat a été validé et votre facture a été générée. 
                 Vous pouvez maintenant procéder au paiement pour accéder à tous les documents et activités de formation.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={() => {
                     setShowInvoicePopup(false);
                     router.push('/invoice');
                   }}
-                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  className="flex-1 bg-green-600 text-white px-3 py-1 rounded text-[10px] font-medium hover:bg-green-700"
                 >
                   Passer au paiement
                 </button>
                 <button
                   onClick={() => setShowInvoicePopup(false)}
-                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  className="flex-1 bg-gray-200 text-gray-800 px-3 py-1 rounded text-[10px] font-medium hover:bg-gray-300"
                 >
                   Plus tard
                 </button>

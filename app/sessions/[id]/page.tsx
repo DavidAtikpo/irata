@@ -39,14 +39,17 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
     message: '',
     session: sessionLabel,
     entreprise: '',
+    niveau: '1',
   });
   const [error, setError] = useState('');
   const [step, setStep] = useState(1); // 1: préinscription, 2: mot de passe
   const [passwords, setPasswords] = useState({ password: '', confirmPassword: '' });
   const [success, setSuccess] = useState(false);
   const [alreadyUser, setAlreadyUser] = useState(false);
+  const [shouldLogin, setShouldLogin] = useState(false);
+  const [skipPassword, setSkipPassword] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -80,10 +83,19 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
         });
         const data = await response.json().catch(() => ({} as any));
         if (!response.ok) {
+          if (data.shouldLogin) {
+            // L'utilisateur a déjà ce niveau, il doit se connecter
+            setShouldLogin(true);
+            return;
+          }
           const msg = (data && (data.message || data.error)) || `Erreur ${response.status}`
           throw new Error(msg)
         }
-        if (data.userExists) {
+        if (data.skipPassword) {
+          // L'utilisateur existe mais avec un niveau différent, skip le mot de passe
+          setSkipPassword(true);
+          setStep(2);
+        } else if (data.userExists) {
           setAlreadyUser(true);
         } else {
           setStep(2);
@@ -104,14 +116,19 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
         setStep(1)
         return
       }
-      if (passwords.password.length < 6) {
-        setError('Le mot de passe doit contenir au moins 6 caractères')
-        return
+      
+      // Valider le mot de passe seulement si on ne skip pas
+      if (!skipPassword) {
+        if (passwords.password.length < 6) {
+          setError('Le mot de passe doit contenir au moins 6 caractères')
+          return
+        }
+        if (passwords.password !== passwords.confirmPassword) {
+          setError('Les mots de passe ne correspondent pas');
+          return;
+        }
       }
-      if (passwords.password !== passwords.confirmPassword) {
-        setError('Les mots de passe ne correspondent pas');
-        return;
-      }
+      
       try {
         const response = await fetch('/api/auth/register', {
           method: 'POST',
@@ -119,7 +136,7 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
           body: JSON.stringify({
             ...formData,
             registrationType,
-            password: passwords.password,
+            password: skipPassword ? undefined : passwords.password,
             role: 'USER',
             step: 2,
           }),
@@ -140,10 +157,34 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
   if (success) {
     return (
       <div className="p-4 sm:p-6 text-green-700 bg-green-50 border border-green-200 rounded-lg mb-4 max-w-md mx-auto shadow-sm">
-        <p className="mb-3 sm:mb-4 font-semibold text-sm sm:text-base">Inscription réussie !</p>
-        <p className="mb-3 sm:mb-4 text-xs sm:text-sm">Vous pouvez maintenant vous connecter à votre espace personnel.</p>
+        <p className="mb-3 sm:mb-4 font-semibold text-sm sm:text-base">
+          {skipPassword ? 'Demande enregistrée !' : 'Inscription réussie !'}
+        </p>
+        <p className="mb-3 sm:mb-4 text-xs sm:text-sm">
+          {skipPassword 
+            ? 'Votre nouvelle demande pour le niveau ' + formData.niveau + ' a été enregistrée. Vous pouvez vous connecter avec vos identifiants habituels.'
+            : 'Vous pouvez maintenant vous connecter à votre espace personnel.'
+          }
+        </p>
         <div className="flex flex-col sm:flex-row items-center justify-end gap-2 sm:gap-4">
           <Link href="/login" className="px-3 sm:px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold no-underline text-sm transition-colors duration-200">
+            Se connecter
+          </Link>
+          <button onClick={onClose} className="text-gray-600 underline text-sm">Fermer</button>
+        </div>
+      </div>
+    );
+  }
+  if (shouldLogin) {
+    return (
+      <div className="p-4 sm:p-6 text-orange-900 bg-orange-50 border border-orange-200 rounded-lg mb-4 max-w-md mx-auto shadow-sm">
+        <p className="mb-3 sm:mb-4 font-semibold text-sm sm:text-base">⚠️ Compte existant</p>
+        <p className="mb-3 sm:mb-4 text-xs sm:text-sm">
+          Vous avez déjà un compte avec ce niveau de formation (Niveau {formData.niveau}). 
+          Veuillez vous connecter pour accéder à votre espace et suivre vos demandes.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-2 sm:gap-4">
+          <Link href="/login" className="px-3 sm:px-4 py-2 rounded bg-orange-600 text-white hover:bg-orange-700 font-semibold no-underline text-sm transition-colors duration-200">
             Se connecter
           </Link>
           <button onClick={onClose} className="text-gray-600 underline text-sm">Fermer</button>
@@ -209,6 +250,23 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
         </div>
       </div>
 
+      {/* Sélection du niveau */}
+      <div className="mb-4">
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Niveau de formation <span className="text-red-600">*</span></label>
+        <select
+          name="niveau"
+          value={formData.niveau}
+          onChange={handleChange}
+          className="border border-gray-300 rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        >
+          <option value="1">Niveau 1</option>
+          <option value="2">Niveau 2</option>
+          <option value="3">Niveau 3</option>
+        </select>
+        <p className="text-xs text-gray-500 mt-1">Sélectionnez le niveau IRATA que vous souhaitez passer</p>
+      </div>
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 px-3 sm:px-4 py-2 rounded mb-3 text-xs sm:text-sm" role="alert">
           {error}
@@ -251,14 +309,29 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
       )}
       {step === 2 && (
         <>
-          <div className="mb-4 p-3 sm:p-4 bg-blue-50 rounded text-blue-900 text-xs sm:text-sm">
-            Merci pour votre préinscription.<br />
-            <b>Pour suivre l'évolution de votre dossier, accéder à vos documents et recevoir des notifications, veuillez définir un mot de passe pour activer votre espace personnel.</b>
-          </div>
-          <div className="grid grid-cols-1 gap-3 mb-3">
-            <input name="password" type="password" required placeholder="Définir un mot de passe" className="border rounded px-3 py-2 text-sm" value={passwords.password} onChange={handlePasswordChange} />
-            <input name="confirmPassword" type="password" required placeholder="Confirmer le mot de passe" className="border rounded px-3 py-2 text-sm" value={passwords.confirmPassword} onChange={handlePasswordChange} />
-          </div>
+          {skipPassword ? (
+            // Cas où l'utilisateur existe déjà - pas besoin de mot de passe
+            <div className="mb-4 p-3 sm:p-4 bg-green-50 rounded text-green-900 text-xs sm:text-sm">
+              <b>Votre compte existe déjà !</b><br />
+              Nous allons créer une nouvelle demande pour le <strong>Niveau {formData.niveau}</strong> avec votre compte existant.
+              <br /><br />
+              Cliquez sur "Confirmer la demande" pour finaliser.
+            </div>
+          ) : (
+            // Cas nouvel utilisateur - définir un mot de passe
+            <div className="mb-4 p-3 sm:p-4 bg-blue-50 rounded text-blue-900 text-xs sm:text-sm">
+              Merci pour votre préinscription.<br />
+              <b>Pour suivre l'évolution de votre dossier, accéder à vos documents et recevoir des notifications, veuillez définir un mot de passe pour activer votre espace personnel.</b>
+            </div>
+          )}
+          
+          {!skipPassword && (
+            <div className="grid grid-cols-1 gap-3 mb-3">
+              <input name="password" type="password" required placeholder="Définir un mot de passe" className="border rounded px-3 py-2 text-sm" value={passwords.password} onChange={handlePasswordChange} />
+              <input name="confirmPassword" type="password" required placeholder="Confirmer le mot de passe" className="border rounded px-3 py-2 text-sm" value={passwords.confirmPassword} onChange={handlePasswordChange} />
+            </div>
+          )}
+          
           <div className="flex flex-col sm:flex-row gap-2">
             <button
               type="submit"
@@ -266,12 +339,10 @@ function SessionRegisterForm({ sessionLabel, onClose }: SessionRegisterFormProps
               disabled={
                 // Require only minimal fields for step 2
                 !(formData.nom && formData.prenom && formData.email && (registrationType === 'entreprise' ? !!formData.entreprise : true))
-                || !passwords.password
-                || !passwords.confirmPassword
-                || passwords.password !== passwords.confirmPassword
+                || (!skipPassword && (!passwords.password || !passwords.confirmPassword || passwords.password !== passwords.confirmPassword))
               }
             >
-              Valider le mot de passe
+              {skipPassword ? 'Confirmer la demande' : 'Valider le mot de passe'}
             </button>
             <button type="button" onClick={onClose} className="text-gray-500 underline text-sm">Annuler</button>
           </div>

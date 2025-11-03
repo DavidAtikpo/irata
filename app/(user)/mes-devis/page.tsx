@@ -200,11 +200,11 @@ export default function MesDevisPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-50 py-4 px-2 sm:px-3">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <h2 className="mt-4 text-xl font-semibold text-gray-900">Chargement...</h2>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+            <h2 className="mt-2 text-sm font-semibold text-gray-900">Chargement...</h2>
           </div>
         </div>
       </div>
@@ -212,26 +212,26 @@ export default function MesDevisPage() {
   }
 
   return (
-    <div className="py-6 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-2 sm:py-3 px-2 sm:px-3">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-6 sm:mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes devis</h2>
-          <p className="mt-2 text-sm sm:text-base text-gray-600">
+        <div className="text-center mb-3">
+          <h2 className="text-lg font-bold text-gray-900">Mes devis</h2>
+          <p className="text-[10px] text-gray-600">
             Consultez l'état de vos devis
           </p>
         </div>
 
         {/* Global banner if any pending devis */}
         {devis.some(d => d.statut === 'EN_ATTENTE') && (
-          <div className="mb-6 rounded-xl border-2 border-yellow-500 bg-yellow-100 p-5 shadow-lg ring-1 ring-yellow-500/30" role="alert">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-start gap-3 text-yellow-900">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 flex-shrink-0 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <div className="mb-3 rounded border-2 border-yellow-500 bg-yellow-100 p-3 shadow-sm" role="alert">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex items-start gap-2 text-yellow-900">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                 </svg>
                 <div>
-                  <p className="text-base sm:text-lg font-extrabold tracking-wide">ACTION REQUISE</p>
-                  <p className="mt-1 text-sm sm:text-base">Ouvrez votre devis et validez-le pour accéder au contrat. Sans validation, vous ne pourrez pas compléter votre inscription.</p>
+                  <p className="text-[11px] font-bold tracking-wide">ACTION REQUISE</p>
+                  <p className="text-[10px]">Ouvrez votre devis et validez-le pour accéder au contrat. Sans validation, vous ne pourrez pas compléter votre inscription.</p>
                 </div>
               </div>
               <button
@@ -239,113 +239,109 @@ export default function MesDevisPage() {
                   const first = devis.find(d => d.statut === 'EN_ATTENTE');
                   if (first) router.push(`/mes-devis/${first.id}`);
                 }}
-                className="inline-flex w-full sm:w-auto items-center justify-center px-4 py-2.5 text-sm sm:text-base font-bold rounded-md text-yellow-900 bg-yellow-300 hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-600"
+                className="inline-flex w-full sm:w-auto items-center justify-center px-3 py-1 text-[10px] font-bold rounded text-yellow-900 bg-yellow-300 hover:bg-yellow-400"
               >
-                Ouvrir et valider maintenant
+                Ouvrir et valider
               </button>
             </div>
           </div>
         )}
 
         {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">{error}</h3>
-              </div>
+          <div className="mb-2 rounded bg-red-50 p-2">
+            <div className="flex items-center">
+              <XCircleIcon className="h-3 w-3 text-red-400 mr-2 flex-shrink-0" />
+              <h3 className="text-[10px] font-medium text-red-800">{error}</h3>
             </div>
           </div>
         )}
 
         {devis.length === 0 ? (
-          <div className="text-center py-8 sm:py-12">
-            <DocumentTextIcon className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm sm:text-base font-medium text-gray-900">Aucun devis</h3>
-            <p className="mt-1 text-xs sm:text-sm text-gray-500">
+          <div className="text-center py-6">
+            <DocumentTextIcon className="mx-auto h-8 w-8 text-gray-400" />
+            <h3 className="mt-2 text-[11px] font-medium text-gray-900">Aucun devis</h3>
+            <p className="mt-1 text-[10px] text-gray-500">
               Vous n'avez pas encore de devis.
             </p>
           </div>
         ) : (
-          <div className="bg-white shadow overflow-hidden rounded-lg">
+          <div className="bg-white shadow-sm overflow-hidden rounded">
             <ul className="divide-y divide-gray-200">
               {devis.map((devis) => {
                 const status = getStatusConfig(devis.statut);
                 const StatusIcon = status.icon;
 
                 return (
-                  <li key={devis.id} className="hover:bg-gray-50 transition-colors duration-200">
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                  <li key={devis.id} className="hover:bg-gray-50 transition-colors duration-150">
+                    <div className="px-3 py-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div className="flex items-center">
-                          <DocumentTextIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-2" />
-                          <p className="text-sm font-medium text-indigo-600 truncate">
-                            Numéro: {devis.numero}
+                          <DocumentTextIcon className="h-3 w-3 text-gray-400 mr-1.5" />
+                          <p className="text-[11px] font-medium text-indigo-600 truncate">
+                            N°: {devis.numero}
                           </p>
                         </div>
                         <div className="flex-shrink-0 flex">
-                          <span className={`inline-flex items-center px-2 py-0.5 sm:px-2.5 rounded-full text-xs font-medium ${status.color}`}>
-                            <StatusIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium ${status.color}`}>
+                            <StatusIcon className="h-3 w-3 mr-0.5" />
                             {status.label}
                           </span>
                         </div>
                       </div>
-                      <div className="mt-3 sm:mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex sm:flex-col gap-1">
-                          <p className="flex items-center text-xs sm:text-sm text-gray-500">
-                            Formation Cordiste IRATA - {sessionRangeFr(devis.dateFormation || null, devis.dateExamen || null) || formatSessionFr(devis.demande?.session || '') || (devis.dateFormation ? formatDateToFr(devis.dateFormation) : '-')}
+                      <div className="mt-2 sm:flex sm:justify-between">
+                        <div className="sm:flex sm:flex-col gap-0.5">
+                          <p className="flex items-center text-[10px] text-gray-500">
+                            Formation IRATA - {sessionRangeFr(devis.dateFormation || null, devis.dateExamen || null) || formatSessionFr(devis.demande?.session || '') || (devis.dateFormation ? formatDateToFr(devis.dateFormation) : '-')}
                           </p>
                           {devis.referenceAffaire && (
-                            <p className="text-xs sm:text-sm text-gray-500">
-                              Notre référence Affaire: <span className="text-gray-700">{devis.referenceAffaire}</span>
+                            <p className="text-[10px] text-gray-500">
+                              Réf: <span className="text-gray-700">{devis.referenceAffaire}</span>
                             </p>
                           )}
                           {devis.exoneration && (
-                            <p className="text-xs sm:text-sm text-gray-500 truncate" title={devis.exoneration || undefined}>
-                              Exonération: <span className="text-gray-700">{devis.exoneration}</span>
+                            <p className="text-[10px] text-gray-500 truncate" title={devis.exoneration || undefined}>
+                              Exo: <span className="text-gray-700">{devis.exoneration}</span>
                             </p>
                           )}
                         </div>
-                        <div className="mt-2 flex items-center text-xs sm:text-sm text-gray-500 sm:mt-0">
+                        <div className="mt-1 flex items-center text-[10px] text-gray-500 sm:mt-0">
                           <p>
-                            {new Date(devis.createdAt).toLocaleDateString('fr-FR')} - {computeMontant(devis).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                            {new Date(devis.createdAt).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit', year: '2-digit'})} - {computeMontant(devis).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(' ', '')}€
                           </p>
                         </div>
                       </div>
-                      <div className="mt-3 sm:mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                         {devis.statut === 'EN_ATTENTE' && (
-                          <div className="w-full sm:w-auto flex-1 rounded-md bg-yellow-50 border-2 border-yellow-500 px-3 py-2 text-xs sm:text-sm text-yellow-900 font-semibold shadow-sm border-l-8 border-l-yellow-600">
-                            Action requise: ouvrez le devis et validez-le pour continuer vers le contrat.
+                          <div className="w-full sm:w-auto flex-1 rounded bg-yellow-50 border-2 border-yellow-500 px-2 py-1 text-[10px] text-yellow-900 font-semibold border-l-4 border-l-yellow-600">
+                            Action requise: ouvrez et validez le devis.
                           </div>
                         )}
                         {devis.statut === 'VALIDE' && (
-                          <div className="w-full sm:w-auto flex-1 rounded-md bg-blue-50 border-2 border-blue-400 px-3 py-2 text-xs sm:text-sm text-blue-900 font-medium">
-                            Devis validé: ouvrez le contrat, lisez-le attentivement, remplissez les informations demandées et signez pour finaliser votre inscription.
+                          <div className="w-full sm:w-auto flex-1 rounded bg-blue-50 border-2 border-blue-400 px-2 py-1 text-[10px] text-blue-900 font-medium">
+                            Devis validé: ouvrez le contrat, remplissez et signez.
                           </div>
                         )}
-                        <div className="flex flex-wrap justify-end gap-2">
+                        <div className="flex flex-wrap justify-end gap-1">
                         <button
                           onClick={() => router.push(`/mes-devis/${devis.id}`)}
-                          className={`inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${devis.statut === 'EN_ATTENTE' ? 'text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500' : 'text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:ring-indigo-500'}`}
+                          className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded ${devis.statut === 'EN_ATTENTE' ? 'text-white bg-yellow-600 hover:bg-yellow-700' : 'text-indigo-700 bg-indigo-100 hover:bg-indigo-200'}`}
                         >
-                          <EyeIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                          {devis.statut === 'EN_ATTENTE' ? 'Ouvrir et valider' : 'Voir'}
+                          <EyeIcon className="h-3 w-3 mr-0.5" />
+                          {devis.statut === 'EN_ATTENTE' ? 'Ouvrir' : 'Voir'}
                         </button>
                         <button
                           onClick={() => downloadDevis(devis.id, devis.numero)}
-                          className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                          className="inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
                         >
-                          <DocumentArrowDownIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                          <DocumentArrowDownIcon className="h-3 w-3 mr-0.5" />
                           PDF
                         </button>
                         {devis.statut === 'VALIDE' && !devis.hasContract && (
                           <button
                             onClick={() => router.push(`/mes-devis/${devis.id}/contrat`)}
-                            className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            className="inline-flex items-center px-2 py-0.5 border border-transparent text-[9px] font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
                           >
-                            <DocumentDuplicateIcon className="h-4 w-4 mr-1" />
+                            <DocumentDuplicateIcon className="h-3 w-3 mr-0.5" />
                             Contrat
                           </button>
                         )}

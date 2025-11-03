@@ -85,18 +85,23 @@ model Formation {
 }
 
 model Demande {
-  id              String   @id @default(cuid())
-  userId          String
-  statut          Statut   @default(EN_ATTENTE)
-  session         String
-  message         String?
-  commentaire     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  entreprise      String?
-  typeInscription String?  @default("personnel")
-  user            User     @relation(fields: [userId], references: [id])
-  devis           Devis?
+  id                    String               @id @default(cuid())
+  userId                String
+  statut                Statut               @default(EN_ATTENTE)
+  session               String
+  message               String?
+  commentaire           String?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  entreprise            String?
+  typeInscription       String?              @default("personnel")
+  niveau                String?              @default("1")
+  sessionChangeRequest  String?
+  sessionChangeStatus   SessionChangeStatus? @default(NONE)
+  sessionChangeReason   String?
+  sessionChangeDate     DateTime?
+  user                  User                 @relation(fields: [userId], references: [id])
+  devis                 Devis?
 
   @@schema("webirata")
 }
@@ -1240,6 +1245,15 @@ enum CustomerSatisfactionType {
   ENVIRONMENT_RECEPTION
   EQUIPMENT
   TRAINING_PEDAGOGY
+
+  @@schema("webirata")
+}
+
+enum SessionChangeStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
 
   @@schema("webirata")
 }

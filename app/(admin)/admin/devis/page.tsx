@@ -242,11 +242,11 @@ export default function DevisListPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-100 py-8 px-2 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto bg-white shadow rounded-lg p-6">
+      <div className="min-h-screen bg-gray-100 py-2 px-2">
+        <div className="max-w-6xl mx-auto bg-white shadow-sm rounded p-4">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <h2 className="mt-4 text-xl font-semibold text-gray-900">Chargement...</h2>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+            <h2 className="mt-2 text-sm font-semibold text-gray-900">Chargement...</h2>
           </div>
         </div>
       </div>
@@ -254,229 +254,177 @@ export default function DevisListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-2">
+      <div className="max-w-7xl mx-auto px-2 sm:px-3">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Gestion des devis</h1>
-              <p className="mt-2 text-sm text-gray-700">
-                Gérez tous les devis de votre organisation
+              <h1 className="text-lg font-bold text-gray-900">Gestion des devis</h1>
+              <p className="text-[10px] text-gray-600">
+                Gérez tous les devis
               </p>
             </div>
-            <div className="mt-4 sm:mt-0">
+            <div className="mt-2 sm:mt-0">
               <Link
                 href="/admin/devis/nouveau"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="inline-flex items-center px-3 py-1 border border-transparent rounded text-[10px] font-medium text-white bg-indigo-600 hover:bg-indigo-700"
               >
-                Nouveau devis
+                + Nouveau
               </Link>
             </div>
           </div>
         </div>
 
         {/* Statistiques */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-5 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total</dt>
-                    <dd className="text-lg font-medium text-gray-900">{stats.total}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 mb-3">
+          <div className="bg-white overflow-hidden shadow-sm rounded p-2">
+            <dt className="text-[9px] font-medium text-gray-500 truncate">Total</dt>
+            <dd className="text-sm font-bold text-gray-900">{stats.total}</dd>
           </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Valides</dt>
-                    <dd className="text-lg font-medium text-green-600">{stats.valides}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
+          <div className="bg-white overflow-hidden shadow-sm rounded p-2">
+            <dt className="text-[9px] font-medium text-gray-500 truncate">Valides</dt>
+            <dd className="text-sm font-bold text-green-600">{stats.valides}</dd>
           </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Invalides</dt>
-                    <dd className="text-lg font-medium text-red-600">{stats.invalides}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
+          <div className="bg-white overflow-hidden shadow-sm rounded p-2">
+            <dt className="text-[9px] font-medium text-gray-500 truncate">Invalides</dt>
+            <dd className="text-sm font-bold text-red-600">{stats.invalides}</dd>
           </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Brouillons</dt>
-                    <dd className="text-lg font-medium text-gray-600">{stats.brouillons}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
+          <div className="bg-white overflow-hidden shadow-sm rounded p-2">
+            <dt className="text-[9px] font-medium text-gray-500 truncate">Brouillons</dt>
+            <dd className="text-sm font-bold text-gray-600">{stats.brouillons}</dd>
           </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">En attente</dt>
-                    <dd className="text-lg font-medium text-yellow-600">{stats.enAttente}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
+          <div className="bg-white overflow-hidden shadow-sm rounded p-2">
+            <dt className="text-[9px] font-medium text-gray-500 truncate">Attente</dt>
+            <dd className="text-sm font-bold text-yellow-600">{stats.enAttente}</dd>
           </div>
         </div>
 
         {/* Erreurs */}
         {error && (
-          <div className="mb-6 rounded-md bg-red-50 p-4">
-            <div className="flex">
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Erreur</h3>
-                <div className="mt-2 text-sm text-red-700">{error}</div>
-              </div>
-            </div>
+          <div className="mb-2 rounded bg-red-50 p-2">
+            <h3 className="text-[10px] font-medium text-red-800">Erreur</h3>
+            <div className="text-[10px] text-red-700">{error}</div>
           </div>
         )}
 
         {/* Filtres, onglets et recherche */}
-        <div className="bg-white shadow rounded-lg mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white shadow-sm rounded mb-2">
+          <div className="px-3 py-2 border-b border-gray-200">
             {/* Onglets statut devis + type */}
-            <div className="mb-4 flex flex-wrap gap-2">
+            <div className="mb-2 flex flex-wrap gap-1">
               <button
                 onClick={() => setActiveTab('tous')}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTab === 'tous' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+                className={`px-2 py-1 rounded text-[10px] font-medium border ${activeTab === 'tous' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
               >
                 Tous
               </button>
               <button
                 onClick={() => setActiveTab('en_attente')}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTab === 'en_attente' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+                className={`px-2 py-1 rounded text-[10px] font-medium border ${activeTab === 'en_attente' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
               >
-                En attente (user)
+                Attente
               </button>
               <button
                 onClick={() => setActiveTab('valides')}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium border ${activeTab === 'valides' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+                className={`px-2 py-1 rounded text-[10px] font-medium border ${activeTab === 'valides' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
               >
                 Validés
               </button>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 gap-2">
               {/* Recherche */}
               <div className="relative flex-1 max-w-md">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                </div>
+                <MagnifyingGlassIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
                 <input
                   type="text"
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="Rechercher par numéro, client ou email..."
+                  className="block w-full pl-7 pr-2 py-1 border border-gray-300 rounded text-[10px] bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Rechercher..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
 
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center gap-2">
                 {/* Filtre par statut */}
-                <div className="relative">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
-                    className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  >
-                    <option value="tous">Tous les statuts</option>
-                    <option value="VALIDE">Valides</option>
-                    <option value="INVALIDE">Invalides</option>
-                    <option value="BROUILLON">Brouillons</option>
-                    <option value="EN_ATTENTE">En attente</option>
-                  </select>
-                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
+                  className="block pl-2 pr-6 py-1 text-[10px] border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded"
+                >
+                  <option value="tous">Tous</option>
+                  <option value="VALIDE">Valides</option>
+                  <option value="INVALIDE">Invalides</option>
+                  <option value="BROUILLON">Brouillons</option>
+                  <option value="EN_ATTENTE">Attente</option>
+                </select>
 
                 {/* Tri */}
-                <div className="relative">
-                  <select
-                    value={`${sortField}-${sortOrder}`}
-                    onChange={(e) => {
-                      const [field, order] = e.target.value.split('-') as [SortField, SortOrder];
-                      setSortField(field);
-                      setSortOrder(order);
-                    }}
-                    className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  >
-                    <option value="date-desc">Date (récent)</option>
-                    <option value="date-asc">Date (ancien)</option>
-                    <option value="numero-asc">Numéro (A-Z)</option>
-                    <option value="numero-desc">Numéro (Z-A)</option>
-                    <option value="client-asc">Client (A-Z)</option>
-                    <option value="client-desc">Client (Z-A)</option>
-                    <option value="montant-desc">Montant (élevé)</option>
-                    <option value="montant-asc">Montant (faible)</option>
-                  </select>
-                </div>
+                <select
+                  value={`${sortField}-${sortOrder}`}
+                  onChange={(e) => {
+                    const [field, order] = e.target.value.split('-') as [SortField, SortOrder];
+                    setSortField(field);
+                    setSortOrder(order);
+                  }}
+                  className="block pl-2 pr-6 py-1 text-[10px] border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded"
+                >
+                  <option value="date-desc">Date ↓</option>
+                  <option value="date-asc">Date ↑</option>
+                  <option value="numero-asc">N° A-Z</option>
+                  <option value="numero-desc">N° Z-A</option>
+                  <option value="client-asc">Client A-Z</option>
+                  <option value="client-desc">Client Z-A</option>
+                  <option value="montant-desc">€ ↓</option>
+                  <option value="montant-asc">€ ↑</option>
+                </select>
 
                 {/* Items per page */}
-                <div className="relative">
-                  <select
-                    value={itemsPerPage}
-                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                    className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  >
-                    <option value={12}>12 par page</option>
-                    <option value={24}>24 par page</option>
-                    <option value={48}>48 par page</option>
-                    <option value={96}>96 par page</option>
-                  </select>
-                </div>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  className="block pl-2 pr-6 py-1 text-[10px] border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded"
+                >
+                  <option value={12}>12</option>
+                  <option value={24}>24</option>
+                  <option value={48}>48</option>
+                  <option value={96}>96</option>
+                </select>
               </div>
             </div>
 
             {/* Compteur de résultats */}
-            <div className="mt-4 text-sm text-gray-700">
-              Affichage de <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> à{' '}
-              <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredAndSortedDevis.length)}</span> sur{' '}
-              <span className="font-medium">{filteredAndSortedDevis.length}</span> résultats
+            <div className="mt-2 text-[9px] text-gray-600">
+              <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span>-
+              <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredAndSortedDevis.length)}</span>/
+              <span className="font-medium">{filteredAndSortedDevis.length}</span>
             </div>
           </div>
         </div>
 
         {/* Liste des devis */}
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="bg-white shadow-sm rounded overflow-hidden">
           {filteredAndSortedDevis.length === 0 ? (
-            <div className="text-center py-12">
-              <FunnelIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Aucun devis trouvé</h3>
-              <p className="mt-1 text-sm text-gray-500">
+            <div className="text-center py-8">
+              <FunnelIcon className="mx-auto h-8 w-8 text-gray-400" />
+              <h3 className="mt-2 text-[11px] font-medium text-gray-900">Aucun devis</h3>
+              <p className="mt-1 text-[10px] text-gray-500">
                 {searchTerm || statusFilter !== 'tous'
-                  ? 'Essayez de modifier vos critères de recherche.'
-                  : 'Commencez par créer un nouveau devis.'}
+                  ? 'Modifiez vos critères.'
+                  : 'Créez un nouveau devis.'}
               </p>
             </div>
           ) : (
             <>
               {/* En-têtes du tableau */}
-              <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
-                <div className="grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                <div className="grid grid-cols-12 gap-2 text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                   <div className="col-span-2">
                     <button 
                       onClick={() => handleSort('numero')}
-                      className="flex items-center space-x-1 hover:text-gray-700"
+                      className="flex items-center gap-0.5 hover:text-gray-700"
                     >
-                      <span>N° Devis</span>
+                      <span>N°</span>
                       {sortField === 'numero' && (
                         <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
                       )}
@@ -485,7 +433,7 @@ export default function DevisListPage() {
                   <div className="col-span-1">
                     <button 
                       onClick={() => handleSort('date')}
-                      className="flex items-center space-x-1 hover:text-gray-700"
+                      className="flex items-center gap-0.5 hover:text-gray-700"
                     >
                       <span>Date</span>
                       {sortField === 'date' && (
@@ -496,7 +444,7 @@ export default function DevisListPage() {
                   <div className="col-span-2">
                     <button 
                       onClick={() => handleSort('client')}
-                      className="flex items-center space-x-1 hover:text-gray-700"
+                      className="flex items-center gap-0.5 hover:text-gray-700"
                     >
                       <span>Client</span>
                       {sortField === 'client' && (
@@ -508,9 +456,9 @@ export default function DevisListPage() {
                   <div className="col-span-1">
                     <button 
                       onClick={() => handleSort('montant')}
-                      className="flex items-center space-x-1 hover:text-gray-700"
+                      className="flex items-center gap-0.5 hover:text-gray-700"
                     >
-                      <span>Montant</span>
+                      <span>€</span>
                       {sortField === 'montant' && (
                         <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
                       )}
@@ -543,22 +491,22 @@ export default function DevisListPage() {
                 }
 
                 const renderRow = (d: typeof paginatedDevis[number]) => (
-                  <div key={d.id} className="px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
-                    <div className="grid grid-cols-12 gap-4 items-center">
+                  <div key={d.id} className="px-4 py-3 hover:bg-gray-50 transition-colors duration-150">
+                    <div className="grid grid-cols-12 gap-2 items-center">
                       {/* Numéro */}
                       <div className="col-span-2">
-                        <div className="text-sm font-medium text-gray-900">#{d.numero}</div>
+                        <div className="text-[11px] font-medium text-gray-900">#{d.numero}</div>
                       </div>
                       {/* Date */}
                       <div className="col-span-1">
-                        <div className="text-sm text-gray-900">
-                          {d.createdAt ? new Date(d.createdAt).toLocaleDateString('fr-FR') : '-'}
+                        <div className="text-[11px] text-gray-900">
+                          {d.createdAt ? new Date(d.createdAt).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'}) : '-'}
                         </div>
                       </div>
                       {/* Client */}
                       <div className="col-span-2">
-                        <div className="text-sm text-gray-900 flex items-center gap-2">
-                          <span>
+                        <div className="text-[11px] text-gray-900 flex items-center gap-1">
+                          <span className="truncate" title={d.demande?.user ? `${d.demande.user.prenom ?? ''} ${d.demande.user.nom ?? ''}`.trim() : d.client}>
                             {d.demande?.user 
                               ? `${d.demande.user.prenom ?? ''} ${d.demande.user.nom ?? ''}`.trim() || 'N/A'
                               : d.client || 'N/A'
@@ -571,14 +519,14 @@ export default function DevisListPage() {
                             const count = devisCountByUser.get(key) || 0;
                             if (count > 1) {
                               return (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200" title="Nombre total de devis pour cet utilisateur">
-                                  {count} devis
+                                <span className="inline-flex items-center px-1 py-0.5 rounded-full text-[9px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200" title="Nombre total de devis">
+                                  {count}
                                 </span>
                               );
                             }
                             return (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-50 text-green-700 border border-green-200" title="Premier devis pour cet utilisateur">
-                                1 devis
+                              <span className="inline-flex items-center px-1 py-0.5 rounded-full text-[9px] font-medium bg-green-50 text-green-700 border border-green-200" title="Premier devis">
+                                1
                               </span>
                             );
                           })()}
@@ -586,48 +534,48 @@ export default function DevisListPage() {
                       </div>
                       {/* Email */}
                       <div className="col-span-3">
-                        <div className="text-sm text-gray-900 truncate" title={d.mail || 'N/A'}>
+                        <div className="text-[11px] text-gray-900 truncate" title={d.mail || 'N/A'}>
                           {d.mail || 'N/A'}
                         </div>
                       </div>
                       {/* Montant */}
                       <div className="col-span-1">
-                        <div className="text-sm font-semibold text-gray-900">
+                        <div className="text-[11px] font-semibold text-gray-900">
                           {typeof d.montant === 'number' 
-                            ? d.montant.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
+                            ? d.montant.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }).replace(' ', '')
                             : 'N/A'
                           }
                         </div>
                       </div>
                       {/* Statut */}
                       <div className="col-span-1">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(d.statut)}`}>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium border ${getStatusColor(d.statut)}`}>
                           {d.statut || 'N/A'}
                         </span>
                       </div>
                       {/* Actions */}
                       <div className="col-span-2 text-center">
-                        <div className="flex items-center justify-center space-x-2">
+                        <div className="flex items-center justify-center space-x-1">
                           <Link
                             href={`/admin/devis/${d.id}`}
-                            className="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
+                            className="text-indigo-600 hover:text-indigo-500 text-[10px] font-medium"
                             title="Voir détails"
                           >
                             Voir
                           </Link>
                           <button
                             onClick={() => downloadDevis(d.id, d.numero)}
-                            className="p-1 text-gray-400 hover:text-gray-600"
+                            className="p-0.5 text-gray-400 hover:text-gray-600"
                             title="Télécharger PDF"
                           >
-                            <DocumentArrowDownIcon className="h-4 w-4" />
+                            <DocumentArrowDownIcon className="h-3 w-3" />
                           </button>
                           <button
                             onClick={() => deleteDevis(d.id)}
-                            className="p-1 text-red-400 hover:text-red-600"
+                            className="p-0.5 text-red-400 hover:text-red-600"
                             title="Supprimer"
                           >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
@@ -641,8 +589,8 @@ export default function DevisListPage() {
                   <>
                     {Array.from(groups.entries()).map(([label, items]) => (
                       <div key={label} className="">
-                        <div className="bg-gray-100 px-6 py-2 border-b border-gray-200 mt-6">
-                          <h3 className="text-sm font-semibold text-gray-800">{label}</h3>
+                        <div className="bg-gray-100 px-4 py-1 border-b border-gray-200 mt-2">
+                          <h3 className="text-[10px] font-semibold text-gray-800">{label}</h3>
                         </div>
                         <div className="divide-y divide-gray-200">
                           {items.map(renderRow)}
@@ -655,72 +603,71 @@ export default function DevisListPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div className="bg-white px-2 py-2 flex items-center justify-between border-t border-gray-200">
                   <div className="flex-1 flex justify-between sm:hidden">
                     <button
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center px-2 py-1 border border-gray-300 text-[10px] font-medium rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                     >
-                      Précédent
+                      ←
                     </button>
+                    <span className="text-[10px] text-gray-700">
+                      {currentPage}/{totalPages}
+                    </span>
                     <button
                       onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                       disabled={currentPage === totalPages}
-                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center px-2 py-1 border border-gray-300 text-[10px] font-medium rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                     >
-                      Suivant
+                      →
                     </button>
                   </div>
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm text-gray-700">
-                        Page <span className="font-medium">{currentPage}</span> sur <span className="font-medium">{totalPages}</span>
-                      </p>
-                    </div>
-                    <div>
-                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                        <button
-                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                          disabled={currentPage === 1}
-                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <ChevronLeftIcon className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                        {[...Array(totalPages)].map((_, i) => {
-                          const page = i + 1;
-                          if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                            return (
-                              <button
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
-                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                  currentPage === page
-                                    ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                }`}
-                              >
-                                {page}
-                              </button>
-                            );
-                          } else if (page === currentPage - 2 || page === currentPage + 2) {
-                            return (
-                              <span key={page} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                                ...
-                              </span>
-                            );
-                          }
-                          return null;
-                        })}
-                        <button
-                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                          disabled={currentPage === totalPages}
-                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                      </nav>
-                    </div>
+                    <p className="text-[10px] text-gray-700">
+                      Page <span className="font-medium">{currentPage}</span>/<span className="font-medium">{totalPages}</span>
+                    </p>
+                    <nav className="inline-flex rounded shadow-sm -space-x-px">
+                      <button
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="inline-flex items-center px-1.5 py-1 rounded-l border border-gray-300 bg-white text-[10px] text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        <ChevronLeftIcon className="h-3 w-3" />
+                      </button>
+                      {[...Array(totalPages)].map((_, i) => {
+                        const page = i + 1;
+                        if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => setCurrentPage(page)}
+                              className={`inline-flex items-center px-2 py-1 border text-[10px] font-medium ${
+                                currentPage === page
+                                  ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                          return (
+                            <span key={page} className="inline-flex items-center px-2 py-1 border border-gray-300 bg-white text-[10px] text-gray-700">
+                              ...
+                            </span>
+                          );
+                        }
+                        return null;
+                      })}
+                      <button
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="inline-flex items-center px-1.5 py-1 rounded-r border border-gray-300 bg-white text-[10px] text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        <ChevronRightIcon className="h-3 w-3" />
+                      </button>
+                    </nav>
                   </div>
                 </div>
               )}
