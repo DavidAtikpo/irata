@@ -55,6 +55,8 @@ export default function UserFollowUpPage() {
   const [error, setError] = useState('');
   const [onlyPending, setOnlyPending] = useState(true);
   const [invoiceFilter, setInvoiceFilter] = useState<string>('');
+  const [sessionFilter, setSessionFilter] = useState<string>('');
+  const [sessions, setSessions] = useState<string[]>([]);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [generatingInvoice, setGeneratingInvoice] = useState<Set<string>>(new Set());
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -81,9 +83,10 @@ export default function UserFollowUpPage() {
     }
     if (status === 'authenticated') {
       load();
+      loadSessions();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, onlyPending, invoiceFilter]);
+  }, [status, onlyPending, invoiceFilter, sessionFilter]);
 
   const load = async () => {
     setLoading(true);
@@ -94,6 +97,9 @@ export default function UserFollowUpPage() {
       if (invoiceFilter) {
         params.append('invoiceFilter', invoiceFilter);
       }
+      if (sessionFilter) {
+        params.append('sessionFilter', sessionFilter);
+      }
       const res = await fetch(`/api/admin/user-follow-up?${params.toString()}`);
       if (!res.ok) throw new Error('Erreur lors du chargement');
       const data = await res.json();
@@ -102,6 +108,17 @@ export default function UserFollowUpPage() {
       setError('Erreur lors du chargement');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSessions = async () => {
+    try {
+      const res = await fetch('/api/user/sessions');
+      if (!res.ok) throw new Error('Erreur lors du chargement des sessions');
+      const data = await res.json();
+      setSessions(data.sessions || []);
+    } catch (e) {
+      console.error('Erreur lors du chargement des sessions:', e);
     }
   };
 
@@ -288,22 +305,40 @@ export default function UserFollowUpPage() {
               </label>
             </div>
             
-            {/* Filtres de factures */}
-            <div className="flex flex-wrap gap-2 items-center">
-              <label className="text-xs font-medium text-gray-700">Filtre factures:</label>
-              <select
-                value={invoiceFilter}
-                onChange={(e) => setInvoiceFilter(e.target.value)}
-                className="text-xs border border-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 min-w-[140px]"
-              >
-                <option value="">Toutes les factures</option>
-                <option value="total_manuel">Total manuel</option>
-                <option value="partiel_manuel">Partiel manuel</option>
-                <option value="total_stripe">Total Stripe</option>
-                <option value="partiel_stripe">Partiel Stripe</option>
-                <option value="partiel_virement">Partiel virement</option>
-                <option value="no_invoice">Sans facture</option>
-              </select>
+            {/* Filtres */}
+            <div className="flex flex-wrap gap-3 items-center">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-gray-700">Filtre factures:</label>
+                <select
+                  value={invoiceFilter}
+                  onChange={(e) => setInvoiceFilter(e.target.value)}
+                  className="text-xs border border-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 min-w-[140px]"
+                >
+                  <option value="">Toutes les factures</option>
+                  <option value="total_manuel">Total manuel</option>
+                  <option value="partiel_manuel">Partiel manuel</option>
+                  <option value="total_stripe">Total Stripe</option>
+                  <option value="partiel_stripe">Partiel Stripe</option>
+                  <option value="partiel_virement">Partiel virement</option>
+                  <option value="no_invoice">Sans facture</option>
+                </select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-gray-700">Filtre session:</label>
+                <select
+                  value={sessionFilter}
+                  onChange={(e) => setSessionFilter(e.target.value)}
+                  className="text-xs border border-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 min-w-[200px]"
+                >
+                  <option value="">Toutes les sessions</option>
+                  {sessions.map((session) => (
+                    <option key={session} value={session}>
+                      {session}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 

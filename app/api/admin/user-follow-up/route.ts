@@ -14,11 +14,32 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const onlyPending = searchParams.get('onlyPending') === 'true';
     const invoiceFilter = searchParams.get('invoiceFilter'); // 'total_manuel', 'partiel_manuel', 'total_stripe', 'partiel_stripe', 'partiel_virement', 'no_invoice'
+    const sessionFilter = searchParams.get('sessionFilter'); // session name to filter by
+
+    // If sessionFilter is provided, first get user IDs that have demandes with that session
+    let filteredUserIds: string[] | undefined;
+    if (sessionFilter) {
+      const demandesWithSession = await prisma.demande.findMany({
+        where: {
+          session: sessionFilter,
+        },
+        select: {
+          userId: true,
+        },
+      });
+      filteredUserIds = Array.from(new Set(demandesWithSession.map(d => d.userId)));
+      
+      // If no users match the session filter, return empty array
+      if (filteredUserIds.length === 0) {
+        return NextResponse.json([]);
+      }
+    }
 
     // Fetch users with key follow-up signals - only USER role
     const users = await prisma.user.findMany({
       where: {
-        role: 'USER'
+        role: 'USER',
+        ...(filteredUserIds && { id: { in: filteredUserIds } }),
       },
       select: {
         id: true,

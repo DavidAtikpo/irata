@@ -145,10 +145,10 @@ export default function ActionCorrectiveDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen bg-gray-50 py-2">
+        <div className="max-w-4xl mx-auto px-2">
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
           </div>
         </div>
       </div>
@@ -157,23 +157,23 @@ export default function ActionCorrectiveDetailPage() {
 
   if (error || !actionCorrective) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Erreur</h1>
-            <p className="text-gray-600 mb-6">{error || 'Action corrective non trouvée'}</p>
-            <div className="space-x-4">
+      <div className="min-h-screen bg-gray-50 py-2">
+        <div className="max-w-4xl mx-auto px-2">
+          <div className="text-center py-6">
+            <h1 className="text-sm font-bold text-gray-900 mb-2">Erreur</h1>
+            <p className="text-gray-600 text-[10px] mb-3">{error || 'Action corrective non trouvée'}</p>
+            <div className="flex gap-2 justify-center">
               <button
                 onClick={() => router.back()}
-                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                className="bg-gray-600 text-white px-2 py-1 rounded text-[10px] hover:bg-gray-700 transition-colors"
               >
                 Retour
               </button>
             <Link
               href="/admin/actions-correctives"
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+              className="bg-indigo-600 text-white px-2 py-1 rounded text-[10px] hover:bg-indigo-700 transition-colors"
             >
-                Voir toutes les actions
+                Voir toutes
             </Link>
             </div>
           </div>
@@ -217,54 +217,54 @@ export default function ActionCorrectiveDetailPage() {
     };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 p-10">
+    <div className="min-h-screen bg-gray-50 py-2">
+      <div className="max-w-6xl mx-auto px-2">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
+        <div className="mb-2">
+          <div className="flex items-center gap-2 mb-2">
             <Link
               href="/admin/actions-correctives"
               className="text-gray-500 hover:text-gray-700"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900">Détail de l'Action Corrective</h1>
+            <h1 className="text-sm font-bold text-gray-900">Détail Action Corrective</h1>
           </div>
         </div>
 
 
         {/* Non-conformité associée */}
-        <div className="bg-white shadow rounded-lg mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Non-conformité associée</h2>
+        <div className="bg-white shadow rounded mb-2">
+          <div className="px-2 py-1.5 border-b border-gray-200">
+            <h2 className="text-[10px] font-medium text-gray-900">NC associée</h2>
           </div>
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
+          <div className="px-2 py-1.5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-[10px] font-medium text-gray-900">
                   {actionCorrective.nonConformite.numero} - {actionCorrective.nonConformite.titre}
                 </p>
-                <p className="text-sm text-gray-500">Statut: {actionCorrective.nonConformite.statut}</p>
+                <p className="text-[9px] text-gray-500">Statut: {actionCorrective.nonConformite.statut}</p>
               </div>
-              <div className="flex space-x-3">
+              <div className="flex gap-1.5">
                 <Link
                   href={`/admin/non-conformites/${actionCorrective.nonConformite.id}`}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors text-sm"
+                  className="bg-indigo-600 text-white px-1.5 py-0.5 rounded text-[9px] hover:bg-indigo-700 transition-colors"
                 >
-                  Voir la non-conformité
+                  Voir NC
                 </Link>
                 <a
                   href={`/api/admin/non-conformites/${actionCorrective.nonConformite.id}/pdf`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm flex items-center space-x-2"
+                  className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[9px] hover:bg-red-700 transition-colors flex items-center gap-1"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span>Télécharger PDF</span>
+                  <span>PDF</span>
                 </a>
               </div>
             </div>
@@ -272,31 +272,31 @@ export default function ActionCorrectiveDetailPage() {
         </div>
 
         {/* Fiche CI.DES Action Corrective - Mode lecture seule */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Fiche CI.DES Action Corrective</h2>
+        <div className="bg-white shadow rounded">
+          <div className="px-2 py-1.5 border-b border-gray-200">
+            <h2 className="text-[10px] font-medium text-gray-900">Fiche CI.DES</h2>
           </div>
-          <div className="p-6">
+          <div className="p-2">
             {/* Header de la fiche */}
-            <header className="p-4 border-b border-gray-200 mb-6">
-              <div className="flex items-center gap-4">
+            <header className="p-1.5 border-b border-gray-200 mb-2">
+              <div className="flex items-center gap-2">
                 <div className="flex-shrink-0">
-                  <img src="/logo.png" alt="CI.DES Logo" className="w-16 h-20 object-contain" />
+                  <img src="/logo.png" alt="CI.DES Logo" className="w-8 h-10 object-contain" />
                 </div>
                 <div className="flex-1">
-                  <table className="w-full border-collapse text-xs">
+                  <table className="w-full border-collapse text-[8px]">
                     <tbody>
                       <tr>
-                        <td className="border p-1 font-bold">Titre</td>
-                        <td className="border p-1 font-bold">Numéro de code</td>
-                        <td className="border p-1 font-bold">Révision</td>
-                        <td className="border p-1 font-bold">Création date</td>
+                        <td className="border p-0.5 font-bold">Titre</td>
+                        <td className="border p-0.5 font-bold">Code</td>
+                        <td className="border p-0.5 font-bold">Révision</td>
+                        <td className="border p-0.5 font-bold">Date</td>
                       </tr>
                       <tr>
-                        <td className="border p-1">CI.DES ACTION CORRECTIVE - (DIGITAL)</td>
-                        <td className="border p-1">ENR-CIFRA-QHSE 002</td>
-                        <td className="border p-1">00</td>
-                        <td className="border p-1">{formatDate(actionCorrective.createdAt)}</td>
+                        <td className="border p-0.5">CI.DES ACTION CORRECTIVE</td>
+                        <td className="border p-0.5">ENR-CIFRA-QHSE 002</td>
+                        <td className="border p-0.5">00</td>
+                        <td className="border p-0.5">{new Date(actionCorrective.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -305,71 +305,71 @@ export default function ActionCorrectiveDetailPage() {
             </header>
 
             {/* Header avec informations de base */}
-            <section className="grid grid-cols-6 gap-4 mb-6">
+            <section className="grid grid-cols-3 sm:grid-cols-6 gap-1 mb-2">
               <div>
-                <div className="text-xs font-medium text-gray-700">Émetteur</div>
-                <div className="text-sm text-gray-900 border rounded px-2 py-1 bg-gray-50">
+                <div className="text-[9px] font-medium text-gray-700">Émetteur</div>
+                <div className="text-[9px] text-gray-900 border rounded px-1 py-0.5 bg-gray-50">
                   {formData.issuer || '—'}
                 </div>
               </div>
               <div>
-                <div className="text-xs font-medium text-gray-700">Destinataire</div>
-                <div className="text-sm text-gray-900 border rounded px-2 py-1 bg-gray-50">
+                <div className="text-[9px] font-medium text-gray-700">Destinataire</div>
+                <div className="text-[9px] text-gray-900 border rounded px-1 py-0.5 bg-gray-50">
                   {formData.recipient || '—'}
                 </div>
               </div>
               <div>
-                <div className="text-xs font-medium text-gray-700">Date</div>
-                <div className="text-sm text-gray-900 border rounded px-2 py-1 bg-gray-50">
+                <div className="text-[9px] font-medium text-gray-700">Date</div>
+                <div className="text-[9px] text-gray-900 border rounded px-1 py-0.5 bg-gray-50">
                   {formData.date || '—'}
                 </div>
               </div>
               <div>
-                <div className="text-xs font-medium text-gray-700">N°</div>
-                <div className="text-sm text-gray-900 border rounded px-2 py-1 bg-gray-50">
+                <div className="text-[9px] font-medium text-gray-700">N°</div>
+                <div className="text-[9px] text-gray-900 border rounded px-1 py-0.5 bg-gray-50">
                   {formData.number || '—'}
                 </div>
               </div>
               <div className="col-span-2">
-                <div className="text-xs font-medium text-gray-700">Département</div>
-                <div className="text-sm text-gray-900 border rounded px-2 py-1 bg-gray-50">
+                <div className="text-[9px] font-medium text-gray-700">Département</div>
+                <div className="text-[9px] text-gray-900 border rounded px-1 py-0.5 bg-gray-50">
                   {formData.department || '—'}
                 </div>
               </div>
             </section>
 
             {/* Partie réservée à l'émetteur */}
-            <section className="border border-gray-300 rounded p-4 space-y-3 mb-6">
-              <h2 className="font-medium text-sm mb-2">PARTIE RÉSERVÉE À L'ÉMETTEUR</h2>
+            <section className="border border-gray-300 rounded p-2 space-y-1.5 mb-2">
+              <h2 className="font-medium text-[9px] mb-1">PARTIE RÉSERVÉE À L'ÉMETTEUR</h2>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   <div>
-                  <div className="text-xs mb-1 font-medium text-gray-700">Origine</div>
-                  <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                  <div className="text-[9px] mb-0.5 font-medium text-gray-700">Origine</div>
+                  <div className="text-[9px] text-gray-900 bg-gray-50 border rounded px-1 py-0.5">
                     {formData.origin || '—'}
                   </div>
                 </div>
                   <div>
-                  <div className="text-xs mb-1 font-medium text-gray-700">Catégorie d'anomalie</div>
-                  <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                  <div className="text-[9px] mb-0.5 font-medium text-gray-700">Catégorie d'anomalie</div>
+                  <div className="text-[9px] text-gray-900 bg-gray-50 border rounded px-1 py-0.5">
                     {formData.category || '—'}
                   </div>
                 </div>
                     </div>
 
                     <div>
-                <div className="text-xs mb-1 font-medium text-gray-700">Description</div>
-                <div className="text-sm text-gray-900 bg-gray-50 border rounded p-2 min-h-24">
+                <div className="text-[9px] mb-0.5 font-medium text-gray-700">Description</div>
+                <div className="text-[9px] text-gray-900 bg-gray-50 border rounded p-1 min-h-12">
                   {formData.issuerDescription || '—'}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 items-center">
-                <div className="text-xs flex items-center gap-2">
-                  <input type="checkbox" checked={formData.immediateCurative || false} disabled className="rounded" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 items-center">
+                <div className="text-[9px] flex items-center gap-1">
+                  <input type="checkbox" checked={formData.immediateCurative || false} disabled className="rounded w-3 h-3" />
                   Action curative immédiate
                 </div>
-                <div className="flex items-center gap-2 text-xs">
+                <div className="flex items-center gap-1 text-[9px]">
                   Action planifiée ?
                   <span className="font-medium">
                     {formData.planned === 'yes' ? 'Oui' : formData.planned === 'no' ? 'Non' : '—'}
@@ -377,33 +377,33 @@ export default function ActionCorrectiveDetailPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-xs flex items-center gap-2">
-                  <input type="checkbox" checked={formData.correctiveDescribed || false} disabled className="rounded" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                <div className="text-[9px] flex items-center gap-1">
+                  <input type="checkbox" checked={formData.correctiveDescribed || false} disabled className="rounded w-3 h-3" />
                   Corrective (décrite)
                 </div>
-                <div className="text-xs flex items-center gap-2">
-                  <input type="checkbox" checked={formData.preventiveDescribed || false} disabled className="rounded" />
+                <div className="text-[9px] flex items-center gap-1">
+                  <input type="checkbox" checked={formData.preventiveDescribed || false} disabled className="rounded w-3 h-3" />
                   Préventive (décrite)
                 </div>
                     </div>
 
                     <div>
-                <div className="text-xs font-medium text-gray-700">Collaborateur responsable de l'action</div>
-                <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                <div className="text-[9px] font-medium text-gray-700">Collaborateur responsable</div>
+                <div className="text-[9px] text-gray-900 bg-gray-50 border rounded px-1 py-0.5">
                   {formData.collaboratorInCharge || '—'}
                 </div>
                     </div>
 
               <div className="flex justify-end">
-                <div className="w-64">
-                  <div className="text-xs font-medium text-gray-700">Signature de l'émetteur</div>
+                <div className="w-32">
+                  <div className="text-[9px] font-medium text-gray-700">Signature émetteur</div>
                   {formData.issuerSignature && formData.issuerSignature !== '—' ? (
-                    <div className="border rounded p-2 bg-gray-50">
-                      <img src={formData.issuerSignature} alt="Signature Émetteur" className="max-w-full h-10 object-contain" />
+                    <div className="border rounded p-1 bg-gray-50">
+                      <img src={formData.issuerSignature} alt="Signature Émetteur" className="max-w-full h-6 object-contain" />
                     </div>
                   ) : (
-                    <div className="border rounded p-2 bg-gray-50 text-gray-400 text-sm">
+                    <div className="border rounded p-1 bg-gray-50 text-gray-400 text-[8px]">
                       Aucune signature
                     </div>
                   )}
@@ -412,47 +412,47 @@ export default function ActionCorrectiveDetailPage() {
             </section>
 
             {/* Partie réservée au responsable qualité */}
-            <section className="border border-gray-300 rounded p-4 space-y-3">
-              <h2 className="font-medium text-sm mb-2">PARTIE RÉSERVÉE AU RESPONSABLE QUALITÉ / AUTORITÉ TECHNIQUE / PDG</h2>
+            <section className="border border-gray-300 rounded p-2 space-y-1.5">
+              <h2 className="font-medium text-[9px] mb-1">PARTIE RÉSERVÉE AU RESPONSABLE QUALITÉ / AUTORITÉ TECHNIQUE / PDG</h2>
 
                     <div>
-                <div className="text-xs mb-1 font-medium text-gray-700">Analyse de la cause / Proposition d'action à valider par le PDG</div>
-                <div className="text-sm text-gray-900 bg-gray-50 border rounded p-2 min-h-24">
+                <div className="text-[9px] mb-0.5 font-medium text-gray-700">Analyse de la cause / Proposition d'action</div>
+                <div className="text-[9px] text-gray-900 bg-gray-50 border rounded p-1 min-h-12">
                   {formData.analysis || '—'}
                 </div>
                     </div>
 
                     <div>
-                <div className="text-xs font-medium text-gray-700">Délai limite :</div>
-                <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                <div className="text-[9px] font-medium text-gray-700">Délai limite :</div>
+                <div className="text-[9px] text-gray-900 bg-gray-50 border rounded px-1 py-0.5">
                   {formData.limitTime || '—'}
                     </div>
                   </div>
 
                   <div>
-                <div className="text-xs font-medium text-gray-700">Collaborateur responsable de l'action (désigné par le PDG)</div>
-                <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                <div className="text-[9px] font-medium text-gray-700">Collaborateur responsable (PDG)</div>
+                <div className="text-[9px] text-gray-900 bg-gray-50 border rounded px-1 py-0.5">
                   {formData.collaboratorAppointed || '—'}
                 </div>
                   </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 <div>
-                  <div className="text-xs font-medium text-gray-700">Clôture des actions</div>
-                  <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                  <div className="text-[9px] font-medium text-gray-700">Clôture des actions</div>
+                  <div className="text-[9px] text-gray-900 bg-gray-50 border rounded px-1 py-0.5">
                     {formData.closingDate || '—'}
                   </div>
                     </div>
                     <div>
-                  <div className="text-xs font-medium text-gray-700">Efficacité des actions prises ?</div>
-                  <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                  <div className="text-[9px] font-medium text-gray-700">Efficacité des actions ?</div>
+                  <div className="text-[9px] text-gray-900 bg-gray-50 border rounded px-1 py-0.5">
                     {formData.effectiveness || '—'}
                   </div>
                   {formData.effectivenessType && (
-                    <div className="text-xs font-medium text-gray-700 mt-1">Type d'efficacité :</div>
+                    <div className="text-[9px] font-medium text-gray-700 mt-0.5">Type d'efficacité :</div>
                   )}
                   {formData.effectivenessType && (
-                    <div className="text-sm text-gray-900 bg-gray-50 border rounded px-2 py-1">
+                    <div className="text-[9px] text-gray-900 bg-gray-50 border rounded px-1 py-0.5">
                       {formData.effectivenessType || '—'}
                     </div>
                   )}
@@ -460,43 +460,47 @@ export default function ActionCorrectiveDetailPage() {
             </div>
               
               <div className="flex justify-end">
-                <div className="text-xs font-medium text-gray-700">Signature / Réception</div>
-                {formData.signatureReception && formData.signatureReception !== '—' ? (
-                  <div className=" p-2 ">
-                    <img src={formData.signatureReception} alt="Signature Réception" className="max-w-full h-10 object-contain" />
-                  </div>
-                ) : (
-                  <div className="border rounded p-2 bg-gray-50 text-gray-400 text-sm">
-                    Aucune signature
+                <div>
+                  <div className="text-[9px] font-medium text-gray-700">Signature / Réception</div>
+                  {formData.signatureReception && formData.signatureReception !== '—' ? (
+                    <div className="p-1">
+                      <img src={formData.signatureReception} alt="Signature Réception" className="max-w-full h-6 object-contain" />
+                    </div>
+                  ) : (
+                    <div className="border rounded p-1 bg-gray-50 text-gray-400 text-[8px]">
+                      Aucune signature
                 </div>
               )}
           </div>
+          </div>
 
                 <div>
-                <div className="text-xs font-medium text-gray-700">Observation du Responsable Qualité / Autorité Technique</div>
-                <div className="text-sm text-gray-900 bg-gray-50 border rounded p-2 min-h-20">
+                <div className="text-[9px] font-medium text-gray-700">Observation Responsable Qualité</div>
+                <div className="text-[9px] text-gray-900 bg-gray-50 border rounded p-1 min-h-12">
                   {formData.observation || '—'}
               </div>
             </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 <div>
-                  <div className="text-xs font-medium mb-1 text-gray-700">Conclusion du Responsable Qualité / Autorité Technique</div>
-                  <div className="text-sm text-gray-900 bg-gray-50 border rounded p-2">
+                  <div className="text-[9px] font-medium mb-0.5 text-gray-700">Conclusion Responsable Qualité</div>
+                  <div className="text-[9px] text-gray-900 bg-gray-50 border rounded p-1">
                     {formData.conclusion || '—'}
                   </div>
                 </div>
                 <div className="flex justify-end">
-                  <div className="text-xs font-medium text-gray-700">Signature</div>
-                  {formData.conclusionSignature && formData.conclusionSignature !== '—' ? (
-                    <div className=" p-2 ">
-                      <img src={formData.conclusionSignature} alt="Signature" className="max-w-full h-10 object-contain" />
-                    </div>
-                  ) : (
-                    <div className="border rounded p-2 bg-gray-50 text-gray-400 text-sm">
-                      Aucune signature
-                    </div>
-                  )}
+                  <div>
+                    <div className="text-[9px] font-medium text-gray-700">Signature</div>
+                    {formData.conclusionSignature && formData.conclusionSignature !== '—' ? (
+                      <div className="p-1">
+                        <img src={formData.conclusionSignature} alt="Signature" className="max-w-full h-6 object-contain" />
+                      </div>
+                    ) : (
+                      <div className="border rounded p-1 bg-gray-50 text-gray-400 text-[8px]">
+                        Aucune signature
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </section>
@@ -504,19 +508,19 @@ export default function ActionCorrectiveDetailPage() {
             </div>
 
         {/* Actions */}
-        <div className="mt-6 flex justify-between">
+        <div className="mt-2 flex flex-col sm:flex-row justify-between gap-2">
           <Link
             href="/admin/actions-correctives"
-            className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+            className="bg-gray-600 text-white px-2 py-1 rounded text-[10px] hover:bg-gray-700 transition-colors"
           >
-            Retour à la liste
+            Retour
           </Link>
-          <div className="space-x-4">
+          <div className="flex gap-2">
             <Link
               href={`/admin/non-conformites/${actionCorrective.nonConformite.id}`}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+              className="bg-indigo-600 text-white px-2 py-1 rounded text-[10px] hover:bg-indigo-700 transition-colors"
             >
-              Voir la non-conformité
+              Voir NC
             </Link>
           </div>
         </div>

@@ -146,10 +146,10 @@ export default function AdminNonConformitesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen bg-gray-50 py-2">
+        <div className="max-w-7xl mx-auto px-2">
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
           </div>
         </div>
       </div>
@@ -157,185 +157,177 @@ export default function AdminNonConformitesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-2">
+      <div className="max-w-7xl mx-auto px-2">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center">
+        <div className="mb-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Gestion des non-conformités</h1>
-              <p className="mt-2 text-gray-600">
-                Vue d'ensemble de toutes les non-conformités du système
+              <h1 className="text-sm font-bold text-gray-900">Non-conformités</h1>
+              <p className="mt-0.5 text-[10px] text-gray-600">
+                Vue d'ensemble
               </p>
             </div>
-            <div className="flex space-x-4">
+            <div className="flex gap-1.5">
               <Link
                 href="/admin/non-conformites/statistiques"
-                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                className="bg-gray-600 text-white px-2 py-1 rounded text-[10px] hover:bg-gray-700 transition-colors"
               >
-                Statistiques
+                Stats
               </Link>
               <Link
                 href="/admin/non-conformites/nouvelle"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+                className="bg-indigo-600 text-white px-2 py-1 rounded text-[10px] hover:bg-indigo-700 transition-colors"
               >
-                Créer une non-conformité
+                Nouvelle
               </Link>
             </div>
           </div>
         </div>
 
         {/* Filtres avancés */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Filtres avancés</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-white rounded shadow p-2 mb-2">
+          <h3 className="text-[10px] font-medium text-gray-900 mb-1.5">Filtres</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
                 Recherche
               </label>
               <input
                 type="text"
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                placeholder="Titre, description, numéro..."
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Titre, description..."
+                className="w-full border border-gray-300 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
                 Statut
               </label>
               <select
                 value={filters.statut}
                 onChange={(e) => setFilters({ ...filters, statut: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
-                <option value="">Tous les statuts</option>
+                <option value="">Tous</option>
                 {Object.entries(statutLabels).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
                 Type
               </label>
               <select
                 value={filters.type}
                 onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
-                <option value="">Tous les types</option>
+                <option value="">Tous</option>
                 {Object.entries(typeLabels).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
                 Gravité
               </label>
               <select
                 value={filters.gravite}
                 onChange={(e) => setFilters({ ...filters, gravite: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
-                <option value="">Toutes les gravités</option>
+                <option value="">Toutes</option>
                 {Object.entries(graviteLabels).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
                 Détecteur
               </label>
               <input
                 type="text"
                 value={filters.detecteurId}
                 onChange={(e) => setFilters({ ...filters, detecteurId: e.target.value })}
-                placeholder="ID du détecteur"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="ID détecteur"
+                className="w-full border border-gray-300 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
                 Responsable
               </label>
               <input
                 type="text"
                 value={filters.responsableId}
                 onChange={(e) => setFilters({ ...filters, responsableId: e.target.value })}
-                placeholder="ID du responsable"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="ID responsable"
+                className="w-full border border-gray-300 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
           </div>
         </div>
 
         {/* Statistiques rapides */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-2">
+          <div className="bg-white rounded shadow p-2">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total</p>
-                <p className="text-2xl font-semibold text-gray-900">{pagination.total}</p>
+              <div>
+                <p className="text-[9px] text-gray-500">Total</p>
+                <p className="text-xs font-semibold text-gray-900">{pagination.total}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                </div>
+          <div className="bg-white rounded shadow p-2">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Ouvertes</p>
-                <p className="text-2xl font-semibold text-gray-900">
+              <div>
+                <p className="text-[9px] text-gray-500">Ouvertes</p>
+                <p className="text-xs font-semibold text-gray-900">
                   {nonConformites.filter(nc => nc.statut === 'OUVERTE').length}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
+          <div className="bg-white rounded shadow p-2">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">En cours</p>
-                <p className="text-2xl font-semibold text-gray-900">
+              <div>
+                <p className="text-[9px] text-gray-500">En cours</p>
+                <p className="text-xs font-semibold text-gray-900">
                   {nonConformites.filter(nc => nc.statut === 'EN_COURS').length}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                </div>
+          <div className="bg-white rounded shadow p-2">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Critiques</p>
-                <p className="text-2xl font-semibold text-gray-900">
+              <div>
+                <p className="text-[9px] text-gray-500">Critiques</p>
+                <p className="text-xs font-semibold text-gray-900">
                   {nonConformites.filter(nc => nc.gravite === 'CRITIQUE').length}
                 </p>
               </div>
@@ -344,11 +336,11 @@ export default function AdminNonConformitesPage() {
         </div>
 
         {/* Liste des non-conformités */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white rounded shadow">
           {nonConformites.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-6">
               <svg
-                className="mx-auto h-12 w-12 text-gray-400"
+                className="mx-auto h-6 w-6 text-gray-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -360,79 +352,79 @@ export default function AdminNonConformitesPage() {
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune non-conformité</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Aucune non-conformité ne correspond aux critères de recherche.
+              <h3 className="mt-1 text-[10px] font-medium text-gray-900">Aucune NC</h3>
+              <p className="mt-0.5 text-[9px] text-gray-500">
+                Aucune non-conformité trouvée.
               </p>
             </div>
           ) : (
             <>
               <div className="divide-y divide-gray-200">
                 {nonConformites.map((nonConformite) => (
-                  <div key={nonConformite.id} className="p-6 hover:bg-gray-50">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-medium text-gray-900">
+                  <div key={nonConformite.id} className="p-2 hover:bg-gray-50">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-1 mb-1">
+                          <h3 className="text-[10px] font-medium text-gray-900">
                             {nonConformite.numero}
                           </h3>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${graviteColors[nonConformite.gravite as keyof typeof graviteColors]}`}>
+                          <span className={`inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium ${graviteColors[nonConformite.gravite as keyof typeof graviteColors]}`}>
                             {graviteLabels[nonConformite.gravite as keyof typeof graviteLabels]}
                           </span>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statutColors[nonConformite.statut as keyof typeof statutColors]}`}>
+                          <span className={`inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium ${statutColors[nonConformite.statut as keyof typeof statutColors]}`}>
                             {statutLabels[nonConformite.statut as keyof typeof statutLabels]}
                           </span>
                           {isOverdue(nonConformite.dateEcheance) && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                              En retard
+                            <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-red-100 text-red-800">
+                              Retard
                             </span>
                           )}
                         </div>
-                        <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        <h4 className="text-[10px] font-semibold text-gray-900 mb-1 truncate">
                           {nonConformite.titre}
                         </h4>
-                        <p className="text-gray-600 mb-4 line-clamp-2">
+                        <p className="text-gray-600 mb-1.5 line-clamp-2 text-[9px]">
                           {nonConformite.description}
                         </p>
-                        <div className="flex items-center space-x-6 text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="flex flex-wrap items-center gap-2 text-[9px] text-gray-500">
+                          <div className="flex items-center gap-0.5">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                             </svg>
                             {typeLabels[nonConformite.type as keyof typeof typeLabels]}
                           </div>
-                          <div className="flex items-center">
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="flex items-center gap-0.5">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
-                            Détecteur: {nonConformite.detecteur.nom || nonConformite.detecteur.email}
+                            {nonConformite.detecteur.nom || nonConformite.detecteur.email}
                           </div>
-                          <div className="flex items-center">
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="flex items-center gap-0.5">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            Détectée le {formatDate(nonConformite.dateDetection)}
+                            {new Date(nonConformite.dateDetection).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4 ml-6">
-                        <div className="text-right text-sm text-gray-500">
-                          <div className="flex items-center mb-1">
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center gap-2 sm:ml-2">
+                        <div className="text-right text-[9px] text-gray-500">
+                          <div className="flex items-center gap-0.5 mb-0.5">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                             </svg>
                             {nonConformite._count.actionsCorrectives} action(s)
                           </div>
-                          <div className="flex items-center">
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="flex items-center gap-0.5">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
-                            {nonConformite._count.commentaires} commentaire(s)
+                            {nonConformite._count.commentaires} comm.
                           </div>
                         </div>
                         <Link
                           href={`/admin/non-conformites/${nonConformite.id}`}
-                          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+                          className="bg-indigo-600 text-white px-2 py-1 rounded text-[9px] hover:bg-indigo-700 transition-colors whitespace-nowrap"
                         >
                           Gérer
                         </Link>
@@ -444,41 +436,42 @@ export default function AdminNonConformitesPage() {
 
               {/* Pagination */}
               {pagination.pages > 1 && (
-                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div className="bg-white px-2 py-1.5 flex items-center justify-between border-t border-gray-200">
                   <div className="flex-1 flex justify-between sm:hidden">
                     <button
                       onClick={() => handlePageChange(pagination.page - 1)}
                       disabled={pagination.page === 1}
-                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center px-2 py-1 border border-gray-300 text-[9px] font-medium rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Précédent
+                      ←
                     </button>
+                    <span className="text-[9px] text-gray-700 py-1">{pagination.page}/{pagination.pages}</span>
                     <button
                       onClick={() => handlePageChange(pagination.page + 1)}
                       disabled={pagination.page === pagination.pages}
-                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center px-2 py-1 border border-gray-300 text-[9px] font-medium rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Suivant
+                      →
                     </button>
                   </div>
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-sm text-gray-700">
-                        Affichage de <span className="font-medium">{((pagination.page - 1) * pagination.limit) + 1}</span> à{' '}
+                      <p className="text-[9px] text-gray-700">
+                        <span className="font-medium">{((pagination.page - 1) * pagination.limit) + 1}</span>-{' '}
                         <span className="font-medium">
                           {Math.min(pagination.page * pagination.limit, pagination.total)}
                         </span>{' '}
-                        sur <span className="font-medium">{pagination.total}</span> résultats
+                        / <span className="font-medium">{pagination.total}</span>
                       </p>
                     </div>
                     <div>
-                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                      <nav className="relative z-0 inline-flex rounded shadow-sm -space-x-px">
                         <button
                           onClick={() => handlePageChange(pagination.page - 1)}
                           disabled={pagination.page === 1}
-                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="relative inline-flex items-center px-1.5 py-0.5 rounded-l border border-gray-300 bg-white text-[9px] font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Précédent
+                          ←
                         </button>
                         {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
                           const page = i + 1;
@@ -486,7 +479,7 @@ export default function AdminNonConformitesPage() {
                             <button
                               key={page}
                               onClick={() => handlePageChange(page)}
-                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              className={`relative inline-flex items-center px-2 py-0.5 border text-[9px] font-medium ${
                                 page === pagination.page
                                   ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
                                   : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
@@ -499,9 +492,9 @@ export default function AdminNonConformitesPage() {
                         <button
                           onClick={() => handlePageChange(pagination.page + 1)}
                           disabled={pagination.page === pagination.pages}
-                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="relative inline-flex items-center px-1.5 py-0.5 rounded-r border border-gray-300 bg-white text-[9px] font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Suivant
+                          →
                         </button>
                       </nav>
                     </div>

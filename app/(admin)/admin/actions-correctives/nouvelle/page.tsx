@@ -142,10 +142,10 @@ export default function NouvelleActionCorrectivePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen bg-gray-50 py-2">
+        <div className="max-w-3xl mx-auto px-2">
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
           </div>
         </div>
       </div>
@@ -154,16 +154,16 @@ export default function NouvelleActionCorrectivePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Erreur de chargement</h1>
-            <p className="text-red-600 mb-6">{error}</p>
+      <div className="min-h-screen bg-gray-50 py-2">
+        <div className="max-w-3xl mx-auto px-2">
+          <div className="text-center py-6">
+            <h1 className="text-sm font-bold text-gray-900 mb-2">Erreur de chargement</h1>
+            <p className="text-red-600 text-[10px] mb-3">{error}</p>
             <Link
               href="/admin/actions-correctives"
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+              className="bg-indigo-600 text-white px-2 py-1 rounded text-[10px] hover:bg-indigo-700 transition-colors"
             >
-              Retour à la liste
+              Retour
             </Link>
           </div>
         </div>
@@ -172,25 +172,25 @@ export default function NouvelleActionCorrectivePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-2">
+      <div className="max-w-3xl mx-auto px-2">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
+        <div className="mb-2">
+          <div className="flex items-center gap-2 mb-2">
             <Link
               href={nonConformiteId ? `/admin/non-conformites/${nonConformiteId}` : '/admin/actions-correctives'}
               className="text-gray-500 hover:text-gray-700"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900">Créer une action corrective</h1>
+            <h1 className="text-sm font-bold text-gray-900">Nouvelle action corrective</h1>
           </div>
           {nonConformite && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-blue-800 mb-2">Non-conformité associée</h3>
-              <p className="text-blue-700">
+            <div className="bg-blue-50 border border-blue-200 rounded p-2">
+              <h3 className="text-[10px] font-medium text-blue-800 mb-1">NC associée</h3>
+              <p className="text-blue-700 text-[9px]">
                 <span className="font-medium">{nonConformite.numero}</span> - {nonConformite.titre}
               </p>
             </div>
@@ -198,10 +198,10 @@ export default function NouvelleActionCorrectivePage() {
         </div>
 
         {/* Formulaire */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white rounded shadow p-3">
+          <form onSubmit={handleSubmit} className="space-y-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-[10px] font-medium text-gray-700 mb-1">
                 Titre *
               </label>
               <input
@@ -209,37 +209,37 @@ export default function NouvelleActionCorrectivePage() {
                 name="titre"
                 value={formData.titre}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded px-2 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 required
-                placeholder="Titre de l'action corrective"
+                placeholder="Titre de l'action"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-[10px] font-medium text-gray-700 mb-1">
                 Description *
               </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                rows={4}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                rows={3}
+                className="w-full border border-gray-300 rounded px-2 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 required
-                placeholder="Décrivez l'action corrective à mettre en place..."
+                placeholder="Description..."
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-[10px] font-medium text-gray-700 mb-1">
                   Type *
                 </label>
                 <select
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-gray-300 rounded px-2 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   required
                 >
                   {Object.entries(typeLabels).map(([value, label]) => (
@@ -249,14 +249,14 @@ export default function NouvelleActionCorrectivePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-[10px] font-medium text-gray-700 mb-1">
                   Priorité *
                 </label>
                 <select
                   name="priorite"
                   value={formData.priorite}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-gray-300 rounded px-2 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   required
                 >
                   {Object.entries(prioriteLabels).map(([value, label]) => (
@@ -267,17 +267,17 @@ export default function NouvelleActionCorrectivePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-[10px] font-medium text-gray-700 mb-1">
                 Responsable *
               </label>
               <select
                 name="responsableId"
                 value={formData.responsableId}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded px-2 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 required
               >
-                <option value="">Sélectionner un responsable</option>
+                <option value="">Sélectionner...</option>
                 {users.map((user) => (
                   <option key={user.id} value={user.id}>
                     {user.nom && user.prenom ? `${user.prenom} ${user.nom}` : user.email}
@@ -287,7 +287,7 @@ export default function NouvelleActionCorrectivePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-[10px] font-medium text-gray-700 mb-1">
                 Date d'échéance
               </label>
               <input
@@ -295,23 +295,23 @@ export default function NouvelleActionCorrectivePage() {
                 name="dateEcheance"
                 value={formData.dateEcheance}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded px-2 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
 
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end gap-2 pt-1">
               <Link
                 href={nonConformiteId ? `/admin/non-conformites/${nonConformiteId}` : '/admin/actions-correctives'}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="px-2 py-1 border border-gray-300 rounded text-gray-700 text-[10px] hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 Annuler
               </Link>
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-2 py-1 bg-indigo-600 text-white rounded text-[10px] hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Création...' : 'Créer l\'action corrective'}
+                {submitting ? 'Création...' : 'Créer'}
               </button>
             </div>
           </form>

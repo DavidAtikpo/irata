@@ -95,10 +95,10 @@ export default function ActionsCorrectivesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen bg-gray-50 py-2">
+        <div className="max-w-7xl mx-auto px-2">
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
           </div>
         </div>
       </div>
@@ -107,14 +107,14 @@ export default function ActionsCorrectivesPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Erreur</h1>
-            <p className="text-gray-600 mb-6">{error}</p>
+      <div className="min-h-screen bg-gray-50 py-2">
+        <div className="max-w-7xl mx-auto px-2">
+          <div className="text-center py-6">
+            <h1 className="text-sm font-bold text-gray-900 mb-2">Erreur</h1>
+            <p className="text-[10px] text-gray-600 mb-3">{error}</p>
             <button
               onClick={fetchActionsCorrectives}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+              className="bg-indigo-600 text-white px-2 py-1 rounded text-[10px] hover:bg-indigo-700 transition-colors"
             >
               Réessayer
             </button>
@@ -125,92 +125,84 @@ export default function ActionsCorrectivesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-2">
+      <div className="max-w-7xl mx-auto px-2">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Actions Correctives</h1>
-              <p className="mt-2 text-gray-600">
-                Gestion des actions correctives créées
+              <h1 className="text-sm font-bold text-gray-900">Actions Correctives</h1>
+              <p className="mt-0.5 text-[10px] text-gray-600">
+                Gestion des actions
               </p>
             </div>
             <Link
               href="/admin/non-conformites"
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+              className="bg-indigo-600 text-white px-2 py-1 rounded text-[10px] hover:bg-indigo-700 transition-colors"
             >
-              Voir les non-conformités
+              Non-conformités
             </Link>
           </div>
         </div>
 
         {/* Statistiques */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-2">
+          <div className="bg-white rounded shadow p-2">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total</p>
-                <p className="text-2xl font-semibold text-gray-900">{actionsCorrectives.length}</p>
+              <div>
+                <p className="text-[9px] text-gray-500">Total</p>
+                <p className="text-xs font-semibold text-gray-900">{actionsCorrectives.length}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
+          <div className="bg-white rounded shadow p-2">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">En cours</p>
-                <p className="text-2xl font-semibold text-gray-900">
+              <div>
+                <p className="text-[9px] text-gray-500">En cours</p>
+                <p className="text-xs font-semibold text-gray-900">
                   {actionsCorrectives.filter(ac => ac.statut === 'EN_COURS').length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
+          <div className="bg-white rounded shadow p-2">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Terminées</p>
-                <p className="text-2xl font-semibold text-gray-900">
+              <div>
+                <p className="text-[9px] text-gray-500">Terminées</p>
+                <p className="text-xs font-semibold text-gray-900">
                   {actionsCorrectives.filter(ac => ac.statut === 'TERMINEE').length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </div>
+          <div className="bg-white rounded shadow p-2">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Critiques</p>
-                <p className="text-2xl font-semibold text-gray-900">
+              <div>
+                <p className="text-[9px] text-gray-500">Critiques</p>
+                <p className="text-xs font-semibold text-gray-900">
                   {actionsCorrectives.filter(ac => ac.priorite === 'CRITIQUE').length}
                 </p>
               </div>
@@ -219,19 +211,19 @@ export default function ActionsCorrectivesPage() {
         </div>
 
         {/* Liste des actions correctives */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Liste des actions correctives</h2>
+        <div className="bg-white shadow rounded">
+          <div className="px-2 py-1.5 border-b border-gray-200">
+            <h2 className="text-[10px] font-medium text-gray-900">Liste des actions</h2>
           </div>
           
           {actionsCorrectives.length === 0 ? (
-            <div className="text-center py-12">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="text-center py-6">
+              <svg className="mx-auto h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune action corrective</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Commencez par créer une action corrective depuis une non-conformité.
+              <h3 className="mt-1 text-[10px] font-medium text-gray-900">Aucune action</h3>
+              <p className="mt-0.5 text-[9px] text-gray-500">
+                Créer depuis une non-conformité.
               </p>
             </div>
           ) : (
@@ -239,28 +231,28 @@ export default function ActionsCorrectivesPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Action Corrective
+                    <th className="px-2 py-1 text-left text-[9px] font-medium text-gray-500 uppercase">
+                      Action
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Non-conformité
+                    <th className="px-2 py-1 text-left text-[9px] font-medium text-gray-500 uppercase">
+                      NC
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 py-1 text-left text-[9px] font-medium text-gray-500 uppercase">
                       Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 py-1 text-left text-[9px] font-medium text-gray-500 uppercase">
                       Priorité
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 py-1 text-left text-[9px] font-medium text-gray-500 uppercase">
                       Statut
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 py-1 text-left text-[9px] font-medium text-gray-500 uppercase">
                       Responsable
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date création
+                    <th className="px-2 py-1 text-left text-[9px] font-medium text-gray-500 uppercase">
+                      Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 py-1 text-left text-[9px] font-medium text-gray-500 uppercase">
                       Actions
                     </th>
                   </tr>
@@ -268,66 +260,64 @@ export default function ActionsCorrectivesPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {actionsCorrectives.map((actionCorrective) => (
                     <tr key={actionCorrective.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-2 py-1.5">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-[10px] font-medium text-gray-900 truncate max-w-[150px]">
                             {actionCorrective.titre}
                           </div>
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
-                            {actionCorrective.description.substring(0, 100)}...
+                          <div className="text-[9px] text-gray-500 truncate max-w-[150px]">
+                            {actionCorrective.description.substring(0, 50)}...
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-2 py-1.5">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-[10px] font-medium text-gray-900">
                             {actionCorrective.nonConformite.numero}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-[9px] text-gray-500 truncate max-w-[100px]">
                             {actionCorrective.nonConformite.titre}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {typeLabels[actionCorrective.type as keyof typeof typeLabels] || actionCorrective.type}
+                      <td className="px-2 py-1.5 text-[9px] text-gray-900">
+                        {typeLabels[actionCorrective.type as keyof typeof typeLabels]?.substring(0, 15) || actionCorrective.type}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${prioriteColors[actionCorrective.priorite as keyof typeof prioriteColors]}`}>
+                      <td className="px-2 py-1.5">
+                        <span className={`inline-flex px-1 py-0.5 text-[9px] font-semibold rounded ${prioriteColors[actionCorrective.priorite as keyof typeof prioriteColors]}`}>
                           {prioriteLabels[actionCorrective.priorite as keyof typeof prioriteLabels] || actionCorrective.priorite}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statutColors[actionCorrective.statut as keyof typeof statutColors]}`}>
+                      <td className="px-2 py-1.5">
+                        <span className={`inline-flex px-1 py-0.5 text-[9px] font-semibold rounded ${statutColors[actionCorrective.statut as keyof typeof statutColors]}`}>
                           {statutLabels[actionCorrective.statut as keyof typeof statutLabels] || actionCorrective.statut}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-2 py-1.5 text-[9px] text-gray-900">
                         {actionCorrective.responsable ? (
                           <div>
-                            <div>{actionCorrective.responsable.prenom} {actionCorrective.responsable.nom}</div>
-                            <div className="text-gray-500">{actionCorrective.responsable.email}</div>
+                            <div className="truncate max-w-[100px]">{actionCorrective.responsable.prenom} {actionCorrective.responsable.nom}</div>
                           </div>
                         ) : (
-                          <span className="text-gray-400">Non assigné</span>
+                          <span className="text-gray-400">N/A</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDate(actionCorrective.createdAt)}
+                      <td className="px-2 py-1.5 text-[9px] text-gray-900">
+                        {new Date(actionCorrective.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="space-x-2">
+                      <td className="px-2 py-1.5 text-[9px]">
+                        <div className="flex flex-col gap-0.5">
                           <Link
                             href={`/admin/actions-correctives/${actionCorrective.id}`}
                             className="text-indigo-600 hover:text-indigo-900"
                           >
-                            Voir le détail
+                            Détail
                           </Link>
-                          <span className="text-gray-300">|</span>
                           <Link
                             href={`/admin/non-conformites/${actionCorrective.nonConformite.id}`}
                             className="text-indigo-600 hover:text-indigo-900"
                           >
-                            Non-conformité
+                            NC
                           </Link>
                         </div>
                       </td>
