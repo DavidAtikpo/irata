@@ -21,6 +21,13 @@ export default function PublicInspectionDetailPage() {
            (inspection.etatSangles !== null && inspection.etatSangles !== undefined);
   };
 
+  // Fonction pour déterminer si c'est un mousqueton
+  const isMousqueton = () => {
+    if (!inspection) return false;
+    return inspection.typeEquipement?.toLowerCase().includes('mousqueton') || 
+           (inspection.verificationCorps !== null && inspection.verificationCorps !== undefined);
+  };
+
   // Helper functions (doivent être définies avant les early returns)
   const StatusIndicator = ({ status }: { status: 'V' | 'NA' | 'X' }) => {
     if (status === 'V') {
@@ -521,7 +528,7 @@ export default function PublicInspectionDetailPage() {
                             </div>
                           )}
                           <div className="flex items-center justify-between gap-2">
-                            <li><span className="text-xs text-gray-700 flex-1">{renderCrossedOutText(isHarness() ? "Lisibilité Numéro de série, de la norme" : "Lisibilité Numéro de série, de la norme", "observationsPrelables.lisibiliteNumeroSerie")}</span></li>
+                            <li><span className="text-xs text-gray-700 flex-1">{renderCrossedOutText(isMousqueton() ? "Numéro de série lisible, ainsi que la norme" : "Lisibilité Numéro de série, de la norme", "observationsPrelables.lisibiliteNumeroSerie")}</span></li>
                             <StatusIndicator status={inspection.observationsPrelables?.lisibiliteNumeroSerie?.status || 'V'} />
                           </div>
                           {inspection.observationsPrelables?.lisibiliteNumeroSerie?.comment && (
@@ -537,6 +544,19 @@ export default function PublicInspectionDetailPage() {
                             <div className="text-xs text-blue-600 italic ml-4">
                               Commentaire: {inspection.observationsPrelables.dureeVieNonDepassee.comment}
                             </div>
+                          )}
+                          {isMousqueton() && (
+                            <>
+                              <div className="flex items-center justify-between gap-2">
+                                <li><span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Comparez avec un appareil neuf l'absence de modification ou perte d'un élément", "observationsPrelables.comparaisonAppareilNeuf")}</span></li>
+                                <StatusIndicator status={inspection.observationsPrelables?.comparaisonAppareilNeuf?.status || 'V'} />
+                              </div>
+                              {inspection.observationsPrelables?.comparaisonAppareilNeuf?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4">
+                                  Commentaire: {inspection.observationsPrelables.comparaisonAppareilNeuf.comment}
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
@@ -950,6 +970,219 @@ export default function PublicInspectionDetailPage() {
                               {inspection.bloqueurCroll?.fonctionnel?.comment && (
                                 <div className="text-xs text-blue-600 italic ml-4 mt-1">
                                   Commentaire: {inspection.bloqueurCroll.fonctionnel.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : isMousqueton() ? (
+                    <>
+                      {/* 3. VERIFICATION CORPS */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="space-y-2">
+                          {/* Marque/Fissure/Déformation/Corrosion */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs font-bold text-gray-900 mb-1">
+                              3. VERIFICATION CORPS : – Doit être démonté de tout appareil pouvant masquer une partie du corps :
+                            </div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque / Fissure / Déformation / Corrosion", "verificationCorps.marqueFissure")}</span>
+                                  <StatusIndicator status={inspection.verificationCorps?.marqueFissure?.status || 'V'} />
+                                </div>
+                                {inspection.verificationCorps?.marqueFissure?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.verificationCorps.marqueFissure.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Vérifier l'usure provoquée par le passage de la corde */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Vérifier l'usure provoquée par le passage de la corde ou l'appui sur les ancrages:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Profondeur des marques - une usure de plus d'un mm de profondeur / Apparition d'arêtes tranchantes", "verificationCorps.usureCordeAncrages")}</span>
+                                  <StatusIndicator status={inspection.verificationCorps?.usureCordeAncrages?.status || 'V'} />
+                                </div>
+                                {inspection.verificationCorps?.usureCordeAncrages?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.verificationCorps.usureCordeAncrages.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Etat du bec */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Vérifier l'état du bec:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marques, Usure, Fissures, Déformation,...", "verificationCorps.etatBec")}</span>
+                                  <StatusIndicator status={inspection.verificationCorps?.etatBec?.status || 'V'} />
+                                </div>
+                                {inspection.verificationCorps?.etatBec?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.verificationCorps.etatBec.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 4. VERIFICATION DU DOIGT */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="space-y-2">
+                          {/* Marque/Usure */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs font-bold text-gray-900 ml-2">4. VERIFICATION DU DOIGT: - État:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque / Usure / Fissure / Déformation / Corrosion...", "verificationDoigt.marqueUsure")}</span>
+                                  <StatusIndicator status={inspection.verificationDoigt?.marqueUsure?.status || 'V'} />
+                                </div>
+                                {inspection.verificationDoigt?.marqueUsure?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.verificationDoigt.marqueUsure.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Propreté */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Vérifier propreté des parties ayant un mouvement à effectuer:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">Propreté des liaisons doigt/corps...</span>
+                                  <StatusIndicator status={inspection.verificationDoigt?.proprete?.status || 'V'} />
+                                </div>
+                                {inspection.verificationDoigt?.proprete?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.verificationDoigt.proprete.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Etat du rivet */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Vérifier l'état du rivet:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("craquelure / Déformation / Corrosion / Jeu...", "verificationDoigt.etatRivet")}</span>
+                                  <StatusIndicator status={inspection.verificationDoigt?.etatRivet?.status || 'V'} />
+                                </div>
+                                {inspection.verificationDoigt?.etatRivet?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.verificationDoigt.etatRivet.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Ouverture manuelle */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Vérifier l'ouverture manuelle complète du doigt:</div>
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">Ouverture manuelle complète</span>
+                                <StatusIndicator status={inspection.verificationDoigt?.ouvertureManuelle?.status || 'V'} />
+                              </div>
+                              {inspection.verificationDoigt?.ouvertureManuelle?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.verificationDoigt.ouvertureManuelle.comment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Fermeture automatique */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Vérifier fermeture automatique du doigt, l'efficacité du ressort de rappel et l'alignement doigt/bec:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">Efficacité ressort de rappel...</span>
+                                  <StatusIndicator status={inspection.verificationDoigt?.fermetureAutomatique?.status || 'V'} />
+                                </div>
+                                {inspection.verificationDoigt?.fermetureAutomatique?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.verificationDoigt.fermetureAutomatique.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 5. VERIFICATION DE LA BAGUE */}
+                      <div className="border-b border-gray-200 pb-2">
+                        <div className="space-y-2">
+                          {/* Marque/Usure */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs font-bold text-gray-900 ml-2">5. VERIFICATION DE LA BAGUE: - État:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">{renderCrossedOutText("Marque / Usure / Fissure / Déformation / Corrosion / Jeu...", "verificationBague.marqueUsure")}</span>
+                                  <StatusIndicator status={inspection.verificationBague?.marqueUsure?.status || 'V'} />
+                                </div>
+                                {inspection.verificationBague?.marqueUsure?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.verificationBague.marqueUsure.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Déverrouillage */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Bague automatique : - Vérifier le bon fonctionnement du système de déverrouillage de la bague, selon le mode d'ouverture:</div>
+                            <div className="space-y-1">
+                              <div className="bg-gray-100 p-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-gray-700 flex-1">Déverrouillage manuel ou automatique...</span>
+                                  <StatusIndicator status={inspection.verificationBague?.deverrouillage?.status || 'V'} />
+                                </div>
+                                {inspection.verificationBague?.deverrouillage?.comment && (
+                                  <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                    Commentaire: {inspection.verificationBague.deverrouillage.comment}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Verrouillage automatique */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-xs text-gray-700 ml-2">- Vérifier le verrouillage automatique lorsque vous relâcher la bague ; Si nécessaire nettoyer:</div>
+                            <div className="bg-gray-100 p-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-700 flex-1">Verrouillage automatique</span>
+                                <StatusIndicator status={inspection.verificationBague?.verrouillageAutomatique?.status || 'V'} />
+                              </div>
+                              {inspection.verificationBague?.verrouillageAutomatique?.comment && (
+                                <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                                  Commentaire: {inspection.verificationBague.verrouillageAutomatique.comment}
                                 </div>
                               )}
                             </div>
