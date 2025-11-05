@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircleIcon, XMarkIcon, PhotoIcon, QrCodeIcon, DocumentIcon } from '@heroicons/react/24/outline';
+import { useRouter, useParams } from 'next/navigation';
+import { CheckCircleIcon, XMarkIcon, PhotoIcon, QrCodeIcon, DocumentIcon, LinkIcon } from '@heroicons/react/24/outline';
 import CommentInput from '@/components/CommentInput';
 import SignaturePad from '@/components/SignaturePad';
+import { generateSlugFromReference } from '@/lib/slug';
 
 interface InspectionPoint {
   status: 'V' | 'NA' | 'X';
@@ -21,60 +22,59 @@ interface InspectionData {
     referenceInterneMarquee: InspectionPoint;
     lisibiliteNumeroSerie: InspectionPoint;
     dureeVieNonDepassee: InspectionPoint;
+    comparaisonAppareilNeuf: InspectionPoint;
   };
-  etatSangles: {
-    ceintureCuisseBretelles: InspectionPoint;
-    etatCouturesSecurite: InspectionPoint;
-    presenceOurlets: InspectionPoint;
+  verificationCorps: {
+    marqueFissure: InspectionPoint;
+    usureCordeAncrages: InspectionPoint;
+    etatBec: InspectionPoint;
   };
-  pointsAttache: {
-    metalliques: InspectionPoint;
-    textiles: InspectionPoint;
-    plastiques: InspectionPoint;
-    indicateurArretChute: InspectionPoint;
+  verificationDoigt: {
+    marqueUsure: InspectionPoint;
+    proprete: InspectionPoint;
+    etatRivet: InspectionPoint;
+    ouvertureManuelle: InspectionPoint;
+    fermetureAutomatique: InspectionPoint;
   };
-  etatBouclesReglages: {
-    passageSangles: InspectionPoint;
-    fonctionnementBoucles: InspectionPoint;
-  };
-  etatElementsConfort: {
-    mousses: InspectionPoint;
-    passantsElastiques: InspectionPoint;
-    elastiquesCuisses: InspectionPoint;
-    portesMateriels: InspectionPoint;
-  };
-  etatConnecteurTorseCuissard: {
-    corpsMousqueton: InspectionPoint;
-    doigtMousqueton: InspectionPoint;
-    bagueVerrouillage: InspectionPoint;
-  };
-  bloqueurCroll: {
-    corpsTrousConnexion: InspectionPoint;
-    gachette: InspectionPoint;
-    taquetSecurite: InspectionPoint;
-    fonctionnel: InspectionPoint;
+  verificationBague: {
+    marqueUsure: InspectionPoint;
+    deverrouillage: InspectionPoint;
+    verrouillageAutomatique: InspectionPoint;
   };
 }
 
-export default function NouvelleInspectionPage() {
+export default function EditInspectionPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useParams();
+  const inspectionId = params.id as string;
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingPDF, setIsUploadingPDF] = useState(false);
-  const [isUploadingDocumentReference, setIsUploadingDocumentReference] = useState(false);
-  const [isUploadingDateAchat, setIsUploadingDateAchat] = useState(false);
   const [isUploadingNormes, setIsUploadingNormes] = useState(false);
+  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
+  const [isUploadingDateAchat, setIsUploadingDateAchat] = useState(false);
   const [isUploadingCertificate, setIsUploadingCertificate] = useState(false);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [digitalSignature, setDigitalSignature] = useState('');
-  const [prefillLoading, setPrefillLoading] = useState(false);
   const [openCommentFields, setOpenCommentFields] = useState<{[key: string]: boolean}>({});
   const [commentInputs, setCommentInputs] = useState<{[key: string]: string}>({});
   const [crossedOutItems, setCrossedOutItems] = useState<{[key: string]: boolean}>({});
   const [crossedOutWords, setCrossedOutWords] = useState<{[key: string]: {[word: string]: boolean}}>({});
+  const [originalData, setOriginalData] = useState<{
+    certificatePdf: string;
+    digitalSignature: string;
+    dateSignature: string;
+  }>({
+    certificatePdf: '',
+    digitalSignature: '',
+    dateSignature: '',
+  });
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [isUpdatingQR, setIsUpdatingQR] = useState(false);
+  const [qrCodeImageUrl, setQrCodeImageUrl] = useState<string>('');
   const commentInputRefs = useRef<{[key: string]: HTMLTextAreaElement | null}>({});
 
   // Initialiser les refs au montage du composant
@@ -94,15 +94,16 @@ export default function NouvelleInspectionPage() {
   }, []);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const qrInputRef = useRef<HTMLInputElement>(null);
-  const pdfInputRef = useRef<HTMLInputElement>(null); // Documents Référence
-  const normesPdfInputRef = useRef<HTMLInputElement>(null); // Normes et Certificat
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const normesPdfInputRef = useRef<HTMLInputElement>(null);
+  const documentsInputRef = useRef<HTMLInputElement>(null);
   const dateAchatInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     // Identification équipement
     referenceInterne: '',
-    typeEquipement: 'Harnais de Suspension',
+    typeEquipement: 'Mousqueton',
     numeroSerie: '',
     numeroSerieTop: '',
     numeroSerieCuissard: '',
@@ -148,38 +149,24 @@ export default function NouvelleInspectionPage() {
         referenceInterneMarquee: { status: 'V' as const, comment: '' },
         lisibiliteNumeroSerie: { status: 'V' as const, comment: '' },
         dureeVieNonDepassee: { status: 'V' as const, comment: '' },
+        comparaisonAppareilNeuf: { status: 'V' as const, comment: '' },
       },
-      etatSangles: {
-        ceintureCuisseBretelles: { status: 'V' as const, comment: '' },
-        etatCouturesSecurite: { status: 'V' as const, comment: '' },
-        presenceOurlets: { status: 'V' as const, comment: '' },
+      verificationCorps: {
+        marqueFissure: { status: 'V' as const, comment: '' },
+        usureCordeAncrages: { status: 'V' as const, comment: '' },
+        etatBec: { status: 'V' as const, comment: '' },
       },
-      pointsAttache: {
-        metalliques: { status: 'V' as const, comment: '' },
-        textiles: { status: 'V' as const, comment: '' },
-        plastiques: { status: 'V' as const, comment: '' },
-        indicateurArretChute: { status: 'V' as const, comment: '' },
+      verificationDoigt: {
+        marqueUsure: { status: 'V' as const, comment: '' },
+        proprete: { status: 'V' as const, comment: '' },
+        etatRivet: { status: 'V' as const, comment: '' },
+        ouvertureManuelle: { status: 'V' as const, comment: '' },
+        fermetureAutomatique: { status: 'V' as const, comment: '' },
       },
-      etatBouclesReglages: {
-        passageSangles: { status: 'V' as const, comment: '' },
-        fonctionnementBoucles: { status: 'V' as const, comment: '' },
-      },
-      etatElementsConfort: {
-        mousses: { status: 'V' as const, comment: '' },
-        passantsElastiques: { status: 'V' as const, comment: '' },
-        elastiquesCuisses: { status: 'V' as const, comment: '' },
-        portesMateriels: { status: 'V' as const, comment: '' },
-      },
-      etatConnecteurTorseCuissard: {
-        corpsMousqueton: { status: 'NA' as const, comment: '' },
-        doigtMousqueton: { status: 'NA' as const, comment: '' },
-        bagueVerrouillage: { status: 'NA' as const, comment: '' },
-      },
-      bloqueurCroll: {
-        corpsTrousConnexion: { status: 'V' as const, comment: '' },
-        gachette: { status: 'V' as const, comment: '' },
-        taquetSecurite: { status: 'V' as const, comment: '' },
-        fonctionnel: { status: 'V' as const, comment: '' },
+      verificationBague: {
+        marqueUsure: { status: 'V' as const, comment: '' },
+        deverrouillage: { status: 'V' as const, comment: '' },
+        verrouillageAutomatique: { status: 'V' as const, comment: '' },
       },
     },
     
@@ -188,50 +175,305 @@ export default function NouvelleInspectionPage() {
     verificateurNom: '',
   });
 
-  // Charger les données du QR code si présent dans l'URL
-  useEffect(() => {
-    const qrCode = searchParams.get('qrCode');
-    const prefill = searchParams.get('prefill');
-    
-    if (qrCode && prefill === 'true' && !prefillLoading) {
-      fetchEquipmentData(qrCode);
-    }
-  }, [searchParams]);
+  // Générer l'URL publique basée sur l'ID unique
+  const getPublicUrl = () => {
+    if (!inspectionId || !formData?.referenceInterne) return '';
+    const slug = generateSlugFromReference(formData.referenceInterne);
+    return typeof window !== 'undefined' 
+      ? `${window.location.origin}/inspection/${inspectionId}-${slug}` 
+      : '';
+  };
 
-  const fetchEquipmentData = async (qrCode: string) => {
-    setPrefillLoading(true);
-    try {
-      const response = await fetch(`/api/qr-equipment/${qrCode}`);
-      
-      if (!response.ok) {
-        console.error('Équipement non trouvé');
+  // Fonction pour générer le QR code avec texte CI.DES
+  const generateQRCodeWithText = async (url: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const size = 300;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        resolve(`https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`);
         return;
       }
 
-      const equipmentData = await response.json();
+      const qrImage = new Image();
+      qrImage.crossOrigin = 'anonymous';
       
-      // Pré-remplir le formulaire avec les données de l'équipement
-      setFormData(prev => ({
-        ...prev,
-        referenceInterne: equipmentData.referenceInterne || '',
-        numeroSerie: equipmentData.numeroSerie || '',
-        normesCertificat: equipmentData.normesCertificat || equipmentData.normes || '', // Remplir avec les normes
-        fabricant: equipmentData.fabricant || '',
-        date: equipmentData.dateControle || '',
-        signataire: equipmentData.signataire || '',
-        pdfUrl: equipmentData.pdfUrl || '',
-        nature: 'Déclaration UE de conformité',
-        reference: equipmentData.referenceInterne || '',
-        normes: equipmentData.normes || equipmentData.normesCertificat || '',
-      }));
+      qrImage.onload = () => {
+        ctx.drawImage(qrImage, 0, 0, size, size);
+        
+        const textSize = 36;
+        const textAreaHeight = 48;
+        const textAreaWidth = 160;
+        const textY = size / 2;
+        const textX = size / 2 - textAreaWidth / 2;
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillRect(textX, textY - textAreaHeight / 2, textAreaWidth, textAreaHeight);
+        
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(textX, textY - textAreaHeight / 2, textAreaWidth, textAreaHeight);
+        
+        ctx.font = `bold ${textSize}px Arial, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        
+        const textCI = 'CI.';
+        const textDES = 'DES';
+        ctx.font = `bold ${textSize}px Arial, sans-serif`;
+        const fullTextWidth = ctx.measureText(textCI).width + ctx.measureText(textDES).width;
+        const startX = (size - fullTextWidth) / 2;
+        
+        ctx.fillStyle = '#F2A62C';
+        const ciX = startX;
+        ctx.fillText(textCI, ciX, textY);
+        
+        ctx.fillStyle = '#000000';
+        const desX = ciX + ctx.measureText(textCI).width;
+        ctx.fillText(textDES, desX, textY);
+        
+        const dataUrl = canvas.toDataURL('image/png');
+        resolve(dataUrl);
+      };
 
-      console.log('✅ Formulaire pré-rempli avec les données du QR code:', qrCode);
+      qrImage.onerror = () => {
+        resolve(`https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`);
+      };
+
+      qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}&ecc=H`;
+    });
+  };
+
+  // Fonction pour copier le lien
+  const handleCopyLink = async () => {
+    try {
+      const url = getPublicUrl();
+      if (url && navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 2000);
+      }
     } catch (error) {
-      console.error('Erreur lors du chargement des données de l\'équipement:', error);
-    } finally {
-      setPrefillLoading(false);
+      console.error('Erreur lors de la copie:', error);
     }
   };
+
+  // Fonction pour mettre à jour le QR code dans la base de données
+  const handleUpdateQRCode = async () => {
+    if (!qrCodeImageUrl) return;
+    
+    setIsUpdatingQR(true);
+    try {
+      const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}/update-qr-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qrCodeImageUrl }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const reloadResponse = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}`);
+        if (reloadResponse.ok) {
+          const updatedData = await reloadResponse.json();
+          
+          // Mapper les données au même format que loadInspection
+          const newFormData = {
+            ...updatedData,
+            fabricant: updatedData.fabricant || '',
+            etat: updatedData.etat || 'INVALID',
+            numeroSerieTop: updatedData.numeroSerieTop || '',
+            numeroSerieCuissard: updatedData.numeroSerieCuissard || '',
+            numeroSerieNonEtiquete: updatedData.numeroSerieNonEtiquete || '',
+
+            inspectionData: {
+              antecedentProduit: {
+                miseEnService: updatedData.antecedentProduit?.miseEnService || '',
+                comment: updatedData.antecedentProduit?.comment || '',
+              },
+              observationsPrelables: updatedData.observationsPrelables || {
+                referenceInterneMarquee: { status: 'V', comment: '' },
+                lisibiliteNumeroSerie: { status: 'V', comment: '' },
+                dureeVieNonDepassee: { status: 'V', comment: '' },
+                comparaisonAppareilNeuf: { status: 'V', comment: '' },
+              },
+              verificationCorps: updatedData.verificationCorps || {
+                marqueFissure: { status: 'V', comment: '' },
+                usureCordeAncrages: { status: 'V', comment: '' },
+                etatBec: { status: 'V', comment: '' },
+              },
+              verificationDoigt: updatedData.verificationDoigt || {
+                marqueUsure: { status: 'V', comment: '' },
+                proprete: { status: 'V', comment: '' },
+                etatRivet: { status: 'V', comment: '' },
+                ouvertureManuelle: { status: 'V', comment: '' },
+                fermetureAutomatique: { status: 'V', comment: '' },
+              },
+              verificationBague: updatedData.verificationBague || {
+                marqueUsure: { status: 'V', comment: '' },
+                deverrouillage: { status: 'V', comment: '' },
+                verrouillageAutomatique: { status: 'V', comment: '' },
+              },
+            },
+          };
+          
+          setFormData(newFormData);
+          setCrossedOutWords(updatedData.crossedOutWords || {});
+        }
+        alert('QR code mis à jour avec succès !');
+      } else {
+        throw new Error('Erreur lors de la mise à jour');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de la mise à jour du QR code');
+    } finally {
+      setIsUpdatingQR(false);
+    }
+  };
+
+  // Fonction pour télécharger le QR code
+  const handleDownloadQRCode = () => {
+    if (!qrCodeImageUrl) return;
+    
+    const link = document.createElement('a');
+    link.href = qrCodeImageUrl;
+    link.download = `QR-Code-${formData?.referenceInterne || 'equipement'}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Fonction pour obtenir l'URL de l'image QR code à afficher
+  const getQRCodeImageUrl = (): string | null => {
+    if (formData.qrCode) {
+      if (formData.qrCode.startsWith('data:image/')) {
+        return formData.qrCode;
+      }
+      if (formData.qrCode.startsWith('http://') || formData.qrCode.startsWith('https://')) {
+        return formData.qrCode;
+      }
+    }
+    
+    if (qrCodeImageUrl) {
+      return qrCodeImageUrl;
+    }
+    
+    if (inspectionId && formData.referenceInterne) {
+      const slug = generateSlugFromReference(formData.referenceInterne);
+      const publicUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/inspection/${inspectionId}-${slug}` 
+        : `/inspection/${inspectionId}-${slug}`;
+      
+      return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(publicUrl)}`;
+    }
+    
+    return null;
+  };
+
+  // Fonctions utilitaires pour gérer les signatures séparées
+  const getCurrentCertificate = () => {
+    return formData.verificateurSignaturePdf || originalData.certificatePdf;
+  };
+
+  const getCurrentDigitalSignature = () => {
+    return formData.verificateurDigitalSignature || originalData.digitalSignature || digitalSignature;
+  };
+
+  // Charger les données de l'inspection
+  useEffect(() => {
+    const loadInspection = async () => {
+      try {
+        const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Données chargées depuis API:', data);
+
+          setCrossedOutWords(data.crossedOutWords || {});
+
+          setOriginalData({
+            certificatePdf: data.verificateurSignaturePdf || '',
+            digitalSignature: data.verificateurDigitalSignature || '',
+            dateSignature: data.dateSignature || '',
+          });
+
+          const newFormData = {
+            ...data,
+            fabricant: data.fabricant || '',
+            etat: data.etat || 'INVALID',
+            numeroSerieTop: data.numeroSerieTop || '',
+            numeroSerieCuissard: data.numeroSerieCuissard || '',
+            numeroSerieNonEtiquete: data.numeroSerieNonEtiquete || '',
+            dateSignature: data.dateSignature || '',
+
+            inspectionData: {
+              antecedentProduit: {
+                miseEnService: data.antecedentProduit?.miseEnService || '',
+                comment: data.antecedentProduit?.comment || '',
+              },
+              observationsPrelables: data.observationsPrelables || {
+                referenceInterneMarquee: { status: 'V', comment: '' },
+                lisibiliteNumeroSerie: { status: 'V', comment: '' },
+                dureeVieNonDepassee: { status: 'V', comment: '' },
+                comparaisonAppareilNeuf: { status: 'V', comment: '' },
+              },
+              verificationCorps: data.verificationCorps || {
+                marqueFissure: { status: 'V', comment: '' },
+                usureCordeAncrages: { status: 'V', comment: '' },
+                etatBec: { status: 'V', comment: '' },
+              },
+              verificationDoigt: data.verificationDoigt || {
+                marqueUsure: { status: 'V', comment: '' },
+                proprete: { status: 'V', comment: '' },
+                etatRivet: { status: 'V', comment: '' },
+                ouvertureManuelle: { status: 'V', comment: '' },
+                fermetureAutomatique: { status: 'V', comment: '' },
+              },
+              verificationBague: data.verificationBague || {
+                marqueUsure: { status: 'V', comment: '' },
+                deverrouillage: { status: 'V', comment: '' },
+                verrouillageAutomatique: { status: 'V', comment: '' },
+              },
+            },
+          };
+
+          setFormData(newFormData);
+          console.log('Chargement terminé - Statuts et commentaires récupérés depuis l\'API');
+        } else {
+          setError('Erreur lors du chargement de l\'inspection');
+        }
+      } catch (error) {
+        setError('Erreur lors du chargement de l\'inspection');
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    if (inspectionId) {
+      loadInspection();
+    }
+  }, [inspectionId]);
+
+  // Générer le QR code au chargement
+  useEffect(() => {
+    const loadQRCode = async () => {
+      if (!inspectionId || !formData?.referenceInterne) return;
+      const slug = generateSlugFromReference(formData.referenceInterne);
+      const url = typeof window !== 'undefined' 
+        ? `${window.location.origin}/inspection/${inspectionId}-${slug}` 
+        : '';
+      if (url) {
+        const qrUrl = await generateQRCodeWithText(url);
+        setQrCodeImageUrl(qrUrl);
+      }
+    };
+    
+    loadQRCode();
+  }, [inspectionId, formData?.referenceInterne]);
 
   if (status === 'unauthenticated') {
     router.push('/login');
@@ -241,6 +483,17 @@ export default function NouvelleInspectionPage() {
   if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
     router.push('/');
     return null;
+  }
+
+  if (isLoadingData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement de l'inspection...</p>
+        </div>
+      </div>
+    );
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -363,6 +616,14 @@ export default function NouvelleInspectionPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validation de la taille du fichier (max 6 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 6 * 1024 * 1024; // 6 MB en bytes
+    if (file.size > maxSize) {
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 6 MB. Veuillez compresser l'image avant de l'uploader.`);
+      setIsUploading(false);
+      return;
+    }
+
     setIsUploading(true);
     try {
       const formData = new FormData();
@@ -378,10 +639,17 @@ export default function NouvelleInspectionPage() {
         const data = await response.json();
         setFormData(prev => ({ ...prev, photo: data.url }));
       } else {
-        throw new Error('Erreur lors de l\'upload de la photo');
+        // Gestion spécifique de l'erreur 413 (Payload Too Large)
+        if (response.status === 413) {
+          throw new Error(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Le serveur a refusé l'upload. Veuillez compresser l'image avant de l'uploader.`);
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload de la photo' }));
+          throw new Error(errorData.error || 'Erreur lors de l\'upload de la photo');
+        }
       }
     } catch (error) {
-      setError('Erreur lors de l\'upload de la photo');
+      console.error('Erreur upload photo:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload de la photo');
     } finally {
       setIsUploading(false);
     }
@@ -391,6 +659,14 @@ export default function NouvelleInspectionPage() {
   const handleQRCodeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Validation de la taille du fichier (max 6 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 6 * 1024 * 1024; // 6 MB en bytes
+    if (file.size > maxSize) {
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 6 MB. Veuillez compresser l'image avant de l'uploader.`);
+      setIsUploading(false);
+      return;
+    }
 
     setIsUploading(true);
     try {
@@ -521,19 +797,34 @@ export default function NouvelleInspectionPage() {
           setError('Bibliothèque QR Scanner non disponible');
         }
       } else {
-        throw new Error('Erreur lors de l\'upload du QR code');
+        // Gestion spécifique de l'erreur 413 (Payload Too Large)
+        if (response.status === 413) {
+          throw new Error(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Le serveur a refusé l'upload. Veuillez compresser l'image avant de l'uploader.`);
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload du QR code' }));
+          throw new Error(errorData.error || 'Erreur lors de l\'upload du QR code');
+        }
       }
     } catch (error) {
-      setError('Erreur lors de l\'upload du QR code');
+      console.error('Erreur upload QR code:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload du QR code');
     } finally {
       setIsUploading(false);
     }
   };
 
-  // Upload PDF pour extraire UNIQUEMENT les normes
+  // Fonction pour upload de PDF (normes et certificats) - Extraction uniquement des normes
   const handlePDFUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Validation de la taille du fichier (max 10 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 10 * 1024 * 1024; // 10 MB en bytes
+    if (file.size > maxSize) {
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 10 MB. Veuillez compresser le PDF avant de l'uploader.`);
+      setIsUploadingNormes(false);
+      return;
+    }
 
     setIsUploadingNormes(true);
     try {
@@ -548,19 +839,106 @@ export default function NouvelleInspectionPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Extraction limitée: ne remplir que les normes; le reste reste manuel
-          setFormData(prev => ({
-            ...prev,
-          normesUrl: (data.extractedData?.pdfUrl || data.url || prev.normesUrl),
+        
+        // Auto-remplissage basé sur l'extraction du PDF - uniquement les normes
+        // Sauvegarder aussi l'URL du PDF uploadé
+        const pdfUrlToSave = data.extractedData?.pdfUrl || data.extractedData?.cloudinaryUrl || data.url;
+        setFormData(prev => ({
+          ...prev,
+          // Sauvegarder l'URL du PDF des normes (avec plusieurs fallbacks)
+          normesUrl: pdfUrlToSave || prev.normesUrl,
+          // Extraire les normes
           normesCertificat: data.extractedData?.normes || prev.normesCertificat,
+          // Ne pas écraser les documents de référence ni les autres données
         }));
+        
+        // Afficher les informations d'extraction PDF
+        console.log('PDF - URL sauvegardée dans normesUrl:', pdfUrlToSave);
+        if (data.extractedData?.rawText) {
+          console.log('PDF - Texte extrait:', data.extractedData.rawText);
+          console.log('PDF - Normes détectées:', data.extractedData.normes);
+          console.log('PDF - Confiance:', data.extractedData.confidence);
+        }
       } else {
-        throw new Error('Erreur lors de l\'upload du PDF');
+        // Gestion spécifique de l'erreur 413 (Payload Too Large)
+        if (response.status === 413) {
+          throw new Error(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Le serveur a refusé l'upload. Veuillez compresser le PDF avant de l'uploader. Vous pouvez utiliser un outil en ligne comme https://www.ilovepdf.com/compress_pdf`);
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload du PDF' }));
+          throw new Error(errorData.error || 'Erreur lors de l\'upload du PDF');
+        }
       }
     } catch (error) {
-      setError('Erreur lors de l\'upload du PDF');
+      console.error('Erreur upload PDF:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload du PDF');
     } finally {
       setIsUploadingNormes(false);
+    }
+  };
+
+  // Fonction pour upload de PDF pour documents de référence
+  const handleDocumentsUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validation de la taille du fichier (max 10 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 10 * 1024 * 1024; // 10 MB en bytes
+    if (file.size > maxSize) {
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 10 MB. Veuillez compresser le PDF avant de l'uploader.`);
+      setIsUploadingDocuments(false);
+      return;
+    }
+
+    setIsUploadingDocuments(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'reference');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Auto-remplissage basé sur l'extraction du PDF pour les documents de référence
+        // Sauvegarder aussi l'URL du PDF uploadé
+        const pdfUrlToSave = data.extractedData?.pdfUrl || data.extractedData?.cloudinaryUrl || data.extractedData?.referenceUrl || data.url;
+        
+        // Toujours mettre à jour le formulaire, même si extractedData n'existe pas
+        setFormData(prev => ({
+          ...prev,
+          // Sauvegarder l'URL du PDF des documents de référence (avec plusieurs fallbacks)
+          pdfUrl: pdfUrlToSave || prev.pdfUrl,
+          // Extraire les documents de référence (avec fallback)
+          documentsReference: data.extractedData?.reference || prev.documentsReference,
+          // Ne pas écraser les autres données
+        }));
+        
+        // Afficher les informations d'extraction
+        console.log('Documents - Données reçues:', data);
+        console.log('Documents - URL sauvegardée dans pdfUrl:', pdfUrlToSave);
+        if (data.extractedData?.rawText) {
+          console.log('Documents - Texte extrait:', data.extractedData.rawText);
+          console.log('Documents - Références détectées:', data.extractedData.reference);
+          console.log('Documents - Confiance:', data.extractedData.confidence);
+        }
+      } else {
+        // Gestion spécifique de l'erreur 413 (Payload Too Large)
+        if (response.status === 413) {
+          throw new Error(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Le serveur a refusé l'upload. Veuillez compresser le PDF avant de l'uploader. Vous pouvez utiliser un outil en ligne comme https://www.ilovepdf.com/compress_pdf`);
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload du PDF' }));
+          throw new Error(errorData.error || 'Erreur lors de l\'upload du PDF');
+        }
+      }
+    } catch (error) {
+      console.error('Erreur upload documents:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload du PDF');
+    } finally {
+      setIsUploadingDocuments(false);
     }
   };
 
@@ -568,6 +946,14 @@ export default function NouvelleInspectionPage() {
   const handleDateAchatUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Validation de la taille du fichier (max 6 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 6 * 1024 * 1024; // 6 MB en bytes
+    if (file.size > maxSize) {
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 6 MB. Veuillez compresser le fichier avant de l'uploader.`);
+      setIsUploadingDateAchat(false);
+      return;
+    }
 
     setIsUploadingDateAchat(true);
     try {
@@ -585,53 +971,44 @@ export default function NouvelleInspectionPage() {
         // Stocker seulement l'URL de l'image/PDF, sans extraction de date
         setFormData(prev => ({ ...prev, dateAchatImage: data.url || data.extractedData?.dateAchatUrl || prev.dateAchatImage }));
       } else {
-        throw new Error('Erreur lors de l\'upload du fichier');
+        // Gestion spécifique de l'erreur 413 (Payload Too Large)
+        if (response.status === 413) {
+          throw new Error(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Le serveur a refusé l'upload. Veuillez compresser le fichier avant de l'uploader.`);
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload du fichier' }));
+          throw new Error(errorData.error || 'Erreur lors de l\'upload du fichier');
+        }
       }
     } catch (error) {
-      setError('Erreur lors de l\'upload du fichier');
+      console.error('Erreur upload date achat:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload du fichier');
     } finally {
       setIsUploadingDateAchat(false);
     }
   };
 
-  // Upload PDF Documents de référence (sans extraction des normes)
-  const handleReferencePDFUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsUploadingDocumentReference(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', 'reference');
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-          setFormData(prev => ({
-            ...prev,
-          pdfUrl: data.url || prev.pdfUrl,
-          documentsReference: data.extractedData?.reference || 'document detecte',
-        }));
-      } else {
-        throw new Error('Erreur lors de l\'upload du document de référence');
-      }
-    } catch (error) {
-      setError('Erreur lors de l\'upload du document de référence');
-    } finally {
-      setIsUploadingDocumentReference(false);
-    }
+  // Fonction pour rendre les normes cliquables avec liens PDF
+  const renderClickableNormes = (text: string) => {
+    if (!text || !formData.pdfUrl) return text;
+    
+    // Remplacer les normes par des liens cliquables vers le PDF
+    return text.replace(/([A-Z0-9]+:?\s*[0-9]+(?:\+[A-Z0-9]+:[0-9]+)*)/g, (match, norme) => {
+      return `<a href="${formData.pdfUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 underline font-medium">${norme}</a>`;
+    });
   };
-
 
   // Fonction pour upload de signature PDF (certificat de contrôle)
   const handleSignatureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Validation de la taille du fichier (max 10 MB pour éviter l'erreur 413, avec marge de sécurité)
+    const maxSize = 10 * 1024 * 1024; // 10 MB en bytes
+    if (file.size > maxSize) {
+      setError(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Taille maximale recommandée : 10 MB. Veuillez compresser le PDF avant de l'uploader.`);
+      setIsUploadingCertificate(false);
+      return;
+    }
 
     setIsUploadingCertificate(true);
     try {
@@ -647,14 +1024,47 @@ export default function NouvelleInspectionPage() {
       if (response.ok) {
         const data = await response.json();
         const certificateUrl = data.url;
+        
         setFormData(prev => ({ ...prev, verificateurSignaturePdf: certificateUrl }));
+        
+        await updateAllEquipmentCertificates(certificateUrl);
       } else {
-        throw new Error('Erreur lors de l\'upload du certificat');
+        // Gestion spécifique de l'erreur 413 (Payload Too Large)
+        if (response.status === 413) {
+          throw new Error(`Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)} MB). Le serveur a refusé l'upload. Veuillez compresser le PDF avant de l'uploader.`);
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'upload du certificat' }));
+          throw new Error(errorData.error || 'Erreur lors de l\'upload du certificat');
+        }
       }
     } catch (error) {
-      setError('Erreur lors de l\'upload du certificat');
+      console.error('Erreur upload certificat:', error);
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload du certificat');
     } finally {
       setIsUploadingCertificate(false);
+    }
+  };
+
+  // Fonction pour mettre à jour tous les équipements avec le certificat PDF
+  const updateAllEquipmentCertificates = async (certificateUrl: string) => {
+    try {
+      const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}/update-all-certificates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          certificateUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Erreur lors de la mise à jour des certificats');
+      } else {
+        console.log('Tous les équipements ont été mis à jour avec le certificat');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des certificats:', error);
     }
   };
 
@@ -663,23 +1073,38 @@ export default function NouvelleInspectionPage() {
     setDigitalSignature(signature);
     setShowSignatureModal(false);
 
-    // Enregistrer la signature dans le nouveau champ séparé
     const currentDate = new Date().toISOString();
     setFormData(prev => ({
       ...prev,
       verificateurDigitalSignature: signature,
       dateSignature: currentDate
     }));
+
+    await updateAllEquipmentSignatures(signature, currentDate);
   };
 
-  // Fonction pour rendre les normes cliquables avec liens PDF
-  const renderClickableNormes = (text: string) => {
-    if (!text || !formData.pdfUrl) return text;
-    
-    // Remplacer les normes par des liens cliquables vers le PDF
-    return text.replace(/([A-Z0-9]+:?\s*[0-9]+(?:\+[A-Z0-9]+:[0-9]+)*)/g, (match, norme) => {
-      return `<a href="${formData.pdfUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 underline font-medium">${norme}</a>`;
-    });
+  // Fonction pour mettre à jour tous les équipements de même type
+  const updateAllEquipmentSignatures = async (signature: string, date: string) => {
+    try {
+      const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}/update-all-signatures`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          signature,
+          dateSignature: date
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Erreur lors de la mise à jour des signatures');
+      } else {
+        console.log('Tous les équipements ont été signés');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des signatures:', error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -688,35 +1113,47 @@ export default function NouvelleInspectionPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/admin/equipment-detailed-inspections', {
-        method: 'POST',
+      const submitData: any = {
+        ...formData,
+        antecedentProduit: formData.inspectionData.antecedentProduit,
+        observationsPrelables: formData.inspectionData.observationsPrelables,
+        verificationCorps: formData.inspectionData.verificationCorps,
+        verificationDoigt: formData.inspectionData.verificationDoigt,
+        verificationBague: formData.inspectionData.verificationBague,
+        crossedOutWords: crossedOutWords,
+      };
+
+      // Gestion séparée des certificats PDF et signatures digitales
+      const certificateChanged = formData.verificateurSignaturePdf !== originalData.certificatePdf;
+      const digitalSignatureChanged = formData.verificateurDigitalSignature !== originalData.digitalSignature;
+      const dateChanged = formData.dateSignature !== originalData.dateSignature;
+
+      if (certificateChanged) {
+        submitData.verificateurSignaturePdf = formData.verificateurSignaturePdf;
+      }
+      if (digitalSignatureChanged) {
+        submitData.verificateurDigitalSignature = formData.verificateurDigitalSignature;
+      }
+      if (dateChanged) {
+        submitData.dateSignature = formData.dateSignature;
+      }
+
+      const response = await fetch(`/api/admin/equipment-detailed-inspections/${inspectionId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          antecedentProduit: formData.inspectionData.antecedentProduit,
-          observationsPrelables: formData.inspectionData.observationsPrelables,
-          etatSangles: formData.inspectionData.etatSangles,
-          pointsAttache: formData.inspectionData.pointsAttache,
-          etatBouclesReglages: formData.inspectionData.etatBouclesReglages,
-          etatElementsConfort: formData.inspectionData.etatElementsConfort,
-          etatConnecteurTorseCuissard: formData.inspectionData.etatConnecteurTorseCuissard,
-          bloqueurCroll: formData.inspectionData.bloqueurCroll,
-          // Nouvelles données pour les éléments barrés
-          crossedOutItems: crossedOutItems,
-          crossedOutWords: crossedOutWords,
-        }),
+        body: JSON.stringify(submitData),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Une erreur est survenue');
+      if (response.ok) {
+        router.push('/admin/equipment-detailed-inspections');
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Erreur lors de la mise à jour de l\'inspection');
       }
-
-      router.push('/admin/equipment-detailed-inspections');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (error) {
+      setError('Erreur lors de la mise à jour de l\'inspection');
     } finally {
       setIsLoading(false);
     }
@@ -846,15 +1283,15 @@ export default function NouvelleInspectionPage() {
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Nouvelle Inspection d'Équipement
+                  Modifier l'inspection d'équipement
                 </h1>
-                <p className="mt-1 text-xs text-gray-500">
-                  Formulaire d'inspection détaillée d'équipement
+                <p className="mt-1 text-sm text-gray-500">
+                  Modification de l'inspection détaillée d'équipement
                 </p>
               </div>
               <button
                 onClick={() => router.back()}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
                 Retour
               </button>
@@ -866,19 +1303,83 @@ export default function NouvelleInspectionPage() {
               </div>
             )}
 
-            {prefillLoading && (
-              <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded flex items-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700 mr-3"></div>
-                <span>Chargement des données de l'équipement depuis le QR code...</span>
-              </div>
-            )}
-
-            {searchParams.get('prefill') === 'true' && !prefillLoading && formData.referenceInterne && (
-              <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded flex items-center">
-                <CheckCircleIcon className="h-5 w-5 mr-3" />
-                <div>
-                  <strong>Formulaire pré-rempli !</strong>
-                  <p className="text-xs mt-1">Les données de l'équipement ont été chargées automatiquement depuis le QR code.</p>
+            {/* Section génération QR Code pour admin */}
+            {formData?.referenceInterne && (
+              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-blue-900 mb-2">
+                      🔗 Génération du QR Code
+                    </h3>
+                    <div className="text-xs text-blue-800 mb-2">
+                      URL publique de cette inspection (pour générer le QR code) :
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 text-xs text-blue-600 break-all font-mono bg-white p-2 rounded border border-blue-200">
+                        {getPublicUrl()}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyLink}
+                        className={`inline-flex items-center px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                          linkCopied
+                            ? 'bg-green-500 text-white'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
+                        title="Copier le lien"
+                      >
+                        <LinkIcon className="h-3 w-3 mr-1" />
+                        {linkCopied ? 'Copié !' : 'Copier'}
+                      </button>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-xs text-blue-800 mb-2">QR Code généré avec CI.DES :</div>
+                      {qrCodeImageUrl ? (
+                        <div className="inline-block bg-white p-2 rounded border border-blue-200">
+                          <img
+                            src={qrCodeImageUrl}
+                            alt="QR Code CI.DES"
+                            className="w-40 h-40"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-40 h-40 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-400">
+                          Chargement...
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleUpdateQRCode}
+                        disabled={!qrCodeImageUrl || isUpdatingQR}
+                        className={`inline-flex items-center px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                          !qrCodeImageUrl || isUpdatingQR
+                            ? 'bg-gray-400 text-white cursor-not-allowed'
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
+                        title="Mettre à jour le QR code dans la base de données"
+                      >
+                        {isUpdatingQR ? 'Mise à jour...' : '🔄 Mettre à jour'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDownloadQRCode}
+                        disabled={!qrCodeImageUrl}
+                        className={`inline-flex items-center px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                          !qrCodeImageUrl
+                            ? 'bg-gray-400 text-white cursor-not-allowed'
+                            : 'bg-purple-600 text-white hover:bg-purple-700'
+                        }`}
+                        title="Télécharger le QR code"
+                      >
+                        📥 Télécharger
+                      </button>
+                    </div>
+                    <div className="mt-2 text-xs text-blue-600">
+                      💡 Utilisez l'URL ci-dessus ou le QR code pour partager cette inspection. Cliquez sur "Mettre à jour" pour sauvegarder le QR code dans la base de données.
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -897,14 +1398,14 @@ export default function NouvelleInspectionPage() {
                 {/* Colonne gauche - Identification équipement */}
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-gray-50 p-4 rounded-lg" dir="ltr">
-                    <h2 className="text-sm font-semibold text-gray-900 mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
                       Identification équipement
                     </h2>
                     
                     {/* Photo et État */}
                     <div className="grid grid-cols-2 gap-4 mb-6">
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Photo
                           </label>
                          <div 
@@ -916,7 +1417,7 @@ export default function NouvelleInspectionPage() {
                            ) : (
                              <div className="text-gray-400">
                                <PhotoIcon className="h-8 w-8 mx-auto mb-2" />
-                               <div className="text-xs">Cliquez pour ajouter une photo</div>
+                               <div className="text-sm">Cliquez pour ajouter une photo</div>
                              </div>
                            )}
                           </div>
@@ -941,7 +1442,7 @@ export default function NouvelleInspectionPage() {
                             }));
                           }}
                           className={`w-full flex items-center justify-center h-20 rounded-lg transition-colors cursor-pointer ${
-                          formData.etat === 'OK' 
+                            formData.etat === 'OK' 
                               ? 'bg-green-100 hover:bg-green-200' 
                               : 'bg-red-100 hover:bg-red-200'
                           }`}
@@ -996,21 +1497,35 @@ export default function NouvelleInspectionPage() {
                     {/* QR Code */}
                       <div className="mb-6">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                         QR Code (Auto-remplissage)
+                         QR Code
                         </label>
                        <div 
                          className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-400 transition-colors"
                          onClick={() => qrInputRef.current?.click()}
                        >
-                         {formData.qrCode ? (
-                           <img src={formData.qrCode} alt="QR Code" className="max-w-full h-24 object-contain rounded" />
-                         ) : (
-                           <div className="text-gray-400">
-                             <QrCodeIcon className="h-8 w-8 mx-auto mb-2" />
-                             <div className="text-xs">Cliquez pour scanner le QR code</div>
-                             <div className="text-[9px] text-gray-500 mt-1">Auto-remplira les données</div>
-                           </div>
-                         )}
+                         {(() => {
+                           const qrUrl = getQRCodeImageUrl();
+                           if (qrUrl) {
+                             return (
+                               <>
+                                 <img 
+                                   src={qrUrl} 
+                                   alt="QR Code" 
+                                   className="max-w-full h-24 object-contain rounded" 
+                                   onError={(e) => {
+                                     e.currentTarget.style.display = 'none';
+                                     const icon = e.currentTarget.nextElementSibling;
+                                     if (icon) {
+                                       (icon as HTMLElement).style.display = 'block';
+                                     }
+                                   }}
+                                 />
+                                 <QrCodeIcon className="h-8 w-8 text-gray-400" style={{ display: 'none' }} />
+                               </>
+                             );
+                           }
+                           return <QrCodeIcon className="h-8 w-8 text-gray-400" />;
+                         })()}
                         </div>
                        <input
                          ref={qrInputRef}
@@ -1024,7 +1539,7 @@ export default function NouvelleInspectionPage() {
                     {/* Champs d'identification */}
                     <div className="space-y-4" dir="ltr">
                       <div>
-                        <label htmlFor="referenceInterne" className="block text-xs font-medium text-gray-700">
+                        <label htmlFor="referenceInterne" className="block text-sm font-medium text-gray-700">
                           Référence interne
                         </label>
                         <input
@@ -1095,6 +1610,21 @@ export default function NouvelleInspectionPage() {
                           placeholder="N A"
                         />
                       </div>
+
+                      {/* <div>
+                        <label htmlFor="numeroSerieNonEtiquete" className="block text-sm font-medium text-gray-700">
+                          Numéro (non étiqueté)
+                        </label>
+                        <input
+                          type="text"
+                          id="numeroSerieNonEtiquete"
+                          name="numeroSerieNonEtiquete"
+                          value={formData.numeroSerieNonEtiquete}
+                          onChange={handleChange}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        />
+                      </div> */}
+
                       <div>
                         <label htmlFor="fabricant" className="block text-sm font-medium text-gray-700">
                           Fabricant
@@ -1143,7 +1673,7 @@ export default function NouvelleInspectionPage() {
                             onClick={() => dateAchatInputRef.current?.click()}
                             disabled={isUploadingDateAchat}
                             className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
-                              isUploadingDateAchat 
+                              isUploadingDateAchat
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 : 'text-gray-700 bg-white hover:bg-gray-50'
                             }`}
@@ -1202,15 +1732,15 @@ export default function NouvelleInspectionPage() {
                           <label htmlFor="dateInspectionDetaillee" className="block text-sm font-medium text-gray-700">
                             Inspection Détaillée (tous les 6 mois)
                           </label>
-                           <input
-                             type="text"
-                             id="dateInspectionDetaillee"
-                             name="dateInspectionDetaillee"
-                             value={formData.dateInspectionDetaillee}
+                          <input
+                            type="text"
+                            id="dateInspectionDetaillee"
+                            name="dateInspectionDetaillee"
+                            value={formData.dateInspectionDetaillee}
                             onChange={handleChange}
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                             placeholder="Date de la prochaine inspection"
-                           />
+                            placeholder="Date de la prochaine inspection"
+                          />
                         </div>
 
                       <div>
@@ -1320,34 +1850,31 @@ export default function NouvelleInspectionPage() {
                           />
                           <button
                             type="button"
-                            onClick={() => pdfInputRef.current?.click()}
-                            disabled={isUploadingDocumentReference}
+                            onClick={() => documentsInputRef.current?.click()}
+                            disabled={isUploadingDocuments}
                             className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
-                              isUploadingDocumentReference
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              isUploadingDocuments 
+                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
                                 : 'text-gray-700 bg-white hover:bg-gray-50'
                             }`}
-                            title="Uploader un document de référence (PDF)"
+                            title={isUploadingDocuments ? "Upload en cours..." : "Uploader un PDF pour auto-remplissage"}
                           >
-                            {isUploadingDocumentReference ? (
-                              <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
-                                <span className="text-xs">Chargement...</span>
-                              </>
+                            {isUploadingDocuments ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                             ) : (
                               <DocumentIcon className="h-4 w-4" />
                             )}
                           </button>
                         </div>
                         <input
-                          ref={pdfInputRef}
+                          ref={documentsInputRef}
                           type="file"
                           accept=".pdf"
-                          onChange={handleReferencePDFUpload}
+                          onChange={handleDocumentsUpload}
                           className="hidden"
                         />
                         <p className="mt-1 text-xs text-gray-500">
-                          Uploader un document de référence (PDF) — aucun remplissage automatique
+                          Uploader un PDF pour extraire automatiquement les documents de référence
                         </p>
                         {/* Affichage des documents cliquables */}
                       </div>
@@ -1403,33 +1930,40 @@ export default function NouvelleInspectionPage() {
                 {/* Colonne droite - Vie de l'équipement */}
                 <div className="lg:col-span-4 space-y-6">
                   <div className="bg-gray-50 p-4 rounded-lg">
-                      <h2 className="text-sm font-semibold text-gray-900 mb-4">
-                        Vie de l'équipement
-                      </h2>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      Vie de l'équipement
+                    </h2>
 
                     {/* Points d'inspection */}
                     <div className="space-y-6" dir="ltr">
                       {/* 1. ANTECEDENT DU PRODUIT */}
                       <div className="border-b border-gray-200 pb-4">
-                        <div className="grid grid-cols-[40%_60%] gap-2">
-                          <div className="text-sm font-medium text-gray-900">
+                        <h3 className="text-sm font-medium text-gray-900 mb-3">
                           1. ANTECEDENT DU PRODUIT:
-                          </div>
+                        </h3>
                         <div className="space-y-2">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                className="text-[10px] text-red-600 hover:underline"
-                                onClick={() => toggleCommentInput('antecedentProduit.comment')}
-                              >
-                                ajouter commentaires
-                              </button>
-                            </div>
-                            <CommentSection
-                              fieldKey="antecedentProduit.comment"
-                              section="antecedentProduit"
-                              field="comment"
-                              value={{ comment: formData.inspectionData.antecedentProduit.comment }}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Mise en service le
+                            </label>
+                            <input
+                              type="date"
+                              value={formData.inspectionData.antecedentProduit.miseEnService}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setFormData(prev => ({
+                                  ...prev,
+                                  dateMiseEnService: value,
+                                  inspectionData: {
+                                    ...prev.inspectionData,
+                                    antecedentProduit: {
+                                      ...prev.inspectionData.antecedentProduit,
+                                      miseEnService: value
+                                    }
+                                  }
+                                }));
+                              }}
+                              className="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                           </div>
                         </div>
@@ -1443,7 +1977,12 @@ export default function NouvelleInspectionPage() {
                           </div>
                         <div className="space-y-2">
                             <div className="flex flex-col gap-1">
-                              <li><span className="text-sm text-gray-700">Référence Interne marquée et lisible</span></li>
+                            <li>
+                                <ClickableText
+                                  text="Référence Interne marquée et lisible"
+                                  fieldKey="observationsPrelables.lisibiliteNumeroSerie"
+                                />
+                              </li>
                               <div className="flex items-center justify-end gap-2">
                                 <StatusSelect
                                 currentStatus={formData.inspectionData.observationsPrelables.referenceInterneMarquee.status}
@@ -1458,279 +1997,339 @@ export default function NouvelleInspectionPage() {
                                   fieldKey="observationsPrelables.lisibiliteNumeroSerie"
                                 />
                               </li>
-                         
-                          </div>
+                            </div>
                             <div className="flex flex-col gap-1">
-                              <li><span className="text-sm text-gray-700">Durée de vie n'est pas dépassée</span></li>
-                          
+                           <li> <ClickableText
+                                  text="Durée de vie n'est pas dépassée"
+                                  fieldKey="observationsPrelables.lisibiliteNumeroSerie"
+                                />
+                                </li>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <li>
+                                <ClickableText
+                                  text="Comparez avec un appareil neuf l'absence de modification ou perte d'un élément"
+                                  fieldKey="observationsPrelables.comparaisonAppareilNeuf"
+                                />
+                              </li>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* 3. ETAT DES SANGLES DE */}
+                      {/* 3. VERIFICATION CORPS */}
                       <div className="border-b border-gray-200 pb-4">
                         <div className="space-y-2">
-                          <div className="text-sm font-medium text-gray-900 mb-2">
-                            3. ETAT DES SANGLES DE
-                            </div>
 
-                          {/* Ceinture / cuisse / bretelles */}
+                          {/* Marque/Fissure/Déformation/Corrosion */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Ceinture / cuisse / liaison cuisse ceinture et bretelles / zones cachées par boucles et points d'attaches</div>
+                          <div className="text-sm font-medium text-gray-900 mb-2">
+                          3. VERIFICATION CORPS : – Doit être démonté de tout appareil pouvant masquer une partie du corps :
+                            </div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
                               <ClickableText
-                                  text="Coupure/Gonflement/Usure Dommage dus à l'utilisation, à des traces de salissures, à la chaleur; aux UV, aux produits..."
-                                  fieldKey="etatSangles.ceintureCuisseBretelles"
+                                  text="Marque / Fissure / Déformation / Corrosion"
+                                  fieldKey="verificationCorps.marqueFissure"
                               />
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"
                                   className="text-[10px] text-red-600 hover:underline"
-                                    onClick={() => toggleCommentInput('etatSangles.ceintureCuisseBretelles')}
+                                    onClick={() => toggleCommentInput('verificationCorps.marqueFissure')}
                                 >
                                     ajouter commentaires
                                 </button>
                                 <StatusSelect
-                                    currentStatus={formData.inspectionData.etatSangles.ceintureCuisseBretelles.status}
-                                    onStatusChange={(status) => handleInspectionChange('etatSangles', 'ceintureCuisseBretelles', status)}
+                                    currentStatus={formData.inspectionData.verificationCorps.marqueFissure.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationCorps', 'marqueFissure', status)}
                               />
                             </div>
                             </div>
                             <CommentSection
-                                fieldKey="etatSangles.ceintureCuisseBretelles"
-                                section="etatSangles"
-                                field="ceintureCuisseBretelles"
-                                value={formData.inspectionData.etatSangles.ceintureCuisseBretelles}
+                                fieldKey="verificationCorps.marqueFissure"
+                                section="verificationCorps"
+                                field="marqueFissure"
+                                value={formData.inspectionData.verificationCorps.marqueFissure}
                             />
                           </div>
                         </div>
 
-                          {/* Etat coutures sécurité */}
+                          {/* Vérifier l'usure provoquée par le passage de la corde */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Etat coutures sécurité (dessus/dessous): Fil couleur différente</div>
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier l'usure provoquée par le passage de la corde ou l'appui sur les ancrages:</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
                               <ClickableText
-                                  text="Fil distendu, usé ou coupé..."
-                                  fieldKey="etatSangles.etatCouturesSecurite"
+                                  text="Profondeur des marques - une usure de plus d'un mm de profondeur / Apparition d'arêtes tranchantes"
+                                  fieldKey="verificationCorps.usureCordeAncrages"
                               />
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"
                                   className="text-[10px] text-red-600 hover:underline"
-                                    onClick={() => toggleCommentInput('etatSangles.etatCouturesSecurite')}
+                                    onClick={() => toggleCommentInput('verificationCorps.usureCordeAncrages')}
                                 >
                                     ajouter commentaires
                                 </button>
                                 <StatusSelect
-                                    currentStatus={formData.inspectionData.etatSangles.etatCouturesSecurite.status}
-                                    onStatusChange={(status) => handleInspectionChange('etatSangles', 'etatCouturesSecurite', status)}
+                                    currentStatus={formData.inspectionData.verificationCorps.usureCordeAncrages.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationCorps', 'usureCordeAncrages', status)}
                                 />
                               </div>
                             </div>
                             <CommentSection
-                                fieldKey="etatSangles.etatCouturesSecurite"
-                                section="etatSangles"
-                                field="etatCouturesSecurite"
-                                value={formData.inspectionData.etatSangles.etatCouturesSecurite}
+                                fieldKey="verificationCorps.usureCordeAncrages"
+                                section="verificationCorps"
+                                field="usureCordeAncrages"
+                                value={formData.inspectionData.verificationCorps.usureCordeAncrages}
                               />
                             </div>
                           </div>
 
-                          {/* Présence des ourlets */}
+                          {/* Etat du bec */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Présence des ourlets en bout de sangle</div>
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center justify-end gap-2">
-                                <StatusSelect
-                                  currentStatus={formData.inspectionData.etatSangles.presenceOurlets.status}
-                                  onStatusChange={(status) => handleInspectionChange('etatSangles', 'presenceOurlets', status)}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 4. POINTS D'ATTACHE */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                          <div className="text-sm font-medium text-gray-900">
-                              4. POINTS D'ATTACHE  - Métalliques:
-                          </div>
-                            <div className="space-y-1">
-                            <div className="flex flex-col gap-1">
-                                <ClickableText
-                                  text="Marque/Fissure/Usure/Déformation/Corrosion..."
-                                  fieldKey="pointsAttache.metalliques"
-                                />
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  type="button"
-                                  className="text-[10px] text-red-600 hover:underline"
-                                    onClick={() => toggleCommentInput('pointsAttache.metalliques')}
-                                >
-                                    ajouter commentaires
-                                </button>
-                                <StatusSelect
-                                    currentStatus={formData.inspectionData.pointsAttache.metalliques.status}
-                                    onStatusChange={(status) => handleInspectionChange('pointsAttache', 'metalliques', status)}
-                                />
-                              </div>
-                            </div>
-                            <CommentSection
-                                fieldKey="pointsAttache.metalliques"
-                                section="pointsAttache"
-                                field="metalliques"
-                                value={formData.inspectionData.pointsAttache.metalliques}
-                              />
-                        </div>
-                      </div>
-
-                          {/* Textiles */}
-                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Textiles:</div>
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier l'état du bec:</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
-                                <ClickableText
-                                  text="Coupure/Usure/Déchirement."
-                                  fieldKey="pointsAttache.textiles"
+                              <ClickableText
+                                  text="Marques, Usure, Fissures, Déformation,..."
+                                  fieldKey="verificationCorps.etatBec"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                    onClick={() => toggleCommentInput('verificationCorps.etatBec')}
+                                >
+                                    ajouter commentaires
+                                </button>
+                                <StatusSelect
+                                    currentStatus={formData.inspectionData.verificationCorps.etatBec.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationCorps', 'etatBec', status)}
+                              />
+                            </div>
+                            </div>
+                            <CommentSection
+                                fieldKey="verificationCorps.etatBec"
+                                section="verificationCorps"
+                                field="etatBec"
+                                value={formData.inspectionData.verificationCorps.etatBec}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 4. VERIFICATION DU DOIGT */}
+                      <div className="border-b border-gray-200 pb-4">
+                        <div className="space-y-2">
+                          {/* Marque/Usure */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-sm font-medium text-gray-900 ml-2">  4. VERIFICATION DU DOIGT: - État:</div>
+                            <div className="space-y-1">
+                              <div className="flex flex-col gap-1">
+                              <ClickableText
+                                  text="Marque / Usure / Fissure / Déformation / Corrosion..."
+                                  fieldKey="verificationDoigt.marqueUsure"
                                 />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                    onClick={() => toggleCommentInput('verificationDoigt.marqueUsure')}
+                                >
+                                    ajouter commentaires
+                                </button>
+                                <StatusSelect
+                                    currentStatus={formData.inspectionData.verificationDoigt.marqueUsure.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationDoigt', 'marqueUsure', status)}
+                                />
+                              </div>
+                            </div>
+                            <CommentSection
+                                fieldKey="verificationDoigt.marqueUsure"
+                                section="verificationDoigt"
+                                field="marqueUsure"
+                                value={formData.inspectionData.verificationDoigt.marqueUsure}
+                            />
+                          </div>
+                        </div>
+
+                          {/* Propreté */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier propreté des parties ayant un mouvement à effectuer:</div>
+                            <div className="space-y-1">
+                              <div className="flex flex-col gap-1">
                                 <div className="flex items-center justify-end gap-2">
                                   <button
                                     type="button"
                                     className="text-[10px] text-red-600 hover:underline"
-                                    onClick={() => toggleCommentInput('pointsAttache.textiles')}
+                                    onClick={() => toggleCommentInput('verificationDoigt.proprete')}
                                   >
                                     Ajouter commentaires
                                   </button>
                                   <StatusSelect
-                                    currentStatus={formData.inspectionData.pointsAttache.textiles.status}
-                                    onStatusChange={(status) => handleInspectionChange('pointsAttache', 'textiles', status)}
+                                    currentStatus={formData.inspectionData.verificationDoigt.proprete.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationDoigt', 'proprete', status)}
                                   />
                                 </div>
                               </div>
                               <CommentSection
-                                fieldKey="pointsAttache.textiles"
-                                section="pointsAttache"
-                                field="textiles"
-                                value={formData.inspectionData.pointsAttache.textiles}
+                                fieldKey="verificationDoigt.proprete"
+                                section="verificationDoigt"
+                                field="proprete"
+                                value={formData.inspectionData.verificationDoigt.proprete}
                               />
                             </div>
                           </div>
 
-                          {/* Plastiques */}
+                          {/* Etat du rivet */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Plastiques:</div>
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier l'état du rivet:</div>
                             <div className="space-y-1">
                             <div className="flex flex-col gap-1">
                               <ClickableText
-                                  text="Coupure/Usure/Déchirement..."
-                                  fieldKey="pointsAttache.plastiques"
+                                  text="craquelure / Déformation / Corrosion / Jeu..."
+                                  fieldKey="verificationDoigt.etatRivet"
                               />
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"
                                   className="text-[10px] text-red-600 hover:underline"
-                                    onClick={() => toggleCommentInput('pointsAttache.plastiques')}
+                                    onClick={() => toggleCommentInput('verificationDoigt.etatRivet')}
                                 >
                                     ajouter commentaires
                                 </button>
                                 <StatusSelect
-                                    currentStatus={formData.inspectionData.pointsAttache.plastiques.status}
-                                    onStatusChange={(status) => handleInspectionChange('pointsAttache', 'plastiques', status)}
+                                    currentStatus={formData.inspectionData.verificationDoigt.etatRivet.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationDoigt', 'etatRivet', status)}
                               />
                             </div>
                             </div>
                             <CommentSection
-                                fieldKey="pointsAttache.plastiques"
-                                section="pointsAttache"
-                                field="plastiques"
-                                value={formData.inspectionData.pointsAttache.plastiques}
+                                fieldKey="verificationDoigt.etatRivet"
+                                section="verificationDoigt"
+                                field="etatRivet"
+                                value={formData.inspectionData.verificationDoigt.etatRivet}
                               />
                             </div>
                           </div>
 
-                          {/* Indicateur arrêt de chute */}
+                          {/* Ouverture manuelle */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Si indicateur arrêt de chute apparait</div>
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier l'ouverture manuelle complète du doigt:</div>
                             <div className="flex flex-col gap-1">
-                              <ClickableText
-                                text="Oui - Non"
-                                fieldKey="pointsAttache.indicateurArretChute"
-                              />
                               <div className="flex items-center justify-end gap-2">
                                 <StatusSelect
-                                  currentStatus={formData.inspectionData.pointsAttache.indicateurArretChute.status}
-                                  onStatusChange={(status) => handleInspectionChange('pointsAttache', 'indicateurArretChute', status)}
+                                  currentStatus={formData.inspectionData.verificationDoigt.ouvertureManuelle.status}
+                                  onStatusChange={(status) => handleInspectionChange('verificationDoigt', 'ouvertureManuelle', status)}
                                 />
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
 
-                      {/* 5. ETAT BOUCLES DE REGLAGES */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <div className="space-y-2">
-                          {/* Grand titre avec Marque/Fissure/Usure/Déformation/Corrosion... */}
+                          {/* Fermeture automatique */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                          <div className="text-sm font-medium text-gray-900">
-                              5. ETAT BOUCLES DE REGLAGES
-                          </div>
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier fermeture automatique du doigt, l'efficacité du ressort de rappel et l'alignement doigt/bec:</div>
                             <div className="space-y-1">
-                            <div className="flex flex-col gap-1">
-                                <ClickableText
-                                  text="Marque/Fissure/Usure/Déformation/Corrosion..."
-                                  fieldKey="etatBouclesReglages.fonctionnementBoucles"
-                                />
+                              <div className="flex flex-col gap-1">
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"
                                   className="text-[10px] text-red-600 hover:underline"
-                                    onClick={() => toggleCommentInput('etatBouclesReglages.fonctionnementBoucles')}
+                                    onClick={() => toggleCommentInput('verificationDoigt.fermetureAutomatique')}
                                 >
                                     ajouter commentaires
                                 </button>
                                 <StatusSelect
-                                    currentStatus={formData.inspectionData.etatBouclesReglages.fonctionnementBoucles.status}
-                                    onStatusChange={(status) => handleInspectionChange('etatBouclesReglages', 'fonctionnementBoucles', status)}
+                                    currentStatus={formData.inspectionData.verificationDoigt.fermetureAutomatique.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationDoigt', 'fermetureAutomatique', status)}
                               />
                             </div>
                             </div>
                             <CommentSection
-                                fieldKey="etatBouclesReglages.fonctionnementBoucles"
-                                section="etatBouclesReglages"
-                                field="fonctionnementBoucles"
-                                value={formData.inspectionData.etatBouclesReglages.fonctionnementBoucles}
+                                fieldKey="verificationDoigt.fermetureAutomatique"
+                                section="verificationDoigt"
+                                field="fermetureAutomatique"
+                                value={formData.inspectionData.verificationDoigt.fermetureAutomatique}
                               />
                             </div>
-                          </div>
-
-                          {/* Passage de sangles */}
-                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Passage de sangles (pas de vrille)</div>
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center justify-end gap-2">
-                                <StatusSelect
-                                  currentStatus={formData.inspectionData.etatBouclesReglages.passageSangles.status}
-                                  onStatusChange={(status) => handleInspectionChange('etatBouclesReglages', 'passageSangles', status)}
-                            />
                           </div>
                         </div>
                       </div>
 
-                          {/* Fonctionnement des boucles */}
+                      {/* 5. VERIFICATION DE LA BAGUE */}
+                      <div className="border-b border-gray-200 pb-4">
+                        <div className="space-y-2">
+                          {/* Marque/Usure */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Fonctionnement des boucles</div>
+                            <div className="text-sm font-medium text-gray-900 ml-2">5. VERIFICATION DE LA BAGUE: - État:</div>
+                            <div className="space-y-1">
+                              <div className="flex flex-col gap-1">
+                              <ClickableText
+                                  text="Marque / Usure / Fissure / Déformation / Corrosion / Jeu..."
+                                  fieldKey="verificationBague.marqueUsure"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                    onClick={() => toggleCommentInput('verificationBague.marqueUsure')}
+                                >
+                                    ajouter commentaires
+                                </button>
+                                <StatusSelect
+                                    currentStatus={formData.inspectionData.verificationBague.marqueUsure.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationBague', 'marqueUsure', status)}
+                                />
+                              </div>
+                            </div>
+                            <CommentSection
+                                fieldKey="verificationBague.marqueUsure"
+                                section="verificationBague"
+                                field="marqueUsure"
+                                value={formData.inspectionData.verificationBague.marqueUsure}
+                            />
+                          </div>
+                        </div>
+
+                          {/* Déverrouillage */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-sm text-gray-700 ml-2">- Bague automatique : - Vérifier le bon fonctionnement du système de déverrouillage de la bague, selon le mode d'ouverture:</div>
+                            <div className="space-y-1">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    className="text-[10px] text-red-600 hover:underline"
+                                    onClick={() => toggleCommentInput('verificationBague.deverrouillage')}
+                                  >
+                                    Ajouter commentaires
+                                  </button>
+                                  <StatusSelect
+                                    currentStatus={formData.inspectionData.verificationBague.deverrouillage.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationBague', 'deverrouillage', status)}
+                                  />
+                                </div>
+                              </div>
+                              <CommentSection
+                                fieldKey="verificationBague.deverrouillage"
+                                section="verificationBague"
+                                field="deverrouillage"
+                                value={formData.inspectionData.verificationBague.deverrouillage}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Verrouillage automatique */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier le verrouillage automatique lorsque vous relâcher la bague ; Si nécessaire nettoyer:</div>
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center justify-end gap-2">
                                 <StatusSelect
-                                  currentStatus={formData.inspectionData.etatBouclesReglages.fonctionnementBoucles.status}
-                                  onStatusChange={(status) => handleInspectionChange('etatBouclesReglages', 'fonctionnementBoucles', status)}
+                                  currentStatus={formData.inspectionData.verificationBague.verrouillageAutomatique.status}
+                                  onStatusChange={(status) => handleInspectionChange('verificationBague', 'verrouillageAutomatique', status)}
                                 />
                               </div>
                             </div>
@@ -1760,10 +2359,10 @@ export default function NouvelleInspectionPage() {
                         </div>
                         <div className="space-y-4">
                           {/* Zone pour le certificat/document chargé */}
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-2">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                               Certificat de contrôle (PDF)
-                          </label>
+                            </label>
                             <div className="flex space-x-2">
                               <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center relative">
                                 {isUploadingCertificate ? (
@@ -1774,28 +2373,28 @@ export default function NouvelleInspectionPage() {
                                     </div>
                                   </div>
                                 ) : null}
-                              {formData.verificateurSignaturePdf ? (
-                                <div className="text-green-600 text-sm">
-                                  <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
-                                  <a 
-                                    href={formData.verificateurSignaturePdf} 
-                                    target="_blank" 
-                                    className="text-blue-600 hover:text-blue-800 underline text-xs"
-                                  >
+                                {getCurrentCertificate() ? (
+                                  <div className="text-green-600 text-sm">
+                                    <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                                    <a
+                                      href={getCurrentCertificate()}
+                                      target="_blank"
+                                      className="text-blue-600 hover:text-blue-800 underline text-xs"
+                                    >
                                       <div>Certificat de contrôle</div>
-                                  </a>
-                                </div>
-                              ) : (
-                                <div className="text-gray-400 text-sm">
-                                  <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                                    </a>
+                                  </div>
+                                ) : (
+                                  <div className="text-gray-400 text-sm">
+                                    <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
                                     <div>Aucun certificat chargé</div>
-                                </div>
-                              )}
-                            </div>
+                                  </div>
+                                )}
+                              </div>
                               <div className="flex items-center">
-                            <button
-                              type="button"
-                              onClick={() => signatureInputRef.current?.click()}
+                                <button
+                                  type="button"
+                                  onClick={() => signatureInputRef.current?.click()}
                                   disabled={isUploadingCertificate}
                                   className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
                                     isUploadingCertificate
@@ -1810,25 +2409,25 @@ export default function NouvelleInspectionPage() {
                                       <span className="text-xs">Chargement...</span>
                                     </>
                                   ) : (
-                              <DocumentIcon className="h-4 w-4" />
+                                    <DocumentIcon className="h-4 w-4" />
                                   )}
-                            </button>
+                                </button>
                               </div>
                             </div>
                           </div>
 
                           {/* Zone pour la signature digitale */}
                           <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                               Signature digitale
                             </label>
                             <div className="flex space-x-2">
                               <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                                {formData.verificateurDigitalSignature || digitalSignature ? (
+                                {getCurrentDigitalSignature() ? (
                                   <div className="text-green-600 text-sm">
                                     <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
                                     <div className="text-gray-600">
-                                      <img src={formData.verificateurDigitalSignature || digitalSignature} alt="Signature digitale" className="h-16 mx-auto object-contain" />
+                                      <img src={getCurrentDigitalSignature()} alt="Signature digitale" className="h-16 mx-auto object-contain" />
                                       <div className="text-xs mt-2">Signature digitale enregistrée</div>
                                     </div>
                                   </div>
@@ -1851,14 +2450,14 @@ export default function NouvelleInspectionPage() {
                               </div>
                             </div>
                           </div>
-                          </div>
-                          <input
-                            ref={signatureInputRef}
-                            type="file"
-                            accept=".pdf"
-                            onChange={handleSignatureUpload}
-                            className="hidden"
-                          />
+                        </div>
+                        <input
+                          ref={signatureInputRef}
+                          type="file"
+                          accept=".pdf"
+                          onChange={handleSignatureUpload}
+                          className="hidden"
+                        />
                       </div>
                     </div>
                   </div>
@@ -1879,7 +2478,7 @@ export default function NouvelleInspectionPage() {
                   disabled={isLoading}
                   className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                 >
-                  {isLoading ? 'Enregistrement...' : 'Enregistrer l\'inspection'}
+                  {isLoading ? 'Mise à jour...' : 'Mettre à jour l\'inspection'}
                 </button>
               </div>
             </form>

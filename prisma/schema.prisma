@@ -373,6 +373,11 @@ model EquipmentDetailedInspection {
   etatElementsConfort          Json?            // Structure pour l'état des éléments de confort (harnais)
   etatConnecteurTorseCuissard Json?            // Structure pour l'état du connecteur torse/cuissard (harnais)
   bloqueurCroll                 Json?            // Structure pour le bloqueur Croll (harnais)
+  
+  // Champs spécifiques au mousqueton
+  verificationCorps            Json?            // Structure pour la vérification du corps (mousqueton)
+  verificationDoigt            Json?            // Structure pour la vérification du doigt (mousqueton)
+  verificationBague            Json?            // Structure pour la vérification de la bague (mousqueton)
 
   // Données pour les éléments barrés (ancienne fonctionnalité)
   crossedOutItems              Json?            // Éléments barrés complètement

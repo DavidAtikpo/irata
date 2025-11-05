@@ -21,38 +21,24 @@ interface InspectionData {
     referenceInterneMarquee: InspectionPoint;
     lisibiliteNumeroSerie: InspectionPoint;
     dureeVieNonDepassee: InspectionPoint;
+    comparaisonAppareilNeuf: InspectionPoint;
   };
-  etatSangles: {
-    ceintureCuisseBretelles: InspectionPoint;
-    etatCouturesSecurite: InspectionPoint;
-    presenceOurlets: InspectionPoint;
+  verificationCorps: {
+    marqueFissure: InspectionPoint;
+    usureCordeAncrages: InspectionPoint;
+    etatBec: InspectionPoint;
   };
-  pointsAttache: {
-    metalliques: InspectionPoint;
-    textiles: InspectionPoint;
-    plastiques: InspectionPoint;
-    indicateurArretChute: InspectionPoint;
+  verificationDoigt: {
+    marqueUsure: InspectionPoint;
+    proprete: InspectionPoint;
+    etatRivet: InspectionPoint;
+    ouvertureManuelle: InspectionPoint;
+    fermetureAutomatique: InspectionPoint;
   };
-  etatBouclesReglages: {
-    passageSangles: InspectionPoint;
-    fonctionnementBoucles: InspectionPoint;
-  };
-  etatElementsConfort: {
-    mousses: InspectionPoint;
-    passantsElastiques: InspectionPoint;
-    elastiquesCuisses: InspectionPoint;
-    portesMateriels: InspectionPoint;
-  };
-  etatConnecteurTorseCuissard: {
-    corpsMousqueton: InspectionPoint;
-    doigtMousqueton: InspectionPoint;
-    bagueVerrouillage: InspectionPoint;
-  };
-  bloqueurCroll: {
-    corpsTrousConnexion: InspectionPoint;
-    gachette: InspectionPoint;
-    taquetSecurite: InspectionPoint;
-    fonctionnel: InspectionPoint;
+  verificationBague: {
+    marqueUsure: InspectionPoint;
+    deverrouillage: InspectionPoint;
+    verrouillageAutomatique: InspectionPoint;
   };
 }
 
@@ -102,7 +88,7 @@ export default function NouvelleInspectionPage() {
   const [formData, setFormData] = useState({
     // Identification équipement
     referenceInterne: '',
-    typeEquipement: 'Harnais de Suspension',
+    typeEquipement: 'Mousqueton',
     numeroSerie: '',
     numeroSerieTop: '',
     numeroSerieCuissard: '',
@@ -148,38 +134,24 @@ export default function NouvelleInspectionPage() {
         referenceInterneMarquee: { status: 'V' as const, comment: '' },
         lisibiliteNumeroSerie: { status: 'V' as const, comment: '' },
         dureeVieNonDepassee: { status: 'V' as const, comment: '' },
+        comparaisonAppareilNeuf: { status: 'V' as const, comment: '' },
       },
-      etatSangles: {
-        ceintureCuisseBretelles: { status: 'V' as const, comment: '' },
-        etatCouturesSecurite: { status: 'V' as const, comment: '' },
-        presenceOurlets: { status: 'V' as const, comment: '' },
+      verificationCorps: {
+        marqueFissure: { status: 'V' as const, comment: '' },
+        usureCordeAncrages: { status: 'V' as const, comment: '' },
+        etatBec: { status: 'V' as const, comment: '' },
       },
-      pointsAttache: {
-        metalliques: { status: 'V' as const, comment: '' },
-        textiles: { status: 'V' as const, comment: '' },
-        plastiques: { status: 'V' as const, comment: '' },
-        indicateurArretChute: { status: 'V' as const, comment: '' },
+      verificationDoigt: {
+        marqueUsure: { status: 'V' as const, comment: '' },
+        proprete: { status: 'V' as const, comment: '' },
+        etatRivet: { status: 'V' as const, comment: '' },
+        ouvertureManuelle: { status: 'V' as const, comment: '' },
+        fermetureAutomatique: { status: 'V' as const, comment: '' },
       },
-      etatBouclesReglages: {
-        passageSangles: { status: 'V' as const, comment: '' },
-        fonctionnementBoucles: { status: 'V' as const, comment: '' },
-      },
-      etatElementsConfort: {
-        mousses: { status: 'V' as const, comment: '' },
-        passantsElastiques: { status: 'V' as const, comment: '' },
-        elastiquesCuisses: { status: 'V' as const, comment: '' },
-        portesMateriels: { status: 'V' as const, comment: '' },
-      },
-      etatConnecteurTorseCuissard: {
-        corpsMousqueton: { status: 'NA' as const, comment: '' },
-        doigtMousqueton: { status: 'NA' as const, comment: '' },
-        bagueVerrouillage: { status: 'NA' as const, comment: '' },
-      },
-      bloqueurCroll: {
-        corpsTrousConnexion: { status: 'V' as const, comment: '' },
-        gachette: { status: 'V' as const, comment: '' },
-        taquetSecurite: { status: 'V' as const, comment: '' },
-        fonctionnel: { status: 'V' as const, comment: '' },
+      verificationBague: {
+        marqueUsure: { status: 'V' as const, comment: '' },
+        deverrouillage: { status: 'V' as const, comment: '' },
+        verrouillageAutomatique: { status: 'V' as const, comment: '' },
       },
     },
     
@@ -697,12 +669,9 @@ export default function NouvelleInspectionPage() {
           ...formData,
           antecedentProduit: formData.inspectionData.antecedentProduit,
           observationsPrelables: formData.inspectionData.observationsPrelables,
-          etatSangles: formData.inspectionData.etatSangles,
-          pointsAttache: formData.inspectionData.pointsAttache,
-          etatBouclesReglages: formData.inspectionData.etatBouclesReglages,
-          etatElementsConfort: formData.inspectionData.etatElementsConfort,
-          etatConnecteurTorseCuissard: formData.inspectionData.etatConnecteurTorseCuissard,
-          bloqueurCroll: formData.inspectionData.bloqueurCroll,
+          verificationCorps: formData.inspectionData.verificationCorps,
+          verificationDoigt: formData.inspectionData.verificationDoigt,
+          verificationBague: formData.inspectionData.verificationBague,
           // Nouvelles données pour les éléments barrés
           crossedOutItems: crossedOutItems,
           crossedOutWords: crossedOutWords,
@@ -1095,6 +1064,21 @@ export default function NouvelleInspectionPage() {
                           placeholder="N A"
                         />
                       </div>
+
+                      {/* <div>
+                        <label htmlFor="numeroSerieNonEtiquete" className="block text-sm font-medium text-gray-700">
+                          Numéro (non étiqueté)
+                        </label>
+                        <input
+                          type="text"
+                          id="numeroSerieNonEtiquete"
+                          name="numeroSerieNonEtiquete"
+                          value={formData.numeroSerieNonEtiquete}
+                          onChange={handleChange}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        />
+                      </div> */}
+
                       <div>
                         <label htmlFor="fabricant" className="block text-sm font-medium text-gray-700">
                           Fabricant
@@ -1411,25 +1395,32 @@ export default function NouvelleInspectionPage() {
                     <div className="space-y-6" dir="ltr">
                       {/* 1. ANTECEDENT DU PRODUIT */}
                       <div className="border-b border-gray-200 pb-4">
-                        <div className="grid grid-cols-[40%_60%] gap-2">
-                          <div className="text-sm font-medium text-gray-900">
+                        <h3 className="text-sm font-medium text-gray-900 mb-3">
                           1. ANTECEDENT DU PRODUIT:
-                          </div>
+                        </h3>
                         <div className="space-y-2">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                className="text-[10px] text-red-600 hover:underline"
-                                onClick={() => toggleCommentInput('antecedentProduit.comment')}
-                              >
-                                ajouter commentaires
-                              </button>
-                            </div>
-                            <CommentSection
-                              fieldKey="antecedentProduit.comment"
-                              section="antecedentProduit"
-                              field="comment"
-                              value={{ comment: formData.inspectionData.antecedentProduit.comment }}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Mise en service le
+                            </label>
+                            <input
+                              type="date"
+                              value={formData.inspectionData.antecedentProduit.miseEnService}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setFormData(prev => ({
+                                  ...prev,
+                                  dateMiseEnService: value,
+                                  inspectionData: {
+                                    ...prev.inspectionData,
+                                    antecedentProduit: {
+                                      ...prev.inspectionData.antecedentProduit,
+                                      miseEnService: value
+                                    }
+                                  }
+                                }));
+                              }}
+                              className="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                           </div>
                         </div>
@@ -1443,7 +1434,12 @@ export default function NouvelleInspectionPage() {
                           </div>
                         <div className="space-y-2">
                             <div className="flex flex-col gap-1">
-                              <li><span className="text-sm text-gray-700">Référence Interne marquée et lisible</span></li>
+                            <li>
+                                <ClickableText
+                                  text="Référence Interne marquée et lisible"
+                                  fieldKey="observationsPrelables.lisibiliteNumeroSerie"
+                                />
+                              </li>
                               <div className="flex items-center justify-end gap-2">
                                 <StatusSelect
                                 currentStatus={formData.inspectionData.observationsPrelables.referenceInterneMarquee.status}
@@ -1458,279 +1454,384 @@ export default function NouvelleInspectionPage() {
                                   fieldKey="observationsPrelables.lisibiliteNumeroSerie"
                                 />
                               </li>
-                         
-                          </div>
+                              {/* <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('observationsPrelables.lisibiliteNumeroSerie')}
+                                >
+                                  ajouter commentaires
+                                </button>
+                                <StatusSelect
+                                  currentStatus={formData.inspectionData.observationsPrelables.lisibiliteNumeroSerie.status}
+                                  onStatusChange={(status) => handleInspectionChange('observationsPrelables', 'lisibiliteNumeroSerie', status)}
+                                />
+                              </div> */}
+                            </div>
                             <div className="flex flex-col gap-1">
-                              <li><span className="text-sm text-gray-700">Durée de vie n'est pas dépassée</span></li>
-                          
+                           <li> <ClickableText
+                                  text="Durée de vie n’est pas dépassée"
+                                  fieldKey="observationsPrelables.lisibiliteNumeroSerie"
+                                />
+                                </li>
+                              {/* <div className="flex items-center justify-end gap-2">
+                                <StatusSelect
+                                  currentStatus={formData.inspectionData.observationsPrelables.dureeVieNonDepassee.status}
+                                  onStatusChange={(status) => handleInspectionChange('observationsPrelables', 'dureeVieNonDepassee', status)}
+                                />
+                              </div> */}
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <li>
+                                <ClickableText
+                                  text="Comparez avec un appareil neuf l'absence de modification ou perte d'un élément"
+                                  fieldKey="observationsPrelables.comparaisonAppareilNeuf"
+                                />
+                              </li>
+                              {/* <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                  onClick={() => toggleCommentInput('observationsPrelables.comparaisonAppareilNeuf')}
+                                >
+                                  ajouter commentaires
+                                </button>
+                                <StatusSelect
+                                  currentStatus={formData.inspectionData.observationsPrelables.comparaisonAppareilNeuf.status}
+                                  onStatusChange={(status) => handleInspectionChange('observationsPrelables', 'comparaisonAppareilNeuf', status)}
+                                />
+                              </div> */}
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* 3. ETAT DES SANGLES DE */}
+                      {/* 3. VERIFICATION CORPS */}
                       <div className="border-b border-gray-200 pb-4">
                         <div className="space-y-2">
-                          <div className="text-sm font-medium text-gray-900 mb-2">
-                            3. ETAT DES SANGLES DE
-                            </div>
 
-                          {/* Ceinture / cuisse / bretelles */}
+                          {/* Marque/Fissure/Déformation/Corrosion */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Ceinture / cuisse / liaison cuisse ceinture et bretelles / zones cachées par boucles et points d'attaches</div>
+                          <div className="text-sm font-medium text-gray-900 mb-2">
+                          3. VERIFICATION CORPS : – Doit être démonté de tout appareil pouvant masquer une partie du corps :
+                            </div>
+                            {/* <div className="text-sm text-gray-700 ml-2">- Marque / Fissure / Déformation / Corrosion:</div> */}
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
                               <ClickableText
-                                  text="Coupure/Gonflement/Usure Dommage dus à l'utilisation, à des traces de salissures, à la chaleur; aux UV, aux produits..."
-                                  fieldKey="etatSangles.ceintureCuisseBretelles"
+                                  text="Marque / Fissure / Déformation / Corrosion"
+                                  fieldKey="verificationCorps.marqueFissure"
                               />
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"
                                   className="text-[10px] text-red-600 hover:underline"
-                                    onClick={() => toggleCommentInput('etatSangles.ceintureCuisseBretelles')}
+                                    onClick={() => toggleCommentInput('verificationCorps.marqueFissure')}
                                 >
                                     ajouter commentaires
                                 </button>
                                 <StatusSelect
-                                    currentStatus={formData.inspectionData.etatSangles.ceintureCuisseBretelles.status}
-                                    onStatusChange={(status) => handleInspectionChange('etatSangles', 'ceintureCuisseBretelles', status)}
+                                    currentStatus={formData.inspectionData.verificationCorps.marqueFissure.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationCorps', 'marqueFissure', status)}
                               />
                             </div>
                             </div>
                             <CommentSection
-                                fieldKey="etatSangles.ceintureCuisseBretelles"
-                                section="etatSangles"
-                                field="ceintureCuisseBretelles"
-                                value={formData.inspectionData.etatSangles.ceintureCuisseBretelles}
+                                fieldKey="verificationCorps.marqueFissure"
+                                section="verificationCorps"
+                                field="marqueFissure"
+                                value={formData.inspectionData.verificationCorps.marqueFissure}
                             />
                           </div>
                         </div>
 
-                          {/* Etat coutures sécurité */}
+                          {/* Vérifier l'usure provoquée par le passage de la corde */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Etat coutures sécurité (dessus/dessous): Fil couleur différente</div>
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier l'usure provoquée par le passage de la corde ou l'appui sur les ancrages:</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
                               <ClickableText
-                                  text="Fil distendu, usé ou coupé..."
-                                  fieldKey="etatSangles.etatCouturesSecurite"
+                                  text="Profondeur des marques - une usure de plus d'un mm de profondeur / Apparition d'arêtes tranchantes"
+                                  fieldKey="verificationCorps.usureCordeAncrages"
                               />
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"
                                   className="text-[10px] text-red-600 hover:underline"
-                                    onClick={() => toggleCommentInput('etatSangles.etatCouturesSecurite')}
+                                    onClick={() => toggleCommentInput('verificationCorps.usureCordeAncrages')}
                                 >
                                     ajouter commentaires
                                 </button>
                                 <StatusSelect
-                                    currentStatus={formData.inspectionData.etatSangles.etatCouturesSecurite.status}
-                                    onStatusChange={(status) => handleInspectionChange('etatSangles', 'etatCouturesSecurite', status)}
+                                    currentStatus={formData.inspectionData.verificationCorps.usureCordeAncrages.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationCorps', 'usureCordeAncrages', status)}
                                 />
                               </div>
                             </div>
                             <CommentSection
-                                fieldKey="etatSangles.etatCouturesSecurite"
-                                section="etatSangles"
-                                field="etatCouturesSecurite"
-                                value={formData.inspectionData.etatSangles.etatCouturesSecurite}
+                                fieldKey="verificationCorps.usureCordeAncrages"
+                                section="verificationCorps"
+                                field="usureCordeAncrages"
+                                value={formData.inspectionData.verificationCorps.usureCordeAncrages}
                               />
                             </div>
                           </div>
 
-                          {/* Présence des ourlets */}
+                          {/* Etat du bec */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Présence des ourlets en bout de sangle</div>
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center justify-end gap-2">
-                                <StatusSelect
-                                  currentStatus={formData.inspectionData.etatSangles.presenceOurlets.status}
-                                  onStatusChange={(status) => handleInspectionChange('etatSangles', 'presenceOurlets', status)}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 4. POINTS D'ATTACHE */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                          <div className="text-sm font-medium text-gray-900">
-                              4. POINTS D'ATTACHE  - Métalliques:
-                          </div>
-                            <div className="space-y-1">
-                            <div className="flex flex-col gap-1">
-                                <ClickableText
-                                  text="Marque/Fissure/Usure/Déformation/Corrosion..."
-                                  fieldKey="pointsAttache.metalliques"
-                                />
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  type="button"
-                                  className="text-[10px] text-red-600 hover:underline"
-                                    onClick={() => toggleCommentInput('pointsAttache.metalliques')}
-                                >
-                                    ajouter commentaires
-                                </button>
-                                <StatusSelect
-                                    currentStatus={formData.inspectionData.pointsAttache.metalliques.status}
-                                    onStatusChange={(status) => handleInspectionChange('pointsAttache', 'metalliques', status)}
-                                />
-                              </div>
-                            </div>
-                            <CommentSection
-                                fieldKey="pointsAttache.metalliques"
-                                section="pointsAttache"
-                                field="metalliques"
-                                value={formData.inspectionData.pointsAttache.metalliques}
-                              />
-                        </div>
-                      </div>
-
-                          {/* Textiles */}
-                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Textiles:</div>
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier l'état du bec:</div>
                             <div className="space-y-1">
                               <div className="flex flex-col gap-1">
-                                <ClickableText
-                                  text="Coupure/Usure/Déchirement."
-                                  fieldKey="pointsAttache.textiles"
+                              <ClickableText
+                                  text="Marques, Usure, Fissures, Déformation,..."
+                                  fieldKey="verificationCorps.etatBec"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                    onClick={() => toggleCommentInput('verificationCorps.etatBec')}
+                                >
+                                    ajouter commentaires
+                                </button>
+                                <StatusSelect
+                                    currentStatus={formData.inspectionData.verificationCorps.etatBec.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationCorps', 'etatBec', status)}
+                              />
+                            </div>
+                            </div>
+                            <CommentSection
+                                fieldKey="verificationCorps.etatBec"
+                                section="verificationCorps"
+                                field="etatBec"
+                                value={formData.inspectionData.verificationCorps.etatBec}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 4. VERIFICATION DU DOIGT */}
+                      <div className="border-b border-gray-200 pb-4">
+                        <div className="space-y-2">
+                          {/* Marque/Usure */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-sm font-medium text-gray-900 ml-2">  4. VERIFICATION DU DOIGT: - État:</div>
+                            <div className="space-y-1">
+                              <div className="flex flex-col gap-1">
+                              <ClickableText
+                                  text="Marque / Usure / Fissure / Déformation / Corrosion..."
+                                  fieldKey="verificationDoigt.marqueUsure"
                                 />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                    onClick={() => toggleCommentInput('verificationDoigt.marqueUsure')}
+                                >
+                                    ajouter commentaires
+                                </button>
+                                <StatusSelect
+                                    currentStatus={formData.inspectionData.verificationDoigt.marqueUsure.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationDoigt', 'marqueUsure', status)}
+                                />
+                              </div>
+                            </div>
+                            <CommentSection
+                                fieldKey="verificationDoigt.marqueUsure"
+                                section="verificationDoigt"
+                                field="marqueUsure"
+                                value={formData.inspectionData.verificationDoigt.marqueUsure}
+                            />
+                          </div>
+                        </div>
+
+                          {/* Propreté */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier propreté des parties ayant un mouvement à effectuer:</div>
+                            <div className="space-y-1">
+                              <div className="flex flex-col gap-1">
+                                {/* <ClickableText
+                                  text="Propreté des liaisons doigt/corps..."
+                                  fieldKey="verificationDoigt.proprete"
+                                /> */}
                                 <div className="flex items-center justify-end gap-2">
                                   <button
                                     type="button"
                                     className="text-[10px] text-red-600 hover:underline"
-                                    onClick={() => toggleCommentInput('pointsAttache.textiles')}
+                                    onClick={() => toggleCommentInput('verificationDoigt.proprete')}
                                   >
                                     Ajouter commentaires
                                   </button>
                                   <StatusSelect
-                                    currentStatus={formData.inspectionData.pointsAttache.textiles.status}
-                                    onStatusChange={(status) => handleInspectionChange('pointsAttache', 'textiles', status)}
+                                    currentStatus={formData.inspectionData.verificationDoigt.proprete.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationDoigt', 'proprete', status)}
                                   />
                                 </div>
                               </div>
                               <CommentSection
-                                fieldKey="pointsAttache.textiles"
-                                section="pointsAttache"
-                                field="textiles"
-                                value={formData.inspectionData.pointsAttache.textiles}
+                                fieldKey="verificationDoigt.proprete"
+                                section="verificationDoigt"
+                                field="proprete"
+                                value={formData.inspectionData.verificationDoigt.proprete}
                               />
                             </div>
                           </div>
 
-                          {/* Plastiques */}
+                          {/* Etat du rivet */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Plastiques:</div>
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier l'état du rivet:</div>
                             <div className="space-y-1">
                             <div className="flex flex-col gap-1">
                               <ClickableText
-                                  text="Coupure/Usure/Déchirement..."
-                                  fieldKey="pointsAttache.plastiques"
+                                  text="craquelure / Déformation / Corrosion / Jeu..."
+                                  fieldKey="verificationDoigt.etatRivet"
                               />
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"
                                   className="text-[10px] text-red-600 hover:underline"
-                                    onClick={() => toggleCommentInput('pointsAttache.plastiques')}
+                                    onClick={() => toggleCommentInput('verificationDoigt.etatRivet')}
                                 >
                                     ajouter commentaires
                                 </button>
                                 <StatusSelect
-                                    currentStatus={formData.inspectionData.pointsAttache.plastiques.status}
-                                    onStatusChange={(status) => handleInspectionChange('pointsAttache', 'plastiques', status)}
+                                    currentStatus={formData.inspectionData.verificationDoigt.etatRivet.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationDoigt', 'etatRivet', status)}
                               />
                             </div>
                             </div>
                             <CommentSection
-                                fieldKey="pointsAttache.plastiques"
-                                section="pointsAttache"
-                                field="plastiques"
-                                value={formData.inspectionData.pointsAttache.plastiques}
+                                fieldKey="verificationDoigt.etatRivet"
+                                section="verificationDoigt"
+                                field="etatRivet"
+                                value={formData.inspectionData.verificationDoigt.etatRivet}
                               />
                             </div>
                           </div>
 
-                          {/* Indicateur arrêt de chute */}
+                          {/* Ouverture manuelle */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Si indicateur arrêt de chute apparait</div>
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier l'ouverture manuelle complète du doigt:</div>
                             <div className="flex flex-col gap-1">
-                              <ClickableText
-                                text="Oui - Non"
-                                fieldKey="pointsAttache.indicateurArretChute"
-                              />
                               <div className="flex items-center justify-end gap-2">
                                 <StatusSelect
-                                  currentStatus={formData.inspectionData.pointsAttache.indicateurArretChute.status}
-                                  onStatusChange={(status) => handleInspectionChange('pointsAttache', 'indicateurArretChute', status)}
+                                  currentStatus={formData.inspectionData.verificationDoigt.ouvertureManuelle.status}
+                                  onStatusChange={(status) => handleInspectionChange('verificationDoigt', 'ouvertureManuelle', status)}
                                 />
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
 
-                      {/* 5. ETAT BOUCLES DE REGLAGES */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <div className="space-y-2">
-                          {/* Grand titre avec Marque/Fissure/Usure/Déformation/Corrosion... */}
+                          {/* Fermeture automatique */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                          <div className="text-sm font-medium text-gray-900">
-                              5. ETAT BOUCLES DE REGLAGES
-                          </div>
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier fermeture automatique du doigt, l'efficacité du ressort de rappel et l'alignement doigt/bec:</div>
                             <div className="space-y-1">
-                            <div className="flex flex-col gap-1">
-                                <ClickableText
-                                  text="Marque/Fissure/Usure/Déformation/Corrosion..."
-                                  fieldKey="etatBouclesReglages.fonctionnementBoucles"
-                                />
+                              <div className="flex flex-col gap-1">
+                                {/* <ClickableText
+                                  text="Efficacité ressort de rappel..."
+                                  fieldKey="verificationDoigt.fermetureAutomatique"
+                                /> */}
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   type="button"
                                   className="text-[10px] text-red-600 hover:underline"
-                                    onClick={() => toggleCommentInput('etatBouclesReglages.fonctionnementBoucles')}
+                                    onClick={() => toggleCommentInput('verificationDoigt.fermetureAutomatique')}
                                 >
                                     ajouter commentaires
                                 </button>
                                 <StatusSelect
-                                    currentStatus={formData.inspectionData.etatBouclesReglages.fonctionnementBoucles.status}
-                                    onStatusChange={(status) => handleInspectionChange('etatBouclesReglages', 'fonctionnementBoucles', status)}
+                                    currentStatus={formData.inspectionData.verificationDoigt.fermetureAutomatique.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationDoigt', 'fermetureAutomatique', status)}
                               />
                             </div>
                             </div>
                             <CommentSection
-                                fieldKey="etatBouclesReglages.fonctionnementBoucles"
-                                section="etatBouclesReglages"
-                                field="fonctionnementBoucles"
-                                value={formData.inspectionData.etatBouclesReglages.fonctionnementBoucles}
+                                fieldKey="verificationDoigt.fermetureAutomatique"
+                                section="verificationDoigt"
+                                field="fermetureAutomatique"
+                                value={formData.inspectionData.verificationDoigt.fermetureAutomatique}
                               />
                             </div>
-                          </div>
-
-                          {/* Passage de sangles */}
-                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Passage de sangles (pas de vrille)</div>
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center justify-end gap-2">
-                                <StatusSelect
-                                  currentStatus={formData.inspectionData.etatBouclesReglages.passageSangles.status}
-                                  onStatusChange={(status) => handleInspectionChange('etatBouclesReglages', 'passageSangles', status)}
-                            />
                           </div>
                         </div>
                       </div>
 
-                          {/* Fonctionnement des boucles */}
+                      {/* 5. VERIFICATION DE LA BAGUE */}
+                      <div className="border-b border-gray-200 pb-4">
+                        <div className="space-y-2">
+                          {/* Marque/Usure */}
                           <div className="grid grid-cols-[40%_60%] gap-2 items-start">
-                            <div className="text-sm text-gray-700 ml-2">- Fonctionnement des boucles</div>
+                            <div className="text-sm font-medium text-gray-900 ml-2">5. VERIFICATION DE LA BAGUE: - État:</div>
+                            <div className="space-y-1">
+                              <div className="flex flex-col gap-1">
+                              <ClickableText
+                                  text="Marque / Usure / Fissure / Déformation / Corrosion / Jeu..."
+                                  fieldKey="verificationBague.marqueUsure"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className="text-[10px] text-red-600 hover:underline"
+                                    onClick={() => toggleCommentInput('verificationBague.marqueUsure')}
+                                >
+                                    ajouter commentaires
+                                </button>
+                                <StatusSelect
+                                    currentStatus={formData.inspectionData.verificationBague.marqueUsure.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationBague', 'marqueUsure', status)}
+                                />
+                              </div>
+                            </div>
+                            <CommentSection
+                                fieldKey="verificationBague.marqueUsure"
+                                section="verificationBague"
+                                field="marqueUsure"
+                                value={formData.inspectionData.verificationBague.marqueUsure}
+                            />
+                          </div>
+                        </div>
+
+                          {/* Déverrouillage */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-sm text-gray-700 ml-2">- Bague automatique : - Vérifier le bon fonctionnement du système de déverrouillage de la bague, selon le mode d'ouverture:</div>
+                            <div className="space-y-1">
+                              <div className="flex flex-col gap-1">
+                                {/* <ClickableText
+                                  text="Déverrouillage manuel ou automatique..."
+                                  fieldKey="verificationBague.deverrouillage"
+                                /> */}
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    className="text-[10px] text-red-600 hover:underline"
+                                    onClick={() => toggleCommentInput('verificationBague.deverrouillage')}
+                                  >
+                                    Ajouter commentaires
+                                  </button>
+                                  <StatusSelect
+                                    currentStatus={formData.inspectionData.verificationBague.deverrouillage.status}
+                                    onStatusChange={(status) => handleInspectionChange('verificationBague', 'deverrouillage', status)}
+                                  />
+                                </div>
+                              </div>
+                              <CommentSection
+                                fieldKey="verificationBague.deverrouillage"
+                                section="verificationBague"
+                                field="deverrouillage"
+                                value={formData.inspectionData.verificationBague.deverrouillage}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Verrouillage automatique */}
+                          <div className="grid grid-cols-[40%_60%] gap-2 items-start">
+                            <div className="text-sm text-gray-700 ml-2">- Vérifier le verrouillage automatique lorsque vous relâcher la bague ; Si nécessaire nettoyer:</div>
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center justify-end gap-2">
                                 <StatusSelect
-                                  currentStatus={formData.inspectionData.etatBouclesReglages.fonctionnementBoucles.status}
-                                  onStatusChange={(status) => handleInspectionChange('etatBouclesReglages', 'fonctionnementBoucles', status)}
+                                  currentStatus={formData.inspectionData.verificationBague.verrouillageAutomatique.status}
+                                  onStatusChange={(status) => handleInspectionChange('verificationBague', 'verrouillageAutomatique', status)}
                                 />
                               </div>
                             </div>

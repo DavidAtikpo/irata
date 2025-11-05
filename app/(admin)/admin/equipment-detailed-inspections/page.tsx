@@ -202,16 +202,24 @@ export default function InspectionsListPage() {
 
   // Fonction pour obtenir le chemin de visualisation selon le type d'équipement
   const getViewPath = (inspection: Inspection) => {
-    if (inspection.typeEquipement === 'Harnais de Suspension') {
+    const typeEquipement = inspection.typeEquipement?.trim() || '';
+    if (typeEquipement === 'Harnais de Suspension' || typeEquipement.toLowerCase().includes('harnais')) {
       return `/admin/equipment-detailed-inspections/harnais/${inspection.id}/view`;
+    }
+    if (typeEquipement === 'Mousqueton Triple Action' || typeEquipement.toLowerCase().includes('mousqueton')) {
+      return `/admin/equipment-detailed-inspections/mousqueton/${inspection.id}/view`;
     }
     return `/admin/equipment-detailed-inspections/${inspection.id}/view`;
   };
 
   // Fonction pour obtenir le chemin d'édition selon le type d'équipement
   const getEditPath = (inspection: Inspection) => {
-    if (inspection.typeEquipement === 'Harnais de Suspension') {
+    const typeEquipement = inspection.typeEquipement?.trim() || '';
+    if (typeEquipement === 'Harnais de Suspension' || typeEquipement.toLowerCase().includes('harnais')) {
       return `/admin/equipment-detailed-inspections/harnais/${inspection.id}/edit`;
+    }
+    if (typeEquipement === 'Mousqueton Triple Action' || typeEquipement.toLowerCase().includes('mousqueton')) {
+      return `/admin/equipment-detailed-inspections/mousqueton/${inspection.id}/edit`;
     }
     return `/admin/equipment-detailed-inspections/${inspection.id}/edit`;
   };
@@ -220,8 +228,8 @@ export default function InspectionsListPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement des inspections...</p>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-2 text-[10px] text-gray-600">Chargement...</p>
         </div>
       </div>
     );
@@ -229,38 +237,45 @@ export default function InspectionsListPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-2xl font-bold text-gray-900">
-                Inspections Détaillées d'Équipements
+      <div className="max-w-7xl mx-auto px-2 py-2">
+        <div className="bg-white shadow rounded">
+          <div className="px-2 py-1.5 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-2">
+              <h1 className="text-sm font-bold text-gray-900">
+                Inspections Équipements
               </h1>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 flex-wrap">
                 <button
                   onClick={() => router.push('/admin/equipment-detailed-inspections/harnais')}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                  className="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded text-[10px] font-medium text-white bg-green-600 hover:bg-green-700"
                 >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Nouvelle inspection Harnais
+                  <PlusIcon className="h-3 w-3 mr-1" />
+                  Nouveau Harnais
+                </button>
+                <button
+                  onClick={() => router.push('/admin/equipment-detailed-inspections/mousqueton')}
+                  className="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded text-[10px] font-medium text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  <PlusIcon className="h-3 w-3 mr-1" />
+                  Nouveau Mousqueton
                 </button>
                 <button
                   onClick={() => router.push('/admin/equipment-detailed-inspections/nouveau')}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                  className="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded text-[10px] font-medium text-white bg-indigo-600 hover:bg-indigo-700"
                 >
-                  <PlusIcon className="h-4 w-4 mr-2" />
+                  <PlusIcon className="h-3 w-3 mr-1" />
                   Nouvelle inspection
                 </button>
               </div>
             </div>
             
             {/* Onglets de filtrage */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1">
               {equipmentTypes.map((type) => (
                 <button
                   key={type}
                   onClick={() => setSelectedTab(type)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors ${
                     selectedTab === type
                       ? 'bg-indigo-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -272,30 +287,30 @@ export default function InspectionsListPage() {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-2">
             {error && (
-              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              <div className="mb-2 bg-red-50 border border-red-200 text-red-700 px-2 py-1 rounded text-[10px]">
                 {error}
               </div>
             )}
 
             {filteredInspections.length === 0 ? (
-              <div className="text-center py-12">
-                <DocumentIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune inspection trouvée</h3>
-                <p className="text-gray-500 mb-4">
+              <div className="text-center py-6">
+                <DocumentIcon className="h-6 w-6 text-gray-400 mx-auto mb-2" />
+                <h3 className="text-xs font-medium text-gray-900 mb-1">Aucune inspection</h3>
+                <p className="text-[10px] text-gray-500 mb-2">
                   {selectedTab === 'Tous' 
-                    ? 'Commencez par créer votre première inspection d\'équipement.'
-                    : `Aucune inspection trouvée pour le type "${selectedTab}".`
+                    ? 'Créez votre première inspection.'
+                    : `Aucune inspection pour "${selectedTab}".`
                   }
                 </p>
                 {selectedTab === 'Tous' && (
                   <button
                     onClick={() => router.push('/admin/equipment-detailed-inspections/nouveau')}
-                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                    className="inline-flex items-center px-2 py-1 border border-transparent rounded text-[10px] font-medium text-white bg-indigo-600 hover:bg-indigo-700"
                   >
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Créer une inspection
+                    <PlusIcon className="h-3 w-3 mr-1" />
+                    Créer
                   </button>
                 )}
               </div>
@@ -304,28 +319,28 @@ export default function InspectionsListPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1.5 py-1 text-left text-[9px] font-medium text-gray-500 uppercase tracking-wider">
                         Photo
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1.5 py-1 text-left text-[9px] font-medium text-gray-500 uppercase tracking-wider">
                         Équipement
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1.5 py-1 text-left text-[9px] font-medium text-gray-500 uppercase tracking-wider">
                         Type
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Numéro de série
+                      <th className="px-1.5 py-1 text-left text-[9px] font-medium text-gray-500 uppercase tracking-wider">
+                        N° série
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Inspection Détaillée (tous les 6 mois)
+                      <th className="px-1.5 py-1 text-left text-[9px] font-medium text-gray-500 uppercase tracking-wider">
+                        Inspection (6 mois)
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1.5 py-1 text-left text-[9px] font-medium text-gray-500 uppercase tracking-wider">
                         État
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1.5 py-1 text-left text-[9px] font-medium text-gray-500 uppercase tracking-wider">
                         QR Code
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-1.5 py-1 text-right text-[9px] font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -333,11 +348,11 @@ export default function InspectionsListPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredInspections.map((inspection) => (
                       <tr key={inspection.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex-shrink-0 h-12 w-12">
+                        <td className="px-1.5 py-1 whitespace-nowrap">
+                          <div className="flex-shrink-0 h-6 w-6">
                             {inspection.photo ? (
                               <img
-                                className="h-12 w-12 rounded-lg object-cover border border-gray-200"
+                                className="h-6 w-6 rounded object-cover border border-gray-200"
                                 src={inspection.photo}
                                 alt={`Photo de ${inspection.referenceInterne || 'l\'équipement'}`}
                                 onError={(e) => {
@@ -346,37 +361,37 @@ export default function InspectionsListPage() {
                                 }}
                               />
                             ) : null}
-                            <div className={`h-12 w-12 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center ${inspection.photo ? 'hidden' : ''}`}>
-                              <DocumentIcon className="h-6 w-6 text-gray-400" />
+                            <div className={`h-6 w-6 rounded bg-gray-100 border border-gray-200 flex items-center justify-center ${inspection.photo ? 'hidden' : ''}`}>
+                              <DocumentIcon className="h-3 w-3 text-gray-400" />
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
+                        <td className="px-1.5 py-1 whitespace-nowrap">
+                          <div className="text-[9px] font-medium text-gray-900">
                             {inspection.referenceInterne || '-'}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                        <td className="px-1.5 py-1 whitespace-nowrap">
+                          <div className="text-[9px] text-gray-900">
                             {inspection.typeEquipement || '-'}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                        <td className="px-1.5 py-1 whitespace-nowrap">
+                          <div className="text-[9px] text-gray-900">
                             {inspection.numeroSerie || '-'}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                        <td className="px-1.5 py-1 whitespace-nowrap">
+                          <div className="text-[9px] text-gray-900">
                             {formatDate(inspection.dateInspectionDetaillee)}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-1.5 py-1 whitespace-nowrap">
                           {inspection.etat === 'OK' && isInspectionUpToDate(inspection.dateInspectionDetaillee) ? (
                             <img 
                               src="/picto-OK.jpg" 
                               alt="État valide" 
-                              className="h-8 w-8 object-contain"
+                              className="h-4 w-4 object-contain"
                               onError={(e) => {
                                 e.currentTarget.style.display = 'none';
                               }}
@@ -385,15 +400,15 @@ export default function InspectionsListPage() {
                             <img 
                               src="/invalide.png" 
                               alt="État invalide" 
-                              className="h-8 w-8 object-contain"
+                              className="h-4 w-4 object-contain"
                               onError={(e) => {
                                 e.currentTarget.style.display = 'none';
                               }}
                             />
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center">
+                        <td className="px-1.5 py-1 whitespace-nowrap">
+                          <div className="flex-shrink-0 h-6 w-6 flex items-center justify-center">
                             {(() => {
                               const qrUrl = getQRCodeImageUrl(inspection);
                               if (qrUrl) {
@@ -401,7 +416,7 @@ export default function InspectionsListPage() {
                                   <img 
                                     src={qrUrl} 
                                     alt="QR Code" 
-                                    className="h-12 w-12 object-contain border border-gray-200 rounded"
+                                    className="h-6 w-6 object-contain border border-gray-200 rounded"
                                     onError={(e) => {
                                       e.currentTarget.style.display = 'none';
                                       const icon = e.currentTarget.nextElementSibling;
@@ -412,39 +427,39 @@ export default function InspectionsListPage() {
                                   />
                                 );
                               }
-                              return <QrCodeIcon className="h-6 w-6 text-gray-400" />;
+                              return <QrCodeIcon className="h-3 w-3 text-gray-400" />;
                             })()}
-                            <QrCodeIcon className="h-6 w-6 text-gray-400 hidden" />
+                            <QrCodeIcon className="h-3 w-3 text-gray-400 hidden" />
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end space-x-2">
+                        <td className="px-1.5 py-1 whitespace-nowrap text-right text-[9px] font-medium">
+                          <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => router.push(getViewPath(inspection))}
-                              className="text-indigo-600 hover:text-indigo-900 p-1"
-                              title="Voir l'inspection"
+                              className="text-indigo-600 hover:text-indigo-900 p-0.5 text-[9px]"
+                              title="Voir"
                             >
                               Voir
                             </button>
                             <button
                               onClick={() => router.push(getEditPath(inspection))}
-                              className="text-yellow-600 hover:text-yellow-900 p-1"
-                              title="Modifier l'inspection"
+                              className="text-yellow-600 hover:text-yellow-900 p-0.5 text-[9px]"
+                              title="Modifier"
                             >
                               Modifier
                             </button>
                             <button
                               onClick={() => handleDuplicate(inspection)}
-                              className="text-blue-600 hover:text-blue-900 p-1"
-                              title="Dupliquer l'inspection"
+                              className="text-blue-600 hover:text-blue-900 p-0.5 text-[9px]"
+                              title="Dupliquer"
                             >
                               Dupliquer
                             </button>
                             <button
                               onClick={() => handleDelete(inspection.id)}
                               disabled={deleteId === inspection.id}
-                              className="text-red-600 hover:text-red-900 p-1 disabled:opacity-50"
-                              title="Supprimer l'inspection"
+                              className="text-red-600 hover:text-red-900 p-0.5 text-[9px] disabled:opacity-50"
+                              title="Supprimer"
                             >
                               Supprimer
                             </button>

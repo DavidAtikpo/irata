@@ -65,6 +65,10 @@ export async function POST(request: NextRequest) {
       etatElementsConfort,
       etatConnecteurTorseCuissard,
       bloqueurCroll,
+      // Extraire les champs spécifiques au mousqueton pour les sauvegarder
+      verificationCorps,
+      verificationDoigt,
+      verificationBague,
       ...inspectionDataWithoutNested 
     } = body;
     
@@ -78,6 +82,10 @@ export async function POST(request: NextRequest) {
         ...(etatElementsConfort && { etatElementsConfort }),
         ...(etatConnecteurTorseCuissard && { etatConnecteurTorseCuissard }),
         ...(bloqueurCroll && { bloqueurCroll }),
+        // Inclure les champs spécifiques au mousqueton s'ils existent
+        ...(verificationCorps && { verificationCorps }),
+        ...(verificationDoigt && { verificationDoigt }),
+        ...(verificationBague && { verificationBague }),
         // Inclure les données de mots barrés
         ...(crossedOutWords && { crossedOutWords }),
         ...(crossedOutItems && { crossedOutItems }),
