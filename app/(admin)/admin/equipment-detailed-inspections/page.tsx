@@ -148,7 +148,10 @@ export default function InspectionsListPage() {
       if (createResponse.ok) {
         const newInspection = await createResponse.json();
         // Rediriger vers la page d'édition de la nouvelle inspection selon le type
-        router.push(getEditPath(newInspection));
+        // Utiliser le typeEquipement de l'inspection originale ou de data pour déterminer le chemin
+        const typeEquipement = data.typeEquipement || inspection.typeEquipement || newInspection.typeEquipement;
+        const inspectionForPath = { ...newInspection, typeEquipement };
+        router.push(getEditPath(inspectionForPath));
       } else {
         setError('Erreur lors de la duplication de l\'inspection');
       }
