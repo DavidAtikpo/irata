@@ -99,6 +99,30 @@ export default function InspectionsListPage() {
     }
   };
 
+  // Fonction pour obtenir le chemin de visualisation selon le type d'équipement
+  const getViewPath = (inspection: Inspection) => {
+    const typeEquipement = inspection.typeEquipement?.trim() || '';
+    if (typeEquipement === 'Harnais de Suspension' || typeEquipement.toLowerCase().includes('harnais')) {
+      return `/admin/equipment-detailed-inspections/harnais/${inspection.id}/view`;
+    }
+    if (typeEquipement === 'Mousqueton Triple Action' || typeEquipement.toLowerCase().includes('mousqueton')) {
+      return `/admin/equipment-detailed-inspections/mousqueton/${inspection.id}/view`;
+    }
+    return `/admin/equipment-detailed-inspections/${inspection.id}/view`;
+  };
+
+  // Fonction pour obtenir le chemin d'édition selon le type d'équipement
+  const getEditPath = (inspection: Inspection) => {
+    const typeEquipement = inspection.typeEquipement?.trim() || '';
+    if (typeEquipement === 'Harnais de Suspension' || typeEquipement.toLowerCase().includes('harnais')) {
+      return `/admin/equipment-detailed-inspections/harnais/${inspection.id}/edit`;
+    }
+    if (typeEquipement === 'Mousqueton Triple Action' || typeEquipement.toLowerCase().includes('mousqueton')) {
+      return `/admin/equipment-detailed-inspections/mousqueton/${inspection.id}/edit`;
+    }
+    return `/admin/equipment-detailed-inspections/${inspection.id}/edit`;
+  };
+
   const handleDuplicate = async (inspection: Inspection) => {
     try {
       // Récupérer les données complètes de l'inspection
@@ -124,11 +148,7 @@ export default function InspectionsListPage() {
       if (createResponse.ok) {
         const newInspection = await createResponse.json();
         // Rediriger vers la page d'édition de la nouvelle inspection selon le type
-        if (inspection.typeEquipement === 'Harnais de Suspension') {
-          router.push(`/admin/equipment-detailed-inspections/harnais/${newInspection.id}/edit`);
-        } else {
-          router.push(`/admin/equipment-detailed-inspections/${newInspection.id}/edit`);
-        }
+        router.push(getEditPath(newInspection));
       } else {
         setError('Erreur lors de la duplication de l\'inspection');
       }
@@ -199,30 +219,6 @@ export default function InspectionsListPage() {
   const filteredInspections = selectedTab === 'Tous' 
     ? inspections 
     : inspections.filter(inspection => inspection.typeEquipement === selectedTab);
-
-  // Fonction pour obtenir le chemin de visualisation selon le type d'équipement
-  const getViewPath = (inspection: Inspection) => {
-    const typeEquipement = inspection.typeEquipement?.trim() || '';
-    if (typeEquipement === 'Harnais de Suspension' || typeEquipement.toLowerCase().includes('harnais')) {
-      return `/admin/equipment-detailed-inspections/harnais/${inspection.id}/view`;
-    }
-    if (typeEquipement === 'Mousqueton Triple Action' || typeEquipement.toLowerCase().includes('mousqueton')) {
-      return `/admin/equipment-detailed-inspections/mousqueton/${inspection.id}/view`;
-    }
-    return `/admin/equipment-detailed-inspections/${inspection.id}/view`;
-  };
-
-  // Fonction pour obtenir le chemin d'édition selon le type d'équipement
-  const getEditPath = (inspection: Inspection) => {
-    const typeEquipement = inspection.typeEquipement?.trim() || '';
-    if (typeEquipement === 'Harnais de Suspension' || typeEquipement.toLowerCase().includes('harnais')) {
-      return `/admin/equipment-detailed-inspections/harnais/${inspection.id}/edit`;
-    }
-    if (typeEquipement === 'Mousqueton Triple Action' || typeEquipement.toLowerCase().includes('mousqueton')) {
-      return `/admin/equipment-detailed-inspections/mousqueton/${inspection.id}/edit`;
-    }
-    return `/admin/equipment-detailed-inspections/${inspection.id}/edit`;
-  };
 
   if (isLoading) {
     return (
