@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
       signataire, 
       crossedOutWords, 
       crossedOutItems,
+      templateId, // Template utilisé (optionnel)
       // Extraire les champs spécifiques au harnais pour les sauvegarder
       etatSangles,
       pointsAttache,
@@ -69,23 +70,85 @@ export async function POST(request: NextRequest) {
       verificationCorps,
       verificationDoigt,
       verificationBague,
-      ...inspectionDataWithoutNested 
+      // Extraire les champs connus du modèle Prisma
+      antecedentProduit,
+      observationsPrelables,
+      calotteExterieurInterieur,
+      calotin,
+      coiffe,
+      tourDeTete,
+      systemeReglage,
+      jugulaire,
+      mousseConfort,
+      crochetsLampe,
+      accessoires,
+      // Extraire toutes les autres sections dynamiques du template (qui seront dans le reste)
+      ...rest 
     } = body;
+    
+    // Collecter toutes les sections JSON dynamiques (sections du template)
+    const jsonSections: Record<string, any> = {
+      ...(antecedentProduit && { antecedentProduit }),
+      ...(observationsPrelables && { observationsPrelables }),
+      ...(etatSangles && { etatSangles }),
+      ...(pointsAttache && { pointsAttache }),
+      ...(etatBouclesReglages && { etatBouclesReglages }),
+      ...(etatElementsConfort && { etatElementsConfort }),
+      ...(etatConnecteurTorseCuissard && { etatConnecteurTorseCuissard }),
+      ...(bloqueurCroll && { bloqueurCroll }),
+      ...(verificationCorps && { verificationCorps }),
+      ...(verificationDoigt && { verificationDoigt }),
+      ...(verificationBague && { verificationBague }),
+      ...(calotteExterieurInterieur && { calotteExterieurInterieur }),
+      ...(calotin && { calotin }),
+      ...(coiffe && { coiffe }),
+      ...(tourDeTete && { tourDeTete }),
+      ...(systemeReglage && { systemeReglage }),
+      ...(jugulaire && { jugulaire }),
+      ...(mousseConfort && { mousseConfort }),
+      ...(crochetsLampe && { crochetsLampe }),
+      ...(accessoires && { accessoires }),
+    };
+
+    // Liste des champs scalaires (non-JSON) connus
+    const scalarFields = [
+      'referenceInterne', 'typeEquipement', 'fabricant', 'numeroSerie',
+      'numeroSerieTop', 'numeroSerieCuissard', 'numeroSerieNonEtiquete',
+      'dateFabrication', 'dateAchat', 'dateMiseEnService', 'dateInspectionDetaillee',
+      'numeroKit', 'taille', 'longueur', 'normesCertificat', 'documentsReference',
+      'consommation', 'attribution', 'commentaire', 'photo', 'qrCode',
+      'pdfUrl', 'normesUrl', 'dateAchatImage', 'verificateurSignature',
+      'verificateurSignaturePdf', 'verificateurDigitalSignature', 'verificateurNom',
+      'dateSignature', 'etat', 'status', 'createdById', 'createdAt', 'updatedAt'
+    ];
+
+    // Extraire les champs de base (scalaires) du reste
+    const baseFields: Record<string, any> = {};
+    const dynamicJsonSections: Record<string, any> = {};
+
+    // Parcourir le reste pour séparer les scalaires des objets JSON (sections dynamiques)
+    Object.keys(rest).forEach(key => {
+      if (scalarFields.includes(key)) {
+        baseFields[key] = rest[key];
+      } else if (rest[key] !== null && typeof rest[key] === 'object' && !Array.isArray(rest[key])) {
+        // C'est probablement une section JSON dynamique du template
+        dynamicJsonSections[key] = rest[key];
+      }
+    });
+
+    // Fusionner toutes les sections JSON
+    const allJsonSections = { ...jsonSections, ...dynamicJsonSections };
     
     const inspection = await prisma.equipmentDetailedInspection.create({
       data: {
-        ...inspectionDataWithoutNested,
-        // Inclure les champs spécifiques au harnais s'ils existent
-        ...(etatSangles && { etatSangles }),
-        ...(pointsAttache && { pointsAttache }),
-        ...(etatBouclesReglages && { etatBouclesReglages }),
-        ...(etatElementsConfort && { etatElementsConfort }),
-        ...(etatConnecteurTorseCuissard && { etatConnecteurTorseCuissard }),
-        ...(bloqueurCroll && { bloqueurCroll }),
-        // Inclure les champs spécifiques au mousqueton s'ils existent
-        ...(verificationCorps && { verificationCorps }),
-        ...(verificationDoigt && { verificationDoigt }),
-        ...(verificationBague && { verificationBague }),
+        // Champs de base (scalaires)
+        ...baseFields,
+        etat: baseFields.etat || body.etat || 'INVALID',
+        status: baseFields.status || body.status || 'DRAFT',
+        // Template utilisé (optionnel)
+        ...(templateId && { templateId }),
+        // Toutes les sections JSON (connues + dynamiques du template)
+        ...allJsonSections,
         // Inclure les données de mots barrés
         ...(crossedOutWords && { crossedOutWords }),
         ...(crossedOutItems && { crossedOutItems }),

@@ -1,0 +1,26 @@
+// AJOUTEZ CES MODÈLES À VOTRE schema.prisma
+
+// Template d'équipement (structure réutilisable)
+model EquipmentTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique  // Ex: "Corde", "Longe", etc.
+  description String?
+  
+  // Structure JSON de la vie de l'équipement
+  // Format: { sections: [ { title, subsections: [ { label, hasStatus, hasComment, crossableWords } ] } ] }
+  structure   Json
+  
+  // Métadonnées
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById String
+  
+  // Relations
+  inspections EquipmentDetailedInspection[]
+}
+
+// Ajouter ce champ au modèle EquipmentDetailedInspection existant :
+// templateId     String?
+// template       EquipmentTemplate? @relation(fields: [templateId], references: [id])
+

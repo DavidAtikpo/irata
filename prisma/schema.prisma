@@ -67,6 +67,7 @@ model User {
   diplomesStagiaire             Diplome[]                      @relation("DiplomasStagiaire")
   diplomesGeneres               Diplome[]                      @relation("DiplomasGeneratedBy")
   equipmentQRs                  EquipmentQR[]                  @relation("EquipmentQRCreatedBy")
+  equipmentTemplates            EquipmentTemplate[]            @relation("EquipmentTemplateCreator")
 
   @@schema("webirata")
 }
@@ -397,6 +398,10 @@ model EquipmentDetailedInspection {
   updatedAt                    DateTime         @updatedAt
   createdById                  String
   createdBy                    User             @relation("EquipmentDetailedInspectionCreatedBy", fields: [createdById], references: [id])
+  
+  // Template utilisé (optionnel)
+  templateId                   String?
+  template                     EquipmentTemplate? @relation("TemplateInspections", fields: [templateId], references: [id])
 
   @@schema("webirata")
 }
@@ -1424,6 +1429,27 @@ model EquipmentQR {
   createdBy           User     @relation("EquipmentQRCreatedBy", fields: [createdById], references: [id])
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  
+  @@schema("webirata")
+}
+
+// Template d'équipement (structure réutilisable)
+model EquipmentTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  
+  // Structure JSON de la vie de l'équipement
+  structure   Json
+  
+  // Métadonnées
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   User     @relation("EquipmentTemplateCreator", fields: [createdById], references: [id])
+  createdById String
+  
+  // Relations
+  inspections EquipmentDetailedInspection[] @relation("TemplateInspections")
   
   @@schema("webirata")
 }

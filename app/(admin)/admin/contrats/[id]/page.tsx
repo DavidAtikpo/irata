@@ -359,6 +359,10 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
                     <label className="text-gray-700 font-medium">Ville</label>
                     <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.entrepriseVille || contrat.ville || '—'}</div>
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Pays</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.pays || '—'}</div>
+                  </div>
                   <div className="space-y-2 col-span-2">
                     <label className="text-gray-700 font-medium">Téléphone de l'entreprise</label>
                     <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.entrepriseTelephone || '—'}</div>
@@ -389,6 +393,18 @@ export default function AdminContratDetailPage({ params }: { params: Promise<{ i
                   <div className="space-y-2 col-span-2">
                     <label className="text-gray-700 font-medium">Adresse</label>
                     <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.adresse}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Code postal</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.codePostal || '—'}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Ville</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.ville || '—'}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-gray-700 font-medium">Pays</label>
+                    <div className="p-3 bg-gray-50 border rounded text-gray-900">{contrat.pays || '—'}</div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-gray-700 font-medium">Profession</label>

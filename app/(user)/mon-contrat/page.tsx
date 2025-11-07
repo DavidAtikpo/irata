@@ -304,7 +304,7 @@ export default function MonContratPage() {
                         {contrat.statut === 'VALIDE' && (
                           <div className="flex gap-1">
                             <button
-                              onClick={() => router.push(`/admin/contrats/${contrat.id}`)}
+                              onClick={() => router.push(`/mon-contrat/${contrat.id}`)}
                               className="inline-flex items-center px-2 py-0.5 border border-transparent text-[9px] font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700"
                             >
                               <DocumentTextIcon className="h-3 w-3 mr-0.5" />

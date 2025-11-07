@@ -244,26 +244,36 @@ export default function InspectionsListPage() {
                 Inspections Équipements
               </h1>
               <div className="flex items-center gap-1 flex-wrap">
+                {/* NOUVELLE MÉTHODE : Page dynamique unique */}
+                <button
+                  onClick={() => router.push('/admin/equipment-detailed-inspections/create')}
+                  className="inline-flex items-center px-2 py-1 border border-transparent rounded text-[11px] font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md"
+                >
+                  <PlusIcon className="h-4 w-4 mr-1" />
+                  🆕 Créer Équipement (Dynamique)
+                </button>
+                
+                {/* Anciennes pages (pour comparaison) */}
                 <button
                   onClick={() => router.push('/admin/equipment-detailed-inspections/harnais')}
                   className="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded text-[10px] font-medium text-white bg-green-600 hover:bg-green-700"
                 >
                   <PlusIcon className="h-3 w-3 mr-1" />
-                  Nouveau Harnais
+                  Harnais (ancienne)
                 </button>
                 <button
                   onClick={() => router.push('/admin/equipment-detailed-inspections/mousqueton')}
                   className="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded text-[10px] font-medium text-white bg-blue-600 hover:bg-blue-700"
                 >
                   <PlusIcon className="h-3 w-3 mr-1" />
-                  Nouveau Mousqueton
+                  Mousqueton (ancienne)
                 </button>
                 <button
                   onClick={() => router.push('/admin/equipment-detailed-inspections/nouveau')}
                   className="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded text-[10px] font-medium text-white bg-indigo-600 hover:bg-indigo-700"
                 >
                   <PlusIcon className="h-3 w-3 mr-1" />
-                  Nouvelle inspection
+                  Casque (ancienne)
                 </button>
               </div>
             </div>
