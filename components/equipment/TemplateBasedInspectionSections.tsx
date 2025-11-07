@@ -33,6 +33,55 @@ export default function TemplateBasedInspectionSections({
   formData,
   setFormData,
 }: TemplateBasedInspectionSectionsProps) {
+  // Initialiser les données d'inspection si nécessaire
+  // IMPORTANT: Tous les hooks doivent être appelés avant tout return conditionnel
+  React.useEffect(() => {
+    if (!template || !template.structure?.sections) return;
+
+    const initialData: any = {
+      antecedentProduit: {
+        miseEnService: formData.dateMiseEnService || '',
+        comment: '',
+      },
+    };
+
+    template.structure.sections.forEach((section) => {
+      section.subsections.forEach((subsection) => {
+        if (!formData.inspectionData[section.id]?.[subsection.id]) {
+          if (!initialData[section.id]) {
+            initialData[section.id] = {};
+          }
+          initialData[section.id][subsection.id] = {
+            status: subsection.hasStatus ? 'V' : undefined,
+            comment: subsection.hasComment ? '' : undefined,
+            crossedWords: {},
+          };
+        }
+      });
+    });
+
+    // Ne mettre à jour que si nécessaire
+    const needsUpdate = Object.keys(initialData).some(key => {
+      if (key === 'antecedentProduit') {
+        return !formData.inspectionData.antecedentProduit;
+      }
+      return template.structure.sections.some((section: any) => 
+        section.id === key && !formData.inspectionData[key]
+      );
+    });
+
+    if (needsUpdate) {
+      setFormData((prev: any) => ({
+        ...prev,
+        inspectionData: {
+          ...prev.inspectionData,
+          ...initialData,
+        },
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template?.id]); // Seulement quand le template change
+
   if (!template || !template.structure?.sections) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 p-4 rounded">
@@ -178,54 +227,6 @@ export default function TemplateBasedInspectionSections({
       </span>
     );
   };
-
-  // Initialiser les données d'inspection si nécessaire
-  React.useEffect(() => {
-    if (!template || !template.structure?.sections) return;
-
-    const initialData: any = {
-      antecedentProduit: {
-        miseEnService: formData.dateMiseEnService || '',
-        comment: '',
-      },
-    };
-
-    template.structure.sections.forEach((section) => {
-      section.subsections.forEach((subsection) => {
-        if (!formData.inspectionData[section.id]?.[subsection.id]) {
-          if (!initialData[section.id]) {
-            initialData[section.id] = {};
-          }
-          initialData[section.id][subsection.id] = {
-            status: subsection.hasStatus ? 'V' : undefined,
-            comment: subsection.hasComment ? '' : undefined,
-            crossedWords: {},
-          };
-        }
-      });
-    });
-
-    // Ne mettre à jour que si nécessaire
-    const needsUpdate = Object.keys(initialData).some(key => {
-      if (key === 'antecedentProduit') {
-        return !formData.inspectionData.antecedentProduit;
-      }
-      return template.structure.sections.some((section: any) => 
-        section.id === key && !formData.inspectionData[key]
-      );
-    });
-
-    if (needsUpdate) {
-      setFormData((prev: any) => ({
-        ...prev,
-        inspectionData: {
-          ...prev.inspectionData,
-          ...initialData,
-        },
-      }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [template.id]); // Seulement quand le template change
 
   return (
     <div className="space-y-6">
