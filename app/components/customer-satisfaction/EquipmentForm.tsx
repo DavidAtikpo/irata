@@ -20,17 +20,19 @@ type EnvironmentReceptionFormProps = {
 
 export default function EnvironmentReceptionForm({ date, traineeName, onNext, step, totalSteps, onNextWithData, onPrev }: EnvironmentReceptionFormProps) {
   const items: string[] = [
-    "Accueil par notre chauffeur à votre arrivée à l'aéroport ou à la gare",
-    'La localisation ou la zone du centre de formation',
-    'La structure de la formation',
-    'Le bureau du secrétaire général et l\'accueil',
-    'À l\'intérieur du bâtiment du centre de formation',
-    'La salle de classe et la salle de réunion',
-    "Disponibilité des accessoires, consommables de 'l'environnement de vie' et leurs conditions",
-    'Les installations sanitaires et leur état de propreté',
-    "Affichage des informations d'urgence et de prévention",
-    "Globalement l'environnement",
-    'Performance sécurité de l\'instructeur et de l\'entreprise'
+    "Cordes d’évolution",
+    'Casques',
+    'Harnais',
+    'Dispositifs de sécurité et absorbeurs d’énergie',
+    'Longes et mousquetons',
+    'Poignées Jumar (bloqueurs de main) et pédales d’ascension',
+    "Descendeurs",
+    'Sièges',
+    "Différents types de protections de corde",
+    "Poulies",
+    'Rangement et classification du matériel',
+    'Suivi et contrôle des équipements',
+    'En résumé : l’ensemble du matériel d’accès et de travail sur cordes'
   ];
 
   const [name, setName] = useState(traineeName ?? '');
