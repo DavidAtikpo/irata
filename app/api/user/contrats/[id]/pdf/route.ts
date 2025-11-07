@@ -245,6 +245,10 @@ export async function GET(
                 <div class="info-label">Ville</div>
                 <div class="info-value">${(contrat as any).entrepriseVille || (contrat as any).ville || '—'}</div>
               </div>
+              <div class="info-item">
+                <div class="info-label">Pays</div>
+                <div class="info-value">${(contrat as any).pays || '—'}</div>
+              </div>
               <div class="info-item" style="grid-column: 1 / span 2">
                 <div class="info-label">Téléphone de l'entreprise</div>
                 <div class="info-value">${(contrat as any).entrepriseTelephone || '—'}</div>
@@ -275,6 +279,18 @@ export async function GET(
               <div class="info-item" style="grid-column: 1 / span 2">
                 <div class="info-label">Adresse</div>
                 <div class="info-value">${(contrat as any).adresse}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Code postal</div>
+                <div class="info-value">${(contrat as any).codePostal || '—'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Ville</div>
+                <div class="info-value">${(contrat as any).ville || '—'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Pays</div>
+                <div class="info-value">${(contrat as any).pays || '—'}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Profession</div>
