@@ -55,6 +55,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Vérifier si un template avec ce nom existe déjà
+    const existingTemplate = await prisma.equipmentTemplate.findUnique({
+      where: { name },
+    });
+
+    if (existingTemplate) {
+      return NextResponse.json(
+        { error: 'Un template avec ce nom existe déjà. Veuillez choisir un autre nom.' },
+        { status: 400 }
+      );
+    }
+
     const template = await prisma.equipmentTemplate.create({
       data: {
         name,
@@ -68,16 +80,16 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Erreur lors de la création du template:', error);
     
-    // Erreur de nom unique
+    // Erreur de nom unique (fallback si la vérification précédente n'a pas fonctionné)
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'Un template avec ce nom existe déjà' },
+        { error: 'Un template avec ce nom existe déjà. Veuillez choisir un autre nom.' },
         { status: 400 }
       );
     }
     
     return NextResponse.json(
-      { error: 'Erreur lors de la création du template' },
+      { error: 'Erreur lors de la création du template. Veuillez réessayer.' },
       { status: 500 }
     );
   }

@@ -46,6 +46,11 @@ interface EquipmentDetailedInspection {
   accessoires?: any;
   verificateurSignature?: string;
   verificateurNom?: string;
+  verificateurSignaturePdf?: string;
+  verificateurDigitalSignature?: string;
+  templateId?: string;
+  templateSections?: any;
+  crossedOutWords?: any;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -61,6 +66,7 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
   const { data: session, status } = useSession();
   const router = useRouter();
   const [inspection, setInspection] = useState<EquipmentDetailedInspection | null>(null);
+  const [template, setTemplate] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,7 +82,49 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
         console.log('Données inspection chargées:', data);
         console.log('QR Code dans les données:', data.qrCode);
         console.log('Reference Interne:', data.referenceInterne);
+        console.log('Type équipement:', data.typeEquipement);
+        console.log('Template ID:', data.templateId);
+        console.log('Template inclus:', data.template);
+        console.log('Template Sections:', data.templateSections);
         setInspection(data);
+        // Si l'inspection utilise un template, le template est déjà inclus dans la réponse
+        if (data.template) {
+          console.log('Setting template from inspection data:', {
+            templateId: data.template.id,
+            templateName: data.template.name,
+            typeEquipement: data.typeEquipement
+          });
+          // Vérifier que le template correspond au type d'équipement
+          if (data.template.id !== data.templateId) {
+            console.error('ERREUR: Le template inclus ne correspond pas au templateId!', {
+              templateIdInData: data.templateId,
+              templateIdInTemplate: data.template.id
+            });
+          }
+          setTemplate(data.template);
+        } else if (data.templateId) {
+          // Si le template n'est pas inclus, le charger séparément
+          console.log('Template not included, loading separately with templateId:', data.templateId);
+          const templateResponse = await fetch(`/api/admin/equipment-templates/${data.templateId}`);
+          if (templateResponse.ok) {
+            const templateData = await templateResponse.json();
+            console.log('Template loaded:', {
+              templateId: templateData.id,
+              templateName: templateData.name,
+              typeEquipement: data.typeEquipement,
+              matches: templateData.id === data.templateId
+            });
+            if (templateData.id !== data.templateId) {
+              console.error('ERREUR: Le template chargé ne correspond pas au templateId!', {
+                expectedTemplateId: data.templateId,
+                loadedTemplateId: templateData.id
+              });
+            }
+            setTemplate(templateData);
+          } else {
+            console.error('Erreur lors du chargement du template:', templateResponse.status);
+          }
+        }
       } catch (error) {
         setError('Erreur lors de la récupération de l\'inspection');
         console.error('Erreur:', error);
@@ -122,6 +170,269 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
       default:
         return status;
     }
+  };
+
+  // Fonction pour rendre du texte avec mots barrés individuellement
+  const renderCrossedOutText = (text: string, fieldKey: string) => {
+    if (!inspection?.crossedOutWords?.[fieldKey]) {
+      return text;
+    }
+
+    // Diviser le texte en mots et séparateurs
+    const parts = text.split(/(\s+|\/|\(|\)|-|\.)/);
+
+    return parts.map((part, index) => {
+      // Si c'est un séparateur, l'afficher tel quel
+      if (/^\s+$/.test(part) || /^[\/\(\)\-\.]+$/.test(part)) {
+        return <span key={index}>{part}</span>;
+      }
+
+      // Si c'est un mot, vérifier s'il est barré
+      const isCrossed = inspection.crossedOutWords[fieldKey][part];
+      return (
+        <span
+          key={index}
+          className={isCrossed ? 'line-through' : ''}
+        >
+          {part}
+        </span>
+      );
+    });
+  };
+
+  // Fonction pour vérifier si une subsection a réellement des données saisies
+  const hasRealData = (subsectionData: any, subsection: any): boolean => {
+    if (!subsectionData) return false;
+    
+    // Si c'est un sous-titre, l'afficher toujours
+    if (subsection.isSubtitle) return true;
+    
+    // Vérifier si un commentaire a été ajouté (non vide)
+    const hasComment = subsectionData.comment && typeof subsectionData.comment === 'string' && subsectionData.comment.trim() !== '';
+    
+    // Vérifier si des mots ont été barrés
+    const hasCrossedWords = subsectionData.crossedWords && Object.keys(subsectionData.crossedWords).length > 0
+      ? Object.values(subsectionData.crossedWords).some((crossed: any) => crossed === true)
+      : false;
+    
+    // Si la subsection a un status
+    if (subsection.hasStatus) {
+      const status = subsectionData.status;
+      
+      // Si le status est 'V' (valeur par défaut), on ne l'affiche que s'il y a un commentaire ou des mots barrés
+      if (status === 'V' || status === undefined || status === null || status === '') {
+        return hasComment || hasCrossedWords;
+      }
+      
+      // Si le status est 'NA' ou 'X', on l'affiche toujours (car c'est une modification explicite de l'utilisateur)
+      if (status === 'NA' || status === 'X') {
+        return true;
+      }
+      
+      // Pour tout autre status, on l'affiche
+      if (status && status !== '') {
+        return true;
+      }
+    } else {
+      // Pour les subsections sans status, on vérifie seulement commentaire et mots barrés
+      return hasComment || hasCrossedWords;
+    }
+    
+    return false;
+  };
+
+  // Fonction pour rendre les sections dynamiques du template
+  const renderTemplateSections = () => {
+    if (!template || !template.structure?.sections || !inspection?.templateSections) {
+      return null;
+    }
+
+    // Vérifier que le template correspond bien au templateId de l'inspection
+    if (template.id !== inspection.templateId) {
+      console.error('ERREUR CRITIQUE: Le template utilisé ne correspond pas au templateId de l\'inspection!', {
+        inspectionTemplateId: inspection.templateId,
+        templateId: template.id,
+        templateName: template.name,
+        typeEquipement: inspection.typeEquipement
+      });
+      return (
+        <div className="bg-red-50 border border-red-200 p-4 rounded">
+          <p className="text-sm text-red-700">
+            Erreur: Le template chargé ({template.name}) ne correspond pas au template de l'inspection.
+            Template ID attendu: {inspection.templateId}, Template ID chargé: {template.id}
+          </p>
+        </div>
+      );
+    }
+
+    const templateSections = inspection.templateSections as Record<string, any>;
+    const templateSectionsKeys = Object.keys(templateSections);
+    
+    // Créer un map pour accéder rapidement aux sections du template par ID
+    const templateSectionsMap = new Map(
+      template.structure.sections.map((section: any) => [section.id, section])
+    );
+
+    // Itérer uniquement sur les sections qui ont des données sauvegardées
+    const validSections = templateSectionsKeys
+      .map((sectionId: string) => {
+        const section = templateSectionsMap.get(sectionId) as any;
+        if (!section) {
+          console.warn(`Section ${sectionId} not found in template structure`);
+          return null;
+        }
+        const sectionData = templateSections[sectionId];
+        if (!sectionData || Object.keys(sectionData).length === 0) {
+          return null;
+        }
+        // Vérifier qu'il y a au moins une subsection avec des données réelles
+        const hasSubsectionData = section.subsections && section.subsections.some((subsection: any) => {
+          const subsectionData = sectionData[subsection.id];
+          return subsectionData !== undefined && hasRealData(subsectionData, subsection);
+        });
+        return hasSubsectionData ? { section, sectionData } : null;
+      })
+      .filter((item): item is { section: any; sectionData: any } => item !== null);
+
+    if (validSections.length === 0) {
+      return <div className="text-sm text-gray-500">Aucune section à afficher</div>;
+    }
+
+    // Trier les sections selon l'ordre du template pour maintenir la cohérence
+    const sortedValidSections = validSections.sort((a, b) => {
+      const indexA = template.structure.sections.findIndex((s: any) => s.id === a.section.id);
+      const indexB = template.structure.sections.findIndex((s: any) => s.id === b.section.id);
+      return indexA - indexB;
+    });
+
+    return sortedValidSections.map(({ section, sectionData }) => {
+      const useGrid = section.useGridLayout || false;
+      const subsectionsWithData = section.subsections.filter((subsection: any) => {
+        const subsectionData = sectionData[subsection.id];
+        return subsectionData !== undefined && hasRealData(subsectionData, subsection);
+      });
+
+      return (
+        <div key={section.id} className="border-b border-gray-200 pb-4">
+          {useGrid ? (
+            <div className="grid grid-cols-[40%_60%] gap-4">
+              {/* Première colonne : Titre */}
+              <div className="text-sm font-medium text-gray-900">
+                {section.title}
+              </div>
+              
+              {/* Deuxième colonne : Éléments */}
+              <div className="space-y-2">
+                {subsectionsWithData.map((subsection: any) => {
+                  const subsectionData = sectionData[subsection.id];
+                  if (!subsectionData) return null;
+
+                  // Si c'est un sous-titre, l'afficher comme titre
+                  if (subsection.isSubtitle) {
+                    return (
+                      <div key={subsection.id} className="border-b border-gray-200 pb-2 mb-2">
+                        <div className="text-sm font-medium text-gray-900">
+                          {subsection.label || section.title}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const contentClass = subsection.hasGrayBackground ? 'bg-gray-100 p-2 rounded' : '';
+                  const status = subsectionData.status || 'V';
+                  const comment = subsectionData.comment;
+                  const fieldKey = `${section.id}.${subsection.id}`;
+
+                  // Rendre le texte avec mots barrés
+                  const renderText = () => {
+                    if (!subsection.crossableWords || subsection.crossableWords.length === 0) {
+                      return subsection.label;
+                    }
+                    return renderCrossedOutText(subsection.label, fieldKey);
+                  };
+
+                  return (
+                    <div key={subsection.id} className={contentClass}>
+                      <div className="flex items-center justify-between gap-2">
+                        {subsection.isListItem ? (
+                          <li className="text-sm text-gray-700 flex-1 list-disc list-inside">
+                            {renderText()}
+                          </li>
+                        ) : (
+                          <span className="text-sm text-gray-700 flex-1">{renderText()}</span>
+                        )}
+                        {subsection.showStatusButton !== false && subsection.hasStatus && (
+                          getStatusIcon(status)
+                        )}
+                      </div>
+                      {comment && (
+                        <div className="text-sm text-blue-600 italic ml-4 mt-1">
+                          Commentaire: {comment}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-gray-900 mb-2">
+                {section.title}
+              </div>
+              {subsectionsWithData.map((subsection: any) => {
+                const subsectionData = sectionData[subsection.id];
+                if (!subsectionData) return null;
+
+                if (subsection.isSubtitle) {
+                  return (
+                    <div key={subsection.id} className="border-b border-gray-200 pb-2 mb-2">
+                      <div className="text-sm font-medium text-gray-900">
+                        {subsection.label || section.title}
+                      </div>
+                    </div>
+                  );
+                }
+
+                const contentClass = subsection.hasGrayBackground ? 'bg-gray-100 p-2 rounded' : '';
+                const status = subsectionData.status || 'V';
+                const comment = subsectionData.comment;
+                const fieldKey = `${section.id}.${subsection.id}`;
+
+                const renderText = () => {
+                  if (!subsection.crossableWords || subsection.crossableWords.length === 0) {
+                    return subsection.label;
+                  }
+                  return renderCrossedOutText(subsection.label, fieldKey);
+                };
+
+                return (
+                  <div key={subsection.id} className={contentClass}>
+                    <div className="flex items-center justify-between gap-2">
+                      {subsection.isListItem ? (
+                        <li className="text-sm text-gray-700 flex-1 list-disc list-inside">
+                          {renderText()}
+                        </li>
+                      ) : (
+                        <span className="text-sm text-gray-700 flex-1">{renderText()}</span>
+                      )}
+                      {subsection.showStatusButton !== false && subsection.hasStatus && (
+                        getStatusIcon(status)
+                      )}
+                    </div>
+                    {comment && (
+                      <div className="text-sm text-blue-600 italic ml-4 mt-1">
+                        Commentaire: {comment}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    });
   };
 
   // Fonction pour obtenir l'URL de l'image QR code
@@ -496,8 +807,31 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
 
                   {/* Points d'inspection */}
                   <div className="space-y-6">
-                    {/* 1. ANTECEDENT DU PRODUIT */}
-                    {inspection.antecedentProduit && (
+                    {/* Afficher les sections dynamiques du template si l'inspection utilise un template */}
+                    {inspection.templateId && template && inspection.templateSections ? (
+                      <>
+                        {/* Antécédent du produit (toujours affiché) */}
+                        {inspection.antecedentProduit && (
+                          <div className="border-b border-gray-200 pb-4">
+                            <h3 className="text-sm font-medium text-gray-900 mb-3">
+                              1. ANTECEDENT DU PRODUIT:
+                            </h3>
+                            <div className="space-y-2">
+                              <div className="text-sm text-gray-700">
+                                Mise en service le: {inspection.antecedentProduit.miseEnService || '-'}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Sections dynamiques du template */}
+                        {renderTemplateSections()}
+                      </>
+                    ) : (
+                      <>
+                        {/* Affichage classique pour les inspections sans template */}
+                        {/* 1. ANTECEDENT DU PRODUIT */}
+                        {inspection.antecedentProduit && (
                       <div className="border-b border-gray-200 pb-4">
                         <h3 className="text-sm font-medium text-gray-900 mb-3">
                           1. ANTECEDENT DU PRODUIT:
@@ -721,6 +1055,8 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
                         </div>
                       </div>
                     )}
+                      </>
+                    )}
                   </div>
 
                   {/* Section Signature */}
@@ -739,14 +1075,40 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700">
-                          Signature
+                          Certificat de contrôleur (PDF)
                         </label>
                         <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                          {inspection.verificateurSignature ? (
-                            <img src={inspection.verificateurSignature} alt="Signature" className="max-w-full h-auto rounded" />
+                          {inspection.verificateurSignaturePdf ? (
+                            <div className="text-center">
+                              <a
+                                href={`/api/inspection-pdf?url=${encodeURIComponent(inspection.verificateurSignaturePdf)}`}
+                                target="_blank"
+                                className="text-blue-600 hover:text-blue-800 underline text-sm"
+                              >
+                                Voir le certificat PDF
+                              </a>
+                            </div>
                           ) : (
                             <div className="text-gray-400 text-sm">
-                              Zone de signature
+                              Aucun certificat PDF
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Signature digitale
+                        </label>
+                        <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                          {inspection.verificateurDigitalSignature ? (
+                            <img 
+                              src={inspection.verificateurDigitalSignature} 
+                              alt="Signature digitale" 
+                              className="max-w-full max-h-32 object-contain mx-auto" 
+                            />
+                          ) : (
+                            <div className="text-gray-400 text-sm">
+                              Aucune signature digitale
                             </div>
                           )}
                         </div>

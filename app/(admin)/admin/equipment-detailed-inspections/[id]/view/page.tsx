@@ -61,6 +61,7 @@ export default function ViewInspectionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [inspection, setInspection] = useState<any>(null);
+  const [template, setTemplate] = useState<any>(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [isUpdatingQR, setIsUpdatingQR] = useState(false);
   const [qrCodeImageUrl, setQrCodeImageUrl] = useState<string>('');
@@ -195,7 +196,67 @@ export default function ViewInspectionPage() {
           const data = await response.json();
           console.log('Données inspection:', data);
           console.log('Date signature:', data.dateSignature);
+          console.log('Template ID:', data.templateId);
+          console.log('Type équipement:', data.typeEquipement);
+          console.log('Template inclus:', data.template);
+          console.log('Template Sections:', data.templateSections);
           setInspection(data);
+          // Si l'inspection utilise un template, le template est déjà inclus dans la réponse
+          if (data.template) {
+            console.log('Setting template from inspection data:', {
+              templateId: data.template.id,
+              templateName: data.template.name,
+              typeEquipement: data.typeEquipement,
+              inspectionTemplateId: data.templateId
+            });
+            // Vérifier que le template correspond au templateId de l'inspection
+            if (data.template.id !== data.templateId) {
+              console.error('❌ ERREUR CRITIQUE: Le template inclus ne correspond pas au templateId!', {
+                templateIdInData: data.templateId,
+                templateIdInTemplate: data.template.id,
+                templateName: data.template.name,
+                typeEquipement: data.typeEquipement
+              });
+              // Ne pas utiliser ce template, charger le bon depuis l'API
+              console.log('Chargement du bon template depuis l\'API...');
+              const templateResponse = await fetch(`/api/admin/equipment-templates/${data.templateId}`);
+              if (templateResponse.ok) {
+                const correctTemplate = await templateResponse.json();
+                console.log('✅ Bon template chargé:', {
+                  templateId: correctTemplate.id,
+                  templateName: correctTemplate.name
+                });
+                setTemplate(correctTemplate);
+              } else {
+                console.error('❌ Impossible de charger le bon template');
+              }
+            } else {
+              console.log('✅ Template correspond au templateId');
+              setTemplate(data.template);
+            }
+          } else if (data.templateId) {
+            // Si le template n'est pas inclus, le charger séparément
+            console.log('Template not included, loading separately with templateId:', data.templateId);
+            const templateResponse = await fetch(`/api/admin/equipment-templates/${data.templateId}`);
+            if (templateResponse.ok) {
+              const templateData = await templateResponse.json();
+              console.log('Template loaded:', {
+                templateId: templateData.id,
+                templateName: templateData.name,
+                typeEquipement: data.typeEquipement,
+                matches: templateData.id === data.templateId
+              });
+              if (templateData.id !== data.templateId) {
+                console.error('ERREUR: Le template chargé ne correspond pas au templateId!', {
+                  expectedTemplateId: data.templateId,
+                  loadedTemplateId: templateData.id
+                });
+              }
+              setTemplate(templateData);
+            } else {
+              console.error('Erreur lors du chargement du template:', templateResponse.status);
+            }
+          }
         } else {
           setError('Erreur lors du chargement de l\'inspection');
         }
@@ -401,6 +462,475 @@ export default function ViewInspectionPage() {
     if (!text || !inspection.dateAchatUrl) return text;
     
     return `<a href="/api/inspection-pdf?url=${encodeURIComponent(inspection.dateAchatUrl)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF">${text}</a>`;
+  };
+
+  // Fonction pour vérifier si une subsection a réellement des données saisies
+  const hasRealData = (subsectionData: any, subsection: any): boolean => {
+    if (!subsectionData) return false;
+    
+    // Si c'est un sous-titre, l'afficher toujours
+    if (subsection.isSubtitle) return true;
+    
+    // Vérifier si un commentaire a été ajouté (non vide)
+    const hasComment = subsectionData.comment && typeof subsectionData.comment === 'string' && subsectionData.comment.trim() !== '';
+    
+    // Vérifier si des mots ont été barrés
+    const hasCrossedWords = subsectionData.crossedWords && Object.keys(subsectionData.crossedWords).length > 0
+      ? Object.values(subsectionData.crossedWords).some((crossed: any) => crossed === true)
+      : false;
+    
+    // Si la subsection a un status
+    if (subsection.hasStatus) {
+      const status = subsectionData.status;
+      
+      // Si le status est 'V' (valeur par défaut), on ne l'affiche que s'il y a un commentaire ou des mots barrés
+      if (status === 'V' || status === undefined || status === null || status === '') {
+        return hasComment || hasCrossedWords;
+      }
+      
+      // Si le status est 'NA' ou 'X', on l'affiche toujours (car c'est une modification explicite de l'utilisateur)
+      if (status === 'NA' || status === 'X') {
+        return true;
+      }
+      
+      // Pour tout autre status, on l'affiche
+      if (status && status !== '') {
+        return true;
+      }
+    } else {
+      // Pour les subsections sans status, on vérifie seulement commentaire et mots barrés
+      return hasComment || hasCrossedWords;
+    }
+    
+    return false;
+  };
+
+  // Fonction pour rendre les sections dynamiques du template
+  const renderTemplateSections = () => {
+    if (!template || !template.structure?.sections || !inspection.templateSections) {
+      console.log('Template sections render - Missing data:', {
+        hasTemplate: !!template,
+        hasStructure: !!template?.structure?.sections,
+        hasTemplateSections: !!inspection.templateSections,
+        templateSections: inspection.templateSections
+      });
+      return null;
+    }
+
+    // Vérifier que le template correspond bien au templateId de l'inspection
+    if (template.id !== inspection.templateId) {
+      console.error('ERREUR CRITIQUE: Le template utilisé ne correspond pas au templateId de l\'inspection!', {
+        inspectionTemplateId: inspection.templateId,
+        templateId: template.id,
+        templateName: template.name,
+        typeEquipement: inspection.typeEquipement
+      });
+      return (
+        <div className="bg-red-50 border border-red-200 p-4 rounded">
+          <p className="text-sm text-red-700">
+            Erreur: Le template chargé ({template.name}) ne correspond pas au template de l'inspection.
+            Template ID attendu: {inspection.templateId}, Template ID chargé: {template.id}
+          </p>
+        </div>
+      );
+    }
+
+    const templateSections = inspection.templateSections as Record<string, any>;
+    const templateSectionsKeys = Object.keys(templateSections);
+    
+    // Créer un map pour accéder rapidement aux sections du template par ID
+    const templateSectionsMap = new Map(
+      template.structure.sections.map((section: any) => [section.id, section])
+    );
+
+    // Si la section "2. OBSERVATIONS PREALABLES" existe dans le template mais pas dans templateSections,
+    // et que observationsPrelables existe, fusionner les données
+    const observationsSection = template.structure.sections.find((s: any) => 
+      s.title && s.title.toLowerCase().includes('observations prealables')
+    );
+    if (observationsSection && !templateSections[observationsSection.id] && inspection.observationsPrelables) {
+      // Mapper observationsPrelables vers les subsections du template en utilisant les labels
+      const observationsData: any = {};
+      
+      // Mapper chaque subsection du template vers observationsPrelables
+      observationsSection.subsections.forEach((subsection: any) => {
+        const label = subsection.label?.toLowerCase() || '';
+        
+        // Mapper selon le label de la subsection
+        if (label.includes('référence interne') || label.includes('reference interne')) {
+          if (inspection.observationsPrelables.referenceInterneMarquee) {
+            observationsData[subsection.id] = inspection.observationsPrelables.referenceInterneMarquee;
+          }
+        } else if (label.includes('lisibilité') || label.includes('numero de serie') || label.includes('norme')) {
+          if (inspection.observationsPrelables.lisibiliteNumeroSerie) {
+            observationsData[subsection.id] = inspection.observationsPrelables.lisibiliteNumeroSerie;
+          }
+        } else if (label.includes('durée de vie') || label.includes('duree de vie')) {
+          if (inspection.observationsPrelables.dureeVieNonDepassee) {
+            observationsData[subsection.id] = inspection.observationsPrelables.dureeVieNonDepassee;
+          }
+        } else if (label.includes('comparaison') || label.includes('appareil neuf')) {
+          if (inspection.observationsPrelables.comparaisonAppareilNeuf) {
+            observationsData[subsection.id] = inspection.observationsPrelables.comparaisonAppareilNeuf;
+          }
+        }
+      });
+      
+      if (Object.keys(observationsData).length > 0) {
+        templateSections[observationsSection.id] = observationsData;
+        templateSectionsKeys.push(observationsSection.id);
+        console.log('Fusionné observationsPrelables dans templateSections pour la section:', observationsSection.id, observationsData);
+      }
+    }
+    
+    // Si la section existe déjà dans templateSections, fusionner aussi avec observationsPrelables
+    if (observationsSection && templateSections[observationsSection.id] && inspection.observationsPrelables) {
+      const existingData = templateSections[observationsSection.id];
+      observationsSection.subsections.forEach((subsection: any) => {
+        // Si la subsection n'existe pas dans templateSections, essayer de la trouver dans observationsPrelables
+        if (!existingData[subsection.id]) {
+          const label = subsection.label?.toLowerCase() || '';
+          
+          if (label.includes('référence interne') || label.includes('reference interne')) {
+            if (inspection.observationsPrelables.referenceInterneMarquee) {
+              existingData[subsection.id] = inspection.observationsPrelables.referenceInterneMarquee;
+            }
+          } else if (label.includes('lisibilité') || label.includes('numero de serie') || label.includes('norme')) {
+            if (inspection.observationsPrelables.lisibiliteNumeroSerie) {
+              existingData[subsection.id] = inspection.observationsPrelables.lisibiliteNumeroSerie;
+            }
+          } else if (label.includes('durée de vie') || label.includes('duree de vie')) {
+            if (inspection.observationsPrelables.dureeVieNonDepassee) {
+              existingData[subsection.id] = inspection.observationsPrelables.dureeVieNonDepassee;
+            }
+          } else if (label.includes('comparaison') || label.includes('appareil neuf')) {
+            if (inspection.observationsPrelables.comparaisonAppareilNeuf) {
+              existingData[subsection.id] = inspection.observationsPrelables.comparaisonAppareilNeuf;
+            }
+          }
+        }
+      });
+    }
+
+    console.log('Rendering template sections:', {
+      templateId: template.id,
+      templateName: template.name,
+      typeEquipement: inspection.typeEquipement,
+      templateSectionsCount: template.structure.sections.length,
+      savedSectionsKeys: templateSectionsKeys,
+      templateSections,
+      templateStructure: template.structure.sections.map((s: any) => ({
+        id: s.id,
+        title: s.title,
+        subsections: s.subsections.map((sub: any) => ({
+          id: sub.id,
+          label: sub.label,
+          hasStatus: sub.hasStatus,
+          hasComment: sub.hasComment
+        }))
+      }))
+    });
+
+    // Itérer uniquement sur les sections qui ont des données sauvegardées
+    const validSections = templateSectionsKeys
+      .map((sectionId: string) => {
+        const section = templateSectionsMap.get(sectionId) as any;
+        if (!section || !section.subsections) {
+          console.warn(`Section ${sectionId} not found in template structure or missing subsections`);
+          return null;
+        }
+        const sectionData = templateSections[sectionId];
+        if (!sectionData || Object.keys(sectionData).length === 0) {
+          return null;
+        }
+        // Vérifier qu'il y a au moins une subsection avec des données sauvegardées
+        // Si une subsection est dans sectionData, elle a été sauvegardée et doit être affichée
+        const hasSubsectionData = section.subsections.some((subsection: any) => {
+          const subsectionData = sectionData[subsection.id];
+          return subsectionData !== undefined;
+        });
+        return hasSubsectionData ? { section, sectionData } : null;
+      })
+      .filter((item): item is { section: any; sectionData: any } => item !== null);
+
+    if (validSections.length === 0) {
+      console.log('No valid sections to render');
+      return <div className="text-xs text-gray-500">Aucune section à afficher</div>;
+    }
+
+    // Trier les sections selon l'ordre du template pour maintenir la cohérence
+    const sortedValidSections = validSections.sort((a, b) => {
+      const indexA = template.structure.sections.findIndex((s: any) => s.id === a.section.id);
+      const indexB = template.structure.sections.findIndex((s: any) => s.id === b.section.id);
+      return indexA - indexB;
+    });
+
+    return (
+      <>
+        {/* Afficher antecedentProduit si présent (section 1, toujours affichée en premier) */}
+        {inspection.antecedentProduit && (
+          <div className="flex justify-between items-center mb-2 border-b border-gray-200 pb-2">
+            <h2 className="text-xs font-bold text-gray-900">
+              1. ANTECEDENT DU PRODUIT
+            </h2>
+            <div className="text-xs text-gray-600">
+              Mise en service le {formatDate(inspection.antecedentProduit?.miseEnService) || formatDate(inspection.dateMiseEnService)}
+            </div>
+          </div>
+        )}
+
+        {/* Sections dynamiques du template */}
+        {sortedValidSections.map(({ section, sectionData }) => {
+      const useGrid = section.useGridLayout || false;
+      // Afficher toutes les subsections du template qui ont des données correspondantes
+      // Vérifier d'abord les subsections du template, puis aussi les clés dans sectionData
+      const subsectionIdsInData = new Set(Object.keys(sectionData));
+      const subsectionsWithData = section.subsections.filter((subsection: any) => {
+        // Si la subsection est dans sectionData, l'afficher
+        const hasData = sectionData[subsection.id] !== undefined;
+        if (!hasData && subsection.label && subsection.label.trim() !== '') {
+          console.log(`Subsection ${subsection.id} (${subsection.label}) n'est pas dans sectionData`);
+        } else if (!hasData && (!subsection.label || subsection.label.trim() === '')) {
+          console.log(`Subsection ${subsection.id} (label vide) n'est pas dans sectionData`);
+        }
+        return hasData;
+      });
+      
+      // Aussi afficher les subsections qui sont dans sectionData mais pas dans le template
+      // (au cas où il y aurait des incohérences)
+      subsectionIdsInData.forEach((subsectionId) => {
+        if (!subsectionsWithData.find((s: any) => s.id === subsectionId)) {
+          // Cette subsection est dans les données mais pas dans le template
+          // On l'ignore car elle ne peut pas être affichée sans la structure du template
+          console.warn(`Subsection ${subsectionId} found in data but not in template structure`);
+        }
+      });
+      
+      console.log(`Section ${section.id} (${section.title}):`, {
+        totalSubsections: section.subsections.length,
+        subsectionsWithData: subsectionsWithData.length,
+        sectionDataKeys: Object.keys(sectionData),
+        sectionDataValues: Object.keys(sectionData).map(key => ({
+          key,
+          hasData: sectionData[key] !== undefined && sectionData[key] !== null,
+          data: sectionData[key]
+        })),
+        subsectionsWithDataIds: subsectionsWithData.map((s: any) => s.id),
+        allSubsectionIds: section.subsections.map((s: any) => ({ id: s.id, label: s.label })),
+        missingSubsections: section.subsections
+          .filter((s: any) => sectionData[s.id] === undefined)
+          .map((s: any) => ({ id: s.id, label: s.label }))
+      });
+
+      return (
+        <div key={section.id} className="border-b border-gray-200 pb-2">
+          {useGrid ? (
+            <div className="grid grid-cols-[45%_55%] gap-2">
+              {/* Première colonne : Titre */}
+              <div className="text-xs font-bold text-gray-900">
+                {section.title}
+              </div>
+              
+              {/* Deuxième colonne : Éléments */}
+              <div className="space-y-2">
+                {subsectionsWithData.map((subsection: any) => {
+                  const subsectionData = sectionData[subsection.id];
+                  // Si pas de données pour cette subsection, ne pas l'afficher
+                  if (subsectionData === undefined || subsectionData === null) {
+                    console.warn(`Subsection ${subsection.id} (${subsection.label}) has no data in sectionData`);
+                    return null;
+                  }
+
+                  // Si c'est un sous-titre, l'afficher comme titre
+                  if (subsection.isSubtitle) {
+                    return (
+                      <div key={subsection.id} className="border-b border-gray-200 pb-2 mb-2">
+                        <div className="text-xs font-medium text-gray-900">
+                          {subsection.label || section.title}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const contentClass = subsection.hasGrayBackground ? 'bg-gray-100 p-1' : '';
+                  const status = subsectionData.status || 'V';
+                  const comment = subsectionData.comment;
+                  const crossedWords = subsectionData.crossedWords || {};
+                  const fieldKey = `${section.id}.${subsection.id}`;
+                const hasLabel = subsection.label && subsection.label.trim() !== '';
+
+                // Rendre le texte avec mots barrés
+                const renderText = () => {
+                  if (!subsection.crossableWords || subsection.crossableWords.length === 0) {
+                    return subsection.label;
+                  }
+                  
+                  // Pour les templates, les mots barrés peuvent être dans deux endroits :
+                  // 1. Dans crossedOutWords (ancien système global)
+                  // 2. Dans subsectionData.crossedWords (nouveau système template)
+                  const crossedWordsFromData = subsectionData.crossedWords || {};
+                  
+                  // Si on a des crossedWords dans la subsection, les utiliser pour afficher les mots barrés
+                  if (Object.keys(crossedWordsFromData).length > 0) {
+                    const text = subsection.label;
+                    const words = text.split(/(\s+|\/|\(|\)|-|\.)/);
+                    
+                    return words.map((word: string, index: number) => {
+                      const trimmedWord = word.trim();
+                      const isCrossable = subsection.crossableWords.includes(trimmedWord);
+                      const isCrossed = isCrossable && crossedWordsFromData[trimmedWord];
+                      
+                      if (!isCrossable || /^\s+$/.test(word) || /^[\/\(\)\-\.]+$/.test(word)) {
+                        return <span key={index}>{word}</span>;
+                      }
+                      
+                      return (
+                        <span
+                          key={index}
+                          className={isCrossed ? 'line-through' : ''}
+                        >
+                          {word}
+                        </span>
+                      );
+                    });
+                  }
+                  
+                  // Sinon, utiliser l'ancien système avec crossedOutWords global
+                  return renderCrossedOutText(subsection.label, fieldKey);
+                };
+
+                  return (
+                    <div key={subsection.id} className={contentClass}>
+                      <div className="flex items-center justify-between gap-2">
+                        {hasLabel ? (
+                          <>
+                            {subsection.isListItem ? (
+                              <li className="text-xs text-gray-700 flex-1 list-disc list-inside">
+                                {renderText()}
+                              </li>
+                            ) : (
+                              <span className="text-xs text-gray-700 flex-1">{renderText()}</span>
+                            )}
+                          </>
+                        ) : (
+                          // Si pas de label, afficher juste un espace pour maintenir la mise en page
+                          <span className="text-xs text-gray-700 flex-1">&nbsp;</span>
+                        )}
+                        {subsection.showStatusButton !== false && subsection.hasStatus && (
+                          <StatusIndicator status={status} />
+                        )}
+                      </div>
+                      {comment && (
+                        <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                          Commentaire: {comment}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="text-xs font-bold text-gray-900 mb-2">
+                {section.title}
+              </div>
+              {subsectionsWithData.map((subsection: any) => {
+                const subsectionData = sectionData[subsection.id];
+                if (!subsectionData) return null;
+
+                if (subsection.isSubtitle) {
+                  return (
+                    <div key={subsection.id} className="border-b border-gray-200 pb-2 mb-2">
+                      <div className="text-xs font-medium text-gray-900">
+                        {subsection.label || section.title}
+                      </div>
+                    </div>
+                  );
+                }
+
+                const contentClass = subsection.hasGrayBackground ? 'bg-gray-100 p-1' : '';
+                const status = subsectionData.status || 'V';
+                const comment = subsectionData.comment;
+                const crossedWords = subsectionData.crossedWords || {};
+                const fieldKey = `${section.id}.${subsection.id}`;
+                const hasLabel = subsection.label && subsection.label.trim() !== '';
+
+                const renderText = () => {
+                  if (!subsection.crossableWords || subsection.crossableWords.length === 0) {
+                    return subsection.label;
+                  }
+                  
+                  // Pour les templates, les mots barrés peuvent être dans deux endroits :
+                  // 1. Dans crossedOutWords (ancien système global)
+                  // 2. Dans subsectionData.crossedWords (nouveau système template)
+                  const crossedWordsFromData = subsectionData.crossedWords || {};
+                  
+                  // Si on a des crossedWords dans la subsection, les utiliser pour afficher les mots barrés
+                  if (Object.keys(crossedWordsFromData).length > 0) {
+                    const text = subsection.label;
+                    const words = text.split(/(\s+|\/|\(|\)|-|\.)/);
+                    
+                    return words.map((word: string, index: number) => {
+                      const trimmedWord = word.trim();
+                      const isCrossable = subsection.crossableWords.includes(trimmedWord);
+                      const isCrossed = isCrossable && crossedWordsFromData[trimmedWord];
+                      
+                      if (!isCrossable || /^\s+$/.test(word) || /^[\/\(\)\-\.]+$/.test(word)) {
+                        return <span key={index}>{word}</span>;
+                      }
+                      
+                      return (
+                        <span
+                          key={index}
+                          className={isCrossed ? 'line-through' : ''}
+                        >
+                          {word}
+                        </span>
+                      );
+                    });
+                  }
+                  
+                  // Sinon, utiliser l'ancien système avec crossedOutWords global
+                  return renderCrossedOutText(subsection.label, fieldKey);
+                };
+
+                return (
+                  <div key={subsection.id} className={contentClass}>
+                    <div className="flex items-center justify-between gap-2">
+                      {hasLabel ? (
+                        <>
+                          {subsection.isListItem ? (
+                            <li className="text-xs text-gray-700 flex-1 list-disc list-inside">
+                              {renderText()}
+                            </li>
+                          ) : (
+                            <span className="text-xs text-gray-700 flex-1">{renderText()}</span>
+                          )}
+                        </>
+                      ) : (
+                        // Si pas de label, afficher juste un espace pour maintenir la mise en page
+                        <span className="text-xs text-gray-700 flex-1">&nbsp;</span>
+                      )}
+                      {subsection.showStatusButton !== false && subsection.hasStatus && (
+                        <StatusIndicator status={status} />
+                      )}
+                    </div>
+                    {comment && (
+                      <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                        Commentaire: {comment}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    })}
+      </>
+    );
   };
 
   return (
@@ -697,18 +1227,37 @@ export default function ViewInspectionPage() {
                 </h2>
             <div className="bg-white  p-6 print:border-0 print:shadow-none">
 
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xs font-bold text-gray-900">
-                 1. ANTECEDENT DU PRODUIT
-                </h2>
-
-                <div className="text-xs text-gray-600">
-                  Mise en service le {formatDate(inspection.antecedentProduit?.miseEnService) || formatDate(inspection.dateMiseEnService)}
+              {/* Afficher les sections dynamiques du template si l'inspection utilise un template */}
+              {inspection.templateId && template && inspection.templateSections ? (
+                <div className="space-y-1">
+                  {/* 
+                    Pour les inspections avec template, renderTemplateSections() gère TOUTES les sections,
+                    y compris antecedentProduit et observationsPrelables.
+                    Ne pas les afficher séparément pour éviter la duplication.
+                  */}
+                  {renderTemplateSections()}
                 </div>
-              </div>
+              ) : inspection.templateId ? (
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded">
+                  <p className="text-sm text-yellow-700">
+                    Template chargé: {template ? 'Oui' : 'Non'}, Template Sections: {inspection.templateSections ? 'Oui' : 'Non'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Affichage classique pour les inspections sans template */}
+                  <div className="flex justify-between items-center mb-2">
+                    <h2 className="text-xs font-bold text-gray-900">
+                     1. ANTECEDENT DU PRODUIT
+                    </h2>
 
-              {/* Points d'inspection - Tableau sans bordure */}
-              <div className="space-y-1">
+                    <div className="text-xs text-gray-600">
+                      Mise en service le {formatDate(inspection.antecedentProduit?.miseEnService) || formatDate(inspection.dateMiseEnService)}
+                    </div>
+                  </div>
+
+                  {/* Points d'inspection - Tableau sans bordure */}
+                  <div className="space-y-1">
                 
                 {/* Observations Préalables */}
                 <div className="border-b border-gray-200 pb-2">
@@ -1025,55 +1574,58 @@ export default function ViewInspectionPage() {
                   </div>
                 </div>
 
-                {/* Signature */}
-                <div className="pt-4 bg-gray-100 p-2">
-                  <div className="text-center">
-                    <div className="text-sm font-medium text-gray-700 mb-4">Signature Vérificateur / signature</div>
-                    
-                    {/* Premier cadre : Certificat de contrôleur (PDF) */}
-                    <div className="border-2 border-gray-300 rounded-lg p-8 h-24 flex items-center justify-center">
-                      {getCurrentCertificate() ? (
-                        <div className="text-center">
-                          <DocumentIcon className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                          <button
-                            onClick={() => window.open(`/api/inspection-pdf?url=${encodeURIComponent(getCurrentCertificate()!)}`, '_blank')}
-                            className="text-orange-600 hover:text-orange-800 underline text-xs"
-                          >
-                          Certificat de controleur
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="text-gray-400 text-sm">Certificat de controleur</div>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center justify-center gap-2 mt-2">
-                      <div className="text-xs text-gray-500">Original Signé {inspection.verificateurNom || 'LA'}</div>
-                      {inspection.dateSignature && (
-                        <div className="text-xs text-gray-500">
-                          le {formatDate(inspection.dateSignature)}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Deuxième cadre : Signature digitale */}
-                    {getCurrentDigitalSignature() && (
-                      <div>
-                        <div className="border-2 border-gray-300 rounded-lg p-8 h-32 flex items-center justify-center mt-4">
-                          <img 
-                            src={getCurrentDigitalSignature()!} 
-                            alt="Signature digitale" 
-                            className="max-w-full max-h-24 object-contain" 
-                          />
-                        </div>
-                        <div className="flex items-center justify-center gap-2 mt-2">
-                          <div className="text-xs text-gray-500">
-                            {inspection.dateSignature ? `Signé le ${formatDate(inspection.dateSignature)}` : 'Signature digitale'}
-                          </div>
-                        </div>
+                  </div>
+                </>
+              )}
+
+              {/* Signature - Affichée dans tous les cas */}
+              <div className="pt-4 bg-gray-100 p-2 mt-4">
+                <div className="text-center">
+                  <div className="text-sm font-medium text-gray-700 mb-4">Signature Vérificateur / signature</div>
+                  
+                  {/* Premier cadre : Certificat de contrôleur (PDF) */}
+                  <div className="border-2 border-gray-300 rounded-lg p-8 h-24 flex items-center justify-center">
+                    {getCurrentCertificate() ? (
+                      <div className="text-center">
+                        <DocumentIcon className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                        <button
+                          onClick={() => window.open(`/api/inspection-pdf?url=${encodeURIComponent(getCurrentCertificate()!)}`, '_blank')}
+                          className="text-orange-600 hover:text-orange-800 underline text-xs"
+                        >
+                        Certificat de controleur
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-gray-400 text-sm">Certificat de controleur</div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <div className="text-xs text-gray-500">Original Signé {inspection.verificateurNom || 'LA'}</div>
+                    {inspection.dateSignature && (
+                      <div className="text-xs text-gray-500">
+                        le {formatDate(inspection.dateSignature)}
                       </div>
                     )}
                   </div>
+                  
+                  {/* Deuxième cadre : Signature digitale */}
+                  {getCurrentDigitalSignature() && (
+                    <div>
+                      <div className="border-2 border-gray-300 rounded-lg p-8 h-32 flex items-center justify-center mt-4">
+                        <img 
+                          src={getCurrentDigitalSignature()!} 
+                          alt="Signature digitale" 
+                          className="max-w-full max-h-24 object-contain" 
+                        />
+                      </div>
+                      <div className="flex items-center justify-center gap-2 mt-2">
+                        <div className="text-xs text-gray-500">
+                          {inspection.dateSignature ? `Signé le ${formatDate(inspection.dateSignature)}` : 'Signature digitale'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -23,6 +23,7 @@ interface Inspection {
   etat: string;
   photo: string;
   qrCode?: string;
+  templateId?: string | null;
   createdAt: string;
   createdBy: {
     id: string;
@@ -101,6 +102,12 @@ export default function InspectionsListPage() {
 
   // Fonction pour obtenir le chemin de visualisation selon le type d'équipement
   const getViewPath = (inspection: Inspection) => {
+    // Si l'inspection utilise un template, toujours utiliser la page générique qui gère les templates
+    if (inspection.templateId) {
+      return `/admin/equipment-detailed-inspections/${inspection.id}/view`;
+    }
+    
+    // Sinon, utiliser les anciennes pages spécifiques selon le type
     const typeEquipement = inspection.typeEquipement?.trim() || '';
     if (typeEquipement === 'Harnais de Suspension' || typeEquipement.toLowerCase().includes('harnais')) {
       return `/admin/equipment-detailed-inspections/harnais/${inspection.id}/view`;
@@ -113,6 +120,12 @@ export default function InspectionsListPage() {
 
   // Fonction pour obtenir le chemin d'édition selon le type d'équipement
   const getEditPath = (inspection: Inspection) => {
+    // Si l'inspection utilise un template, toujours utiliser la page générique qui gère les templates
+    if (inspection.templateId) {
+      return `/admin/equipment-detailed-inspections/${inspection.id}/edit`;
+    }
+    
+    // Sinon, utiliser les anciennes pages spécifiques selon le type
     const typeEquipement = inspection.typeEquipement?.trim() || '';
     if (typeEquipement === 'Harnais de Suspension' || typeEquipement.toLowerCase().includes('harnais')) {
       return `/admin/equipment-detailed-inspections/harnais/${inspection.id}/edit`;
@@ -134,7 +147,82 @@ export default function InspectionsListPage() {
       const data = await response.json();
       
       // Supprimer l'id et les champs générés automatiquement
-      const { id, createdAt, updatedAt, createdBy, ...inspectionData } = data;
+      const { id, createdAt, updatedAt, createdBy, template, ...baseInspectionData } = data;
+      
+      // Variable pour stocker les données finales à dupliquer
+      let inspectionData: any = baseInspectionData;
+      
+      // Si l'inspection utilise un template, filtrer les données comme dans create/page.tsx
+      if (data.templateId) {
+        console.log('Duplication inspection avec template:', {
+          templateId: data.templateId,
+          typeEquipement: data.typeEquipement
+        });
+        
+        // Liste des champs scalaires à conserver
+        const scalarFields = [
+          'referenceInterne', 'typeEquipement', 'fabricant', 'numeroSerie',
+          'numeroSerieTop', 'numeroSerieCuissard', 'numeroSerieNonEtiquete',
+          'dateFabrication', 'dateAchat', 'dateMiseEnService', 'dateInspectionDetaillee',
+          'numeroKit', 'taille', 'longueur', 'normesCertificat', 'documentsReference',
+          'consommation', 'attribution', 'commentaire', 'photo', 'qrCode',
+          'pdfUrl', 'normesUrl', 'dateAchatImage', 'verificateurSignature',
+          'verificateurSignaturePdf', 'verificateurDigitalSignature', 'verificateurNom',
+          'dateSignature', 'etat', 'status'
+        ];
+
+        // Sections de l'ancien système à exclure
+        const sectionsToExclude = [
+          'etatSangles', 'pointsAttache', 'etatBouclesReglages', 'etatElementsConfort',
+          'etatConnecteurTorseCuissard', 'bloqueurCroll', 'verificationCorps',
+          'verificationDoigt', 'verificationBague', 'calotteExterieurInterieur',
+          'calotin', 'coiffe', 'tourDeTete', 'systemeReglage', 'jugulaire',
+          'mousseConfort', 'crochetsLampe', 'accessoires'
+        ];
+
+        // Construire les données de duplication
+        inspectionData = {
+          // Inclure seulement les champs scalaires
+          ...Object.fromEntries(
+            Object.entries(baseInspectionData).filter(([key]) => 
+              scalarFields.includes(key) && key !== 'templateId'
+            )
+          ),
+          // Template ID
+          templateId: data.templateId,
+          // Sections JSON séparées
+          antecedentProduit: baseInspectionData.antecedentProduit,
+          observationsPrelables: baseInspectionData.observationsPrelables,
+          // Mots barrés
+          crossedOutWords: baseInspectionData.crossedOutWords,
+        };
+
+        // Ajouter les sections dynamiques du template depuis templateSections
+        if (baseInspectionData.templateSections) {
+          Object.keys(baseInspectionData.templateSections).forEach(sectionId => {
+            inspectionData[sectionId] = baseInspectionData.templateSections[sectionId];
+          });
+        }
+
+        // S'assurer qu'aucune section de l'ancien système n'est incluse
+        sectionsToExclude.forEach(section => {
+          if (inspectionData[section]) {
+            delete inspectionData[section];
+          }
+        });
+
+        
+        console.log('Données de duplication (template):', {
+          templateId: inspectionData.templateId,
+          sectionsInBody: Object.keys(inspectionData).filter(key => 
+            !scalarFields.includes(key) && 
+            key !== 'templateId' && 
+            key !== 'antecedentProduit' && 
+            key !== 'observationsPrelables' &&
+            key !== 'crossedOutWords'
+          )
+        });
+      }
       
       // Créer une nouvelle inspection avec les données dupliquées
       const createResponse = await fetch('/api/admin/equipment-detailed-inspections', {
@@ -150,12 +238,15 @@ export default function InspectionsListPage() {
         // Rediriger vers la page d'édition de la nouvelle inspection selon le type
         // Utiliser le typeEquipement de l'inspection originale ou de data pour déterminer le chemin
         const typeEquipement = data.typeEquipement || inspection.typeEquipement || newInspection.typeEquipement;
-        const inspectionForPath = { ...newInspection, typeEquipement };
+        const inspectionForPath = { ...newInspection, typeEquipement, templateId: newInspection.templateId };
         router.push(getEditPath(inspectionForPath));
       } else {
-        setError('Erreur lors de la duplication de l\'inspection');
+        const errorData = await createResponse.json();
+        console.error('Erreur API lors de la duplication:', errorData);
+        setError(errorData.error || 'Erreur lors de la duplication de l\'inspection');
       }
     } catch (error) {
+      console.error('Erreur lors de la duplication:', error);
       setError('Erreur lors de la duplication de l\'inspection');
     }
   };

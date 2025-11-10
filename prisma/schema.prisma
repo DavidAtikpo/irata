@@ -385,6 +385,9 @@ model EquipmentDetailedInspection {
   // Données pour les mots barrés individuellement (nouvelle fonctionnalité)
   crossedOutWords              Json?            // Mots barrés individuellement
 
+  // Sections dynamiques du template (pour les templates personnalisés)
+  templateSections             Json?            // Toutes les sections dynamiques du template
+
   // Signature
   verificateurSignature        String?
   verificateurSignaturePdf     String?    // Pour les certificats PDF

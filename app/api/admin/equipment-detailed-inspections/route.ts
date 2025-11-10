@@ -27,7 +27,28 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(inspections);
+    // Filtrer les sections de l'ancien système pour les inspections avec template
+    const filteredInspections = inspections.map(inspection => {
+      if (inspection.templateId) {
+        const sectionsToRemove = [
+          'etatSangles', 'pointsAttache', 'etatBouclesReglages', 'etatElementsConfort',
+          'etatConnecteurTorseCuissard', 'bloqueurCroll', 'verificationCorps',
+          'verificationDoigt', 'verificationBague', 'calotteExterieurInterieur',
+          'calotin', 'coiffe', 'tourDeTete', 'systemeReglage', 'jugulaire',
+          'mousseConfort', 'crochetsLampe', 'accessoires'
+        ];
+
+        const filtered: any = { ...inspection };
+        sectionsToRemove.forEach(section => {
+          delete filtered[section];
+        });
+
+        return filtered;
+      }
+      return inspection;
+    });
+
+    return NextResponse.json(filteredInspections);
   } catch (error) {
     console.error('Erreur lors de la récupération des inspections:', error);
     return NextResponse.json(
@@ -46,6 +67,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    
+    // Log pour déboguer
+    if (body.templateId) {
+      const sectionsToCheck = [
+        'verificationBague', 'verificationCorps', 'verificationDoigt',
+        'etatSangles', 'pointsAttache', 'calotteExterieurInterieur'
+      ];
+      const foundOldSections = sectionsToCheck.filter(section => body[section]);
+      if (foundOldSections.length > 0) {
+        console.error('⚠️ Old system sections found in request body:', foundOldSections);
+      }
+    }
     
     // Extraire les champs qui ne doivent pas être directement sauvegardés
     const { 
@@ -86,28 +119,40 @@ export async function POST(request: NextRequest) {
       ...rest 
     } = body;
     
+    // Si un templateId est présent, on ignore les sections JSON connues de l'ancien système
+    // (sauf antecedentProduit et observationsPrelables qui sont communs)
+    const sectionsToIgnoreWhenUsingTemplate = [
+      'etatSangles', 'pointsAttache', 'etatBouclesReglages', 'etatElementsConfort',
+      'etatConnecteurTorseCuissard', 'bloqueurCroll', 'verificationCorps',
+      'verificationDoigt', 'verificationBague', 'calotteExterieurInterieur',
+      'calotin', 'coiffe', 'tourDeTete', 'systemeReglage', 'jugulaire',
+      'mousseConfort', 'crochetsLampe', 'accessoires'
+    ];
+
     // Collecter toutes les sections JSON dynamiques (sections du template)
+    // Si un templateId est présent, ne pas inclure les sections de l'ancien système
     const jsonSections: Record<string, any> = {
       ...(antecedentProduit && { antecedentProduit }),
       ...(observationsPrelables && { observationsPrelables }),
-      ...(etatSangles && { etatSangles }),
-      ...(pointsAttache && { pointsAttache }),
-      ...(etatBouclesReglages && { etatBouclesReglages }),
-      ...(etatElementsConfort && { etatElementsConfort }),
-      ...(etatConnecteurTorseCuissard && { etatConnecteurTorseCuissard }),
-      ...(bloqueurCroll && { bloqueurCroll }),
-      ...(verificationCorps && { verificationCorps }),
-      ...(verificationDoigt && { verificationDoigt }),
-      ...(verificationBague && { verificationBague }),
-      ...(calotteExterieurInterieur && { calotteExterieurInterieur }),
-      ...(calotin && { calotin }),
-      ...(coiffe && { coiffe }),
-      ...(tourDeTete && { tourDeTete }),
-      ...(systemeReglage && { systemeReglage }),
-      ...(jugulaire && { jugulaire }),
-      ...(mousseConfort && { mousseConfort }),
-      ...(crochetsLampe && { crochetsLampe }),
-      ...(accessoires && { accessoires }),
+      // Ne pas inclure les sections de l'ancien système si on utilise un template
+      ...(!templateId && etatSangles && { etatSangles }),
+      ...(!templateId && pointsAttache && { pointsAttache }),
+      ...(!templateId && etatBouclesReglages && { etatBouclesReglages }),
+      ...(!templateId && etatElementsConfort && { etatElementsConfort }),
+      ...(!templateId && etatConnecteurTorseCuissard && { etatConnecteurTorseCuissard }),
+      ...(!templateId && bloqueurCroll && { bloqueurCroll }),
+      ...(!templateId && verificationCorps && { verificationCorps }),
+      ...(!templateId && verificationDoigt && { verificationDoigt }),
+      ...(!templateId && verificationBague && { verificationBague }),
+      ...(!templateId && calotteExterieurInterieur && { calotteExterieurInterieur }),
+      ...(!templateId && calotin && { calotin }),
+      ...(!templateId && coiffe && { coiffe }),
+      ...(!templateId && tourDeTete && { tourDeTete }),
+      ...(!templateId && systemeReglage && { systemeReglage }),
+      ...(!templateId && jugulaire && { jugulaire }),
+      ...(!templateId && mousseConfort && { mousseConfort }),
+      ...(!templateId && crochetsLampe && { crochetsLampe }),
+      ...(!templateId && accessoires && { accessoires }),
     };
 
     // Liste des champs scalaires (non-JSON) connus
@@ -126,18 +171,62 @@ export async function POST(request: NextRequest) {
     const baseFields: Record<string, any> = {};
     const dynamicJsonSections: Record<string, any> = {};
 
+    // Liste des sections JSON connues (pour les équipements spécifiques - ancien système)
+    const knownJsonSections = [
+      'antecedentProduit', 'observationsPrelables', 'etatSangles', 'pointsAttache',
+      'etatBouclesReglages', 'etatElementsConfort', 'etatConnecteurTorseCuissard',
+      'bloqueurCroll', 'verificationCorps', 'verificationDoigt', 'verificationBague',
+      'calotteExterieurInterieur', 'calotin', 'coiffe', 'tourDeTete', 'systemeReglage',
+      'jugulaire', 'mousseConfort', 'crochetsLampe', 'accessoires'
+    ];
+
     // Parcourir le reste pour séparer les scalaires des objets JSON (sections dynamiques)
     Object.keys(rest).forEach(key => {
       if (scalarFields.includes(key)) {
         baseFields[key] = rest[key];
       } else if (rest[key] !== null && typeof rest[key] === 'object' && !Array.isArray(rest[key])) {
-        // C'est probablement une section JSON dynamique du template
-        dynamicJsonSections[key] = rest[key];
+        // Si on utilise un template, ignorer les sections de l'ancien système
+        if (templateId && sectionsToIgnoreWhenUsingTemplate.includes(key)) {
+          // Ignorer cette section - elle ne doit pas être sauvegardée
+          console.log(`Ignoring old system section '${key}' because templateId is present`);
+          return;
+        }
+        
+        // Si c'est une section JSON connue, l'ajouter à jsonSections
+        if (knownJsonSections.includes(key)) {
+          jsonSections[key] = rest[key];
+        } else {
+          // Sinon, c'est une section JSON dynamique du template
+          dynamicJsonSections[key] = rest[key];
+        }
       }
     });
 
-    // Fusionner toutes les sections JSON
-    const allJsonSections = { ...jsonSections, ...dynamicJsonSections };
+    // Fusionner toutes les sections JSON connues (pas les sections dynamiques du template)
+    const allJsonSections = { ...jsonSections };
+    
+    // Stocker toutes les sections dynamiques du template dans un seul champ JSON
+    const templateSectionsData = Object.keys(dynamicJsonSections).length > 0 
+      ? dynamicJsonSections 
+      : null;
+    
+    // Log pour diagnostiquer
+    if (templateId) {
+      console.log('📝 Creating inspection with template:', {
+        templateId,
+        typeEquipement: body.typeEquipement,
+        dynamicSections: Object.keys(dynamicJsonSections),
+        dynamicSectionsCount: Object.keys(dynamicJsonSections).length,
+        observationsPrelables: !!observationsPrelables,
+        antecedentProduit: !!antecedentProduit,
+        // Afficher le contenu de chaque section dynamique
+        dynamicSectionsContent: Object.keys(dynamicJsonSections).map(sectionId => ({
+          sectionId,
+          subsectionsCount: Object.keys(dynamicJsonSections[sectionId]).length,
+          subsectionIds: Object.keys(dynamicJsonSections[sectionId])
+        }))
+      });
+    }
     
     const inspection = await prisma.equipmentDetailedInspection.create({
       data: {
@@ -147,8 +236,10 @@ export async function POST(request: NextRequest) {
         status: baseFields.status || body.status || 'DRAFT',
         // Template utilisé (optionnel)
         ...(templateId && { templateId }),
-        // Toutes les sections JSON (connues + dynamiques du template)
+        // Toutes les sections JSON connues (pour les équipements spécifiques)
         ...allJsonSections,
+        // Sections dynamiques du template (stockées dans un seul champ JSON)
+        ...(templateSectionsData && { templateSections: templateSectionsData }),
         // Inclure les données de mots barrés
         ...(crossedOutWords && { crossedOutWords }),
         ...(crossedOutItems && { crossedOutItems }),

@@ -13,6 +13,7 @@ export default function PublicInspectionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [inspection, setInspection] = useState<any>(null);
+  const [template, setTemplate] = useState<any>(null);
 
   // Fonction pour déterminer si c'est un harnais
   const isHarness = () => {
@@ -97,6 +98,11 @@ export default function PublicInspectionDetailPage() {
         if (response.ok) {
           const data = await response.json();
           setInspection(data);
+          
+          // Si l'inspection utilise un template, le charger
+          if (data.templateId && data.template) {
+            setTemplate(data.template);
+          }
         } else {
           setError('Inspection non trouvée');
         }
@@ -222,6 +228,217 @@ export default function PublicInspectionDetailPage() {
 
   const getCurrentDigitalSignature = (): string | null => {
     return inspection?.verificateurDigitalSignature || null;
+  };
+
+  // Fonction pour rendre les sections basées sur le template
+  const renderTemplateSections = () => {
+    if (!template || !template.structure || !template.structure.sections) {
+      return null;
+    }
+
+    const sections = template.structure.sections as any[];
+    const templateSections = inspection.templateSections || {};
+
+    return sections.map((section: any) => {
+      const sectionData = templateSections[section.id];
+      if (!sectionData) return null;
+
+      const subsectionsWithData = section.subsections.filter((subsection: any) => {
+        return sectionData[subsection.id] !== undefined;
+      });
+
+      if (subsectionsWithData.length === 0) return null;
+
+      return (
+        <div key={section.id} className="border-b border-gray-200 pb-2">
+          {section.usesGridLayout ? (
+            <div className="grid grid-cols-[45%_55%] gap-2">
+              {/* Première colonne : Titre */}
+              <div className="text-xs font-bold text-gray-900">
+                {section.title}
+              </div>
+              
+              {/* Deuxième colonne : Éléments */}
+              <div className="space-y-2">
+                {subsectionsWithData.map((subsection: any) => {
+                  const subsectionData = sectionData[subsection.id];
+                  if (!subsectionData) return null;
+
+                  if (subsection.isSubtitle) {
+                    return (
+                      <div key={subsection.id} className="border-b border-gray-200 pb-2 mb-2">
+                        <div className="text-xs font-medium text-gray-900">
+                          {subsection.label || section.title}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const contentClass = subsection.hasGrayBackground ? 'bg-gray-100 p-1' : '';
+                  const status = subsectionData.status || 'V';
+                  const comment = subsectionData.comment;
+                  const crossedWords = subsectionData.crossedWords || {};
+                  const fieldKey = `${section.id}.${subsection.id}`;
+                  const hasLabel = subsection.label && subsection.label.trim() !== '';
+
+                  const renderText = () => {
+                    if (!subsection.crossableWords || subsection.crossableWords.length === 0) {
+                      return subsection.label;
+                    }
+
+                    if (Object.keys(crossedWords).length > 0) {
+                      const text = subsection.label;
+                      const words = text.split(/(\s+|\/|\(|\)|-|\.)/);
+
+                      return words.map((word: string, index: number) => {
+                        const trimmedWord = word.trim();
+                        const isCrossable = subsection.crossableWords.includes(trimmedWord);
+                        const isCrossed = isCrossable && crossedWords[trimmedWord];
+
+                        if (!isCrossable || /^\s+$/.test(word) || /^[\/\(\)\-\.]+$/.test(word)) {
+                          return <span key={index}>{word}</span>;
+                        }
+
+                        return (
+                          <span
+                            key={index}
+                            className={isCrossed ? 'line-through' : ''}
+                          >
+                            {word}
+                          </span>
+                        );
+                      });
+                    }
+
+                    return renderCrossedOutText(subsection.label, fieldKey);
+                  };
+
+                  return (
+                    <div key={subsection.id} className={contentClass}>
+                      <div className="flex items-center justify-between gap-2">
+                        {hasLabel ? (
+                          <>
+                            {subsection.isListItem ? (
+                              <li className="text-xs text-gray-700 flex-1 list-disc list-inside">
+                                {renderText()}
+                              </li>
+                            ) : (
+                              <span className="text-xs text-gray-700 flex-1">{renderText()}</span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-gray-700 flex-1">&nbsp;</span>
+                        )}
+                        {subsection.showStatusButton !== false && subsection.hasStatus && (
+                          <StatusIndicator status={status} />
+                        )}
+                      </div>
+                      {comment && (
+                        <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                          Commentaire: {comment}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-[45%_55%] gap-2">
+              {/* Première colonne : Titre */}
+              <div className="text-xs font-bold text-gray-900">
+                {section.title}
+              </div>
+              
+              {/* Deuxième colonne : Éléments */}
+              <div className="space-y-2">
+                {subsectionsWithData.map((subsection: any) => {
+                const subsectionData = sectionData[subsection.id];
+                if (!subsectionData) return null;
+
+                if (subsection.isSubtitle) {
+                  return (
+                    <div key={subsection.id} className="border-b border-gray-200 pb-2 mb-2">
+                      <div className="text-xs font-medium text-gray-900">
+                        {subsection.label || section.title}
+                      </div>
+                    </div>
+                  );
+                }
+
+                const contentClass = subsection.hasGrayBackground ? 'bg-gray-100 p-1' : '';
+                const status = subsectionData.status || 'V';
+                const comment = subsectionData.comment;
+                const crossedWords = subsectionData.crossedWords || {};
+                const fieldKey = `${section.id}.${subsection.id}`;
+                const hasLabel = subsection.label && subsection.label.trim() !== '';
+
+                const renderText = () => {
+                  if (!subsection.crossableWords || subsection.crossableWords.length === 0) {
+                    return subsection.label;
+                  }
+
+                  if (Object.keys(crossedWords).length > 0) {
+                    const text = subsection.label;
+                    const words = text.split(/(\s+|\/|\(|\)|-|\.)/);
+
+                    return words.map((word: string, index: number) => {
+                      const trimmedWord = word.trim();
+                      const isCrossable = subsection.crossableWords.includes(trimmedWord);
+                      const isCrossed = isCrossable && crossedWords[trimmedWord];
+
+                      if (!isCrossable || /^\s+$/.test(word) || /^[\/\(\)\-\.]+$/.test(word)) {
+                        return <span key={index}>{word}</span>;
+                      }
+
+                      return (
+                        <span
+                          key={index}
+                          className={isCrossed ? 'line-through' : ''}
+                        >
+                          {word}
+                        </span>
+                      );
+                    });
+                  }
+
+                  return renderCrossedOutText(subsection.label, fieldKey);
+                };
+
+                return (
+                  <div key={subsection.id} className={contentClass}>
+                    <div className="flex items-center justify-between gap-2">
+                      {hasLabel ? (
+                        <>
+                          {subsection.isListItem ? (
+                            <li className="text-xs text-gray-700 flex-1 list-disc list-inside">
+                              {renderText()}
+                            </li>
+                          ) : (
+                            <span className="text-xs text-gray-700 flex-1">{renderText()}</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-gray-700 flex-1">&nbsp;</span>
+                      )}
+                      {subsection.showStatusButton !== false && subsection.hasStatus && (
+                        <StatusIndicator status={status} />
+                      )}
+                    </div>
+                    {comment && (
+                      <div className="text-xs text-blue-600 italic ml-4 mt-1">
+                        Commentaire: {comment}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    });
   };
 
   if (isLoading) {
@@ -508,8 +725,15 @@ export default function PublicInspectionDetailPage() {
                 {/* Points d'inspection */}
                 <div className="space-y-1">
                   
-                  {/* Observations Préalables */}
-                  <div className="border-b border-gray-200 pb-2">
+                  {/* Si l'inspection utilise un template, afficher les sections dynamiques */}
+                  {inspection.templateId && template ? (
+                    <>
+                      {renderTemplateSections()}
+                    </>
+                  ) : (
+                    <>
+                      {/* Observations Préalables */}
+                      <div className="border-b border-gray-200 pb-2">
                     <div className={isHarness() ? "grid grid-cols-[40%_60%] gap-2" : "grid grid-cols-[45%_55%] gap-2"}>
                       <div className="space-y-2">
                         <div className="text-xs font-bold text-gray-900">
@@ -1457,6 +1681,9 @@ export default function PublicInspectionDetailPage() {
                       </div>
                     </>
                   )}
+                    </>
+                  )}
+                </div>
 
                 {/* Signature */}
                 <div className="pt-4 bg-gray-100 p-2 mt-4">
@@ -1496,7 +1723,6 @@ export default function PublicInspectionDetailPage() {
             </div>
           </div>
         </div>
-      </div>
       </div>
     </>
   );

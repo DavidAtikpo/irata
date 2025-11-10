@@ -55,6 +55,7 @@ export async function GET(
                 email: true,
               },
             },
+            template: true,
           },
         });
       } catch (error) {
@@ -78,6 +79,7 @@ export async function GET(
               email: true,
             },
           },
+          template: true,
         },
       });
     }
@@ -95,6 +97,7 @@ export async function GET(
               email: true,
             },
           },
+          template: true,
         },
       });
 

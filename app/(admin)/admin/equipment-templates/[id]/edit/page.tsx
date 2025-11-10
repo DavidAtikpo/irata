@@ -16,12 +16,17 @@ interface Subsection {
   hasStatus: boolean;
   hasComment: boolean;
   crossableWords: string[];
+  isSubtitle?: boolean;
+  hasGrayBackground?: boolean;
+  isListItem?: boolean;
+  showStatusButton?: boolean;
 }
 
 interface Section {
   id: string;
   title: string;
   subsections: Subsection[];
+  useGridLayout?: boolean;
 }
 
 export default function EditTemplatePage() {
@@ -102,6 +107,10 @@ export default function EditTemplatePage() {
       hasStatus: true,
       hasComment: true,
       crossableWords: [],
+      isSubtitle: false,
+      hasGrayBackground: false,
+      isListItem: false,
+      showStatusButton: true,
     };
     
     setSections(sections.map(s => 
@@ -161,10 +170,14 @@ export default function EditTemplatePage() {
       if (response.ok) {
         router.push('/admin/equipment-templates');
       } else {
-        alert('Erreur lors de la mise à jour du template');
+        // Récupérer le message d'erreur de l'API
+        const errorData = await response.json();
+        const errorMessage = errorData.error || 'Erreur lors de la mise à jour du template';
+        alert(errorMessage);
       }
     } catch (error) {
-      alert('Erreur lors de la mise à jour du template');
+      console.error('Erreur lors de la mise à jour du template:', error);
+      alert('Erreur lors de la mise à jour du template. Veuillez réessayer.');
     } finally {
       setIsSubmitting(false);
     }
@@ -241,22 +254,13 @@ export default function EditTemplatePage() {
 
         {/* Structure - Sections */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">
-                Vie de l'Équipement
-              </h2>
-              <p className="text-sm text-gray-600">
-                Modifiez les sections existantes ou ajoutez-en de nouvelles
-              </p>
-            </div>
-            <button
-              onClick={addSection}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Ajouter une section
-            </button>
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-gray-900">
+              Vie de l'Équipement
+            </h2>
+            <p className="text-sm text-gray-600">
+              Modifiez les sections existantes ou ajoutez-en de nouvelles
+            </p>
           </div>
 
           {sections.length === 0 ? (
@@ -264,6 +268,13 @@ export default function EditTemplatePage() {
               <p className="text-gray-500 mb-4">
                 Aucune section. Cliquez sur "Ajouter une section" pour commencer.
               </p>
+              <button
+                onClick={addSection}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Ajouter une section
+              </button>
             </div>
           ) : (
             <div className="space-y-6">
@@ -310,6 +321,25 @@ export default function EditTemplatePage() {
                     </div>
                   </div>
 
+                  {/* Options de section */}
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={section.useGridLayout || false}
+                        onChange={(e) => {
+                          setSections(sections.map(s => 
+                            s.id === section.id ? { ...s, useGridLayout: e.target.checked } : s
+                          ));
+                        }}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">
+                        Utiliser le layout grid 40%/60% (comme dans nouveau/page.tsx)
+                      </span>
+                    </label>
+                  </div>
+
                   {/* Sous-sections */}
                   <div className="space-y-3 mb-4">
                     {section.subsections.map((subsection) => (
@@ -328,34 +358,85 @@ export default function EditTemplatePage() {
                               onChange={(e) => updateSubsection(section.id, subsection.id, 'label', e.target.value)}
                               rows={2}
                               className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                              placeholder="Ex: Usure / Coupure / Brûlure..."
+                              placeholder="Ex: Usure / Coupure / Brûlure... (laisser vide si c'est un sous-titre)"
                             />
+                            <p className="mt-1 text-xs text-gray-500">
+                              Laisser vide si c'est un sous-titre (comme "-Fentes et trous accessoires")
+                            </p>
                           </div>
 
                           {/* Options */}
-                          <div className="flex items-center space-x-6">
-                            <label className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={subsection.hasStatus}
-                                onChange={(e) => updateSubsection(section.id, subsection.id, 'hasStatus', e.target.checked)}
-                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                              />
-                              <span className="ml-2 text-sm text-gray-700">
-                                Status (V / NA / X)
-                              </span>
-                            </label>
-                            <label className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={subsection.hasComment}
-                                onChange={(e) => updateSubsection(section.id, subsection.id, 'hasComment', e.target.checked)}
-                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                              />
-                              <span className="ml-2 text-sm text-gray-700">
-                                Commentaire
-                              </span>
-                            </label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={subsection.hasStatus}
+                                  onChange={(e) => updateSubsection(section.id, subsection.id, 'hasStatus', e.target.checked)}
+                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">
+                                  Status (V / NA / X)
+                                </span>
+                              </label>
+                              <label className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={subsection.showStatusButton !== false}
+                                  onChange={(e) => updateSubsection(section.id, subsection.id, 'showStatusButton', e.target.checked)}
+                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">
+                                  Afficher le bouton Status
+                                </span>
+                              </label>
+                              <label className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={subsection.hasComment}
+                                  onChange={(e) => updateSubsection(section.id, subsection.id, 'hasComment', e.target.checked)}
+                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">
+                                  Commentaire
+                                </span>
+                              </label>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={subsection.isSubtitle || false}
+                                  onChange={(e) => updateSubsection(section.id, subsection.id, 'isSubtitle', e.target.checked)}
+                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">
+                                  Sous-titre (comme "-Fentes et trous accessoires")
+                                </span>
+                              </label>
+                              <label className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={subsection.hasGrayBackground || false}
+                                  onChange={(e) => updateSubsection(section.id, subsection.id, 'hasGrayBackground', e.target.checked)}
+                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">
+                                  Fond gris (bg-gray-100)
+                                </span>
+                              </label>
+                              <label className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={subsection.isListItem || false}
+                                  onChange={(e) => updateSubsection(section.id, subsection.id, 'isListItem', e.target.checked)}
+                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">
+                                  Format liste (&lt;li&gt;)
+                                </span>
+                              </label>
+                            </div>
                           </div>
 
                           {/* Mots à barrer */}
@@ -404,8 +485,28 @@ export default function EditTemplatePage() {
                     <PlusIcon className="h-5 w-5 mr-2" />
                     Ajouter un point d'inspection
                   </button>
+                  
+                  {/* Bouton ajouter section après cette section */}
+                  <button
+                    onClick={addSection}
+                    className="mt-4 w-full inline-flex items-center justify-center px-4 py-2 border-2 border-dashed border-indigo-300 rounded-md text-sm text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50"
+                  >
+                    <PlusIcon className="h-5 w-5 mr-2" />
+                    Ajouter une section après celle-ci
+                  </button>
                 </div>
               ))}
+              
+              {/* Bouton ajouter section à la fin */}
+              <div className="pt-4 border-t border-gray-200">
+                <button
+                  onClick={addSection}
+                  className="w-full inline-flex items-center justify-center px-4 py-2 border-2 border-dashed border-indigo-300 rounded-md text-sm font-medium text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50"
+                >
+                  <PlusIcon className="h-5 w-5 mr-2" />
+                  Ajouter une section
+                </button>
+              </div>
             </div>
           )}
         </div>

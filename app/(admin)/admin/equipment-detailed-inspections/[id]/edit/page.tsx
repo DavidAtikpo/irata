@@ -7,6 +7,8 @@ import { CheckCircleIcon, XMarkIcon, PhotoIcon, QrCodeIcon, DocumentIcon, LinkIc
 import SignaturePad from '../../../../../../components/SignaturePad';
 import CommentInput from '../../../../../../components/CommentInput';
 import { generateSlugFromReference } from '@/lib/slug';
+import TemplateBasedInspectionSections from '@/components/equipment/TemplateBasedInspectionSections';
+import EquipmentIdentification from '@/components/equipment/EquipmentIdentification';
 
 interface InspectionPoint {
   status: 'V' | 'NA' | 'X';
@@ -82,6 +84,10 @@ export default function EditInspectionPage() {
   const [isUpdatingQR, setIsUpdatingQR] = useState(false);
   const [qrCodeImageUrl, setQrCodeImageUrl] = useState<string>('');
   const commentInputRefs = useRef<{[key: string]: HTMLTextAreaElement | null}>({});
+  
+  // États pour gérer les templates
+  const [template, setTemplate] = useState<any>(null);
+  const [templateId, setTemplateId] = useState<string | null>(null);
 
   // Générer l'URL publique basée sur l'ID unique (garantit l'unicité même avec même référence interne)
   const getPublicUrl = () => {
@@ -425,6 +431,27 @@ export default function EditInspectionPage() {
         if (response.ok) {
           const data = await response.json();
           console.log('Données chargées depuis API:', data);
+          console.log('Template ID:', data.templateId);
+          console.log('Template Sections:', data.templateSections);
+          console.log('Template inclus:', data.template);
+
+          // Si l'inspection utilise un template, charger le template
+          if (data.templateId) {
+            setTemplateId(data.templateId);
+            if (data.template) {
+              console.log('Template inclus dans la réponse:', data.template);
+              setTemplate(data.template);
+            } else {
+              // Charger le template séparément
+              console.log('Chargement du template séparément...');
+              const templateResponse = await fetch(`/api/admin/equipment-templates/${data.templateId}`);
+              if (templateResponse.ok) {
+                const templateData = await templateResponse.json();
+                console.log('Template chargé:', templateData);
+                setTemplate(templateData);
+              }
+            }
+          }
 
           // Charger les données des mots barrés
           setCrossedOutWords(data.crossedOutWords || {});
@@ -438,22 +465,27 @@ export default function EditInspectionPage() {
             dateSignature: data.dateSignature || '',
           });
 
-          console.log('inspectionData depuis API:', data.observationsPrelables, data.calotteExterieurInterieur);
-
-          // Créer le nouvel état formData en utilisant directement les données de l'API
-          const newFormData = {
-            // Copier toutes les données de base depuis l'API
-            ...data,
-            fabricant: data.fabricant || '',
-            etat: data.etat || 'INVALID',
-
-            // Structure d'inspectionData - utiliser directement les données de l'API
-            inspectionData: {
+          // Si l'inspection utilise un template, mapper templateSections vers inspectionData
+          let inspectionData: any = {};
+          
+          if (data.templateId && data.templateSections) {
+            // Mapper templateSections vers inspectionData
+            inspectionData = {
+              antecedentProduit: data.antecedentProduit || {
+                miseEnService: data.dateMiseEnService || '',
+                comment: '',
+              },
+              observationsPrelables: data.observationsPrelables || {},
+              // Ajouter toutes les sections dynamiques depuis templateSections
+              ...data.templateSections,
+            };
+            console.log('InspectionData mappé depuis templateSections:', inspectionData);
+          } else {
+            // Ancien système : utiliser la structure fixe
+            inspectionData = {
               antecedentProduit: {
                 miseEnService: data.antecedentProduit?.miseEnService || '',
               },
-              // IMPORTANT : Utiliser directement les objets de l'API pour préserver statuts et commentaires
-              // Avec fallback aux valeurs par défaut si les données n'existent pas
               observationsPrelables: data.observationsPrelables || {
                 referenceInterneMarquee: { status: 'V', comment: '' },
                 lisibiliteNumeroSerie: { status: 'V', comment: '' },
@@ -489,7 +521,17 @@ export default function EditInspectionPage() {
               accessoires: data.accessoires || {
                 fonctionnementEtat: { status: 'NA', comment: '' },
               },
-            },
+            };
+          }
+
+          // Créer le nouvel état formData en utilisant directement les données de l'API
+          const newFormData = {
+            // Copier toutes les données de base depuis l'API
+            ...data,
+            fabricant: data.fabricant || '',
+            etat: data.etat || 'INVALID',
+            templateId: data.templateId || null,
+            inspectionData,
           };
 
           // console.log('Nouveau formData créé:', newFormData);
@@ -1035,14 +1077,144 @@ export default function EditInspectionPage() {
     });
   };
 
+  // Fonction pour filtrer les sections avec seulement des données par défaut
+  // IMPORTANT: Sauvegarder toutes les subsections qui sont présentes dans sectionData
+  // Le filtre hasRealData ne doit être utilisé que pour l'affichage, pas pour la sauvegarde
+  const filterEmptySections = (sectionData: any, section: any): any => {
+    if (!sectionData || Object.keys(sectionData).length === 0) {
+      return null;
+    }
+
+    const filteredSection: any = {};
+    let hasAnyData = false;
+
+    // Sauvegarder toutes les subsections qui sont présentes dans sectionData
+    // Si elles sont initialisées, elles doivent être sauvegardées
+    section.subsections.forEach((subsection: any) => {
+      const subsectionData = sectionData[subsection.id];
+      if (subsectionData !== undefined && subsectionData !== null) {
+        // Sauvegarder la subsection même si elle n'a que le status 'V' par défaut
+        // Le filtre hasRealData sera utilisé dans le view pour déterminer l'affichage
+        filteredSection[subsection.id] = subsectionData;
+        hasAnyData = true;
+      }
+    });
+
+    return hasAnyData ? filteredSection : null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-      // Préparer les données à envoyer, en ne mettant à jour que les champs modifiés
-      const submitData: any = {
+      // Préparer les données à envoyer
+      let submitData: any = {
+        // Données pour les éléments barrés
+        crossedOutWords: crossedOutWords,
+      };
+
+      // Si l'inspection utilise un template, mapper inspectionData vers templateSections
+      if (templateId && template) {
+        // Mode template : préparer les données depuis le template (identique à create/page.tsx)
+        console.log('Mise à jour inspection avec template:', {
+          templateId: template.id,
+          templateName: template.name,
+          typeEquipement: formData.typeEquipement,
+        });
+        
+        // Liste des champs scalaires à inclure (pas les sections JSON de l'ancien système)
+        const scalarFields = [
+          'referenceInterne', 'typeEquipement', 'fabricant', 'numeroSerie',
+          'numeroSerieTop', 'numeroSerieCuissard', 'numeroSerieNonEtiquete',
+          'dateFabrication', 'dateAchat', 'dateMiseEnService', 'dateInspectionDetaillee',
+          'numeroKit', 'taille', 'longueur', 'normesCertificat', 'documentsReference',
+          'consommation', 'attribution', 'commentaire', 'photo', 'qrCode',
+          'pdfUrl', 'normesUrl', 'dateAchatImage', 'verificateurSignature',
+          'verificateurSignaturePdf', 'verificateurDigitalSignature', 'verificateurNom',
+          'dateSignature', 'etat', 'status'
+        ];
+
+        // Sections de l'ancien système à exclure
+        const sectionsToExclude = [
+          'etatSangles', 'pointsAttache', 'etatBouclesReglages', 'etatElementsConfort',
+          'etatConnecteurTorseCuissard', 'bloqueurCroll', 'verificationCorps',
+          'verificationDoigt', 'verificationBague', 'calotteExterieurInterieur',
+          'calotin', 'coiffe', 'tourDeTete', 'systemeReglage', 'jugulaire',
+          'mousseConfort', 'crochetsLampe', 'accessoires'
+        ];
+
+        // Construire le body avec seulement les champs scalaires nécessaires
+        submitData = {
+          // Inclure seulement les champs scalaires
+          ...Object.fromEntries(
+            Object.entries(formData).filter(([key]) => 
+              scalarFields.includes(key) && key !== 'inspectionData' && key !== 'templateId'
+            )
+          ),
+          // Template ID
+          templateId: template.id,
+        };
+
+        // Toujours ajouter antecedentProduit (section 1 automatique)
+        if (formData.inspectionData.antecedentProduit) {
+          submitData.antecedentProduit = formData.inspectionData.antecedentProduit;
+        }
+
+        // Ajouter observationsPrelables si présent
+        if (formData.inspectionData.observationsPrelables) {
+          submitData.observationsPrelables = formData.inspectionData.observationsPrelables;
+        }
+
+        // Filtrer et ajouter seulement les sections du template qui ont des données réelles
+        template.structure.sections.forEach((section: any) => {
+          const sectionData = (formData.inspectionData as any)[section.id];
+          if (sectionData) {
+            const filteredSection = filterEmptySections(sectionData, section);
+            if (filteredSection) {
+              submitData[section.id] = filteredSection;
+              console.log(`Section ${section.id} (${section.title}):`, {
+                totalSubsectionsInTemplate: section.subsections.length,
+                subsectionsInFormData: Object.keys(sectionData).length,
+                subsectionsAfterFilter: Object.keys(filteredSection).length,
+                formDataKeys: Object.keys(sectionData),
+                filteredKeys: Object.keys(filteredSection),
+                missingAfterFilter: section.subsections
+                  .filter((sub: any) => sectionData[sub.id] !== undefined && !filteredSection[sub.id])
+                  .map((sub: any) => ({ id: sub.id, label: sub.label }))
+              });
+            } else {
+              console.log(`Section ${section.id} (${section.title}): filteredSection is null`);
+            }
+          } else {
+            console.log(`Section ${section.id} (${section.title}): sectionData is undefined`);
+          }
+        });
+
+        // S'assurer qu'aucune section de l'ancien système n'est incluse
+        sectionsToExclude.forEach(section => {
+          if (submitData[section]) {
+            console.log(`Removing old system section '${section}' from submitData`);
+            delete submitData[section];
+          }
+        });
+
+        console.log('SubmitData to send (after filtering):', {
+          templateId: submitData.templateId,
+          typeEquipement: submitData.typeEquipement,
+          sectionsInBody: Object.keys(submitData).filter(key => 
+            !scalarFields.includes(key) && 
+            key !== 'templateId' && 
+            key !== 'antecedentProduit' && 
+            key !== 'observationsPrelables' &&
+            key !== 'crossedOutWords'
+          ),
+          hasOldSystemSections: sectionsToExclude.some(section => submitData[section])
+        });
+      } else {
+        // Ancien système : utiliser la structure fixe
+        submitData = {
           ...formData,
           antecedentProduit: formData.inspectionData.antecedentProduit,
           observationsPrelables: formData.inspectionData.observationsPrelables,
@@ -1055,31 +1227,16 @@ export default function EditInspectionPage() {
           mousseConfort: formData.inspectionData.mousseConfort,
           crochetsLampe: formData.inspectionData.crochetsLampe,
           accessoires: formData.inspectionData.accessoires,
-          // Données pour les éléments barrés
-          crossedOutWords: crossedOutWords,
         };
+      }
 
       // Gestion séparée des certificats PDF et signatures digitales
-      const certificateChanged = formData.verificateurSignaturePdf !== originalData.certificatePdf;
-      const digitalSignatureChanged = formData.verificateurDigitalSignature !== originalData.digitalSignature;
-      const dateChanged = formData.dateSignature !== originalData.dateSignature;
-
-      // Ajouter les champs seulement s'ils ont changé
-      if (certificateChanged) {
-        submitData.verificateurSignaturePdf = formData.verificateurSignaturePdf;
-      }
-      if (digitalSignatureChanged) {
-        submitData.verificateurDigitalSignature = formData.verificateurDigitalSignature;
-      }
-      if (dateChanged) {
-        submitData.dateSignature = formData.dateSignature;
-      }
+      // Toujours inclure ces champs s'ils existent (même s'ils n'ont pas changé)
+      // car ils font partie des champs scalaires déjà inclus dans submitData
+      // Les champs scalaires sont déjà inclus dans submitData via Object.fromEntries
+      // donc pas besoin de les ajouter séparément ici
 
       console.log('=== DEBUG SAUVEGARDE ===');
-      console.log('originalData:', originalData);
-      console.log('certificateChanged:', certificateChanged);
-      console.log('digitalSignatureChanged:', digitalSignatureChanged);
-      console.log('dateChanged:', dateChanged);
       console.log('Envoi verificateurSignaturePdf:', submitData.verificateurSignaturePdf);
       console.log('Envoi verificateurDigitalSignature:', submitData.verificateurDigitalSignature);
       console.log('Envoi dateSignature:', submitData.dateSignature);
@@ -1760,9 +1917,20 @@ export default function EditInspectionPage() {
                     </h2>
 
                     {/* Points d'inspection */}
-                    <div className="space-y-2">
-                      {/* 1. ANTECEDENT DU PRODUIT */}
-                      <div className="border-b border-gray-200 pb-2">
+                    {templateId && template ? (
+                      // Utiliser TemplateBasedInspectionSections pour les inspections avec template
+                      <TemplateBasedInspectionSections
+                        template={template}
+                        formData={formData}
+                        setFormData={setFormData}
+                        onSignatureUpload={handleSignatureUpload}
+                        isUploadingSignature={isUploading}
+                      />
+                    ) : (
+                      // Ancien système : rendu fixe
+                      <div className="space-y-2">
+                        {/* 1. ANTECEDENT DU PRODUIT */}
+                        <div className="border-b border-gray-200 pb-2">
                         <h3 className="text-xs font-medium text-gray-900 mb-1">
                           1. ANTECEDENT DU PRODUIT:
                         </h3>
@@ -2036,133 +2204,136 @@ export default function EditInspectionPage() {
                           </div>
                         </div>
                       </div>
+                      </div>
+                    )}
 
-                      {/* Signature */}
-                      <div className="border-b border-gray-200 pb-2">
-                        <h3 className="text-xs font-medium text-gray-900 mb-2">
-                          Signature
-                        </h3>
-                        <div className="space-y-4">
-                          <div>
-                            <label htmlFor="verificateurNom" className="block text-sm font-medium text-gray-700">
-                              Nom du vérificateur
-                            </label>
-                            <input
-                              type="text"
-                              id="verificateurNom"
-                              name="verificateurNom"
-                              value={formData.verificateurNom}
-                              onChange={handleChange}
-                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            />
-                          </div>
-                          <div className="space-y-4">
-                            {/* Zone pour le certificat/document chargé */}
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Certificat de contrôle (PDF)
-                              </label>
-                              <div className="flex space-x-2">
-                                <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center relative">
-                                  {isUploadingCertificate ? (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 rounded-lg">
-                                      <div className="flex flex-col items-center">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
-                                        <p className="text-xs text-gray-600">Chargement du certificat...</p>
-                                      </div>
-                                    </div>
-                                  ) : null}
-                                  {getCurrentCertificate() ? (
-                                    <div className="text-green-600 text-sm">
-                                      <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
-                                      <a
-                                        href={getCurrentCertificate()}
-                                        target="_blank"
-                                        className="text-blue-600 hover:text-blue-800 underline text-xs"
-                                      >
-                                        <div>Certificat de contrôle</div>
-                                      </a>
-                                    </div>
-                                  ) : (
-                                    <div className="text-gray-400 text-sm">
-                                      <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
-                                      <div>Aucun certificat chargé</div>
-                                    </div>
-                                  )}
+                  {/* Signature - Afficher seulement si pas de template (TemplateBasedInspectionSections inclut déjà la signature) */}
+                  {!templateId && (
+                  <div className="border-b border-gray-200 pb-2">
+                    <h3 className="text-xs font-medium text-gray-900 mb-2">
+                      Signature
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="verificateurNom" className="block text-sm font-medium text-gray-700">
+                          Nom du vérificateur
+                        </label>
+                        <input
+                          type="text"
+                          id="verificateurNom"
+                          name="verificateurNom"
+                          value={formData.verificateurNom}
+                          onChange={handleChange}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        {/* Zone pour le certificat/document chargé */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Certificat de contrôle (PDF)
+                          </label>
+                          <div className="flex space-x-2">
+                            <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center relative">
+                              {isUploadingCertificate ? (
+                                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 rounded-lg">
+                                  <div className="flex flex-col items-center">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
+                                    <p className="text-xs text-gray-600">Chargement du certificat...</p>
+                                  </div>
                                 </div>
-                                <div className="flex items-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => signatureInputRef.current?.click()}
-                                    disabled={isUploadingCertificate}
-                                    className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
-                                      isUploadingCertificate
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        : 'text-gray-700 bg-white hover:bg-gray-50'
-                                    }`}
-                                    title="Uploader un certificat PDF"
+                              ) : null}
+                              {getCurrentCertificate() ? (
+                                <div className="text-green-600 text-sm">
+                                  <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                                  <a
+                                    href={getCurrentCertificate()}
+                                    target="_blank"
+                                    className="text-blue-600 hover:text-blue-800 underline text-xs"
                                   >
-                                    {isUploadingCertificate ? (
-                                      <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
-                                        <span className="text-xs">Chargement...</span>
-                                      </>
-                                    ) : (
-                                      <DocumentIcon className="h-4 w-4" />
-                                    )}
-                                  </button>
+                                    <div>Certificat de contrôle</div>
+                                  </a>
                                 </div>
-                              </div>
+                              ) : (
+                                <div className="text-gray-400 text-sm">
+                                  <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                                  <div>Aucun certificat chargé</div>
+                                </div>
+                              )}
                             </div>
-
-                            {/* Zone pour la signature digitale */}
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Signature digitale
-                              </label>
-                              <div className="flex space-x-2">
-                                <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                                  {getCurrentDigitalSignature() ? (
-                                    <div className="text-green-600 text-sm">
-                                      <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
-                                      <div className="text-gray-600">
-                                        <img src={getCurrentDigitalSignature()} alt="Signature digitale" className="h-16 mx-auto object-contain" />
-                                        <div className="text-xs mt-2">Signature digitale enregistrée</div>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="text-gray-400 text-sm">
-                                      <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
-                                      <div>Aucune signature digitale</div>
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex items-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => setShowSignatureModal(true)}
-                                    className="inline-flex items-center px-3 py-2 border border-indigo-300 rounded-md text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
-                                    title="Signature digitale"
-                                  >
-                                    ✍️ Signer
-                                  </button>
-                                </div>
-                              </div>
+                            <div className="flex items-center">
+                              <button
+                                type="button"
+                                onClick={() => signatureInputRef.current?.click()}
+                                disabled={isUploadingCertificate}
+                                className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${
+                                  isUploadingCertificate
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'text-gray-700 bg-white hover:bg-gray-50'
+                                }`}
+                                title="Uploader un certificat PDF"
+                              >
+                                {isUploadingCertificate ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                                    <span className="text-xs">Chargement...</span>
+                                  </>
+                                ) : (
+                                  <DocumentIcon className="h-4 w-4" />
+                                )}
+                              </button>
                             </div>
                           </div>
-                          <input
-                            ref={signatureInputRef}
-                            type="file"
-                            accept=".pdf"
-                            onChange={handleSignatureUpload}
-                            className="hidden"
-                          />
+                        </div>
+
+                        {/* Zone pour la signature digitale */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Signature digitale
+                          </label>
+                          <div className="flex space-x-2">
+                            <div className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                              {getCurrentDigitalSignature() ? (
+                                <div className="text-green-600 text-sm">
+                                  <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                                  <div className="text-gray-600">
+                                    <img src={getCurrentDigitalSignature()} alt="Signature digitale" className="h-16 mx-auto object-contain" />
+                                    <div className="text-xs mt-2">Signature digitale enregistrée</div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-gray-400 text-sm">
+                                  <DocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                                  <div>Aucune signature digitale</div>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center">
+                              <button
+                                type="button"
+                                onClick={() => setShowSignatureModal(true)}
+                                className="inline-flex items-center px-3 py-2 border border-indigo-300 rounded-md text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
+                                title="Signature digitale"
+                              >
+                                ✍️ Signer
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
+                      <input
+                        ref={signatureInputRef}
+                        type="file"
+                        accept=".pdf"
+                        onChange={handleSignatureUpload}
+                        className="hidden"
+                      />
                     </div>
                   </div>
+                  )}
                 </div>
               </div>
+            </div>
 
               {/* Boutons d'action */}
               <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
