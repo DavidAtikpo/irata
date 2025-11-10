@@ -345,45 +345,55 @@ export default function InspectionsListPage() {
                 </button>
                 
                 {/* Anciennes pages (pour comparaison) */}
-                <button
+                {/* <button
                   onClick={() => router.push('/admin/equipment-detailed-inspections/harnais')}
                   className="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded text-[10px] font-medium text-white bg-green-600 hover:bg-green-700"
                 >
                   <PlusIcon className="h-3 w-3 mr-1" />
                   Harnais (ancienne)
-                </button>
-                <button
+                </button> */}
+                {/* <button
                   onClick={() => router.push('/admin/equipment-detailed-inspections/mousqueton')}
                   className="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded text-[10px] font-medium text-white bg-blue-600 hover:bg-blue-700"
                 >
                   <PlusIcon className="h-3 w-3 mr-1" />
                   Mousqueton (ancienne)
-                </button>
-                <button
+                </button> */}
+                {/* <button
                   onClick={() => router.push('/admin/equipment-detailed-inspections/nouveau')}
                   className="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded text-[10px] font-medium text-white bg-indigo-600 hover:bg-indigo-700"
                 >
                   <PlusIcon className="h-3 w-3 mr-1" />
                   Casque (ancienne)
-                </button>
+                </button> */}
               </div>
             </div>
             
             {/* Onglets de filtrage */}
             <div className="flex flex-wrap gap-1">
-              {equipmentTypes.map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setSelectedTab(type)}
-                  className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors ${
-                    selectedTab === type
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
+              {equipmentTypes.map((type) => {
+                // Afficher la première lettre de chaque mot pour les types d'équipement
+                const displayText = type === 'Tous' 
+                  ? type 
+                  : type
+                      .split(/\s+/) // Diviser en mots
+                      .map(word => word.charAt(0).toUpperCase()) // Prendre la première lettre de chaque mot
+                      .join(''); // Joindre les lettres
+                return (
+                  <button
+                    key={type}
+                    onClick={() => setSelectedTab(type)}
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors ${
+                      selectedTab === type
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                    title={type} // Afficher le nom complet au survol
+                  >
+                    {displayText}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
