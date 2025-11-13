@@ -90,6 +90,41 @@ export default function PublicInspectionDetailPage() {
     );
   };
 
+  // Fonction pour rendre les normes cliquables avec liens PDF
+  const renderClickableNormes = (text: string) => {
+    // Utiliser normesUrl si disponible, sinon pdfUrl comme fallback
+    const normesUrlToUse = inspection?.normesUrl || inspection?.pdfUrl;
+    if (!text || !normesUrlToUse) return text;
+    
+    let result = text;
+    
+    // Pattern pour les normes EN (format européen)
+    const enPattern = /(EN\s*\d+(?::\d{4})?(?:\s*\+\s*[A-Z]\d+(?::\d{4})?)?)/gi;
+    result = result.replace(enPattern, (match) => {
+      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(normesUrlToUse)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF des normes">${match}</a>`;
+    });
+    
+    // Pattern pour PPE-R (avec variations de tirets et slashes)
+    const ppePattern = /(PPE[^\w\s]*R[^\w\s]*\/?\s*\d+[\.\-\/]?\d*[\.\-\/]?\d*[\.\-\/]?[A-Z]?\d*[\.\-\/]?[Vv]?\d*)/gi;
+    result = result.replace(ppePattern, (match) => {
+      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(normesUrlToUse)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF des normes">${match}</a>`;
+    });
+    
+    // Pattern pour UIAA (format UIAA 130:2021)
+    const uiaaPattern = /(UIAA\s+\d+(?::\d{4})?)/gi;
+    result = result.replace(uiaaPattern, (match) => {
+      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(normesUrlToUse)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF des normes">${match}</a>`;
+    });
+    
+    // Pattern pour European Coordination sheet
+    const europeanPattern = /(European\s+Coordination\s+sheet)/gi;
+    result = result.replace(europeanPattern, (match) => {
+      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(normesUrlToUse)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF des normes">${match}</a>`;
+    });
+    
+    return result;
+  };
+
   // Charger les données de l'inspection
   useEffect(() => {
     const loadInspection = async () => {
@@ -659,14 +694,7 @@ export default function PublicInspectionDetailPage() {
                     <span 
                       className="text-sm text-gray-900 font-bold"
                       dangerouslySetInnerHTML={{ 
-                        __html: inspection.normesCertificat 
-                          ? (inspection.normesUrl || inspection.pdfUrl
-                              ? inspection.normesCertificat.replace(/(EN\s*\d+(?::\d{4})?(?:\s*\+\s*[A-Z]\d+(?::\d{4})?)?)/gi, (match: string) => {
-                                  const url = inspection.normesUrl || inspection.pdfUrl;
-                                  return `<a href="/api/inspection-pdf?url=${encodeURIComponent(url)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF des normes">${match}</a>`;
-                                })
-                              : inspection.normesCertificat)
-                          : '/' 
+                        __html: inspection.normesCertificat ? renderClickableNormes(inspection.normesCertificat) : '/' 
                       }}
                     />
                   </div>

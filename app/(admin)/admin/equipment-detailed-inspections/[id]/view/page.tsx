@@ -437,12 +437,33 @@ export default function ViewInspectionPage() {
     const normesUrlToUse = inspection.normesUrl || inspection.pdfUrl;
     if (!text || !normesUrlToUse) return text;
     
-    // Remplacer les normes par des liens cliquables vers le PDF
-    const normePattern = /(EN\s*\d+(?::\d{4})?(?:\s*\+\s*[A-Z]\d+(?::\d{4})?)?)/gi;
+    let result = text;
     
-    return text.replace(normePattern, (match) => {
+    // Pattern pour les normes EN (format européen)
+    const enPattern = /(EN\s*\d+(?::\d{4})?(?:\s*\+\s*[A-Z]\d+(?::\d{4})?)?)/gi;
+    result = result.replace(enPattern, (match) => {
       return `<a href="/api/inspection-pdf?url=${encodeURIComponent(normesUrlToUse)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF des normes">${match}</a>`;
     });
+    
+    // Pattern pour PPE-R (avec variations de tirets et slashes)
+    const ppePattern = /(PPE[^\w\s]*R[^\w\s]*\/?\s*\d+[\.\-\/]?\d*[\.\-\/]?\d*[\.\-\/]?[A-Z]?\d*[\.\-\/]?[Vv]?\d*)/gi;
+    result = result.replace(ppePattern, (match) => {
+      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(normesUrlToUse)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF des normes">${match}</a>`;
+    });
+    
+    // Pattern pour UIAA (format UIAA 130:2021)
+    const uiaaPattern = /(UIAA\s+\d+(?::\d{4})?)/gi;
+    result = result.replace(uiaaPattern, (match) => {
+      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(normesUrlToUse)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF des normes">${match}</a>`;
+    });
+    
+    // Pattern pour European Coordination sheet
+    const europeanPattern = /(European\s+Coordination\s+sheet)/gi;
+    result = result.replace(europeanPattern, (match) => {
+      return `<a href="/api/inspection-pdf?url=${encodeURIComponent(normesUrlToUse)}" target="_blank" class="text-blue-600 hover:text-blue-800 underline cursor-pointer" title="Télécharger le PDF des normes">${match}</a>`;
+    });
+    
+    return result;
   };
 
   // Fonction pour rendre les documents de référence cliquables
