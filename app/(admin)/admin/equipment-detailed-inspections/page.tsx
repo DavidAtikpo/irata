@@ -7,7 +7,8 @@ import {
   PlusIcon,
   DocumentIcon,
   PrinterIcon,
-  QrCodeIcon
+  QrCodeIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { generateSlugFromReference } from '@/lib/slug';
 
@@ -41,6 +42,7 @@ export default function InspectionsListPage() {
   const [error, setError] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<string>('Tous');
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Extraire les types d'équipements uniques depuis les inspections
   const equipmentTypes = ['Tous', ...Array.from(new Set(inspections.map(inspection => inspection.typeEquipement).filter(Boolean)))];
@@ -253,8 +255,21 @@ export default function InspectionsListPage() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
+    
+    // Si la date est déjà au format JJ/MM/AAAA, la retourner telle quelle
+    if (dateString.includes('/') && dateString.split('/').length === 3) {
+      return dateString;
+    }
+    
+    // Sinon, convertir au format français
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR');
+    if (isNaN(date.getTime())) return '-';
+    
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}/${month}/${year}`;
   };
 
   const isInspectionUpToDate = (dateInspectionDetaillee: string) => {
@@ -309,10 +324,41 @@ export default function InspectionsListPage() {
     return null;
   };
 
-  // Filtrer les inspections par type d'équipement
-  const filteredInspections = selectedTab === 'Tous' 
-    ? inspections 
-    : inspections.filter(inspection => inspection.typeEquipement === selectedTab);
+  // Fonction pour vérifier si une inspection est en quarantaine (état invalide)
+  const isInQuarantine = (inspection: Inspection) => {
+    return !(inspection.etat === 'OK' && isInspectionUpToDate(inspection.dateInspectionDetaillee));
+  };
+
+  // Calculer les statistiques par type d'équipement
+  const getStatisticsByType = (type: string) => {
+    const typeInspections = type === 'Tous' 
+      ? inspections 
+      : inspections.filter(inspection => inspection.typeEquipement === type);
+    
+    const total = typeInspections.length;
+    const quarantine = typeInspections.filter(isInQuarantine).length;
+    
+    return { total, quarantine };
+  };
+
+  // Filtrer les inspections par type d'équipement et recherche
+  const filteredInspections = (() => {
+    let filtered = selectedTab === 'Tous' 
+      ? inspections 
+      : inspections.filter(inspection => inspection.typeEquipement === selectedTab);
+    
+    // Appliquer le filtre de recherche si présent
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(inspection => {
+        const referenceMatch = inspection.referenceInterne?.toLowerCase().includes(query);
+        const typeMatch = inspection.typeEquipement?.toLowerCase().includes(query);
+        return referenceMatch || typeMatch;
+      });
+    }
+    
+    return filtered;
+  })();
 
   if (isLoading) {
     return (
@@ -369,9 +415,69 @@ export default function InspectionsListPage() {
               </div>
             </div>
             
+            {/* Barre de recherche */}
+            <div className="mb-2">
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher par référence interne ou nom..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-2 py-1.5 text-[10px] border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Tableau de statistiques */}
+            <div className="mb-2 overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-2 py-1 text-left text-[9px] font-medium text-gray-700 uppercase">
+                      Type d'équipement
+                    </th>
+                    <th className="px-2 py-1 text-center text-[9px] font-medium text-gray-700 uppercase">
+                      Nombre total
+                    </th>
+                    <th className="px-2 py-1 text-center text-[9px] font-medium text-gray-700 uppercase">
+                      Quarantaine
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {equipmentTypes.map((type) => {
+                    const stats = getStatisticsByType(type);
+                    const displayText = type === 'Tous' 
+                      ? type 
+                      : type
+                          .split(/\s+/)
+                          .map(word => word.charAt(0).toUpperCase())
+                          .join('');
+                    return (
+                      <tr key={type} className="hover:bg-gray-50">
+                        <td className="px-2 py-1 text-[9px] text-gray-900">
+                          {type === 'Tous' ? type : type}
+                        </td>
+                        <td className="px-2 py-1 text-center text-[9px] font-medium text-gray-900">
+                          {stats.total}
+                        </td>
+                        <td className="px-2 py-1 text-center text-[9px] font-medium">
+                          <span className={stats.quarantine > 0 ? 'text-red-600' : 'text-green-600'}>
+                            {stats.quarantine}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
             {/* Onglets de filtrage */}
             <div className="flex flex-wrap gap-1">
               {equipmentTypes.map((type) => {
+                const stats = getStatisticsByType(type);
                 // Afficher la première lettre de chaque mot pour les types d'équipement
                 const displayText = type === 'Tous' 
                   ? type 
@@ -388,9 +494,9 @@ export default function InspectionsListPage() {
                         ? 'bg-indigo-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
-                    title={type} // Afficher le nom complet au survol
+                    title={`${type} - Total: ${stats.total}, Quarantaine: ${stats.quarantine}`}
                   >
-                    {displayText}
+                    {displayText} ({stats.total})
                   </button>
                 );
               })}
