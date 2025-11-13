@@ -438,33 +438,21 @@ export default function InspectionsListPage() {
                       Type d'équipement
                     </th>
                     <th className="px-2 py-1 text-center text-[9px] font-medium text-gray-700 uppercase">
-                      Nombre total
-                    </th>
-                    <th className="px-2 py-1 text-center text-[9px] font-medium text-gray-700 uppercase">
-                      Quarantaine
+                      Nombre / Quarantaine
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {equipmentTypes.map((type) => {
                     const stats = getStatisticsByType(type);
-                    const displayText = type === 'Tous' 
-                      ? type 
-                      : type
-                          .split(/\s+/)
-                          .map(word => word.charAt(0).toUpperCase())
-                          .join('');
                     return (
                       <tr key={type} className="hover:bg-gray-50">
                         <td className="px-2 py-1 text-[9px] text-gray-900">
                           {type === 'Tous' ? type : type}
                         </td>
                         <td className="px-2 py-1 text-center text-[9px] font-medium text-gray-900">
-                          {stats.total}
-                        </td>
-                        <td className="px-2 py-1 text-center text-[9px] font-medium">
-                          <span className={stats.quarantine > 0 ? 'text-red-600' : 'text-green-600'}>
-                            {stats.quarantine}
+                          {stats.total} <span className={stats.quarantine > 0 ? 'text-red-600' : 'text-green-600'}>
+                            ({stats.quarantine})
                           </span>
                         </td>
                       </tr>
