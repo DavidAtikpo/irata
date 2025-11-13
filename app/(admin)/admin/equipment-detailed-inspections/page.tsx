@@ -10,7 +10,9 @@ import {
   QrCodeIcon,
   MagnifyingGlassIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { generateSlugFromReference } from '@/lib/slug';
 
@@ -46,6 +48,8 @@ export default function InspectionsListPage() {
   const [selectedTab, setSelectedTab] = useState<string>('Tous');
   const [searchQuery, setSearchQuery] = useState('');
   const [showStatistics, setShowStatistics] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Nombre d'équipements par page
   
   // Extraire les types d'équipements uniques depuis les inspections
   const equipmentTypes = ['Tous', ...Array.from(new Set(inspections.map(inspection => inspection.typeEquipement).filter(Boolean)))];
@@ -363,6 +367,17 @@ export default function InspectionsListPage() {
     return filtered;
   })();
 
+  // Calculer la pagination
+  const totalPages = Math.ceil(filteredInspections.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedInspections = filteredInspections.slice(startIndex, endIndex);
+
+  // Réinitialiser à la page 1 quand on change de filtre ou de recherche
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedTab, searchQuery]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -436,7 +451,7 @@ export default function InspectionsListPage() {
             <div className="mb-2">
               <button
                 onClick={() => setShowStatistics(!showStatistics)}
-                className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-wite-700 bg-blue-100 hover:bg-blue-200 rounded transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-white bg-blue-800 hover:bg-blue-200 rounded transition-colors"
               >
                 {showStatistics ? (
                   <>
@@ -587,7 +602,7 @@ export default function InspectionsListPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredInspections.map((inspection) => (
+                    {paginatedInspections.map((inspection) => (
                       <tr key={inspection.id} className="hover:bg-gray-50">
                         <td className="px-1.5 py-1 whitespace-nowrap">
                           <div className="flex-shrink-0 h-6 w-6">
@@ -710,6 +725,66 @@ export default function InspectionsListPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Contrôles de pagination */}
+            {filteredInspections.length > itemsPerPage && (
+              <div className="mt-3 flex items-center justify-between border-t border-gray-200 pt-2">
+                <div className="text-[9px] text-gray-700">
+                  Affichage de {startIndex + 1} à {Math.min(endIndex, filteredInspections.length)} sur {filteredInspections.length} équipements
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-2 py-1 text-[9px] font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                  >
+                    <ChevronLeftIcon className="h-3 w-3" />
+                    Précédent
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Afficher seulement les pages proches de la page actuelle
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-2 py-1 text-[9px] font-medium rounded ${
+                              currentPage === page
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      } else if (page === currentPage - 2 || page === currentPage + 2) {
+                        return (
+                          <span key={page} className="px-1 text-[9px] text-gray-500">
+                            ...
+                          </span>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-2 py-1 text-[9px] font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                  >
+                    Suivant
+                    <ChevronRightIcon className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
             )}
           </div>
