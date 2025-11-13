@@ -8,7 +8,9 @@ import {
   DocumentIcon,
   PrinterIcon,
   QrCodeIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import { generateSlugFromReference } from '@/lib/slug';
 
@@ -43,6 +45,7 @@ export default function InspectionsListPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<string>('Tous');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showStatistics, setShowStatistics] = useState(false);
   
   // Extraire les types d'équipements uniques depuis les inspections
   const equipmentTypes = ['Tous', ...Array.from(new Set(inspections.map(inspection => inspection.typeEquipement).filter(Boolean)))];
@@ -429,38 +432,72 @@ export default function InspectionsListPage() {
               </div>
             </div>
 
-            {/* Tableau de statistiques */}
-            <div className="mb-2 overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-2 py-1 text-left text-[9px] font-medium text-gray-700 uppercase">
-                      Type d'équipement
-                    </th>
-                    <th className="px-2 py-1 text-center text-[9px] font-medium text-gray-700 uppercase">
-                      Nombre / Quarantaine
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {equipmentTypes.map((type) => {
-                    const stats = getStatisticsByType(type);
-                    return (
-                      <tr key={type} className="hover:bg-gray-50">
-                        <td className="px-2 py-1 text-[9px] text-gray-900">
-                          {type === 'Tous' ? type : type}
-                        </td>
-                        <td className="px-2 py-1 text-center text-[9px] font-medium text-gray-900">
-                          {stats.total} <span className={stats.quarantine > 0 ? 'text-red-600' : 'text-green-600'}>
-                            ({stats.quarantine})
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            {/* Bouton pour afficher/masquer le tableau de statistiques */}
+            <div className="mb-2">
+              <button
+                onClick={() => setShowStatistics(!showStatistics)}
+                className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-wite-700 bg-blue-100 hover:bg-blue-200 rounded transition-colors"
+              >
+                {showStatistics ? (
+                  <>
+                    <ChevronUpIcon className="h-3 w-3" />
+                    Masquer les statistiques
+                  </>
+                ) : (
+                  <>
+                    <ChevronDownIcon className="h-3 w-3" />
+                    Nombre et quarantaine
+                  </>
+                )}
+              </button>
             </div>
+
+            {/* Tableau de statistiques */}
+            {showStatistics && (
+              <div className="mb-2 overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-2 py-1 text-left text-[9px] font-medium text-gray-700 uppercase">
+                        Type d'équipement
+                      </th>
+                      <th className="px-2 py-1 text-center text-[9px] font-medium text-gray-700 uppercase">
+                        Nombre total
+                      </th>
+                      <th className="px-2 py-1 text-center text-[9px] font-medium text-gray-700 uppercase">
+                        Quarantaine
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {equipmentTypes.map((type) => {
+                      const stats = getStatisticsByType(type);
+                      const displayText = type === 'Tous' 
+                        ? type 
+                        : type
+                            .split(/\s+/)
+                            .map(word => word.charAt(0).toUpperCase())
+                            .join('');
+                      return (
+                        <tr key={type} className="hover:bg-gray-50">
+                          <td className="px-2 py-1 text-[9px] text-gray-900">
+                            {type === 'Tous' ? type : type}
+                          </td>
+                          <td className="px-2 py-1 text-center text-[9px] font-medium text-gray-900">
+                            {stats.total}
+                          </td>
+                          <td className="px-2 py-1 text-center text-[9px] font-medium">
+                            <span className={stats.quarantine > 0 ? 'text-red-600' : 'text-green-600'}>
+                              {stats.quarantine}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {/* Onglets de filtrage */}
             <div className="flex flex-wrap gap-1">
