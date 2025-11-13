@@ -76,6 +76,11 @@ export default function InspectionsListPage() {
     }
   }, [status]);
 
+  // Réinitialiser à la page 1 quand on change de filtre ou de recherche
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedTab, searchQuery]);
+
   if (status === 'unauthenticated') {
     router.push('/login');
     return null;
@@ -372,11 +377,6 @@ export default function InspectionsListPage() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedInspections = filteredInspections.slice(startIndex, endIndex);
-
-  // Réinitialiser à la page 1 quand on change de filtre ou de recherche
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedTab, searchQuery]);
 
   if (isLoading) {
     return (
