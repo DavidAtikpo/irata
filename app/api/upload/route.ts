@@ -243,7 +243,45 @@ export async function POST(request: NextRequest) {
             const trimmed = norme.trim();
             if (!trimmed) return;
             
-            // Extraire le numéro de base (ex: "EN 361" de "EN 361: 2002")
+            // Gérer les formats spéciaux (PPE-R, UIAA, European Coordination sheet)
+            // Pattern très permissif pour détecter PPE-R avec différents types de tirets et caractères spéciaux
+            if (trimmed.match(/PPE[^\w\s]*R/i)) {
+              // Format PPE-R/11.114_V3 - normaliser tous les tirets et caractères spéciaux vers un tiret standard
+              let normalized = trimmed
+                .replace(/\s+/g, '') // Supprimer tous les espaces
+                .replace(/PPE[^\w\s]*R/gi, 'PPE-R') // Normaliser vers PPE-R (remplacer tout caractère non-alphanumérique entre PPE et R)
+                .replace(/[\/\u2215]/g, '/') // Normaliser les slashes
+                .replace(/[\u2011\u2012\u2013\u2014]/g, '-'); // Normaliser tous les tirets Unicode vers un tiret standard
+              // Utiliser la version complète comme clé pour préserver les différentes versions
+              const key = normalized;
+              if (!normesMap.has(key)) {
+                normesMap.set(key, normalized);
+              }
+              return;
+            }
+            
+            if (trimmed.match(/UIAA/i)) {
+              // Format UIAA 130:2021
+              let normalized = trimmed
+                .replace(/\s*:\s*/g, ':')
+                .replace(/\s+/g, ' ')
+                .trim();
+              const baseKey = normalized.match(/UIAA\s+\d+/i)?.[0] || 'UIAA';
+              if (!normesMap.has(baseKey)) {
+                normesMap.set(baseKey, normalized);
+              }
+              return;
+            }
+            
+            if (trimmed.match(/European\s+Coordination\s+sheet/i)) {
+              // Format European Coordination sheet
+              if (!normesMap.has('European Coordination sheet')) {
+                normesMap.set('European Coordination sheet', 'European Coordination sheet');
+              }
+              return;
+            }
+            
+            // Format standard EN/ISO/CE/NF
             const baseMatch = trimmed.match(/^(EN|ISO|CE|NF)\s*(\d+)/i);
             if (!baseMatch) return;
             
@@ -275,8 +313,8 @@ export async function POST(request: NextRequest) {
             }
           });
           
-          // Retourner les normes dédupliquées
-          return Array.from(normesMap.values()).join(' ');
+          // Retourner les normes dédupliquées, séparées par des virgules pour les formats mixtes
+          return Array.from(normesMap.values()).join(', ');
         };
         
         // Rechercher les normes avec plusieurs approches
@@ -293,8 +331,19 @@ export async function POST(request: NextRequest) {
         const pattern4 = /(?:EN|ISO|CE|NF)\s*\d+:\d{4}/gi;
         // Pattern 5: EN 397 (juste le numéro)
         const pattern5 = /(?:EN|ISO|CE|NF)\s*\d+/gi;
+        // Pattern 6: PPE-R/11.114_V3 ou PPE-R/11.114 ou similaire
+        // Gérer différents types de tirets (normal, insécable, cadratin) et slashes
+        const pattern6 = /PPE[-\u2011\u2012\u2013\u2014_]?R\s*[\/\u2215]\s*[\d\.]+(?:_V\d+)?/gi;
+        // Pattern 6b: Pattern alternatif plus permissif pour PPE-R (avec ou sans tiret, avec espaces)
+        const pattern6b = /PPE\s*[-_\u2011\u2012\u2013\u2014]?\s*R\s*[\/\u2215]\s*[\d\.]+(?:_V\d+)?/gi;
+        // Pattern 6c: Pattern très permissif - PPE suivi de n'importe quel caractère non-alphanumérique puis R puis / puis chiffres
+        const pattern6c = /PPE[^\w\s]*R[^\w\s]*[\/\u2215][^\w\s]*[\d\.]+(?:_V\d+)?/gi;
+        // Pattern 7: UIAA 130:2021 ou UIAA 130
+        const pattern7 = /UIAA\s+\d+(?::\d{4})?/gi;
+        // Pattern 8: European Coordination sheet (format spécial)
+        const pattern8 = /European\s+Coordination\s+sheet/gi;
         
-        const allPatterns = [pattern1, pattern2, pattern3, pattern4, pattern5];
+        const allPatterns = [pattern1, pattern2, pattern3, pattern4, pattern5, pattern6, pattern6b, pattern6c, pattern7, pattern8];
         
         allPatterns.forEach(pattern => {
           const matches = extractedText.match(pattern);
@@ -309,6 +358,11 @@ export async function POST(request: NextRequest) {
           const veryBroadMatch = extractedText.match(/EN\s*\d+/gi);
           if (veryBroadMatch) {
             allNormesMatches.push(...veryBroadMatch);
+          }
+          // Recherche large pour PPE-R (même avec caractères spéciaux)
+          const ppeMatch = extractedText.match(/PPE[^\w]*R[^\w]*\/[^\w]*[\d\.]+/gi);
+          if (ppeMatch) {
+            allNormesMatches.push(...ppeMatch);
           }
         }
         

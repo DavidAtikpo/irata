@@ -758,10 +758,13 @@ export default function EditInspectionPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Extraction limitée: ne remplir que les normes; le reste reste manuel
-          setFormData(prev => ({
-            ...prev,
-          normesUrl: (data.extractedData?.pdfUrl || data.url || prev.normesUrl),
+        // Toujours enregistrer le fichier si l'upload réussit, même si l'extraction échoue
+        setFormData(prev => ({
+          ...prev,
+          // Enregistrer l'URL du fichier si disponible
+          normesUrl: data.url || prev.normesUrl,
+          // Si l'extraction a réussi, utiliser les normes extraites
+          // Sinon, garder l'ancienne valeur pour permettre la saisie manuelle
           normesCertificat: data.extractedData?.normes || prev.normesCertificat,
         }));
       } else {
